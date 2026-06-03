@@ -1,0 +1,160 @@
+@use "sass:map";
+@use "../abstracts/variables" as v;
+
+.mg-item-popover-trigger {
+  cursor: pointer;
+}
+
+.mg-item-popover-trigger > .mg-card {
+  transition:
+    border-color v.$transition-fast,
+    background-color v.$transition-fast,
+    box-shadow v.$transition-fast,
+    transform v.$transition-fast;
+}
+
+.mg-item-popover-trigger:hover > .mg-card:not(.mg-card--selected),
+.mg-item-popover-trigger:focus-visible > .mg-card:not(.mg-card--selected),
+.mg-item-popover-trigger:focus-within > .mg-card:not(.mg-card--selected) {
+  border-color: color-mix(in srgb, v.$color-secondary 46%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, v.$color-shell-surface-elevated 82%, transparent),
+      color-mix(in srgb, v.$color-shell-surface 78%, transparent)
+    ),
+    v.$color-shell-surface;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, v.$color-secondary 18%, transparent),
+    v.$shadow-premium;
+}
+
+.mg-item-popover__icon {
+  border: 1px solid color-mix(in srgb, v.$color-secondary 20%, transparent);
+  background:
+    radial-gradient(
+      circle,
+      color-mix(in srgb, v.$color-secondary 16%, transparent),
+      color-mix(in srgb, v.$color-primary 10%, transparent)
+    );
+}
+
+.mg-item-popover-overlay {
+  max-width: min(30rem, calc(100vw - 2rem));
+  overflow: hidden;
+  border-radius: v.$radius-lg;
+}
+
+.mg-item-popover {
+  position: relative;
+  width: min(30rem, calc(100vw - 2rem));
+  border: 1px solid color-mix(in srgb, v.$color-secondary 18%, transparent);
+  border-radius: v.$radius-lg;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, v.$color-shell-surface-elevated 86%, transparent),
+      color-mix(in srgb, v.$color-shell-surface 92%, transparent)
+    ),
+    v.$color-shell-surface;
+  overflow: hidden;
+}
+
+.mg-item-popover::before {
+  content: "";
+  position: absolute;
+  inset: map.get(v.$spacings, "xs");
+  border: 1px solid color-mix(in srgb, v.$color-secondary 8%, transparent);
+  border-radius: v.$radius-md;
+  pointer-events: none;
+}
+
+.mg-item-popover__header {
+  display: grid;
+  grid-template-columns: 4.25rem minmax(0, 1fr);
+  border-bottom: 1px solid color-mix(in srgb, v.$color-secondary 14%, transparent);
+}
+
+.mg-item-popover__icon {
+  width: 4.25rem;
+  height: 4.25rem;
+  border-radius: v.$radius-lg;
+}
+
+.mg-item-popover__section {
+  border-bottom: 1px solid color-mix(in srgb, v.$color-secondary 10%, transparent);
+}
+
+.mg-item-popover__section:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.mg-item-popover__section-title {
+  color: v.$color-secondary;
+  font-size: map.get(v.$font-sizes, "xs");
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.mg-item-popover__row {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) minmax(3.5rem, max-content);
+  width: 100%;
+  align-items: center;
+  line-height: 1.25;
+}
+
+.mg-item-popover__row-code {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: v.$radius-sm;
+  background: color-mix(in srgb, v.$color-secondary 10%, transparent);
+  color: v.$color-secondary;
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.mg-item-popover__row-label--wide {
+  grid-column: 2 / -1;
+}
+
+.mg-item-popover__row-value {
+  justify-self: end;
+  text-align: right;
+  line-height: 1.15;
+}
+
+.mg-item-popover__row .is-boosted {
+  color: v.$color-success;
+  text-shadow: 0 0 0.75rem color-mix(in srgb, v.$color-success 28%, transparent);
+}
+
+.mg-item-popover__row .is-weakened {
+  color: v.$color-danger;
+  text-shadow: 0 0 0.75rem color-mix(in srgb, v.$color-danger 20%, transparent);
+}
+
+.mg-item-popover__row.is-requirement-met {
+  color: color-mix(in srgb, v.$color-text 68%, v.$color-success);
+
+  .mg-item-popover__row-code,
+  .mg-item-popover__row-value {
+    color: v.$color-success;
+  }
+}
+
+.mg-item-popover__row.is-requirement-missing {
+  color: color-mix(in srgb, v.$color-danger 78%, v.$color-text);
+
+  .mg-item-popover__row-code,
+  .mg-item-popover__row-value {
+    color: v.$color-danger;
+  }
+}
+
+.mg-item-popover__empty {
+  font-style: italic;
+}

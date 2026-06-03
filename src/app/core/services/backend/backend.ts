@@ -243,9 +243,27 @@ export class Backend {
     return toCamelCase<T>(response.data);
   }
 
-  private throwIfError(response: { error: { message: string } | null }) {
+  private throwIfError(response: {
+    error: {
+      message: string;
+      code?: string;
+      details?: string;
+      hint?: string;
+    } | null;
+    status?: number;
+    statusText?: string;
+  }) {
     if (response.error) {
-      throw new Error(response.error.message);
+      const error = new Error(response.error.message);
+
+      Object.assign(error, {
+        code: response.error.code ?? null,
+        details: response.error.details ?? null,
+        hint: response.error.hint ?? null,
+        status: response.status ?? null,
+        statusText: response.statusText ?? null,
+      });
+      throw error;
     }
   }
 }

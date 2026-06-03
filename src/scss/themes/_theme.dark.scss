@@ -4,19 +4,20 @@
 
 $c: common.$common;
 
-$bg: #080d14;
-$surface: #101927;
-$surface-elevated: #162337;
+$bg: #05080d;
+$surface: #09111a;
+$surface-elevated: #0f1a26;
 $border: rgba(240, 201, 111, 0.2);
 $text: #f6edda;
-$text-muted: rgba(246, 237, 218, 0.76);
-$secondary: #d6a84c;
+$text-muted: #d7c8ab;
+$secondary: #c8923a;
 $info: #77b6dc;
 $danger: #d36a5b;
 $success: #8fcf74;
 $warn: #e0ae45;
 $help: #a58bd8;
-$link: #9bc8e5;
+$link: #c6b3ff;
+$link-hover: #eadfff;
 
 $dark: (
   "color-primary": map.get($c, "color-crimson"),
@@ -31,10 +32,22 @@ $dark: (
   "color-bg-surface": $surface,
   "color-bg-surface-elevated": $surface-elevated,
   "color-border": $border,
+  "color-shell-bg": $bg,
+  "color-shell-surface": rgba($surface, 0.78),
+  "color-shell-surface-elevated": rgba($surface-elevated, 0.86),
+  "color-shell-border": rgba($secondary, 0.3),
+  "color-chip-bg": rgba($surface-elevated, 0.78),
+  "color-chip-border": rgba($secondary, 0.18),
+  "color-progress-track": rgba(#000000, 0.38),
+  "color-progress-track-border": rgba(#f0c96f, 0.08),
+  "color-progress-gold-start": #9c6723,
+  "color-progress-gold-end": #f0c96f,
+  "color-progress-gold-glow": rgba(#f0c96f, 0.3),
+  "color-progress-danger": $danger,
   "color-text": $text,
   "color-text-muted": $text-muted,
   "color-link": $link,
-  "color-link-hover": color.scale($link, $lightness: 18%),
+  "color-link-hover": $link-hover,
   "bg-gradient": (
     radial-gradient(
       circle at 18% 8%,
@@ -43,10 +56,10 @@ $dark: (
     ),
     radial-gradient(
       circle at 82% 4%,
-      rgba($info, 0.18),
+      rgba(map.get($c, "color-crimson"), 0.08),
       transparent 34rem
     ),
-    linear-gradient(135deg, $bg 0%, #0b111b 42%, #05070b 100%)
+    linear-gradient(135deg, $bg 0%, #080b11 42%, #050608 100%),
   ),
   "color-paper-bg": linear-gradient(
       180deg,
@@ -79,4 +92,16 @@ $dark: (
   "form-disabled-text": color.scale($text, $alpha: -50%),
   "form-autofill-bg": color.scale($surface, $lightness: 9%),
   "form-autofill-text": $text,
+  "shadow-shell": 0 0.75rem 2rem rgba(0, 0, 0, 0.42),
+  "shadow-premium": 0 0.8rem 1.8rem rgba(0, 0, 0, 0.2),
+  "shadow-elevated": (
+    0 0.75rem 1.9rem rgba(0, 0, 0, 0.22),
+    inset 0 1px rgba(255, 255, 255, 0.035),
+  ),
+
+  "shadow-gold-glow": 0 0 1.15rem rgba(240, 201, 111, 0.24),
+  "shadow-brand-mark": (
+    inset 0 0 0 4px rgba(0, 0, 0, 0.42),
+    0 0 1.2rem rgba(240, 201, 111, 0.22),
+  ),
 );

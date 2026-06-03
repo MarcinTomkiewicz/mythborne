@@ -12,13 +12,9 @@ on:
           - test
           - prod
 
-  # Automatyczne deploye włączymy później.
-  # Na razie workflow uruchamiaj ręcznie.
-  #
-  # push:
-  #   branches:
-  #     - develop
-  #     - master
+  push:
+    branches:
+      - develop
 
 concurrency:
   group: mythsworn-${{ github.ref_name }}-${{ github.event.inputs.environment || 'auto' }}
@@ -74,7 +70,8 @@ jobs:
       - name: Workflow version marker
         shell: bash
         run: |
-          echo "Deploy Mythsworn workflow version: 2026-05-10-no-tar-listing"
+          echo "Deploy Mythsworn workflow version: 2026-05-11-develop-auto-test"
+          echo "Event: ${{ github.event_name }}"
           echo "Branch/ref: ${{ github.ref_name }}"
           echo "Target: ${{ needs.resolve-target.outputs.target }}"
           echo "Port: ${{ needs.resolve-target.outputs.port }}"

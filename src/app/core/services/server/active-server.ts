@@ -8,6 +8,7 @@ import {
   GLOBAL_ROLE_PRIORITY,
   GlobalRoleKey,
 } from '../../enums/active-server.enum';
+import { StartFlowServerAvailability } from '../../domain/start-flow/start-flow.model';
 import {
   SelectedGameServer,
   ServerAccessState,
@@ -17,15 +18,20 @@ import { Row } from '../../types/supabase.types';
 import {
   emptyServerAccessState,
   resolveActiveServerState,
+  resolveActiveServerStateFromStartFlowAvailability,
   toAccessState,
 } from '../../utils/active-server';
 import { AuthState } from '../auth/auth-state';
 import { Backend } from '../backend/backend';
+import { Platform } from '../platform/platform';
+
+const SELECTED_SERVER_STORAGE_KEY_PREFIX = 'mythsworn.selectedServerId';
 
 @Injectable({ providedIn: 'root' })
 export class ActiveServer {
   private readonly authState = inject(AuthState);
   private readonly backend = inject(Backend);
+  private readonly platform = inject(Platform);
   private readonly _servers = signal<SelectedGameServer[]>([]);
   private readonly _selectedServer = signal<SelectedGameServer | null>(null);
   private readonly _access = signal<ServerAccessState>(
@@ -48,13 +54,19 @@ export class ActiveServer {
 
     return this.loadActiveServerRows(user?.id ?? null).pipe(
       map((rows) =>
-        resolveActiveServerState(rows, user?.id ?? null, this._selectedServer()),
+        resolveActiveServerState(
+          rows,
+          user?.id ?? null,
+          this._selectedServer(),
+          this.readStoredSelectedServerId(user?.id ?? null),
+        ),
       ),
       tap({
         next: ({ selectedServers, selectedServer, access }) => {
           this._servers.set(selectedServers);
           this._selectedServer.set(selectedServer);
           this._access.set(access);
+          this.persistSelectedServer(user?.id ?? null, selectedServer?.id ?? null);
           this._isLoading.set(false);
         },
         error: (error: unknown) => {
@@ -68,6 +80,29 @@ export class ActiveServer {
       }),
       map(({ selectedServers }) => selectedServers),
     );
+  }
+
+  loadAccessibleServersFromStartFlowAvailability(
+    availability: StartFlowServerAvailability[],
+  ): SelectedGameServer[] {
+    const userId = this.authState.user()?.id ?? null;
+    const { selectedServers, selectedServer, access } =
+      resolveActiveServerStateFromStartFlowAvailability(
+        availability,
+        userId,
+        this._access().globalRoleKey,
+        this._selectedServer(),
+        this.readStoredSelectedServerId(userId),
+      );
+
+    this._servers.set(selectedServers);
+    this._selectedServer.set(selectedServer);
+    this._access.set(access);
+    this.persistSelectedServer(userId, selectedServer?.id ?? null);
+    this._isLoading.set(false);
+    this._error.set(null);
+
+    return selectedServers;
   }
 
   selectServer(serverId: string): boolean {
@@ -86,8 +121,45 @@ export class ActiveServer {
         server,
       ),
     );
+    this.persistSelectedServer(this.authState.user()?.id ?? null, server.id);
 
     return true;
+  }
+
+  private selectedServerStorageKey(userId: string | null): string | null {
+    return userId ? `${SELECTED_SERVER_STORAGE_KEY_PREFIX}.${userId}` : null;
+  }
+
+  private readStoredSelectedServerId(userId: string | null): string | null {
+    const key = this.selectedServerStorageKey(userId);
+
+    if (!key || !this.platform.isBrowser) {
+      return null;
+    }
+
+    try {
+      return window.localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+
+  private persistSelectedServer(userId: string | null, serverId: string | null): void {
+    const key = this.selectedServerStorageKey(userId);
+
+    if (!key || !this.platform.isBrowser) {
+      return;
+    }
+
+    try {
+      if (serverId) {
+        window.localStorage.setItem(key, serverId);
+      } else {
+        window.localStorage.removeItem(key);
+      }
+    } catch {
+      // Storage is best-effort; server/read-model access remains authoritative.
+    }
   }
 
   private loadActiveServerRows(

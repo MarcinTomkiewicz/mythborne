@@ -40,6 +40,7 @@ $spacings: (
 
 $navbar-height: 60px;
 $container-padding: 1.5rem;
+$shell-container-max-width: 1360px;
 
 /* =========================================================
    RADII / SHADOWS / TRANSITIONS
@@ -47,10 +48,16 @@ $container-padding: 1.5rem;
 $radius-sm: 6px;
 $radius-md: 8px;
 $radius-lg: 12px;
+$radius-pill: 999px;
 
 $shadow-sm: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.12);
 $shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.25);
 $shadow-lg: 0 0.75rem 2rem rgba(15, 23, 42, 0.12);
+$shadow-shell: var(--mg-shadow-shell, #{$shadow-lg});
+$shadow-premium: var(--mg-shadow-premium, #{$shadow-soft});
+$shadow-elevated: var(--mg-shadow-elevated, #{$shadow-lg});
+$shadow-gold-glow: var(--mg-shadow-gold-glow, none);
+$shadow-brand-mark: var(--mg-shadow-brand-mark, #{$shadow-soft});
 $transition-fast: 0.2s ease-in-out;
 $transition-slow: 0.5s ease;
 
@@ -71,6 +78,24 @@ $color-bg: var(--mg-color-bg);
 $color-bg-surface: var(--mg-color-bg-surface);
 $color-bg-surface-elevated: var(--mg-color-bg-surface-elevated);
 $color-border: var(--mg-color-border);
+
+$color-shell-bg: var(--mg-color-shell-bg, var(--mg-color-bg));
+$color-shell-surface: var(--mg-color-shell-surface, var(--mg-color-bg-surface));
+$color-shell-surface-elevated: var(--mg-color-shell-surface-elevated, var(--mg-color-bg-surface-elevated));
+$color-shell-border: var(--mg-color-shell-border, var(--mg-color-border));
+$bg-gradient: var(--mg-bg-gradient, none);
+$color-chip-bg: var(--mg-color-chip-bg, var(--mg-color-bg-surface));
+$color-chip-border: var(--mg-color-chip-border, var(--mg-color-border));
+$color-progress-track: var(--mg-color-progress-track, var(--mg-color-bg));
+$color-progress-track-border: var(--mg-color-progress-track-border, var(--mg-color-border));
+$color-progress-gold-start: var(--mg-color-progress-gold-start, var(--mg-color-secondary));
+$color-progress-gold-end: var(--mg-color-progress-gold-end, var(--mg-color-secondary));
+$color-progress-gold-glow: var(--mg-color-progress-gold-glow, transparent);
+$color-progress-danger: var(--mg-color-progress-danger, var(--mg-color-danger));
+$color-oracle-gold-soft: var(--mg-color-oracle-gold-soft, color-mix(in srgb, var(--mg-color-progress-gold-end, var(--mg-color-secondary)) 10%, transparent));
+$color-oracle-gold-line: var(--mg-color-oracle-gold-line, color-mix(in srgb, var(--mg-color-progress-gold-end, var(--mg-color-secondary)) 22%, transparent));
+$color-oracle-gold-fill: var(--mg-color-oracle-gold-fill, color-mix(in srgb, var(--mg-color-progress-gold-end, var(--mg-color-secondary)) 72%, var(--mg-color-progress-gold-start, var(--mg-color-secondary))));
+$color-oracle-glass: var(--mg-color-oracle-glass, color-mix(in srgb, var(--mg-color-shell-surface, var(--mg-color-bg-surface)) 82%, transparent));
 
 $heading-color: var(--mg-heading-color);
 $heading-style: var(--mg-heading-style);

@@ -4,6 +4,7 @@ import { IHeroStats } from '../../interfaces/hero/i-hero-stats';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import { StatProgressionRules } from '../../domain/progression/stat-progression.model';
 import { Hero } from '../hero/hero';
+import { HeroDashboardRuntimeStats } from '../hero/hero-dashboard-runtime-stats';
 import { StatsService } from '../stats/stats';
 import { ToastService } from '../ui/toast';
 import { AttributeAllocationPageFacade } from './attribute-allocation-page.facade';
@@ -37,12 +38,10 @@ describe('AttributeAllocationPageFacade', () => {
 
     statProgression = jasmine.createSpyObj<StatProgressionService>('StatProgressionService', [
       'evaluateStatCap',
-      'evaluateNextLevelCost',
       'getNextLevelCost',
       'getRules',
     ]);
     statProgression.evaluateStatCap.and.returnValue({ value: 10, error: null });
-    statProgression.evaluateNextLevelCost.and.returnValue({ value: 3, error: null });
     statProgression.getNextLevelCost.and.returnValue(3);
     statProgression.getRules.and.returnValue(of(rules()));
     toast = jasmine.createSpyObj<ToastService>('ToastService', ['show']);
@@ -59,6 +58,26 @@ describe('AttributeAllocationPageFacade', () => {
         },
         { provide: StatProgressionService, useValue: statProgression },
         { provide: ToastService, useValue: toast },
+        {
+          provide: HeroDashboardRuntimeStats,
+          useValue: jasmine.createSpyObj<HeroDashboardRuntimeStats>(
+            'HeroDashboardRuntimeStats',
+            {
+              getActiveHeroRuntimeStats: of(null) as unknown as ReturnType<
+                HeroDashboardRuntimeStats['getActiveHeroRuntimeStats']
+              >,
+              getActiveHeroAttributeAllocationPreviewManifest: of({
+                contractVersion: 'hero_attribute_allocation_preview_manifest_v2',
+                oneShotManifest: true,
+                perClickRpcPreviewRequired: false,
+                frontendMayEvaluateLocally: true,
+                rows: [],
+              }) as unknown as ReturnType<
+                HeroDashboardRuntimeStats['getActiveHeroAttributeAllocationPreviewManifest']
+              >,
+            },
+          ),
+        },
       ],
     });
     facade = TestBed.inject(AttributeAllocationPageFacade);
@@ -73,10 +92,6 @@ describe('AttributeAllocationPageFacade', () => {
   });
 
   it('surfaces broken stat upgrade cost configuration instead of reporting zero spent points', () => {
-    statProgression.evaluateNextLevelCost.and.returnValue({
-      value: null,
-      error: 'Formula target "Hero stat upgrade cost" has no enabled assigned formula.',
-    });
     statProgression.getNextLevelCost.and.returnValue(null);
 
     const row = facade.statRows()[0];
@@ -86,24 +101,29 @@ describe('AttributeAllocationPageFacade', () => {
     expect(facade.characterPointSummaryError()).toContain('Stat upgrade cost cannot be calculated');
     expect(row.nextLevelCost).toBeNull();
     expect(row.canIncrease).toBeFalse();
-    expect(row.formulaError).toBe(
-      'Formula target "Hero stat upgrade cost" has no enabled assigned formula.',
-    );
-    expect(row.increaseReason).toBe(
-      'Formula target "Hero stat upgrade cost" has no enabled assigned formula.',
-    );
-  });
-
-  it('does not save when stat upgrade cost configuration is unavailable', () => {
-    statProgression.evaluateNextLevelCost.and.returnValue({
-      value: null,
-      error: 'Formula target "Hero stat upgrade cost" has no enabled assigned formula.',
-    });
-    statProgression.getNextLevelCost.and.returnValue(null);
 
     facade.saveDraft();
 
     expect(hero.saveProgressionDraft).not.toHaveBeenCalled();
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Formula error',
+      'Stat upgrade cost cannot be calculated because the active formula configuration is broken.',
+    );
+  });
+
+  it('shows a player-facing error when the draft costs more Character Points than available', () => {
+    facade.characterPoints.set(1);
+
+    facade.saveDraft();
+
+    expect(facade.remainingCharacterPoints()).toBe(-2);
+    expect(hero.saveProgressionDraft).not.toHaveBeenCalled();
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Not enough Character Points',
+      'Lower the draft allocation before saving.',
+    );
   });
 
   it('blocks save when the stat cap formula cannot be evaluated', () => {
@@ -112,17 +132,12 @@ describe('AttributeAllocationPageFacade', () => {
       error: 'Formula target "Hero stat level cap" has no enabled assigned formula.',
     });
 
-    const row = facade.statRows()[0];
     facade.saveDraft();
 
     expect(facade.statCapSummaryError()).toBe(
       'Formula target "Hero stat level cap" has no enabled assigned formula.',
     );
-    expect(row.maxAllowedValue).toBeNull();
-    expect(row.canIncrease).toBeFalse();
-    expect(row.formulaError).toBe(
-      'Formula target "Hero stat level cap" has no enabled assigned formula.',
-    );
+    expect(facade.statRows()[0].canIncrease).toBeFalse();
     expect(hero.saveProgressionDraft).not.toHaveBeenCalled();
     expect(toast.show).toHaveBeenCalledWith(
       'error',
@@ -135,14 +150,9 @@ describe('AttributeAllocationPageFacade', () => {
     statProgression.evaluateStatCap.and.returnValue({ value: 2, error: null });
     facade.draftStats.set({ strength: 3 });
 
-    const row = facade.statRows()[0];
     facade.saveDraft();
 
-    expect(row.maxAllowedValue).toBe(2);
-    expect(row.canIncrease).toBeFalse();
-    expect(row.increaseReason).toBe(
-      'Cap exceeded for hero level 2. Lower this stat to 2 or less before saving.',
-    );
+    expect(facade.statRows()[0].canIncrease).toBeFalse();
     expect(facade.canSaveDraft()).toBeFalse();
     expect(hero.saveProgressionDraft).not.toHaveBeenCalled();
     expect(toast.show).toHaveBeenCalledWith(
@@ -153,10 +163,9 @@ describe('AttributeAllocationPageFacade', () => {
   });
 
   function seedFacade(): void {
+    facade.loadData();
     facade.heroLevel.set(2);
     facade.characterPoints.set(10);
-    facade.statsList.set([stat()]);
-    facade.baseStats.set({ strength: 1 });
     facade.draftStats.set({ strength: 2 });
     facade.progressionRules.set(rules());
   }

@@ -1,0 +1,20 @@
+<p-confirmdialog
+  [key]="key()"
+  [styleClass]="styleClass()"
+  (onHide)="hidden.emit()"
+>
+  <ng-template pTemplate="message">
+    <p class="mb-0">
+      @for (segment of messageSegments(); track $index) {
+        @if (segment.highlighted) {
+          <strong class="color-heading">{{ segment.text }}</strong>
+        } @else {
+          <span>{{ segment.text }}</span>
+        }
+        @if (segment.lineBreakAfter) {
+          <br />
+        }
+      }
+    </p>
+  </ng-template>
+</p-confirmdialog>

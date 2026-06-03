@@ -1,0 +1,14 @@
+<section class="mg-card p-lg flex-col gap-sm">
+  <p class="small-caps color-muted text-xs mb-0">Szczegóły wyzwania</p>
+
+  @if (challenge.challengeFacts().length) {
+    <div class="mg-grid-auto-fit gap-sm mt-sm">
+      @for (fact of challenge.challengeFacts(); track fact.label) {
+        <div class="mg-data-row">
+          <span class="mg-data-row__label">{{ fact.label }}</span>
+          <strong class="mg-data-row__value">{{ fact.value }}</strong>
+        </div>
+      }
+    </div>
+  }
+</section>

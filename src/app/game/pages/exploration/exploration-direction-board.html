@@ -1,0 +1,131 @@
+@let layout = boardLayout();
+
+<article class="exploration-direction-stage mg-card position-relative overflow-hidden w-100 bg-transparent">
+  <section
+    class="position-relative z-1 w-100 flex-col-center-center"
+    aria-label="Plansza wyboru kierunku"
+  >
+    <div class="exploration-direction-oracle-board position-relative overflow-hidden radius-lg bg-transparent mx-auto p-md">
+      <div class="exploration-direction-frame exploration-direction-frame--outer position-absolute position-center z-0 pointer-events-none radius-lg"></div>
+      <div class="exploration-direction-frame exploration-direction-frame--inner position-absolute position-center z-0 pointer-events-none radius-lg"></div>
+
+      @if (layout.forward.length) {
+        <div class="exploration-direction-oracle-line exploration-direction-oracle-line--forward position-absolute z-1 pointer-events-none"></div>
+      }
+      @if (layout.left.length) {
+        <div class="exploration-direction-oracle-line exploration-direction-oracle-line--left position-absolute z-1 pointer-events-none"></div>
+      }
+      @if (layout.right.length) {
+        <div class="exploration-direction-oracle-line exploration-direction-oracle-line--right position-absolute z-1 pointer-events-none"></div>
+      }
+      <div class="exploration-direction-oracle-line exploration-direction-oracle-line--horizontal-left position-absolute z-1 pointer-events-none"></div>
+      <div class="exploration-direction-oracle-line exploration-direction-oracle-line--horizontal-right position-absolute z-1 pointer-events-none"></div>
+      <div class="exploration-direction-oracle-line exploration-direction-oracle-line--back position-absolute z-1 pointer-events-none"></div>
+
+      @if (layout.forward.length) {
+        <div class="exploration-direction-gate-slot position-absolute position-center-x top-0 z-2 flex-col gap-sm">
+          @for (option of layout.forward; track option.edgeId ?? option.stepKind + '-' + $index) {
+            <app-exploration-direction-gate
+              [option]="option"
+              slot="forward"
+              [label]="movement.movementOptionLabel(option)"
+              [isBusy]="movement.isMoving()"
+              [isDisabled]="!movement.canChooseMovementOption(option)"
+              (chooseMovementOption)="movement.chooseMovementOption($event)"
+            />
+          }
+        </div>
+      }
+
+      @if (layout.left.length) {
+        <div class="exploration-direction-gate-slot position-absolute position-center-y left-0 z-2 flex-col gap-sm">
+          @for (option of layout.left; track option.edgeId ?? option.stepKind + '-' + $index) {
+            <app-exploration-direction-gate
+              [option]="option"
+              slot="left"
+              [label]="movement.movementOptionLabel(option)"
+              [isBusy]="movement.isMoving()"
+              [isDisabled]="!movement.canChooseMovementOption(option)"
+              (chooseMovementOption)="movement.chooseMovementOption($event)"
+            />
+          }
+        </div>
+      }
+
+      <article class="exploration-direction-core mg-card position-absolute position-center z-2 p-lg flex-col-center-center gap-sm text-center">
+        <span class="exploration-direction-core__mark mg-card p-md flex-row-center-center flex-none square-9 shadow-premium">
+          <i class="pi pi-compass color-heading text-xxl" aria-hidden="true"></i>
+        </span>
+        <strong class="color-heading text-xl font-black">Wybierz kierunek</strong>
+        <span class="color-text text-sm">
+          Wybierz kierunek, żeby kontynuować przygodę.
+        </span>
+      </article>
+
+      @if (layout.right.length) {
+        <div class="exploration-direction-gate-slot position-absolute position-center-y right-0 z-2 flex-col gap-sm">
+          @for (option of layout.right; track option.edgeId ?? option.stepKind + '-' + $index) {
+            <app-exploration-direction-gate
+              [option]="option"
+              slot="right"
+              [label]="movement.movementOptionLabel(option)"
+              [isBusy]="movement.isMoving()"
+              [isDisabled]="!movement.canChooseMovementOption(option)"
+              (chooseMovementOption)="movement.chooseMovementOption($event)"
+            />
+          }
+        </div>
+      }
+
+      <div class="exploration-direction-gate-slot position-absolute position-center-x bottom-0 z-2 flex-col gap-sm">
+        @if (layout.back.length) {
+          @for (option of layout.back; track option.edgeId ?? option.stepKind + '-' + $index) {
+            <app-exploration-direction-gate
+              [option]="option"
+              slot="back"
+              [label]="movement.movementOptionLabel(option)"
+              [isBusy]="movement.isMoving()"
+              [isDisabled]="!movement.canChooseMovementOption(option)"
+              (chooseMovementOption)="movement.chooseMovementOption($event)"
+            />
+          }
+        } @else {
+          <article
+            class="exploration-direction-gate-placeholder mg-card border-dashed p-lg flex-row-start-center gap-md h-100 opacity-55 user-select-none"
+            aria-disabled="true"
+          >
+            <span class="exploration-direction-gate-placeholder__icon mg-card p-sm flex-row-center-center flex-none square-11 shadow-premium">
+              <i class="pi pi-arrow-down color-info text-xl" aria-hidden="true"></i>
+            </span>
+            <div class="flex-col gap-xs min-w-0 w-100">
+              <strong class="color-heading text-lg">Wstecz</strong>
+            </div>
+          </article>
+        }
+      </div>
+    </div>
+
+    @if (layout.unsupported.length) {
+      <div class="mg-grid-auto-fit gap-md w-100 mt-md">
+        @for (option of layout.unsupported; track option.edgeId ?? option.stepKind + '-' + $index) {
+          <app-exploration-direction-gate
+            [option]="option"
+            slot="unknown"
+            [label]="movement.movementOptionLabel(option)"
+            [isBusy]="movement.isMoving()"
+            [isDisabled]="!movement.canChooseMovementOption(option)"
+            (chooseMovementOption)="movement.chooseMovementOption($event)"
+          />
+        }
+      </div>
+    }
+    @if (!movementOptions().length) {
+      <div class="mg-card p-md flex-col gap-xs w-100 mt-md">
+        <strong class="color-text">Brak dostępnych kierunków</strong>
+        <span class="color-muted text-sm">
+          Aktualny stan eksploracji nie ma dostępnych wygenerowanych ścieżek.
+        </span>
+      </div>
+    }
+  </section>
+</article>

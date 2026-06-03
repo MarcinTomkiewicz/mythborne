@@ -92,7 +92,7 @@
           />
         </div>
 
-        <div class="mg-surface-card flex-col gap-md p-lg" formArrayName="bonuses">
+        <div class="mg-card flex-col gap-md p-lg" formArrayName="bonuses">
           <div class="flex-row-between-center flex-col-sm gap-md">
             <div class="flex-col gap-xs">
               <p class="card-legend mb-0">Bonuses</p>
@@ -104,7 +104,7 @@
 
           <div class="flex-col gap-md">
             @for (bonusGroup of page.baseBonusEditor.controls; track $index) {
-              <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="bonusGroup">
+              <div class="mg-card flex-col gap-md p-md" [formGroup]="bonusGroup">
                 <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
                   <label class="flex-col gap-sm">
                     <span class="muted-text">Category</span>
@@ -270,7 +270,7 @@
 
           <div class="flex-col gap-md">
             @for (bonusGroup of page.affixBonusEditor.controls; track $index) {
-              <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="bonusGroup">
+              <div class="mg-card flex-col gap-md p-md" [formGroup]="bonusGroup">
                 <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md">
                   <label class="flex-col gap-sm">
                     <span class="muted-text">Category</span>

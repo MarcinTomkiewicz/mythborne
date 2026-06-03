@@ -21,6 +21,7 @@ import {
   toRespondGuildInviteRpcArgs,
 } from '../../utils/guild-invite-mappers';
 import { mapGuildInvite } from '../../utils/guild-mappers';
+import { firstRpcRow } from '../../utils/rpc-result';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
 
@@ -82,7 +83,7 @@ export class PlayerGuildInvites {
       )
       .pipe(
         map((rows) =>
-          mapGuildInviteOperationResult(firstRow(rows, RPC.create_guild_invite))
+          mapGuildInviteOperationResult(firstRpcRow(rows, RPC.create_guild_invite))
         ),
       );
   }
@@ -114,7 +115,7 @@ export class PlayerGuildInvites {
       )
       .pipe(
         map((rows) =>
-          mapGuildInviteOperationResult(firstRow(rows, RPC.respond_guild_invite))
+          mapGuildInviteOperationResult(firstRpcRow(rows, RPC.respond_guild_invite))
         ),
       );
   }
@@ -146,7 +147,7 @@ export class PlayerGuildInvites {
       )
       .pipe(
         map((rows) =>
-          mapGuildInviteOperationResult(firstRow(rows, RPC.cancel_guild_invite))
+          mapGuildInviteOperationResult(firstRpcRow(rows, RPC.cancel_guild_invite))
         ),
       );
   }
@@ -161,16 +162,6 @@ function createRequestId(prefix: string): string {
     ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   return `${prefix}:${randomId}`;
-}
-
-function firstRow<T>(rows: readonly T[], rpcName: string): T {
-  const row = rows[0];
-
-  if (!row) {
-    throw new Error(`${rpcName} returned no guild invite row.`);
-  }
-
-  return row;
 }
 
 function assertActiveContext(

@@ -57,13 +57,24 @@ strong {
   font-weight: 700;
 }
 
-a {
+:where(a) {
   color: v.$color-link;
-  text-decoration: none;
+  text-decoration-line: none;
+  text-decoration-thickness: 0.08em;
+  text-decoration-color: currentColor;
+  text-underline-offset: 0.22em;
+  transition:
+    color v.$transition-fast,
+    text-decoration-color v.$transition-fast;
 
   &:hover {
     color: v.$color-link-hover;
-    text-underline-offset: 0.2em;
+    text-decoration-line: underline;
+  }
+
+  &:focus-visible {
+    color: v.$color-link-hover;
+    text-decoration-line: underline;
   }
 }
 

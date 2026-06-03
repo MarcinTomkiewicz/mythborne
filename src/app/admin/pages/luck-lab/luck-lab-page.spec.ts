@@ -771,7 +771,7 @@ function cardSummaryValues(
 ): (string | undefined)[] {
   return Array.from<Element>(
     fixture.nativeElement.querySelectorAll(
-      '.mg-surface-card strong, .mg-surface-card span',
+      '.mg-card strong, .mg-card span',
     ),
   ).map((element) => element.textContent?.trim());
 }

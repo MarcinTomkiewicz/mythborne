@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mythborne Exploration Board Prototype</title>
+  <!--
+    VISUAL REFERENCE ONLY.
+    Do not copy this CSS into Angular feature components.
+    Translate approved visual patterns into global SCSS tokens, vendor wrappers,
+    shared components, PrimeNG wrappers, or documented layout utilities.
+
+    Mythborne Exploration Board V4 — cinematic direction board plus full step report.
+
+    Scope:
+    - player-facing active Exploration board after difficulty was selected on the previous screen;
+    - this is not a generated map and does not create named route locations;
+    - each step resolves after a short wait; if it has a result, the result must be rendered as a full report block, not as a tiny symbolic center badge;
+    - directions are generated choices, not persistent map nodes;
+    - available directions can be 1-3 forward/side choices, and Back is always available;
+    - all available directions are mechanically equivalent within the selected difficulty;
+    - after any completed Encounter, including combat encounter, player returns here and chooses the next generated direction;
+    - no invented route names like Broken Colonnade / Sunken Courtyard;
+    - no per-direction risk labels such as safer/riskier/balanced;
+    - pending timer/check-result belongs to a separate pending step state, not this completed step-result board.
+  -->
+  <style>
+    :root {
+      --mb-bg-0: #06080c;
+      --mb-bg-1: #0b1018;
+      --mb-navy-0: #07111d;
+      --mb-navy-1: #0d2135;
+      --mb-navy-2: #163b5c;
+      --mb-gold-1: #9c6723;
+      --mb-gold-2: #c8923a;
+      --mb-gold-3: #f0c96f;
+      --mb-red: #b24b3b;
+      --mb-green: #6fa45d;
+      --mb-blue: #5ba3d5;
+      --mb-purple: #9672cc;
+      --mb-text-0: #f6edda;
+      --mb-text-1: #d7c8ab;
+      --mb-text-2: #9d8f75;
+      --mb-text-3: #6f675a;
+      --mb-line-soft: rgba(240, 201, 111, 0.12);
+      --mb-line: rgba(240, 201, 111, 0.24);
+      --mb-line-strong: rgba(240, 201, 111, 0.44);
+      --mb-shadow: rgba(0, 0, 0, 0.42);
+      --mb-sidebar-w: 16rem;
+      --mb-topbar-h: 4.25rem;
+      --mb-radius-lg: 1rem;
+      --mb-radius-xl: 1.35rem;
+      --mb-font-display: Georgia, "Times New Roman", serif;
+      --mb-font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { color-scheme: dark; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--mb-font-ui);
+      color: var(--mb-text-0);
+      background:
+        radial-gradient(circle at 18% 8%, rgba(200,146,58,.14), transparent 28rem),
+        radial-gradient(circle at 82% 4%, rgba(45,110,159,.20), transparent 34rem),
+        linear-gradient(135deg, var(--mb-bg-0), #080b11 38%, #050608 100%);
+      overflow-x: hidden;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .14;
+      background-image:
+        linear-gradient(rgba(255,255,255,.032) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.032) 1px, transparent 1px);
+      background-size: 34px 34px;
+      mask-image: radial-gradient(circle at center, black, transparent 78%);
+    }
+    button { font: inherit; color: inherit; }
+
+    .mb-app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--mb-sidebar-w) minmax(0, 1fr);
+      grid-template-rows: var(--mb-topbar-h) minmax(0, 1fr);
+      grid-template-areas:
+        "topbar topbar"
+        "sidebar main";
+      position: relative;
+      z-index: 1;
+    }
+
+    .mb-topbar {
+      grid-area: topbar;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: minmax(20rem, 1fr) auto minmax(20rem, 1fr);
+      align-items: center;
+      gap: 1rem;
+      padding: .55rem 1rem;
+      border-bottom: 1px solid var(--mb-line-soft);
+      background:
+        linear-gradient(180deg, rgba(8,13,20,.94), rgba(8,12,18,.88)),
+        radial-gradient(circle at center top, rgba(240,201,111,.1), transparent 28rem);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 .75rem 2rem var(--mb-shadow);
+    }
+    .mb-topbar-left,
+    .mb-topbar-right { display: flex; align-items: center; gap: .6rem; min-width: 0; }
+    .mb-topbar-right { justify-content: flex-end; }
+
+    .mb-brand { display: flex; align-items: center; justify-content: center; gap: .7rem; min-width: 16rem; }
+    .mb-brand-mark {
+      width: 2.35rem;
+      height: 2.35rem;
+      border-radius: 999px;
+      border: 1px solid var(--mb-line-strong);
+      background:
+        radial-gradient(circle at 34% 24%, #fff0b9 0, var(--mb-gold-3) 22%, var(--mb-gold-1) 48%, #251509 70%, var(--mb-navy-0) 100%);
+      box-shadow: inset 0 0 0 4px rgba(0,0,0,.42), 0 0 1.2rem rgba(240,201,111,.22);
+      position: relative;
+    }
+    .mb-brand-mark::after {
+      content: "M";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-family: var(--mb-font-display);
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #080705;
+    }
+    .mb-brand-title { font-family: var(--mb-font-display); font-size: 1.65rem; letter-spacing: .11em; text-transform: uppercase; color: var(--mb-gold-3); line-height: 1; }
+    .mb-brand-subtitle { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .18em; text-transform: uppercase; margin-top: .18rem; text-align: center; }
+
+    .mb-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: .42rem;
+      min-height: 2.15rem;
+      padding: .38rem .72rem;
+      border: 1px solid var(--mb-line-soft);
+      border-radius: 999px;
+      color: var(--mb-text-1);
+      background: linear-gradient(180deg, rgba(15,23,33,.75), rgba(6,9,13,.78));
+      white-space: nowrap;
+      box-shadow: inset 0 1px rgba(255,255,255,.04);
+    }
+    .mb-chip strong { color: var(--mb-text-0); }
+    .mb-chip-icon { color: var(--mb-gold-2); }
+    .mb-chip--health strong { color: #ffc0b7; }
+    .mb-chip--resource strong { color: var(--mb-gold-3); }
+    .mb-chip-stack { display: inline-grid; gap: .08rem; line-height: 1.05; }
+    .mb-chip-stack small { color: var(--mb-text-3); font-size: .68rem; }
+    .mb-xp { min-width: 15rem; display: grid; gap: .3rem; padding: .35rem .7rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(15,23,33,.72), rgba(6,9,13,.74)); }
+    .mb-xp-meta { display: flex; justify-content: space-between; gap: .75rem; font-size: .75rem; color: var(--mb-text-2); }
+    .mb-mini-bar { height: .42rem; border-radius: 999px; background: rgba(0,0,0,.38); overflow: hidden; border: 1px solid rgba(240,201,111,.08); }
+    .mb-mini-bar > span { display: block; width: var(--value, 62%); height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--mb-gold-1), var(--mb-gold-3)); box-shadow: 0 0 .8rem rgba(240,201,111,.3); }
+
+    .mb-sidebar { grid-area: sidebar; padding: 1rem .8rem; border-right: 1px solid var(--mb-line-soft); background: linear-gradient(180deg, rgba(7,11,17,.84), rgba(5,7,10,.88)); backdrop-filter: blur(12px); }
+    .mb-server-card { padding: .9rem; border: 1px solid var(--mb-line-soft); border-radius: var(--mb-radius-xl); background: linear-gradient(180deg, rgba(20,32,47,.72), rgba(8,12,18,.74)), radial-gradient(circle at 80% 0%, rgba(240,201,111,.16), transparent 10rem); box-shadow: 0 .8rem 1.8rem rgba(0,0,0,.2); }
+    .mb-server-label { color: var(--mb-text-3); font-size: .68rem; letter-spacing: .15em; text-transform: uppercase; margin-bottom: .4rem; }
+    .mb-server-name { display: flex; justify-content: space-between; gap: .7rem; align-items: center; font-weight: 800; color: var(--mb-text-0); }
+    .mb-prestige { margin-top: .75rem; padding-top: .75rem; border-top: 1px solid rgba(240,201,111,.1); }
+    .mb-nav-section-title { margin: 1.05rem 0 .45rem .55rem; color: var(--mb-text-3); font-size: .68rem; letter-spacing: .16em; text-transform: uppercase; }
+    .mb-nav-list { display: grid; gap: .28rem; margin: 0; padding: 0; list-style: none; }
+    .mb-nav-link { display: flex; align-items: center; gap: .65rem; padding: .67rem .68rem; color: var(--mb-text-1); text-decoration: none; border-radius: .85rem; border: 1px solid transparent; transition: 120ms ease; }
+    .mb-nav-link:hover, .mb-nav-link.is-active { color: var(--mb-text-0); border-color: rgba(240,201,111,.16); background: linear-gradient(90deg, rgba(240,201,111,.13), rgba(45,110,159,.12)); }
+    .mb-nav-link.is-active { box-shadow: inset 3px 0 0 var(--mb-gold-2); }
+    .mb-nav-icon { width: 1.65rem; height: 1.65rem; border-radius: .55rem; display: grid; place-items: center; background: rgba(240,201,111,.08); color: var(--mb-gold-2); border: 1px solid rgba(240,201,111,.08); flex: 0 0 auto; font-size: .74rem; font-weight: 800; letter-spacing: .02em; }
+
+    .mb-main { grid-area: main; min-width: 0; padding: 1.1rem; display: grid; gap: 1rem; align-content: start; }
+    .mb-exploration-page { width: min(1220px, 100%); margin: 0 auto; display: grid; gap: 1rem; }
+
+    .mb-badge { display: inline-flex; align-items: center; gap: .35rem; padding: .25rem .55rem; border-radius: 999px; border: 1px solid var(--mb-line-soft); color: var(--mb-text-1); background: rgba(7,10,14,.45); font-size: .77rem; white-space: nowrap; }
+    .mb-badge--gold { color: var(--mb-gold-3); border-color: rgba(240,201,111,.32); }
+    .mb-badge--green { color: #bde6b0; border-color: rgba(111,164,93,.46); }
+    .mb-badge--blue { color: #b9def3; border-color: rgba(91,163,213,.46); }
+    .mb-badge--red { color: #f2b4aa; border-color: rgba(178,75,59,.46); }
+    .mb-badge--warning { color: #f1d08a; border-color: rgba(240,201,111,.34); }
+
+    .mb-hero-stage {
+      position: relative;
+      min-height: calc(100vh - var(--mb-topbar-h) - 2.2rem);
+      display: grid;
+      grid-template-rows: auto minmax(34rem, 1fr) auto;
+      gap: 1rem;
+      overflow: hidden;
+      padding: 1rem;
+      border-radius: 1.65rem;
+      border: 1px solid rgba(240,201,111,.20);
+      background:
+        radial-gradient(circle at 50% 34%, rgba(240,201,111,.16), transparent 18rem),
+        radial-gradient(circle at 50% 58%, rgba(91,163,213,.17), transparent 24rem),
+        linear-gradient(145deg, rgba(6,9,14,.82), rgba(10,22,34,.64), rgba(5,7,10,.9)),
+        repeating-linear-gradient(0deg, transparent 0 2.9rem, rgba(255,255,255,.018) 2.9rem 2.95rem),
+        repeating-linear-gradient(90deg, transparent 0 2.9rem, rgba(255,255,255,.018) 2.9rem 2.95rem);
+      box-shadow: 0 1rem 2.6rem rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.05);
+    }
+    .mb-hero-stage::before {
+      content: "";
+      position: absolute;
+      inset: 1rem;
+      border-radius: 1.25rem;
+      pointer-events: none;
+      border: 1px solid rgba(240,201,111,.07);
+      background:
+        linear-gradient(90deg, rgba(240,201,111,.06), transparent 14%, transparent 86%, rgba(240,201,111,.06)),
+        linear-gradient(0deg, rgba(240,201,111,.05), transparent 16%, transparent 84%, rgba(240,201,111,.05));
+      mask-image: radial-gradient(circle at center, black, transparent 78%);
+    }
+    .mb-hero-stage::after {
+      content: "ΜΥΘΒΟΡΝΕ";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) rotate(-8deg);
+      font-family: var(--mb-font-display);
+      font-size: clamp(4rem, 11vw, 10rem);
+      letter-spacing: .18em;
+      color: rgba(240,201,111,.035);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .mb-stage-top {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: .75rem;
+      align-items: start;
+    }
+    .mb-kicker { color: var(--mb-gold-2); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; margin: 0 0 .45rem; }
+    .mb-title { margin: 0; font-family: var(--mb-font-display); font-size: clamp(2.3rem, 4vw, 4.2rem); line-height: .96; color: var(--mb-gold-3); text-shadow: 0 0 1.4rem rgba(240,201,111,.12); }
+    .mb-stage-copy { margin: .72rem 0 0; max-width: 60rem; color: var(--mb-text-1); line-height: 1.55; font-size: .96rem; }
+    .mb-stage-meta { display: flex; flex-wrap: wrap; gap: .45rem; justify-content: flex-start; }
+
+    .mb-exploration-minihud {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .4rem;
+      margin-top: .7rem;
+      max-width: 60rem;
+    }
+    .mb-minihud-item {
+      display: inline-flex;
+      align-items: center;
+      gap: .35rem;
+      min-height: 1.85rem;
+      padding: .25rem .55rem;
+      border-radius: .55rem;
+      border: 1px solid rgba(240,201,111,.1);
+      background: rgba(7,10,14,.28);
+      color: var(--mb-text-2);
+      font-size: .76rem;
+      white-space: nowrap;
+    }
+    .mb-minihud-item strong { color: var(--mb-gold-3); font-weight: 900; }
+    .mb-minihud-item.is-muted strong { color: var(--mb-text-1); }
+
+    .mb-oracle-wrap {
+      position: relative;
+      z-index: 1;
+      min-height: 32rem;
+      display: grid;
+      place-items: center;
+      padding: .25rem 1rem 0;
+    }
+    .mb-oracle-board {
+      position: relative;
+      width: min(50rem, 100%);
+      aspect-ratio: 16 / 10;
+      border-radius: 2rem;
+      isolation: isolate;
+    }
+    .mb-oracle-board::before {
+      content: "";
+      position: absolute;
+      inset: 2% 5%;
+      border-radius: 2rem;
+      border: 1px solid rgba(240,201,111,.18);
+      background:
+        radial-gradient(circle at center, rgba(240,201,111,.16), rgba(91,163,213,.08) 35%, rgba(6,9,13,.66) 68%, transparent 69%),
+        linear-gradient(90deg, transparent 0 49.8%, rgba(240,201,111,.13) 49.8% 50.2%, transparent 50.2%),
+        linear-gradient(0deg, transparent 0 49.8%, rgba(240,201,111,.10) 49.8% 50.2%, transparent 50.2%),
+        repeating-linear-gradient(45deg, transparent 0 2.2rem, rgba(255,255,255,.018) 2.2rem 2.25rem);
+      box-shadow:
+        inset 0 0 0 .7rem rgba(0,0,0,.12),
+        inset 0 0 4rem rgba(240,201,111,.045),
+        0 0 4.5rem rgba(91,163,213,.1);
+      z-index: -2;
+    }
+    .mb-oracle-board::after {
+      content: "";
+      position: absolute;
+      inset: 17%;
+      border-radius: 1.6rem;
+      border: 1px solid rgba(240,201,111,.18);
+      background:
+        radial-gradient(circle, rgba(7,10,14,.04), rgba(7,10,14,.62) 70%),
+        repeating-conic-gradient(from 45deg, transparent 0deg 28deg, rgba(240,201,111,.07) 28deg 29deg);
+      z-index: -1;
+    }
+    .mb-oracle-line {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 1px;
+      height: 34%;
+      transform-origin: center top;
+      background: linear-gradient(180deg, rgba(240,201,111,.42), transparent);
+      box-shadow: 0 0 .9rem rgba(240,201,111,.2);
+      pointer-events: none;
+    }
+    .mb-oracle-line--forward { transform: rotate(0deg); }
+    .mb-oracle-line--left { transform: rotate(-58deg); }
+    .mb-oracle-line--right { transform: rotate(58deg); opacity: .24; }
+    .mb-oracle-line--back { transform: rotate(180deg); background: linear-gradient(180deg, rgba(91,163,213,.36), transparent); }
+
+    .mb-step-core {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(20rem, 45%);
+      min-height: 12rem;
+      display: grid;
+      align-content: center;
+      gap: .7rem;
+      text-align: center;
+      padding: 1.15rem;
+      border-radius: 1.45rem;
+      border: 1px solid rgba(240,201,111,.35);
+      background:
+        radial-gradient(circle at 50% 0%, rgba(240,201,111,.18), transparent 8rem),
+        linear-gradient(180deg, rgba(18,27,39,.88), rgba(6,9,13,.88));
+      box-shadow:
+        0 1.3rem 3rem rgba(0,0,0,.32),
+        0 0 2.6rem rgba(240,201,111,.12),
+        inset 0 1px rgba(255,255,255,.06);
+    }
+    .mb-step-core-mark {
+      width: 3.15rem;
+      height: 3.15rem;
+      margin: 0 auto .1rem;
+      display: grid;
+      place-items: center;
+      border-radius: 1rem;
+      border: 1px solid rgba(240,201,111,.24);
+      background: rgba(240,201,111,.08);
+      color: var(--mb-gold-3);
+      font-size: 1.35rem;
+      font-weight: 900;
+    }
+    .mb-step-core h2 { margin: 0; font-family: var(--mb-font-display); font-size: 1.6rem; line-height: 1.04; color: var(--mb-text-0); }
+    .mb-step-core p { margin: 0; color: var(--mb-text-2); line-height: 1.42; font-size: .88rem; }
+    .mb-step-core .mb-step-prize { display: inline-flex; justify-content: center; gap: .35rem; color: var(--mb-gold-3); font-weight: 900; }
+
+    .mb-path-gate {
+      position: absolute;
+      width: 13.8rem;
+      min-height: 8.2rem;
+      border: 1px solid rgba(240,201,111,.18);
+      border-radius: 1.05rem;
+      background:
+        linear-gradient(180deg, rgba(24,36,50,.86), rgba(7,10,14,.84)),
+        radial-gradient(circle at center top, rgba(240,201,111,.12), transparent 8rem);
+      box-shadow: 0 1rem 2rem rgba(0,0,0,.28), inset 0 1px rgba(255,255,255,.045);
+      cursor: pointer;
+      display: grid;
+      grid-template-columns: auto minmax(0,1fr);
+      gap: .7rem;
+      align-items: center;
+      padding: .8rem;
+      text-align: left;
+      transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+    }
+    .mb-path-gate:hover,
+    .mb-path-gate:focus-visible {
+      outline: none;
+      transform: translateY(-2px);
+      border-color: rgba(240,201,111,.52);
+      background:
+        linear-gradient(180deg, rgba(36,53,71,.9), rgba(7,10,14,.86)),
+        radial-gradient(circle at center top, rgba(240,201,111,.18), transparent 8rem);
+    }
+    .mb-path-gate[aria-disabled="true"] {
+      opacity: .28;
+      cursor: default;
+      border-style: dashed;
+      filter: grayscale(.4);
+    }
+    .mb-path-gate[aria-disabled="true"]:hover { transform: none; border-color: rgba(240,201,111,.18); }
+    .mb-path-arrow {
+      width: 3rem;
+      height: 3rem;
+      display: grid;
+      place-items: center;
+      border-radius: .85rem;
+      border: 1px solid rgba(240,201,111,.2);
+      background: rgba(240,201,111,.08);
+      color: var(--mb-gold-3);
+      font-size: 2rem;
+      line-height: 1;
+      text-shadow: 0 0 .8rem rgba(240,201,111,.22);
+    }
+    .mb-path-gate--back .mb-path-arrow { color: #b9def3; border-color: rgba(91,163,213,.28); background: rgba(91,163,213,.08); }
+    .mb-path-copy { min-width: 0; }
+    .mb-path-copy strong { display:block; color: var(--mb-text-0); font-size: 1.05rem; }
+    .mb-path-copy small { display:block; color: var(--mb-text-2); font-size: .8rem; line-height: 1.35; margin-top: .16rem; }
+
+    .mb-path-gate--forward { left: 50%; top: 2%; transform: translateX(-50%); }
+    .mb-path-gate--forward:hover { transform: translateX(-50%) translateY(-2px); }
+    .mb-path-gate--left { left: 0%; top: 43%; transform: translateY(-50%); }
+    .mb-path-gate--left:hover { transform: translateY(calc(-50% - 2px)); }
+    .mb-path-gate--right { right: 0%; top: 43%; transform: translateY(-50%); }
+    .mb-path-gate--right:hover { transform: translateY(-50%); }
+    .mb-path-gate--back { left: 50%; bottom: 2%; transform: translateX(-50%); border-color: rgba(91,163,213,.28); }
+    .mb-path-gate--back:hover { transform: translateX(-50%) translateY(-2px); }
+
+    .mb-stage-bottom {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+    .mb-full-step-report {
+      padding: 1rem;
+      border-radius: var(--mb-radius-xl);
+      border: 1px solid rgba(240,201,111,.14);
+      background:
+        linear-gradient(180deg, rgba(9,15,23,.74), rgba(6,9,13,.78)),
+        radial-gradient(circle at top right, rgba(240,201,111,.08), transparent 16rem);
+      box-shadow: inset 0 1px rgba(255,255,255,.035);
+    }
+    .mb-report-head {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) auto;
+      gap: .9rem;
+      align-items: start;
+      padding-bottom: .85rem;
+      border-bottom: 1px solid rgba(240,201,111,.09);
+      margin-bottom: .85rem;
+    }
+    .mb-full-step-report h3 { margin: 0; font-family: var(--mb-font-display); color: var(--mb-text-0); font-size: 1.35rem; }
+    .mb-full-step-report p { margin: 0; color: var(--mb-text-2); line-height: 1.5; font-size: .92rem; }
+    .mb-full-step-report strong { color: var(--mb-gold-3); }
+    .mb-report-body {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(17rem, .55fr);
+      gap: .85rem;
+    }
+    .mb-report-section {
+      padding: .85rem;
+      border-radius: 1rem;
+      border: 1px solid rgba(240,201,111,.09);
+      background: rgba(7,10,14,.34);
+    }
+    .mb-report-section h4 { margin: 0 0 .45rem; color: var(--mb-text-0); font-size: .98rem; }
+    .mb-result-inline { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .65rem; }
+
+    @media (max-width: 1220px) {
+      .mb-topbar { grid-template-columns: 1fr; height: auto; }
+      .mb-brand { justify-content: flex-start; }
+      .mb-app-shell { grid-template-rows: auto minmax(0, 1fr); }
+      .mb-stage-top, .mb-stage-bottom { grid-template-columns: 1fr; }
+      .mb-stage-meta { justify-content: flex-start; }
+      .mb-expedition-hud { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    }
+    @media (max-width: 900px) {
+      .mb-app-shell { display: block; }
+      .mb-topbar { position: static; }
+      .mb-topbar-left, .mb-topbar-right { justify-content: flex-start; overflow-x: auto; }
+      .mb-sidebar { border-right: 0; border-bottom: 1px solid var(--mb-line-soft); }
+      .mb-nav-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .mb-nav-link { justify-content: center; }
+      .mb-nav-label, .mb-nav-section-title { display: none; }
+      .mb-main { padding: .75rem; }
+      .mb-hero-stage { min-height: auto; }
+      .mb-expedition-hud { grid-template-columns: 1fr; }
+      .mb-oracle-board { width: min(100%, 26rem); aspect-ratio: auto; display: grid; gap: .75rem; }
+      .mb-oracle-board::before, .mb-oracle-board::after, .mb-oracle-line { display:none; }
+      .mb-step-core, .mb-path-gate { position: static; transform: none !important; width: auto; min-height: auto; }
+      .mb-step-core { border-radius: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="mb-app-shell">
+    <header class="mb-topbar">
+      <div class="mb-topbar-left" aria-label="Hero health and experience">
+        <span class="mb-chip mb-chip--health"><span class="mb-chip-icon">♥</span> Health <strong>86 / 100</strong></span>
+        <div class="mb-xp" aria-label="Experience progress">
+          <div class="mb-xp-meta"><span>Level 12</span><strong>1,240 XP to next</strong></div>
+          <div class="mb-mini-bar" style="--value: 63%"><span></span></div>
+        </div>
+      </div>
+
+      <div class="mb-brand" aria-label="Mythborne">
+        <div class="mb-brand-mark"></div>
+        <div>
+          <div class="mb-brand-title">Mythborne</div>
+          <div class="mb-brand-subtitle">Exploration board prototype</div>
+        </div>
+      </div>
+
+      <div class="mb-topbar-right" aria-label="Hero resources">
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◈</span><span class="mb-chip-stack">Drachmas <strong>3,420</strong><small>+96 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">▣</span><span class="mb-chip-stack">Materials <strong>185</strong><small>+22 / h</small></span></span>
+        <span class="mb-chip mb-chip--resource"><span class="mb-chip-icon">◇</span><span class="mb-chip-stack">Workforce <strong>42</strong><small>+4 / h</small></span></span>
+      </div>
+    </header>
+
+    <aside class="mb-sidebar">
+      <section class="mb-server-card" aria-label="Selected world context">
+        <div class="mb-server-label">Selected server</div>
+        <div class="mb-server-name"><span>Sandbox</span><span class="mb-badge mb-badge--blue">live</span></div>
+        <div class="mb-prestige">
+          <div class="mb-server-label">Prestige</div>
+          <div class="mb-server-name"><span>Zeugitai</span><span class="mb-badge mb-badge--gold">Tier II</span></div>
+        </div>
+      </section>
+
+      <div class="mb-nav-section-title">Hero</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#dashboard"><span class="mb-nav-icon">DA</span><span class="mb-nav-label">Dashboard</span></a></li>
+        <li><a class="mb-nav-link is-active" href="#exploration"><span class="mb-nav-icon">EX</span><span class="mb-nav-label">Exploration</span></a></li>
+        <li><a class="mb-nav-link" href="#statistics"><span class="mb-nav-icon">ST</span><span class="mb-nav-label">Statistics</span></a></li>
+        <li><a class="mb-nav-link" href="#armory"><span class="mb-nav-icon">AR</span><span class="mb-nav-label">Armory</span></a></li>
+      </ul>
+
+      <div class="mb-nav-section-title">World</div>
+      <ul class="mb-nav-list">
+        <li><a class="mb-nav-link" href="#estate"><span class="mb-nav-icon">ES</span><span class="mb-nav-label">Estate</span></a></li>
+        <li><a class="mb-nav-link" href="#trade"><span class="mb-nav-icon">TR</span><span class="mb-nav-label">Trade</span></a></li>
+        <li><a class="mb-nav-link" href="#pvp"><span class="mb-nav-icon">PV</span><span class="mb-nav-label">PvP</span></a></li>
+        <li><a class="mb-nav-link" href="#reports"><span class="mb-nav-icon">RP</span><span class="mb-nav-label">Reports</span></a></li>
+      </ul>
+    </aside>
+
+    <main class="mb-main" id="exploration-board">
+      <div class="mb-exploration-page">
+        <section class="mb-hero-stage">
+          <div class="mb-stage-top">
+            <div>
+              <p class="mb-kicker">Exploration</p>
+              <h1 class="mb-title">Choose the next path</h1>
+              <p class="mb-stage-copy">The previous step has been resolved in the report below. The board is now only about the next generated direction — not a map, not named locations, and not separate risk profiles.</p>
+            </div>
+            <div class="mb-stage-meta">
+              <span class="mb-badge">Difficulty: Selected tier</span>
+              <span class="mb-badge">Step resolved</span>
+              <span class="mb-badge mb-badge--green">Report available</span>
+            </div>
+          </div>
+
+          <div class="mb-exploration-minihud" aria-label="Exploration status">
+            <span class="mb-minihud-item">Remaining trials <strong>20</strong></span>
+            <span class="mb-minihud-item is-muted">Current buff <strong>No buff</strong></span>
+            <span class="mb-minihud-item">Steps since trial <strong>4</strong></span>
+            <span class="mb-minihud-item">Last report <strong>Resource cache</strong></span>
+          </div>
+
+          <section class="mb-oracle-wrap" aria-label="Exploration direction board">
+            <div class="mb-oracle-board">
+              <div class="mb-oracle-line mb-oracle-line--forward"></div>
+              <div class="mb-oracle-line mb-oracle-line--left"></div>
+              <div class="mb-oracle-line mb-oracle-line--right"></div>
+              <div class="mb-oracle-line mb-oracle-line--back"></div>
+
+              <button class="mb-path-gate mb-path-gate--forward" type="button">
+                <span class="mb-path-arrow">↑</span>
+                <div class="mb-path-copy"><strong>Forward</strong><small>Start the next generated step.</small></div>
+              </button>
+
+              <button class="mb-path-gate mb-path-gate--left" type="button">
+                <span class="mb-path-arrow">↖</span>
+                <div class="mb-path-copy"><strong>Left</strong><small>Start the next generated step.</small></div>
+              </button>
+
+              <div class="mb-step-core">
+                <div class="mb-step-core-mark">◇</div>
+                <h2>Direction board</h2>
+                <p>Select where Theron goes next. The resolved step is recorded as a full report below.</p>
+                <span class="mb-step-prize">2 paths open · Back available</span>
+              </div>
+
+              <div class="mb-path-gate mb-path-gate--right" aria-disabled="true">
+                <span class="mb-path-arrow">↗</span>
+                <div class="mb-path-copy"><strong>Right</strong><small>Not available in this roll.</small></div>
+              </div>
+
+              <button class="mb-path-gate mb-path-gate--back" type="button">
+                <span class="mb-path-arrow">↓</span>
+                <div class="mb-path-copy"><strong>Back</strong><small>Return by the previous path.</small></div>
+              </button>
+            </div>
+          </section>
+
+          <div class="mb-stage-bottom">
+            <section class="mb-full-step-report">
+              <div class="mb-report-head">
+                <div>
+                  <p class="mb-kicker">Step report</p>
+                  <h3>Encounter completed: Resource cache</h3>
+                  <p>Resolved exploration step. No Trial manifested and no combat encounter was created.</p>
+                </div>
+                <span class="mb-badge mb-badge--green">resolved</span>
+              </div>
+
+              <div class="mb-report-body">
+                <section class="mb-report-section">
+                  <h4>What happened</h4>
+                  <p>Theron broke the seal of a small cache hidden under an old votive plate. The contents were simple, but useful: a purse of <strong>84 Drachmas</strong>. No temporary modifier was applied.</p>
+                  <div class="mb-result-inline">
+                    <span class="mb-badge mb-badge--green">Resource recovered</span>
+                    <span class="mb-badge">No trial consumed</span>
+                    <span class="mb-badge">No active buff</span>
+                  </div>
+                </section>
+
+                <section class="mb-report-section">
+                  <h4>Reward</h4>
+                  <p><strong>84</strong> Drachmas</p>
+                  <p style="margin-top:.45rem;">Resource encounters should usually grant one resource type, not all resources at once.</p>
+                </section>
+              </div>
+            </section>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

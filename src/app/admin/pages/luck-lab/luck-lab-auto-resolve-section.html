@@ -21,16 +21,16 @@
   <app-luck-lab-explanation-list [rows]="explanationRows()" />
 
   <div class="grid-3 gap-md">
-    <div class="mg-surface-card p-md flex-col gap-xs">
+    <div class="mg-card p-md flex-col gap-xs">
       <span class="card-legend">Difficulty context</span>
       <strong>Difficulty override: {{ page.lab.input().difficultyKey ?? 'DB default' }}</strong>
     </div>
-    <div class="mg-surface-card p-md flex-col gap-xs">
+    <div class="mg-card p-md flex-col gap-xs">
       <span class="card-legend">Tested stat</span>
       <strong>Tested stat: {{ page.autoResolvePreview()?.testedStatValue ?? 'N/A' }}</strong>
       <span class="muted-text">{{ page.lab.input().testedStatKey ?? 'No stat key' }}</span>
     </div>
-    <div class="mg-surface-card p-md flex-col gap-xs">
+    <div class="mg-card p-md flex-col gap-xs">
       <span class="card-legend">Trial context</span>
       <strong>Trial definition override: {{ page.selectedTrialContextLabel() }}</strong>
       <span class="muted-text">Not consumed by current auto-resolve RPC</span>
@@ -38,7 +38,7 @@
   </div>
 
   <div class="grid-2 gap-md">
-    <article class="mg-surface-card p-md flex-col gap-sm">
+    <article class="mg-card p-md flex-col gap-sm">
       <span class="card-legend">Final auto-resolve chance</span>
       @if (page.autoResolvePreview(); as autoResolve) {
         <strong>
@@ -61,7 +61,7 @@
       }
     </article>
 
-    <article class="mg-surface-card p-md flex-col gap-sm">
+    <article class="mg-card p-md flex-col gap-sm">
       <span class="card-legend">Caps and references</span>
       <span>
         Cap:

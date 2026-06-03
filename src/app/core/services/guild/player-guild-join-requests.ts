@@ -21,6 +21,7 @@ import {
   toReviewGuildJoinRequestRpcArgs,
 } from '../../utils/guild-join-request-mappers';
 import { mapGuildJoinRequest } from '../../utils/guild-mappers';
+import { firstRpcRow } from '../../utils/rpc-result';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
 
@@ -90,7 +91,7 @@ export class PlayerGuildJoinRequests {
       )
       .pipe(
         map((rows) =>
-          mapGuildJoinRequestOperationResult(firstRow(rows, RPC.create_guild_join_request))
+          mapGuildJoinRequestOperationResult(firstRpcRow(rows, RPC.create_guild_join_request))
         ),
       );
   }
@@ -128,7 +129,7 @@ export class PlayerGuildJoinRequests {
       )
       .pipe(
         map((rows) =>
-          mapGuildJoinRequestOperationResult(firstRow(rows, RPC.review_guild_join_request))
+          mapGuildJoinRequestOperationResult(firstRpcRow(rows, RPC.review_guild_join_request))
         ),
       );
   }
@@ -166,7 +167,7 @@ export class PlayerGuildJoinRequests {
       )
       .pipe(
         map((rows) =>
-          mapGuildJoinRequestOperationResult(firstRow(rows, RPC.cancel_guild_join_request))
+          mapGuildJoinRequestOperationResult(firstRpcRow(rows, RPC.cancel_guild_join_request))
         ),
       );
   }
@@ -181,16 +182,6 @@ function createRequestId(prefix: string): string {
     ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   return `${prefix}:${randomId}`;
-}
-
-function firstRow<T>(rows: readonly T[], rpcName: string): T {
-  const row = rows[0];
-
-  if (!row) {
-    throw new Error(`${rpcName} returned no guild join request row.`);
-  }
-
-  return row;
 }
 
 function assertActiveContext(

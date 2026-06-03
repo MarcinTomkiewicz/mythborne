@@ -5,20 +5,17 @@ import {
   GetHeroArmoryItemDetailRpcRow,
   GetHeroArmoryItemsRpcRow,
   GetHeroArmoryVisibilityStateRpcRow,
-  GetItemEffectiveRequirementsRpcRow,
-  GetItemRequirementComponentRowsRpcRow,
+  GetHeroItemRequirementStatusRpcRow,
   MoveHeroArmoryItemToShelfRpcRow,
   RenameHeroArmoryShelfRpcRow,
 } from '../../types/item-equipment-rpc.types';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
-import { StatsService } from '../stats/stats';
 import { PlayerArmory } from './player-armory';
 
 describe('PlayerArmory', () => {
   let activeHero: jasmine.SpyObj<ActiveHero>;
   let backend: jasmine.SpyObj<Backend>;
-  let stats: jasmine.SpyObj<StatsService>;
   let service: PlayerArmory;
 
   beforeEach(() => {
@@ -33,8 +30,6 @@ describe('PlayerArmory', () => {
       'delete',
       'upsert',
     ]);
-    stats = jasmine.createSpyObj<StatsService>('StatsService', ['getStats']);
-
     activeHero.requireActiveHero.and.returnValue(of({
       heroRow: { id: 'hero-1' } as never,
       heroId: 'hero-1',
@@ -71,23 +66,8 @@ describe('PlayerArmory', () => {
         return of([armoryItemDetailRow()] as T);
       }
 
-      if (rpcName === RPC.get_item_effective_requirements) {
-        return of([
-          effectiveRequirementRow('hero_level', '', 5),
-          effectiveRequirementRow('hero_stat', 'strength', 12),
-        ] as T);
-      }
-
-      if (rpcName === RPC.get_item_requirement_component_rows) {
-        return of([
-          requirementComponentRow('hero_level', '', 4, 'base'),
-          requirementComponentRow('hero_stat', 'strength', 10, 'base'),
-          requirementComponentRow('hero_stat', 'strength', 2, 'prefix'),
-        ] as T);
-      }
-
-      if (rpcName === RPC.check_hero_meets_item_requirements) {
-        return of([{ meets_requirements: false, failures_json: [] }] as T);
+      if (rpcName === RPC.get_hero_item_requirement_status) {
+        return of([requirementStatusRow()] as T);
       }
 
       if (rpcName === RPC.rename_hero_armory_shelf) {
@@ -100,20 +80,11 @@ describe('PlayerArmory', () => {
 
       return of([] as T);
     });
-    stats.getStats.and.returnValue(of([{
-      id: 'stat-1',
-      key: 'strength',
-      label: 'Strength',
-      order: 10,
-      description: 'Strength stat.',
-    }]));
-
     TestBed.configureTestingModule({
       providers: [
         PlayerArmory,
         { provide: ActiveHero, useValue: activeHero },
         { provide: Backend, useValue: backend },
-        { provide: StatsService, useValue: stats },
       ],
     });
     service = TestBed.inject(PlayerArmory);
@@ -176,6 +147,7 @@ describe('PlayerArmory', () => {
       },
     );
     expect(result.itemStats).toEqual([{
+      statKey: 'damage',
       label: 'Damage',
       displayValue: '2-9',
     }]);
@@ -193,36 +165,20 @@ describe('PlayerArmory', () => {
     expect(result.requirementPreview?.effectiveRequirements.map((requirement) => ({
       label: requirement.displayLabel,
       value: requirement.displayValue,
+      current: requirement.currentValueLabel,
+      isMet: requirement.isMet,
     }))).toEqual([
-      { label: 'Hero level', value: 'Level 5' },
-      { label: 'Strength', value: '12' },
-    ]);
-    expect(result.requirementPreview?.components.map((component) => ({
-      layer: component.sourceLayerLabel,
-      label: component.displayLabel,
-      value: component.displayValue,
-    }))).toEqual([
-      { layer: 'Base', label: 'Hero level', value: 'Level 4' },
-      { layer: 'Base', label: 'Strength', value: '10' },
-      { layer: 'Prefix', label: 'Strength', value: '2' },
+      { label: 'Hero level', value: 'Level 5', current: 'Level 4', isMet: false },
+      { label: 'Strength', value: '12', current: '10', isMet: false },
     ]);
     expect(backend.rpc).toHaveBeenCalledWith(
-      RPC.get_item_effective_requirements,
-      { p_item_id: 'item-1' },
-    );
-    expect(backend.rpc).toHaveBeenCalledWith(
-      RPC.get_item_requirement_component_rows,
-      { p_item_id: 'item-1' },
-    );
-    expect(backend.rpc).toHaveBeenCalledWith(
-      RPC.check_hero_meets_item_requirements,
+      RPC.get_hero_item_requirement_status,
       {
         p_hero_id: 'hero-1',
         p_item_id: 'item-1',
       },
     );
     expect(JSON.stringify(backend.rpc.calls.allArgs())).not.toContain('user-1');
-    expect(stats.getStats).toHaveBeenCalled();
   });
 
   it('loads requirements only after owner-safe detail confirms the item id', async () => {
@@ -231,20 +187,12 @@ describe('PlayerArmory', () => {
         return of([armoryItemDetailRow({ item_id: 'item-from-db' })] as T);
       }
 
-      if (rpcName === RPC.get_item_effective_requirements) {
-        return of([
-          effectiveRequirementRow('hero_level', '', 5, 'item-from-db'),
-        ] as T);
-      }
-
-      if (rpcName === RPC.get_item_requirement_component_rows) {
-        return of([
-          requirementComponentRow('hero_level', '', 4, 'base', 'item-from-db'),
-        ] as T);
-      }
-
-      if (rpcName === RPC.check_hero_meets_item_requirements) {
-        return of([{ meets_requirements: true, failures_json: [] }] as T);
+      if (rpcName === RPC.get_hero_item_requirement_status) {
+        return of([requirementStatusRow({
+          item_id: 'item-from-db',
+          meets_requirements: true,
+          unmet_count: 0,
+        })] as T);
       }
 
       return of([] as T);
@@ -261,15 +209,7 @@ describe('PlayerArmory', () => {
       },
     );
     expect(backend.rpc).toHaveBeenCalledWith(
-      RPC.get_item_effective_requirements,
-      { p_item_id: 'item-from-db' },
-    );
-    expect(backend.rpc).toHaveBeenCalledWith(
-      RPC.get_item_requirement_component_rows,
-      { p_item_id: 'item-from-db' },
-    );
-    expect(backend.rpc).toHaveBeenCalledWith(
-      RPC.check_hero_meets_item_requirements,
+      RPC.get_hero_item_requirement_status,
       {
         p_hero_id: 'hero-1',
         p_item_id: 'item-from-db',
@@ -278,7 +218,7 @@ describe('PlayerArmory', () => {
     const rpcCallNames = backend.rpc.calls.allArgs().map((args) => args[0]);
 
     expect(rpcCallNames.indexOf(RPC.get_hero_armory_item_detail)).toBeLessThan(
-      rpcCallNames.indexOf(RPC.get_item_effective_requirements),
+      rpcCallNames.indexOf(RPC.get_hero_item_requirement_status),
     );
     expect(JSON.stringify(backend.rpc.calls.allArgs())).not.toContain('user-1');
   });
@@ -298,10 +238,7 @@ describe('PlayerArmory', () => {
 
     const names = backend.rpc.calls.allArgs().map((args) => args[0]);
 
-    expect(names).not.toContain(RPC.get_item_effective_requirements);
-    expect(names).not.toContain(RPC.get_item_requirement_component_rows);
-    expect(names).not.toContain(RPC.check_hero_meets_item_requirements);
-    expect(stats.getStats).not.toHaveBeenCalled();
+    expect(names).not.toContain(RPC.get_hero_item_requirement_status);
   });
 
   it('does not load requirement RPCs when owner-safe item detail fails', async () => {
@@ -319,10 +256,7 @@ describe('PlayerArmory', () => {
 
     const names = backend.rpc.calls.allArgs().map((args) => args[0]);
 
-    expect(names).not.toContain(RPC.get_item_effective_requirements);
-    expect(names).not.toContain(RPC.get_item_requirement_component_rows);
-    expect(names).not.toContain(RPC.check_hero_meets_item_requirements);
-    expect(stats.getStats).not.toHaveBeenCalled();
+    expect(names).not.toContain(RPC.get_hero_item_requirement_status);
   });
 
   it('preserves the visibility_limit returned by the DB/RPC read model', async () => {
@@ -556,13 +490,21 @@ function armoryItemRow(
     generated_at: '2026-05-07T10:00:00Z',
     generation_base_id: 'base-1',
     generation_quality_key: 'normal',
+    allowed_slot_keys: ['main_hand'],
+    base_key: 'bronze_blade',
+    base_name: 'Bronze blade',
+    base_type_key: 'one_handed_weapon',
+    equipment_area: 'weapon',
+    hand_usage_key: 'one_handed',
     hero_id: 'hero-1',
     is_unsorted: false,
     is_visible: true,
+    item_category_key: 'weapon',
     item_id: 'item-1',
     item_name: 'Bronze blade',
     item_status: 'active',
     prefix_affix_id: null,
+    primary_slot_key: 'main_hand',
     server_id: 'server-1',
     shelf_name: 'Shelf 1',
     suffix_affix_id: null,
@@ -570,6 +512,50 @@ function armoryItemRow(
     visibility_limit: 2,
     ...overrides,
   } as GetHeroArmoryItemsRpcRow;
+}
+
+function requirementStatusRow(
+  overrides: Partial<GetHeroItemRequirementStatusRpcRow> = {},
+): GetHeroItemRequirementStatusRpcRow {
+  return {
+    check_json: {},
+    failures_json: [{
+      requirementDefinitionKey: 'hero_level',
+      requiredStatKey: null,
+    }, {
+      requirementDefinitionKey: 'hero_stat',
+      requiredStatKey: 'strength',
+    }],
+    generated_at: '2026-05-07T10:00:00Z',
+    hero_id: 'hero-1',
+    item_id: 'item-1',
+    item_name: 'Demonic Dagger',
+    item_status: 'active',
+    meets_requirements: false,
+    requirement_count: 2,
+    requirements_json: [{
+      requirementDefinitionKey: 'hero_level',
+      requirementLabel: 'Hero level',
+      requiredStatKey: null,
+      requiredValue: 5,
+      requiredValueLabel: 'Level 5',
+      currentValue: 4,
+      currentValueLabel: 'Level 4',
+      isMet: false,
+    }, {
+      requirementDefinitionKey: 'hero_stat',
+      requirementLabel: 'Strength',
+      requiredStatKey: 'strength',
+      requiredValue: 12,
+      requiredValueLabel: '12',
+      currentValue: 10,
+      currentValueLabel: '10',
+      isMet: false,
+    }],
+    server_id: 'server-1',
+    unmet_count: 2,
+    ...overrides,
+  };
 }
 
 function armoryItemDetailRow(
@@ -650,60 +636,6 @@ function armoryItemDetailRow(
     visibility_index: 1,
     visibility_limit: 30,
     ...overrides,
-  };
-}
-
-function effectiveRequirementRow(
-  requirementDefinitionKey: string,
-  requiredStatKey: string,
-  requiredValue: number,
-  itemId = 'item-1',
-): GetItemEffectiveRequirementsRpcRow {
-  return {
-    additional_component_value: 2,
-    additional_requirement_fraction: 0.25,
-    component_count: 2,
-    final_decimal_value: requiredValue,
-    generation_quality_key: 'normal',
-    highest_component_value: requiredValue,
-    item_id: itemId,
-    item_owner_hero_id: 'hero-1',
-    pre_quality_value: requiredValue,
-    quality_requirement_multiplier: 1,
-    required_stat_key: requiredStatKey,
-    required_value_integer: requiredValue,
-    requirement_definition_key: requirementDefinitionKey,
-    rounding_mode: 'ceil',
-  };
-}
-
-function requirementComponentRow(
-  requirementDefinitionKey: string,
-  requiredStatKey: string,
-  rawRequiredValue: number,
-  sourceLayer: string,
-  itemId = 'item-1',
-): GetItemRequirementComponentRowsRpcRow {
-  return {
-    applies_from_level: 1,
-    generation_quality_key: 'normal',
-    item_id: itemId,
-    item_owner_hero_id: 'hero-1',
-    item_status: 'active',
-    quality_requirement_multiplier: 1,
-    raw_required_value: rawRequiredValue,
-    required_stat_key: requiredStatKey,
-    requirement_definition_key: requirementDefinitionKey,
-    requirement_id: `${sourceLayer}-${requirementDefinitionKey}-${requiredStatKey || 'level'}`,
-    requirement_sort_order: requirementDefinitionKey === 'hero_level' ? 10 : 20,
-    source_entity_id: `${sourceLayer}-1`,
-    source_entity_type: sourceLayer === 'base'
-      ? 'item_generation_base'
-      : 'item_generation_affix',
-    source_key: sourceLayer,
-    source_label: sourceLayer === 'base' ? 'Dagger' : 'Demonic',
-    source_layer: sourceLayer,
-    source_sort_order: sourceLayer === 'base' ? 10 : 20,
   };
 }
 

@@ -1,24 +1,60 @@
+@use "abstracts/mixins" as m;
+@use "abstracts/variables" as v;
+
+$wd-lane-height: 1.1rem;
+$wd-lane-overlay-inset: 0.24rem 0.32rem;
+$wd-lane-grid-step: 1.9rem;
+$wd-lane-grid-line-width: 0.05rem;
+$wd-indicator-width: 0.26rem;
+$wd-indicator-offset: -0.32rem;
+$wd-indicator-transition: left 160ms linear;
+
+.walking-dead-meter {
+  @include m.timing-panel-surface;
+}
+
 .walking-dead-meter__field:disabled {
   cursor: default;
-  opacity: 0.7;
 }
 
-.walking-dead-meter__svg {
-  height: 56px;
+.walking-dead-meter__lane {
+  position: relative;
+  height: $wd-lane-height;
+  @include m.timing-lane-track($wd-lane-grid-step, $wd-lane-grid-line-width);
+  overflow: hidden;
 }
 
-.walking-dead-meter__track {
-  fill: rgba(255, 255, 255, 0.05);
+.walking-dead-meter__lane::before {
+  content: "";
+  position: absolute;
+  inset: $wd-lane-overlay-inset;
+  @include m.timing-lane-overlay;
+  border-radius: v.$radius-sm;
+  pointer-events: none;
 }
 
 .walking-dead-meter__zone {
-  fill: rgba(140, 201, 120, 0.22);
-  stroke: rgba(140, 201, 120, 0.8);
-  stroke-width: 3;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  @include m.timing-hit-zone;
+  pointer-events: none;
 }
 
 .walking-dead-meter__indicator {
-  stroke: var(--color-accent, #c97a49);
-  stroke-width: 6;
-  stroke-linecap: round;
+  position: absolute;
+  top: $wd-indicator-offset;
+  bottom: $wd-indicator-offset;
+  width: $wd-indicator-width;
+  border-radius: v.$radius-pill;
+  @include m.timing-indicator;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transition: $wd-indicator-transition;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .walking-dead-meter__indicator {
+    transition: none;
+  }
 }

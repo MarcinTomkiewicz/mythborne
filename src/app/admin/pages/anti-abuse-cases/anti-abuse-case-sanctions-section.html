@@ -4,7 +4,7 @@
     <div class="flex-col gap-md">
       @for (sanction of sanctions(); track sanction.id) {
         @let type = sanctionType(sanction);
-        <article class="mg-surface-card p-md flex-col gap-sm">
+        <article class="mg-card p-md flex-col gap-sm">
           <div class="flex-row-between-center flex-col-sm gap-sm">
             <strong class="heading-color text-break">{{ type?.label ?? sanction.sanctionTypeKey }}</strong>
             <span class="mg-tag">{{ sanctionStatusLabel(sanction.status) }}</span>
@@ -29,7 +29,7 @@
 
     <div class="flex-col gap-md">
       @for (penalty of penalties(); track penalty.id) {
-        <article class="mg-surface-card p-md flex-col gap-sm">
+        <article class="mg-card p-md flex-col gap-sm">
           <div class="flex-row-between-center flex-col-sm gap-sm">
             <strong class="heading-color text-break">{{ penalty.heroId }}</strong>
             <span class="mg-tag">{{ sanctionStatusLabel(penalty.status) }}</span>

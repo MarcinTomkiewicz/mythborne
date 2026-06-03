@@ -20,7 +20,7 @@
     dla biezacego scope i variables dostepne dla wybranego targetu testowego.
   </p>
 
-  <form [formGroup]="page.formulas.editorForm" class="mg-surface-card flex-col gap-lg p-lg">
+  <form [formGroup]="page.formulas.editorForm" class="mg-card flex-col gap-lg p-lg">
     <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100 grid-items-start">
       <app-form-fields [form]="page.formulas.editorForm" [fields]="editorMetaFields()" />
       <app-form-fields [form]="page.formulas.editorForm" [fields]="descriptionFields" />
@@ -45,7 +45,7 @@
       />
     </div>
 
-    <div class="mg-surface-card flex-col gap-md p-md">
+    <div class="mg-card flex-col gap-md p-md">
       @if (page.formulas.formulaValidationError(); as formulaError) {
         <p class="mb-0 muted-text">{{ formulaError }}</p>
       }
@@ -73,7 +73,7 @@
       }
     </div>
 
-    <div class="mg-surface-card flex-col gap-md p-md">
+    <div class="mg-card flex-col gap-md p-md">
       <p class="card-legend mb-0">Tester</p>
       <p class="muted-text mb-0">
         Najpierw wybierasz target testowy dla aktualnego scope, a potem zmieniasz wartosci zmiennych i od razu widzisz
@@ -117,7 +117,7 @@
       }
     </div>
 
-    <div class="mg-surface-card flex-col gap-xs p-md">
+    <div class="mg-card flex-col gap-xs p-md">
       <div class="flex-row-between-center flex-col-sm gap-sm">
         <span class="muted-text">Preview result</span>
         @if (page.formulas.isFormulaNonDeterministic()) {

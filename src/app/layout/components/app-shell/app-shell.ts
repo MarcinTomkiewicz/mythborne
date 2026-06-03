@@ -2,29 +2,19 @@ import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter, map, startWith } from 'rxjs';
-import { ActiveServer } from '../../../core/services/server/active-server';
-import { resolveStaffAccessPolicy } from '../../../core/utils/staff-access-policy';
-import { GameSidebar } from '../game-sidebar/game-sidebar';
-import { GameTopbar } from '../game-topbar/game-topbar';
-import { MembershipBlockedNotice } from '../membership-blocked-notice/membership-blocked-notice';
-import { StaffNotificationBell } from '../staff-notification-bell/staff-notification-bell';
-import { StaffGameplayBlockedNotice } from '../staff-gameplay-blocked-notice/staff-gameplay-blocked-notice';
+import { resolveRouteBackgroundImage } from '../../../core/config/route-backgrounds.config';
+import { RouteBackgroundOverride } from '../../../core/services/ui/route-background-override';
+import { AppFooter } from '../app-footer/app-footer';
+import { GlobalToast } from '../global-toast/global-toast';
 
 @Component({
   selector: 'app-shell',
-  imports: [
-    RouterOutlet,
-    GameSidebar,
-    GameTopbar,
-    MembershipBlockedNotice,
-    StaffNotificationBell,
-    StaffGameplayBlockedNotice,
-  ],
+  imports: [RouterOutlet, AppFooter, GlobalToast],
   templateUrl: './app-shell.html',
 })
 export class AppShell {
   private readonly router = inject(Router);
-  private readonly activeServer = inject(ActiveServer);
+  private readonly routeBackgroundOverride = inject(RouteBackgroundOverride);
 
   readonly currentUrl = toSignal(
     this.router.events.pipe(
@@ -34,24 +24,13 @@ export class AppShell {
     ),
     { initialValue: this.router.url },
   );
-  readonly isWideContent = computed(() => this.currentUrl().startsWith('/admin'));
-  readonly activeServerAccess = this.activeServer.access;
-  readonly isGameplayRoute = computed(
-    () =>
-      this.currentUrl().startsWith('/hero') ||
-      this.currentUrl().startsWith('/game'),
-  );
-  readonly isGameplayBlocked = computed(
-    () => this.isGameplayRoute() && this.activeServerAccess().isMembershipBlocked,
-  );
-  readonly staffAccessPolicy = computed(() =>
-    resolveStaffAccessPolicy({
-      access: this.activeServer.access(),
-      selectedServer: this.activeServer.selectedServer(),
-    }),
-  );
-  readonly isStaffGameplayBlocked = computed(
-    () => this.isGameplayRoute() && this.staffAccessPolicy().isStaffGameplayBlocked,
-  );
-  readonly shouldShowTopbar = computed(() => !this.isStaffGameplayBlocked());
+  readonly routeBackgroundImage = computed(() => {
+    const override = this.routeBackgroundOverride.image();
+
+    if (override) {
+      return override;
+    }
+
+    return resolveRouteBackgroundImage(this.currentUrl());
+  });
 }

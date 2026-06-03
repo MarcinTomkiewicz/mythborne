@@ -4,20 +4,24 @@ import { Observable, finalize } from 'rxjs';
 import { ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
 import {
   ExplorationChallengeRewardReadModel,
+  ExplorationGeneratedRewardItemReadModel,
   RewardGrantEntryReadModel,
 } from '../../../core/domain/exploration/exploration-reward.model';
 import { HeroExplorationStepResolutionReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
-import { ItemReadModel } from '../../../core/domain/item/item.model';
 import { HeroExplorationRewards } from '../../../core/services/exploration/hero-exploration-rewards';
+import { PlayerDashboardShellState } from '../../../core/services/hero/player-dashboard-shell-state';
 import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import {
   rewardDisplay,
+  rewardEntryAmount,
   rewardEntryDetails,
   rewardEntryLabel,
+  rewardEntryName,
   rewardItemDetails,
+  rewardItemIconClass,
   rewardItemLabel,
 } from './exploration-reward-card-ui';
 import {
@@ -36,6 +40,7 @@ export class ExplorationRewardState {
   private readonly feedback = inject(ExplorationFeedbackState);
   private readonly overview = inject(ExplorationOverviewState);
   private readonly rewards = inject(HeroExplorationRewards);
+  private readonly dashboardShell = inject(PlayerDashboardShellState);
   private readonly step = inject(ExplorationStepState);
   private readonly loadToken = new RequestToken();
   private readonly currentSource = signal<RewardSource | null>(null);
@@ -53,7 +58,7 @@ export class ExplorationRewardState {
   );
   readonly rewardUnavailableMessage = computed(() =>
     this.currentSource() && !this.isLoadingReward() && !this.reward()
-      ? 'Reward details are unavailable from the DB read model.'
+      ? 'Szczegóły nagrody nie są teraz dostępne.'
       : null,
   );
 
@@ -88,12 +93,24 @@ export class ExplorationRewardState {
     return rewardEntryDetails(entry);
   }
 
-  itemLabel(item: ItemReadModel): string {
+  entryAmount(entry: RewardGrantEntryReadModel): number | null {
+    return rewardEntryAmount(entry);
+  }
+
+  entryName(entry: RewardGrantEntryReadModel): string {
+    return rewardEntryName(entry);
+  }
+
+  itemLabel(item: ExplorationGeneratedRewardItemReadModel): string {
     return rewardItemLabel(item);
   }
 
-  itemDetails(item: ItemReadModel): string {
+  itemDetails(item: ExplorationGeneratedRewardItemReadModel): string[] {
     return rewardItemDetails(item);
+  }
+
+  itemIconClass(item: ExplorationGeneratedRewardItemReadModel): string {
+    return rewardItemIconClass(item);
   }
 
   private resolveRewardSource(): RewardSource | null {
@@ -165,6 +182,10 @@ export class ExplorationRewardState {
         next: (reward) => {
           if (this.isCurrentLoad(token, context.heroId, context.difficultyKey, source)) {
             this.reward.set(reward);
+
+            if (reward) {
+              this.dashboardShell.refreshActiveDashboardContext();
+            }
           }
         },
         error: (error: unknown) => {

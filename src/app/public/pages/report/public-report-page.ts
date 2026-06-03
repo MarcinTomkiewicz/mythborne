@@ -1,15 +1,18 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import { ButtonModule } from 'primeng/button';
 import { GameReportContent } from '../../../shared/game-report-content/game-report-content';
+import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import { PvpSpyReport } from '../../../shared/pvp-spy-report/pvp-spy-report';
 import { PublicReportPageState } from './public-report-page.state';
 
 @Component({
   selector: 'app-public-report-page',
   standalone: true,
-  imports: [GameReportContent, LoadingOverlay, RouterLink],
+  imports: [ButtonModule, GameReportContent, LoadingOverlay, PvpSpyReport, RouterLink],
   providers: [PublicReportPageState],
   templateUrl: './public-report-page.html',
+  host: { class: 'd-block w-100' },
 })
 export class PublicReportPage implements OnInit {
   readonly page = inject(PublicReportPageState);

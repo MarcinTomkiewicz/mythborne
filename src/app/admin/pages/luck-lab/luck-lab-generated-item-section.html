@@ -21,15 +21,15 @@
   <app-luck-lab-explanation-list [rows]="explanationRows()" />
 
   <div class="grid-3 gap-md">
-    <div class="mg-surface-card p-md flex-col gap-xs">
+    <div class="mg-card p-md flex-col gap-xs">
       <span class="card-legend">Selected bucket</span>
       <strong>Bucket profile override: {{ section.selectedBucketLabel() }}</strong>
     </div>
-    <div class="mg-surface-card p-md flex-col gap-xs">
+    <div class="mg-card p-md flex-col gap-xs">
       <span class="card-legend">Maximum quality</span>
       <strong>Maximum quality override: {{ section.selectedMaxQualityLabel() }}</strong>
     </div>
-    <div class="mg-surface-card p-md flex-col gap-xs">
+    <div class="mg-card p-md flex-col gap-xs">
       <span class="card-legend">Single-roll limit</span>
       <strong>Explanation only</strong>
       <span>Use distribution preview later for statistical Luck impact.</span>
@@ -38,7 +38,7 @@
 
   @if (section.preview(); as item) {
     <div class="grid-2 gap-md">
-      <article class="mg-surface-card p-md flex-col gap-sm">
+      <article class="mg-card p-md flex-col gap-sm">
         <span class="card-legend">Generated item</span>
         <strong>Generated item: {{ item.generatedName }}</strong>
         <span>{{ item.baseName }} ({{ item.baseKey }})</span>
@@ -47,7 +47,7 @@
         <span>Final value: {{ item.drachmaValue }} drachma</span>
       </article>
 
-      <article class="mg-surface-card p-md flex-col gap-sm">
+      <article class="mg-card p-md flex-col gap-sm">
         <span class="card-legend">Roll context</span>
         <strong>Raw Luck: {{ item.luckValue }}; Luck influence: {{ item.luckInfluence }}</strong>
         <span>Bucket profile: {{ item.bucketProfileName }}; bucket index: {{ item.bucketIndex }}</span>
@@ -57,7 +57,7 @@
     </div>
 
     <div class="grid-3 gap-md">
-      <article class="mg-surface-card p-md flex-col gap-sm">
+      <article class="mg-card p-md flex-col gap-sm">
         <span class="card-legend">Quality</span>
         <strong>Quality: {{ item.qualityLabel }} ({{ item.qualityKey }})</strong>
         <span>Multiplier: x{{ item.qualityMultiplier }}</span>
@@ -66,7 +66,7 @@
         <span>Roll score: {{ item.qualityRollScore }}</span>
       </article>
 
-      <article class="mg-surface-card p-md flex-col gap-sm">
+      <article class="mg-card p-md flex-col gap-sm">
         <span class="card-legend">Prefix</span>
         @if (item.prefixAffix; as prefix) {
           <strong>Prefix: {{ prefix.name }} ({{ prefix.key }})</strong>
@@ -79,7 +79,7 @@
         }
       </article>
 
-      <article class="mg-surface-card p-md flex-col gap-sm">
+      <article class="mg-card p-md flex-col gap-sm">
         <span class="card-legend">Suffix</span>
         @if (item.suffixAffix; as suffix) {
           <strong>Suffix: {{ suffix.name }} ({{ suffix.key }})</strong>
@@ -95,7 +95,7 @@
 
     <div class="grid-3 gap-md">
       @for (row of section.budgetRows(); track row.label) {
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="card-legend">{{ row.label }}</span>
           <strong>{{ row.label }}: {{ row.value }}</strong>
         </div>

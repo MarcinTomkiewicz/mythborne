@@ -6,101 +6,168 @@
 .carousel-wrapper {
   position: relative;
   width: 100%;
-  max-width: 100%;
-  margin-inline: auto;
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  padding-inline: 3.25rem;
 }
 
 .carousel-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(15rem, 0.95fr) minmax(16rem, 0.85fr);
+  gap: 1.25rem;
+  align-items: stretch;
+  max-width: 58rem;
+  margin-inline: auto;
 }
 
 .images {
-  display: flex;
-  justify-content: center;
   position: relative;
-  width: 100%;
-  max-width: 72rem;
-  height: 400px;
+  min-height: 26rem;
+  overflow: hidden;
   perspective: 1000px;
 }
 
 .carousel-image {
   position: absolute;
-  transition: transform 1s ease, opacity 1s ease;
-  height: 100%;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
   opacity: 0;
   transform-origin: center;
+  transition: transform 0.55s ease, opacity 0.55s ease;
+
   img {
-    height: 100%;
-    width: auto;
-    max-width: min(24rem, 100%);
     object-fit: contain;
+    filter: drop-shadow(0 1.1rem 2rem rgba(0, 0, 0, 0.38));
   }
 }
 
+.carousel-image__slot {
+  position: relative;
+  display: block;
+  width: min(22rem, 72%);
+  height: min(23rem, 82%);
+}
+
 .carousel-image.center {
-  transform: translateZ(50px) rotateY(0deg);
-  opacity: 1;
   z-index: 2;
+  opacity: 1;
+  transform: translateZ(4rem) scale(1);
 }
 
 .carousel-image.left {
-  transform: translateX(-90%) translateZ(-30px) rotateY(-45deg) scale(0.85);
-  opacity: 0.5;
   z-index: 1;
+  opacity: 0.42;
+  transform: translateX(-34%) translateZ(-3rem) rotateY(-28deg) scale(0.78);
 }
 
 .carousel-image.right {
-  transform: translateX(90%) translateZ(-30px) rotateY(45deg) scale(0.85);
-  opacity: 0.5;
   z-index: 1;
+  opacity: 0.42;
+  transform: translateX(34%) translateZ(-3rem) rotateY(28deg) scale(0.78);
 }
 
 .carousel-image.hidden {
-  transform: scale(0.5);
-  opacity: 0;
   z-index: 0;
+  opacity: 0;
+  transform: scale(0.62);
 }
 
 .origin-info {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
-  text-align: center;
-  width: 100%;
+  display: grid;
+  align-content: center;
+  gap: 0.85rem;
+  min-height: 26rem;
+  padding-block: 1rem;
 }
 
 .origin-info__description {
-  max-width: 70ch;
-  font-style: italic;
+  padding-left: 0.9rem;
+  border-left: 1px solid color-mix(in srgb, var(--mg-color-secondary) 48%, transparent);
   color: var(--mg-color-text-muted);
+  line-height: 1.55;
+}
+
+.origin-info__bonus {
+  display: grid;
+  gap: 0.55rem;
 }
 
 .nav {
   position: absolute;
-  top: 40%;
-  transform: translateY(-50%);
-  font-size: 2rem;
-  background: transparent;
-  border: none;
-  cursor: pointer;
   z-index: 3;
+  top: 13rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 1px solid var(--mg-color-shell-border, var(--mg-color-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mg-color-shell-surface-elevated, var(--mg-color-bg-surface-elevated)) 82%, transparent);
   color: var(--mg-color-secondary);
+  cursor: pointer;
+  font-size: 1.5rem;
+  line-height: 1;
+  transform: translateY(-50%);
+}
+
+.nav:focus-visible {
+  outline: 2px solid var(--mg-color-secondary);
+  outline-offset: 3px;
 }
 
 .nav.prev {
-  left: 1rem;
+  left: 0.75rem;
 }
 
 .nav.next {
-  right: 1rem;
+  right: 0.75rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .carousel-image {
+    transition: none;
+  }
+}
+
+@media (max-width: 62rem) {
+  .carousel-wrapper {
+    padding-inline: 3rem;
+  }
+
+  .carousel-content {
+    grid-template-columns: 1fr;
+    max-width: 34rem;
+  }
+
+  .images,
+  .origin-info {
+    min-height: 22rem;
+  }
+
+  .nav {
+    top: 11rem;
+  }
+}
+
+@media (max-width: 40rem) {
+  .carousel-wrapper {
+    padding-inline: 2.75rem;
+  }
+
+  .images {
+    min-height: 18rem;
+  }
+
+  .origin-info {
+    min-height: auto;
+  }
+
+  .carousel-image.left,
+  .carousel-image.right {
+    opacity: 0;
+    transform: scale(0.62);
+  }
+
+  .nav {
+    top: 9rem;
+  }
 }

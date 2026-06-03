@@ -55,8 +55,15 @@ export function mapTimingManifest(value: Json): CombatTimingManifestReadModel | 
   }
 
   const zoneWidthPercent = clampPercent(greenZonePercent);
-  const zoneStartPercent = clampPercent((100 - zoneWidthPercent) / 2);
-  const zoneEndPercent = clampPercent(zoneStartPercent + zoneWidthPercent);
+  const backendZoneStartPercent = optionalNumber(read(record, 'zoneStartPercent', 'zone_start_percent'));
+  const backendZoneEndPercent = optionalNumber(read(record, 'zoneEndPercent', 'zone_end_percent'));
+  const fallbackZoneStartPercent = clampPercent((100 - zoneWidthPercent) / 2);
+  const zoneStartPercent = backendZoneStartPercent === null
+    ? fallbackZoneStartPercent
+    : clampPercent(backendZoneStartPercent);
+  const zoneEndPercent = backendZoneEndPercent === null
+    ? clampPercent(zoneStartPercent + zoneWidthPercent)
+    : clampPercent(backendZoneEndPercent);
 
   return {
     manifestId,

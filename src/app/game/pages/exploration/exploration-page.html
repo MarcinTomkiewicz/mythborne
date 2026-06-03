@@ -1,89 +1,80 @@
 <div class="flex-col gap-xl min-w-0">
-  <section class="mg-card p-lg w-100">
-    <div class="flex-row-between-center flex-col-sm gap-md">
+  <section class="mg-card p-md w-100">
+    <div class="grid-2-1 gap-lg grid-items-center">
       <div class="flex-col gap-xs">
-        <p class="card-legend mb-0">Game</p>
-        <h2 class="mg-section__title mg-section__title--sm mb-0">Exploration</h2>
-        <p class="muted-text mb-0">Daily exploration status for the active hero.</p>
+        <p class="small-caps color-muted text-xs mb-0">Eksploracja</p>
+        <h2 class="mg-section__title mg-section__title--sm mb-0">
+          Wybierz trudność i prowadź wyprawę
+        </h2>
+        <p class="mg-section__subtitle mg-section__subtitle--no-margin mg-section__subtitle--full">
+          Rozpocznij albo kontynuuj wyprawę aktywnego bohatera.
+        </p>
       </div>
-      <span class="tag-badge tag-badge--info">{{ page.remainingTrialsLabel() }}</span>
-    </div>
-  </section>
 
-  @if (feedback.error(); as message) {
-    <p-message severity="error">{{ message }}</p-message>
-  }
-  @if (feedback.successMessage(); as message) {
-    <p-message severity="success">{{ message }}</p-message>
-  }
-
-  <section class="mg-card p-lg w-100">
-    <div class="flex-row-between-center flex-col-sm gap-md mb-md">
-      <div class="flex-col gap-xs">
-        <h3 class="mg-section__title mg-section__title--xs mb-0">Difficulty</h3>
-        <p class="muted-text mb-0">Active tiers come from the database configuration.</p>
-      </div>
-      @if (page.isLoading()) {
-        <span class="tag-badge tag-badge--muted">Loading</span>
-      }
-    </div>
-
-    <div class="mg-grid-auto-fit gap-md">
-      @for (difficulty of page.difficulties(); track difficulty.key) {
-        <article class="mg-card p-md">
-          <div class="flex-col gap-sm">
-            <div class="flex-row-between-start gap-sm">
-              <div class="flex-col gap-xs">
-                <strong>{{ difficulty.label }}</strong>
-                <span class="muted-text">{{ difficulty.description }}</span>
-              </div>
-              @if (page.selectedDifficultyKey() === difficulty.key) {
-                <span class="tag-badge tag-badge--info">Selected</span>
-              }
-            </div>
-
-            @if (difficulty.helperText) {
-              <p class="muted-text mb-0">{{ difficulty.helperText }}</p>
+      <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium">
+        <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+          <span class="color-muted small-caps uppercase text-xs">Trudność</span>
+          <strong class="color-heading text-md">
+            @if (page.overview.selectedDifficulty(); as difficulty) {
+              {{ difficulty.difficultyLabel }}
+            } @else if (page.overview.isLoading()) {
+              Ładowanie
+            } @else {
+              Nie wybrano
             }
-
-            <div class="flex-row-start-center flex-wrap gap-xs">
-              <span class="tag-badge tag-badge--muted">
-                Step x{{ difficulty.stepDurationMultiplier }}
-              </span>
-              <span class="tag-badge tag-badge--muted">
-                Trial reward x{{ difficulty.trialRewardMultiplier }}
-              </span>
-              <span class="tag-badge tag-badge--muted">
-                Encounter reward x{{ difficulty.encounterRewardMultiplier }}
-              </span>
-            </div>
-
-            @if (page.previewRows(difficulty.key).length) {
-              <div class="flex-col gap-xs">
-                @for (preview of page.previewRows(difficulty.key); track preview.projectedStepNumber) {
-                  <span class="muted-text">
-                    Step {{ preview.projectedStepNumber }}:
-                    {{ preview.trialOpportunityChance }}% trial chance
-                  </span>
-                }
-              </div>
+          </strong>
+        </div>
+        <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+          <span class="color-muted small-caps uppercase text-xs">Szacowany wynik auto</span>
+          <strong class="color-text text-md">
+            @if (page.selectedDifficultyCardPreview(); as preview) {
+              {{ preview.autoResultDisplay }}
+            } @else {
+              Ładowanie
             }
-
-            <button
-              pButton
-              type="button"
-              label="Select"
-              severity="secondary"
-              [disabled]="page.isLoading() || page.isStarting()"
-              (click)="page.selectDifficulty(difficulty.key)"
-            ></button>
+          </strong>
+        </div>
+        @if (page.overview.state(); as state) {
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">Próby dzisiaj</span>
+            <strong class="color-heading text-md">{{ page.overview.remainingTrialsLabel() }}</strong>
           </div>
-        </article>
-      } @empty {
-        <p class="muted-text mb-0">No active exploration difficulties.</p>
-      }
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">Efekt</span>
+            @if (page.overview.activeEffectDisplay(); as effect) {
+              <strong class="color-text text-md">{{ effect.title }}</strong>
+            } @else {
+              <strong class="color-text text-md">Brak aktywnego</strong>
+            }
+          </div>
+        }
+      </aside>
     </div>
   </section>
 
-  <app-exploration-status-section></app-exploration-status-section>
+  @if (page.shouldShowRuntimeScreen()) {
+    <section class="flex-col gap-sm w-100">
+      <app-exploration-runtime-diagnostics-section />
+      <app-exploration-runtime-primary-surface />
+      <app-exploration-runtime-direction-section />
+    </section>
+  } @else {
+    <app-exploration-difficulty-preview-section
+      [difficulties]="page.preview.difficultyCardPreviews()"
+      [selectedDifficulty]="page.selectedDifficultyCardPreview()"
+      [selectedDifficultyKey]="page.overview.selectedDifficultyKey()"
+      [isBusy]="page.overview.isLoading() || page.start.isStarting()"
+      [isStarting]="page.start.isStarting()"
+      [isLoading]="page.overview.isLoading()"
+      [explorationState]="page.overview.state()"
+      (selectDifficulty)="page.selectDifficulty($event)"
+      (selectedDifficultyAction)="page.startSelectedDifficulty()"
+    />
+  }
+
 </div>
+
+<app-loading-overlay
+  [visible]="page.overview.isLoading() || page.start.isStarting()"
+  [label]="page.start.isStarting() ? 'Rozpoczynanie eksploracji...' : 'Ładowanie eksploracji...'"
+/>

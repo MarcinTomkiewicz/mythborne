@@ -1,0 +1,78 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-start-start flex-col-sm gap-md w-100">
+    <span
+      class="image__preview image__preview--circle flex-none w-px-150 h-px-150"
+    >
+      @if (page().origin(); as origin) {
+        <img
+          [src]="origin.imageUrl"
+          [alt]="origin.name"
+          class="image__preview-image"
+        />
+      }
+    </span>
+
+    <div class="flex-row-start-start gap-md w-100">
+      <div class="flex-col-between-start gap-xl min-w-250">
+        <div class="flex-col gap-sm w-100">
+          <div class="flex-row-between-center flex-wrap gap-sm w-100">
+            <h2 class="mg-section__title mg-section__title--sm mb-0 small-caps">
+              {{ page().heroName() }}
+            </h2>
+            <span class="tag-badge tag-badge--warn small-caps"
+              >Poziom {{ page().level() }}</span
+            >
+          </div>
+        </div>
+
+        <div class="flex-col gap-md w-100">
+          <app-game-bar
+            label="Zdrowie"
+            [value]="page().healthDisplay().currentHealth"
+            [max]="page().healthDisplay().maxHealth"
+            type="hp"
+          />
+
+          @if (page().experienceToNextLevel(); as experienceToNextLevel) {
+            <app-game-bar
+              label="Doświadczenie"
+              [value]="page().experience()"
+              [max]="experienceToNextLevel"
+              type="xp"
+            />
+          }
+        </div>
+      </div>
+
+      <div class="flex-col gap-sm flex-none min-w-250 min-w-auto-sm">
+        @if (page().selectedServer(); as selectedServer) {
+          <div class="flex-col gap-xs">
+            <span class="color-muted small-caps">Serwer</span>
+            <strong class="color-heading">{{ selectedServer.name }}</strong>
+          </div>
+        }
+
+        <div class="flex-col gap-xs">
+          <span class="color-muted small-caps">Pochodzenie</span>
+          @if (page().origin(); as origin) {
+            <strong class="color-heading">{{ origin.name }}</strong>
+          }
+        </div>
+
+        <div class="flex-col gap-xs">
+          <span class="color-muted small-caps">Punkty postaci</span>
+          <strong class="color-heading">{{ page().characterPoints() }}</strong>
+        </div>
+
+        @if (page().estateAddress(); as estateAddress) {
+          <div class="flex-col gap-xs">
+            <span class="color-muted small-caps">Adres</span>
+            <a routerLink="/game/vicinity">
+              <strong>{{ estateAddress }}</strong>
+            </a>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+</section>

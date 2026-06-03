@@ -11,19 +11,25 @@ import { FormFields } from '../../../../../shared/form-fields/form-fields';
   imports: [ReactiveFormsModule, ButtonModule, FormFields],
   template: `
     <div [formGroup]="form()" class="mg-form flex-col gap-md w-100">
-      <h2 class="mg-section__title mg-section__title--xs mb-sm">Name your hero</h2>
+      <h2 class="mg-section__title mg-section__title--xs m-0">Nazwij bohatera</h2>
+      <p class="m-0 color-muted">
+        Nazwa musi być unikalna na wybranym serwerze. Sprawdzimy ją podczas tworzenia bohatera.
+      </p>
 
       <app-form-fields [form]="form()" [fields]="fields" />
 
       <div class="flex-row-end-center gap-sm mt-xl">
-        <p-button type="button" label="Back" severity="secondary" (click)="back.emit()" />
-        <p-button type="button" label="Next" (click)="next.emit()" />
+        @if (showBack()) {
+          <p-button type="button" label="Wstecz" severity="secondary" (click)="back.emit()" />
+        }
+        <p-button type="button" label="Dalej" (click)="next.emit()" />
       </div>
     </div>
   `,
 })
 export class StepHero {
   readonly form = input.required<CreateCharacterHeroForm>();
+  readonly showBack = input(true);
   readonly fields = CREATE_CHARACTER_HERO_FIELDS;
   readonly back = output<void>();
   readonly next = output<void>();

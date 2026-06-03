@@ -1,5 +1,5 @@
 import { Json } from '../../types/database.types';
-import { ItemReadModel } from '../item/item.model';
+import type { PlayerItemDisplayCore } from '../item/player-item-display-core.model';
 import { Row } from '../../types/supabase.types';
 import { BalanceFormula } from '../formula/formula.model';
 
@@ -179,7 +179,7 @@ export interface ExplorationChallengeRewardReadModel {
   rewardGrantId: string | null;
   rewardGrant: RewardGrantReadModel | null;
   entries: RewardGrantEntryReadModel[];
-  items: ItemReadModel[];
+  items: ExplorationGeneratedRewardItemReadModel[];
   rewardStatusKey: string | null;
   rewardStatusLabel: string | null;
   rewardEntryCount: number | null;
@@ -188,6 +188,12 @@ export interface ExplorationChallengeRewardReadModel {
   noRewardReasonLabel: string | null;
   noRewardReasonHelperText: string | null;
   explanation: string | null;
+  rawJson: Json;
+}
+
+export interface ExplorationGeneratedRewardItemReadModel {
+  id: string;
+  displayCore: PlayerItemDisplayCore;
   rawJson: Json;
 }
 

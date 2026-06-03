@@ -1,12 +1,10 @@
 import {
   ApplicationConfig,
-  inject,
-  provideAppInitializer,
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideAnimations } from '@angular/platform-browser/animations';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 import { routes } from './app.routes';
 import {
@@ -14,18 +12,17 @@ import {
   withEventReplay,
 } from '@angular/platform-browser';
 import { providePrimeNG } from 'primeng/config';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { MgPrimePreset } from './primeng/mg-primeng.preset';
-import { Auth } from './core/services/auth/auth';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
-    provideAppInitializer(() => inject(Auth).initialize()),
     provideRouter(routes),
     provideClientHydration(withEventReplay()),
-    provideAnimations(),
+    provideAnimationsAsync(),
+    ConfirmationService,
     MessageService,
     providePrimeNG({
       theme: {

@@ -1,0 +1,211 @@
+<section class="mg-card p-lg w-100 min-w-0">
+  <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">{{ title() }}</h3>
+  </div>
+
+  <app-armory-inventory-filter-bar
+    [searchControl]="searchControl"
+    [slotFilterControl]="slotFilterControl"
+    [availabilityFilterControl]="availabilityFilterControl"
+    [storageSlotFilterControl]="storageSlotFilterControl"
+    [searchCopy]="searchCopy()"
+    [filtersCopy]="filtersCopy()"
+    [inventoryCopy]="inventoryCopy()"
+    [slotOptions]="slotOptions()"
+    [availabilityOptions]="availabilityOptions()"
+    [storageSlotOptions]="storageSlotOptions()"
+    [hasFilters]="hasFilters()"
+    (clearFilters)="clearFilters()"
+  />
+
+  @if (hasFilters() && visibleShelves().length === 0) {
+    <div class="mg-card p-md flex-row-start-center gap-md w-100">
+      <span class="mg-card p-sm flex-row-center-center flex-none">
+        <i class="pi pi-maze color-muted text-xl" aria-hidden="true"></i>
+      </span>
+      <strong class="color-text">{{ inventoryCopy().noFilterResultsLabel }}</strong>
+    </div>
+  }
+
+  <app-armory-bulk-actions-toolbar
+    [state]="bulkToolbarState()"
+    (equipSelected)="equipSelectedItems()"
+    (sellSelected)="sellSelectedItems()"
+    (moveSelected)="moveSelectedItems($event)"
+  />
+
+  <div class="flex-col gap-sm" [formGroup]="shelfNameForm" cdkDropListGroup>
+    @for (shelf of shelfRows(); track shelf.position) {
+      <section class="mg-card p-md flex-col gap-md w-100">
+        <div class="flex-row-between-center flex-col-sm gap-md border-bottom pb-sm w-100">
+          <div class="flex-row-start-center gap-sm min-w-0">
+            <div class="mg-card p-sm flex-row-center-center flex-none rectangle-9 radius-sm">
+              <strong class="color-heading text-sm truncate-1">{{ shelfTitle(shelf) }}</strong>
+            </div>
+          </div>
+
+          <div class="flex-row-start-center flex-wrap gap-xs flex-none">
+            @let shelfNameControl = shelfNameForm.controls[shelf.controlName];
+            @if (shelf.canRename && shelfNameControl) {
+              <app-inline-text-edit
+                [control]="shelfNameControl"
+                [originalValue]="shelf.displayName"
+                [displayLabel]="renameStorageSlotLabel()"
+                [submitAriaLabel]="renameStorageSlotLabel()"
+                [cancelAriaLabel]="cancelLabel()"
+                [disabled]="actionDisabled()"
+                (submitted)="submitShelfRename(shelf, $event)"
+              />
+            }
+
+            <span
+              class="tag-badge flex-none"
+            >
+              {{ shelf.shelfCountLabel }}
+            </span>
+          </div>
+        </div>
+
+        @if (shelf.visibleItems.length) {
+          <div
+            class="mg-grid-auto-fill-compact gap-sm w-100"
+            cdkDropList
+            [cdkDropListData]="shelf"
+            [cdkDropListEnterPredicate]="canEnterShelfDropList"
+            [cdkDropListSortingDisabled]="true"
+            (cdkDropListDropped)="dropInventoryItem($event)"
+          >
+            @for (item of shelf.visibleItems; track item.itemId) {
+              <div
+                class="w-100 min-w-0"
+                cdkDrag
+                [cdkDragData]="dragData(item)"
+                [cdkDragDisabled]="actionDisabled()"
+              >
+                <app-item-detail-popover
+                  [copy]="itemDetailCopy()"
+                  [itemId]="item.itemId"
+                  [fallbackName]="item.displayCore.itemName"
+                  [buttonTrigger]="false"
+                  [triggerFullWidth]="true"
+                  [triggerTabIndex]="null"
+                >
+                  <article
+                    class="mg-card p-sm flex-col gap-xs h-100 w-100 min-w-0 cursor-pointer"
+                    [class.mg-card--selected]="isItemSelected(item)"
+                    role="button"
+                    tabindex="0"
+                    [attr.aria-pressed]="isItemSelected(item)"
+                    (click)="toggleItemSelection(item)"
+                    (keydown.enter)="toggleItemSelection(item)"
+                    (keydown.space)="toggleItemSelection(item); $event.preventDefault()"
+                  >
+                    <div class="flex-col gap-xs min-w-0">
+                      <div class="flex-row-start-center gap-sm min-w-0">
+                        <span class="mg-card p-sm flex-row-center-center flex-none">
+                          <i
+                            class="pi pi-{{ item.displayCore.displayIconKey || 'box' }} color-text text-xl"
+                            aria-hidden="true"
+                          ></i>
+                        </span>
+                        <div class="flex-col-center-start min-h-lines-2 min-w-0">
+                          <strong class="color-text text-sm truncate-1">{{ item.displayCore.itemName }}</strong>
+                        </div>
+                      </div>
+
+                      @if (itemMetadata(item.displayCore); as metadata) {
+                        <span class="color-muted text-xs truncate-1 w-100">{{ metadata }}</span>
+                      }
+                    </div>
+
+                    @if (item.lifecycleStatusKey !== 'active' && item.displayCore.lifecycleStatusLabel) {
+                      <span class="tag-badge tag-badge--muted">{{ item.displayCore.lifecycleStatusLabel }}</span>
+                    }
+
+                    <div class="flex-1"></div>
+
+                    @if (item.displayCore.valueDisplay; as valueDisplay) {
+                      <div class="border-top pt-xs w-100">
+                        <span class="color-muted text-xs">
+                          {{ valueDisplay.displayLabel }}:
+                        </span>
+                        <strong class="color-heading text-xs">{{ valueDisplay.displayValue }}</strong>
+                      </div>
+                    }
+
+                    @if (canEquipItem(item) || canSellItem(item)) {
+                      <div
+                        class="flex-row-start-center flex-wrap gap-xs border-top pt-xs"
+                        (click)="$event.stopPropagation()"
+                        (mousedown)="$event.stopPropagation()"
+                        (touchstart)="$event.stopPropagation()"
+                        (keydown.enter)="$event.stopPropagation()"
+                        (keydown.space)="$event.stopPropagation()"
+                      >
+                        @if (canEquipItem(item)) {
+                          <p-button
+                            type="button"
+                            severity="secondary"
+                            size="small"
+                            [label]="equipItemLabel()"
+                            [disabled]="actionDisabled()"
+                            (onClick)="equipItem.emit(item)"
+                          />
+                        }
+                        @if (canSellItem(item)) {
+                          <p-button
+                            type="button"
+                            severity="secondary"
+                            size="small"
+                            [label]="sellItemLabel()"
+                            [disabled]="actionDisabled()"
+                            (onClick)="sellItem.emit(item)"
+                          />
+                        }
+                      </div>
+                    }
+                  </article>
+                </app-item-detail-popover>
+
+                <ng-template cdkDragPreview>
+                  <app-armory-item-drag-preview
+                    [item]="item"
+                    [items]="draggedItems(item)"
+                  />
+                </ng-template>
+
+                <ng-template cdkDragPlaceholder>
+                  <app-armory-item-drag-preview
+                    [item]="item"
+                    [items]="draggedItems(item)"
+                    [placeholder]="true"
+                  />
+                </ng-template>
+              </div>
+            }
+          </div>
+        } @else {
+          <div
+            class="mg-card p-md flex-row-start-center gap-md w-100"
+            cdkDropList
+            [cdkDropListData]="shelf"
+            [cdkDropListEnterPredicate]="canEnterShelfDropList"
+            [cdkDropListSortingDisabled]="true"
+            (cdkDropListDropped)="dropInventoryItem($event)"
+          >
+            <span class="mg-card p-sm flex-row-center-center flex-none">
+              <i class="pi pi-warehouse color-muted text-xl" aria-hidden="true"></i>
+            </span>
+          </div>
+        }
+      </section>
+    }
+  </div>
+
+  <app-armory-bulk-actions-toolbar
+    [state]="bulkToolbarState()"
+    (equipSelected)="equipSelectedItems()"
+    (sellSelected)="sellSelectedItems()"
+    (moveSelected)="moveSelectedItems($event)"
+  />
+</section>

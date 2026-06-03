@@ -1,4 +1,7 @@
 import {
+  EquipmentPreviewSlotRow,
+} from '../equipment/equipment-preview.model';
+import {
   GameReportAccessRole,
   GameReportItemSourceKind,
   GameReportSourceEntityType,
@@ -111,12 +114,20 @@ export interface GameReportContextualReadiness {
 export interface GameReportSectionFact {
   label: string;
   value: string;
+  valueClass?: string;
+}
+
+export interface GameReportSpyBuildingDisplay extends GameReportSectionFact {
+  districtCode: string;
 }
 
 export interface GameReportSectionItem {
   label: string;
   value: string | null;
   details: string[];
+  entryKind?: string | null;
+  resourceType?: string | null;
+  amount?: number | null;
 }
 
 export interface GameReportRelatedReport {
@@ -130,12 +141,24 @@ export interface GameReportRelatedReport {
 }
 
 export interface GameReportContextSection {
-  sectionKind: 'trial' | 'encounter' | 'reward' | 'effect';
+  sectionKind: 'trial' | 'encounter' | 'spy' | 'reward' | 'effect';
   title: string;
   summary: string | null;
   badge: string | null;
   facts: GameReportSectionFact[];
   items: GameReportSectionItem[];
+  spyDisplay: GameReportSpyDisplay | null;
+}
+
+export interface GameReportSpyDisplay {
+  outcomeKey: string | null;
+  outcomeLabel: string | null;
+  playerSummary: string | null;
+  viewerRole: string | null;
+  equipment: EquipmentPreviewSlotRow[];
+  baseStats: GameReportSectionFact[];
+  buildings: GameReportSpyBuildingDisplay[];
+  resources: GameReportSectionFact[];
 }
 
 export interface PrivateGameReportListItem {
@@ -192,7 +215,7 @@ export interface CreatedCombatGameReport {
   serverId: string;
   participantsCreated: number;
   accessRowsCreated: number;
-  auditLogId: string;
+  auditLogId: string | null;
 }
 
 export interface AttachRewardDropItemToReportInput {
@@ -222,6 +245,7 @@ export interface PrivateGameReportDetail extends Omit<
   itemReferences: GameReportItemReference[];
   trialSection: GameReportContextSection | null;
   encounterSection: GameReportContextSection | null;
+  spySection: GameReportContextSection | null;
   rewardSection: GameReportContextSection | null;
   effectSection: GameReportContextSection | null;
   combatSection: GameReportCombatSection | null;
@@ -244,6 +268,7 @@ export interface PublicGameReport {
   itemReferences: PublicGameReportItemReference[];
   trialSection: GameReportContextSection | null;
   encounterSection: GameReportContextSection | null;
+  spySection: GameReportContextSection | null;
   rewardSection: GameReportContextSection | null;
   effectSection: GameReportContextSection | null;
   combatSection: GameReportCombatSection | null;

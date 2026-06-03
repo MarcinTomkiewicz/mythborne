@@ -18,6 +18,7 @@ export interface FormFieldConfig {
   max?: string | number;
   readonly?: boolean;
   autocomplete?: string;
+  passwordFeedback?: boolean;
   showIcon?: boolean;
   dateFormat?: string;
 }

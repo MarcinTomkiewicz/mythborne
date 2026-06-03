@@ -1,0 +1,64 @@
+@use "sass:map";
+@use "../abstracts/mixins" as m;
+@use "../abstracts/variables" as v;
+
+.mg-data-row {
+  @include m.grid(minmax(0, 1fr) auto, map.get(v.$spacings, "md"), center);
+
+  padding: map.get(v.$spacings, "xs") map.get(v.$spacings, "sm");
+  border: 1px solid color-mix(in srgb, v.$color-shell-border 34%, transparent);
+  border-radius: v.$radius-md;
+  background: color-mix(in srgb, v.$color-bg 34%, transparent);
+}
+
+.mg-data-row--stat {
+  @include m.grid(repeat(2, minmax(0, 1fr)), map.get(v.$spacings, "md"), center);
+}
+
+.mg-data-row__label {
+  color: v.$color-text-muted;
+  font-size: map.get(v.$font-sizes, "xs");
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.mg-data-row__value {
+  color: v.$color-text;
+  font-weight: 750;
+  text-align: right;
+}
+
+.mg-data-row--stat .mg-data-row__meta {
+  @include m.grid(repeat(4, minmax(0, 1fr)), map.get(v.$spacings, "md"), center);
+}
+
+.mg-data-row__metric {
+  @include m.flex(row, end, center, map.get(v.$spacings, "xs"), true);
+
+  white-space: nowrap;
+}
+
+.mg-data-row__actions {
+  @include m.flex(row, end, center, map.get(v.$spacings, "sm"), true);
+}
+
+@media (max-width: map.get(v.$breakpoints, "md")) {
+  .mg-data-row,
+  .mg-data-row--stat {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mg-data-row--stat .mg-data-row__meta {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .mg-data-row__value {
+    text-align: end;
+  }
+}
+
+@media (max-width: map.get(v.$breakpoints, "sm")) {
+  .mg-data-row--stat .mg-data-row__meta {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

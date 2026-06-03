@@ -1,4 +1,8 @@
 import { MansionBuilding } from '../../domain/building/building.model';
+import {
+  SUPABASE_ASSET_IMAGE_TRANSFORMS,
+  storageBackedImageUrl,
+} from '../../config/storage-assets.config';
 import { resolveBuildingImagePath } from '../../domain/building/building-image-paths';
 import { FormulaAdminData } from '../../domain/formula/formula.model';
 import { BuildingProgressionRules } from '../../domain/progression/building-progression.model';
@@ -92,10 +96,11 @@ export function mapMansionBuilding(input: MansionBuildingMappingInput): MansionB
     key: building.key,
     name: building.name,
     description: building.description ?? null,
-    imagePath:
-      resolveBuildingImagePath(building.key, districtCode) ??
-      building.image_path ??
-      '/assets/icons/capitol.svg',
+    imagePath: resolveBuildingImagePath(building.key, districtCode) ??
+      storageBackedImageUrl(
+        building.image_path ?? '/assets/icons/capitol.svg',
+        SUPABASE_ASSET_IMAGE_TRANSFORMS.buildingCard,
+      ),
     districtCode,
     districtUnlockRank: buildingDistrictRank,
     rankRequired: building.rank_required,

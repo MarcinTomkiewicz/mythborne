@@ -1,0 +1,38 @@
+<section class="mg-game-shell bg-transparent flex-col">
+  <header class="mg-game-shell__topbar position-sticky top-0 z-10 backdrop-blur-xl py-sm px-lg w-100 shadow-shell mg-grid grid-cols-3 grid-cols-1-sm grid-items-end gap-md">
+    <div class="flex-row-start-center gap-sm justify-self-start justify-self-start-sm">
+      <span class="tag-badge tag-badge--muted">{{ accountLabel() }}</span>
+    </div>
+
+    <div class="flex-row-center-center gap-sm justify-self-center justify-self-start-sm" aria-label="Mythsworn">
+      <img
+        src="/images/banner.png"
+        alt="Mythsworn"
+        class="mg-brand-banner"
+      />
+    </div>
+
+    <div class="flex-row-end-center justify-self-end justify-self-start-sm">
+      <span class="tag-badge tag-badge--muted">
+        Serwer: {{ selectedServerName() ?? 'nie wybrano' }}
+      </span>
+    </div>
+  </header>
+
+  <div class="flex-row-start-stretch flex-col-sm flex-1 w-100">
+    <aside class="mg-game-shell__sidebar flex-none w-px-250 w-100-sm">
+      <app-shell-sidebar-content
+        contextAriaLabel="Dane konta"
+        navAriaLabel="Nawigacja konta"
+        [contextRows]="contextRows()"
+        [navGroups]="navGroups()"
+      />
+    </aside>
+
+    <main class="mg-game-shell__main flex-1 min-w-0 w-100">
+      <div class="mg-container max-w-none py-md w-100">
+        <router-outlet />
+      </div>
+    </main>
+  </div>
+</section>

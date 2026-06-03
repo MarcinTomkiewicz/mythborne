@@ -1,7 +1,9 @@
 import { Component, OnInit, computed, inject } from '@angular/core';
+import { NgOptimizedImage } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { SUPABASE_ASSET_IMAGE_DIMENSIONS } from '../../../core/config/storage-assets.config';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { BuildingsPageFacade } from '../../../core/services/buildings/building-admin-page.facade';
 import { BuildingFormulaPreviewCalculator } from '../../../core/services/buildings/building-formula-preview-calculator';
@@ -31,6 +33,7 @@ import {
   imports: [
     ReactiveFormsModule,
     ButtonModule,
+    NgOptimizedImage,
     InputTextModule,
     LoadingOverlay,
     FormFields,
@@ -55,6 +58,7 @@ import {
 export class BuildingsPage implements OnInit {
   readonly page = inject(BuildingsPageFacade);
   readonly links = BUILDINGS_PAGE_LINKS;
+  readonly buildingImageDimensions = SUPABASE_ASSET_IMAGE_DIMENSIONS.buildingCard;
   readonly formulaFields = computed(() =>
     createBuildingFormulaFields(
       this.page.formulas.targets(),

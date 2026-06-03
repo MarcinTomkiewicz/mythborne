@@ -1,0 +1,58 @@
+<div class="mg-card p-md flex-row-between-center flex-col-sm gap-md">
+  @let toolbar = state();
+
+  <div class="flex-row-start-center flex-wrap gap-sm min-w-0">
+    <span class="color-muted text-xs">{{ toolbar.selectedCountLabel }}</span>
+    <strong class="color-heading text-xs">{{ toolbar.selectedCount }}</strong>
+    <span class="color-muted text-xs">&middot;</span>
+    <span class="color-muted text-xs">{{ toolbar.selectedValueLabel }}</span>
+    <strong class="color-heading text-xs">{{ toolbar.drachmaValue }}</strong>
+    @if (toolbar.isActionBusy) {
+      <span class="tag-badge tag-badge--warn">{{ toolbar.actionBusyLabel }}</span>
+    }
+  </div>
+
+  <div class="flex-row-start-center flex-wrap gap-sm">
+    <p-button
+      type="button"
+      severity="secondary"
+      size="small"
+      icon="pi pi-equip"
+      [label]="toolbar.equipLabel"
+      [disabled]="equipDisabled()"
+      (onClick)="equipSelected.emit()"
+    />
+    <p-button
+      type="button"
+      severity="secondary"
+      size="small"
+      icon="pi pi-sold"
+      [label]="toolbar.sellLabel"
+      [disabled]="sellDisabled()"
+      (onClick)="sellSelected.emit()"
+    />
+    @if (toolbar.moveDestinationOptions.length > 0) {
+      <div class="flex-row-start-center flex-wrap gap-xs">
+        <p-select
+          class="min-w-160"
+          [formControl]="moveTargetControl"
+          [options]="moveSelectOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [placeholder]="toolbar.moveTargetPlaceholder"
+          [ariaLabel]="toolbar.moveTargetPlaceholder"
+          [disabled]="moveSelectDisabled()"
+        />
+        <p-button
+          type="button"
+          severity="secondary"
+          size="small"
+          icon="pi pi-arrow-right-arrow-left"
+          [label]="toolbar.moveSelectedLabel"
+          [disabled]="moveDisabled()"
+          (onClick)="emitMoveSelected()"
+        />
+      </div>
+    }
+  </div>
+</div>

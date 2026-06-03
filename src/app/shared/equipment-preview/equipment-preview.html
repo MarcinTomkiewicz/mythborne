@@ -1,0 +1,204 @@
+<section
+  class="mg-card w-100"
+  [class.p-md]="compact()"
+  [class.p-lg]="!compact()"
+>
+  <div
+    class="flex-row-between-center flex-col-sm gap-md"
+    [class.mb-sm]="compact()"
+    [class.mb-md]="!compact()"
+  >
+    <div class="flex-col gap-xs">
+      @if (title(); as heading) {
+        <h3 class="mg-section__title mg-section__title--xs mb-0">
+          {{ heading }}
+        </h3>
+      }
+    </div>
+
+    @if (showActions()) {
+      <div class="flex-row-start-center flex-wrap gap-sm">
+      @if (isLoading()) {
+        @if (loadingLabel(); as label) {
+          <span class="tag-badge tag-badge--muted">{{ label }}</span>
+        }
+      } @else if (isUnavailable() || error()) {
+        @if (unavailableLabel(); as label) {
+          <span class="tag-badge tag-badge--warn">{{ label }}</span>
+        }
+      }
+
+      @if (isArmory()) {
+        @if (unequipSelectedLabel(); as label) {
+          <p-button
+            type="button"
+            severity="secondary"
+            size="small"
+            [label]="label"
+            [disabled]="selectionActionDisabled() || !hasSelectedEquippedItems()"
+            (onClick)="unequipSelected.emit()"
+          />
+        }
+        @if (unequipAllLabel(); as label) {
+          <p-button
+            type="button"
+            severity="secondary"
+            size="small"
+            [label]="label"
+            [disabled]="selectionActionDisabled() || !hasEquippedItems()"
+            (onClick)="unequipAll.emit()"
+          />
+        }
+      } @else {
+        @if (armoryLabel(); as label) {
+          <a [routerLink]="armoryLink()" class="tag-badge tag-badge--muted">
+            {{ label }}
+          </a>
+        }
+      }
+      </div>
+    }
+  </div>
+
+  @if (error(); as equipmentError) {
+    <p class="warn-text mb-md">{{ equipmentError }}</p>
+  }
+
+  @if (rows().length === 0 && !isLoading() && emptyLabel()) {
+    <p class="color-muted mb-0">{{ emptyLabel() }}</p>
+  } @else {
+    <div class="equipment-preview">
+      <div
+        class="equipment-preview__board mg-card p-sm gap-sm"
+        [class.equipment-preview__board--compact]="compact()"
+      >
+        @for (group of paperdollGroups(); track group.key) {
+          <div class="flex-col gap-sm {{ group.zoneClass }}">
+            @for (slot of group.rows; track slot.slotKey) {
+              @if (slot.item; as item) {
+                @if (itemDetailCopy(); as copy) {
+                  <app-item-detail-popover
+                    class="equipment-preview__slot-popover"
+                    [copy]="copy"
+                    [itemId]="item.itemId"
+                    [fallbackName]="item.name"
+                    [buttonTrigger]="false"
+                    [triggerFullWidth]="true"
+                  >
+                    <ng-container
+                      [ngTemplateOutlet]="slotCard"
+                      [ngTemplateOutletContext]="{ slot: slot, item: item, stretch: false }"
+                    />
+                  </app-item-detail-popover>
+                } @else {
+                  <ng-container
+                    [ngTemplateOutlet]="slotCard"
+                    [ngTemplateOutletContext]="{ slot: slot, item: item, stretch: false }"
+                  />
+                }
+              } @else {
+                <ng-container
+                  [ngTemplateOutlet]="slotCard"
+                  [ngTemplateOutletContext]="{ slot: slot, item: null, stretch: false }"
+                />
+              }
+            }
+          </div>
+        }
+
+        <div class="equipment-preview__figure mg-card flex-row-center-center">
+          <img
+            [ngSrc]="paperdollImageUrl()"
+            [alt]="title()"
+            class="equipment-preview__figure-image"
+            [width]="paperdollDimensions.width"
+            [height]="paperdollDimensions.height"
+          />
+        </div>
+      </div>
+
+      @if (otherRows().length) {
+        <div class="flex-col gap-sm p-sm">
+          @for (slot of otherRows(); track slot.slotKey) {
+            @if (slot.item; as item) {
+              @if (itemDetailCopy(); as copy) {
+                <app-item-detail-popover
+                  class="equipment-preview__slot-popover"
+                  [copy]="copy"
+                  [itemId]="item.itemId"
+                  [fallbackName]="item.name"
+                  [buttonTrigger]="false"
+                  [triggerFullWidth]="true"
+                >
+                  <ng-container
+                    [ngTemplateOutlet]="slotCard"
+                    [ngTemplateOutletContext]="{ slot: slot, item: item, stretch: true }"
+                  />
+                </app-item-detail-popover>
+              } @else {
+                <ng-container
+                  [ngTemplateOutlet]="slotCard"
+                  [ngTemplateOutletContext]="{ slot: slot, item: item, stretch: true }"
+                />
+              }
+            } @else {
+              <ng-container
+                [ngTemplateOutlet]="slotCard"
+                [ngTemplateOutletContext]="{ slot: slot, item: null, stretch: true }"
+              />
+            }
+          }
+        </div>
+      }
+    </div>
+  }
+</section>
+
+<ng-template #slotCard let-slot="slot" let-item="item" let-stretch="stretch">
+  <article
+    class="equipment-preview__slot-card mg-card gap-sm min-w-0 p-sm"
+    [class.flex-row-start-stretch]="stretch"
+    [class.flex-row-start-center]="!stretch"
+    [class.bg-transparent]="!item"
+    [class.equipment-preview__slot-card--selected]="isSelected(slot)"
+    [attr.aria-label]="slotAriaLabel(slot, item)"
+    [attr.aria-pressed]="isArmory() && item ? isSelected(slot) : null"
+    (click)="toggleEquippedItem(slot)"
+  >
+    <span
+      class="equipment-preview__slot-icon equipment-preview__slot-icon-host mg-card p-xs flex-row-center-center flex-none"
+      [class.opacity-35]="!item"
+    >
+      <i
+        class="color-text text-xxl {{ slot.iconClass }}"
+        aria-hidden="true"
+      ></i>
+    </span>
+
+    <span class="equipment-preview__slot-content flex-col gap-xs min-w-0">
+      @if (showSlotLabels()) {
+        <span class="color-muted text-xs small-caps uppercase">{{ slot.label }}</span>
+      }
+
+      @if (item) {
+        <strong class="equipment-preview__item-name color-heading text-sm">
+          {{ item.name }}
+        </strong>
+      } @else {
+        @if (emptySlotName(slot); as emptyName) {
+          <strong class="equipment-preview__item-name equipment-preview__item-name--empty color-heading text-sm">
+            {{ emptyName }}
+          </strong>
+        }
+      }
+
+      @if (item?.metadata && !compact()) {
+        <span class="color-muted text-xs">{{ item.metadata }}</span>
+      } @else if (!item && !compact()) {
+        @if (emptySlotDescription(slot); as emptyDescription) {
+          <span class="color-muted text-xs">{{ emptyDescription }}</span>
+        }
+      }
+    </span>
+  </article>
+</ng-template>

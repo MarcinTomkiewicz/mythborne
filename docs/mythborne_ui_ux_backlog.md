@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-08 — single-file rewrite merging v3 hardening with detailed v2 task inventory
+Updated: 2026-05-30 — UI-ENTRY no-server entry/create-character handling accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -28,22 +28,19 @@ Primary rule:
 
 ## 0.1. Single-file rule and relationship to v2
 
-This document is the **single canonical UI/UX backlog** for Codex UI work. It must contain both:
+This document is the **single canonical UI/UX backlog** for Codex UI work. It contains both the strict v3 execution contract and the canonical task inventory in one ordered file.
 
-1. the strict v3 execution contract and hardening rules;
-2. the detailed task inventory/scope material that previously lived in UI/UX Backlog v2.
-
-There must not be a runtime dependency on a separate v2 backlog file during normal Codex work. A reviewer may keep old files historically, but Codex should be able to work from this one file plus the current project/source documents listed below.
+There must not be a runtime dependency on a separate v2 backlog file or a separate “Part II” during normal Codex work. A reviewer may keep old files historically, but Codex should be able to work from this one file plus the current project/source documents listed below.
 
 Practical rule:
 
-- v3 hardening rules in sections 0–13 are mandatory for every UI task.
-- The detailed task inventory in **Part II** is part of this same canonical backlog, not an external reference.
-- If a detailed task seems too broad, split it into smaller implementation slices inside the current prompt while preserving v3 preflight, visual anchors, utilities-first discipline, muted-text audit, missing-pattern escalation and required reporting.
-- If an old detailed task conflicts with newer hardening rules, the newer hardening rules win.
+- v3 hardening rules in sections 0–7 are mandatory for every UI task.
+- The task inventory starts after the execution contract and is organized by domain.
+- If a task seems too broad, split it into smaller implementation slices inside the current prompt while preserving v3 preflight, visual anchors, utilities-first discipline, muted-text audit, missing-pattern escalation and required reporting.
+- If older detailed inventory wording conflicts with newer hardening rules, the newer hardening rules win.
 - Do not re-run completed UI-CORE documentation tasks unless a real implementation task proves that a specific rule/inventory entry is missing.
 
-This rewrite intentionally removes the “v2 is a separate reference inventory” model. The backlog is one file.
+This rewrite intentionally removes the “v3 hardening + Part II” model. The backlog is one file with one canonical task inventory.
 
 ---
 
@@ -426,399 +423,13 @@ The prototype archive is visual reference only. `docs/ui-ux/README.md` maps the 
 | Hero Creation Origin Carousel | accepted direction | name + origin carousel + DB-backed bonuses/artwork |
 | Trial minigames | accepted direction per minigame | manual trial renderer and minigame hosts |
 
----
-
-# 8. UI-SHELL — game shell hardening and implementation sequence
-
-## UI-SHELL-0 — Game shell preflight and visual-anchor mapping
-
-**Goal:**  
-Before touching code, map the accepted shell prototype to current production utilities, SCSS and missing patterns.
-
-**Required visual anchors from `game-shell-v1`:**
-
-- desktop topbar uses three-zone composition: left hero status, centered brand, right resources;
-- brand is centered in desktop topbar unless explicit task says otherwise;
-- fallback `M` brand mark is preserved;
-- left topbar area shows Health and XP/Level summary;
-- right topbar area shows Drachmas, Materials and Workforce;
-- resource chips are stacked/compact: label + strong value + per-hour secondary line;
-- sidebar selected server/prestige block is a compact premium context card, not a flat generic row panel;
-- selected server block uses label/value hierarchy: small label, strong value, status badge;
-- Prestige is separated inside the same surface, with label, strong rank value and rank/tier badge;
-- active sidebar nav uses gold left inset or equivalent active affordance;
-- important values are not muted.
-
-**Scope:**
-
-- Read `docs/ui-ux/README.md` first.
-- Read style contract, global inventory, local SCSS checklist, prototype mapping, utility audit, layout cleanup, text semantics, surface/badge docs and icon registry.
-- Inspect actual `src/scss` utilities and current layout components.
-- Produce mapping only; no code.
-
-**Acceptance criteria:**
-
-- For each visual anchor, mapping says: existing pattern / utility composition / missing production pattern / defer.
-- Missing patterns are named explicitly.
-- Reviewer can decide which implementation task should own which pattern.
-
-**Required report:** standard UI report plus visual-anchor mapping.
+Accepted onboarding prototype archive files:
+- Account Entry Shell / server+hero context selector: `docs/ui-ux/prototypes/mythsworn_server_select.html`;
+- Hero Creation Origin Carousel: `docs/ui-ux/prototypes/mythsworn_origin_screen.html`.
 
 ---
 
-## UI-SHELL-1 — Game shell skeleton only
-
-**Goal:**  
-Create or stabilize the game shell skeleton without solving every visual pattern at once.
-
-**Scope:**
-
-- Shell grid/areas: topbar, sidebar, main.
-- Main content containment.
-- Active hero/server game context only; no public/account/guest/login/create-character flow.
-- Use utilities-first.
-
-**Out of scope:**
-
-- final brand/logo pattern;
-- final resource chips;
-- final selected server/prestige card;
-- final sidebar nav item pattern;
-- dashboard redesign;
-- account/public shell.
-
-**SCSS rules:**
-
-- SCSS may contain named shell grid/areas and boundary styling only where no utility/pattern exists.
-- Do not write flex/gap/padding/position/z-index/overflow/backdrop manually if utilities exist.
-- Pseudo-element active inset is allowed only as a temporary exception if it cannot be expressed by utilities.
-
-**Acceptance criteria:**
-
-- Game shell renders topbar/sidebar/main.
-- No local component SCSS.
-- No direct copied prototype CSS.
-- No utility shadowing.
-- No guest/public/account flow.
-- Missing visual patterns are reported, not silently flattened.
-
----
-
-## UI-SHELL-2 — Topbar visual anchor pass
-
-**Goal:**  
-Implement topbar composition according to `game-shell-v1` visual anchors.
-
-**Required visual anchors:**
-
-- three-zone desktop composition;
-- centered brand;
-- left hero Health + XP/Level;
-- right stacked resource chips;
-- important resource values strong, per-hour line secondary but readable;
-- no `muted-text` for resource values;
-- responsive wrapping does not destroy hierarchy.
-
-**Scope:**
-
-- Use existing topbar/game bar components where possible.
-- If resource chip pattern is missing, either add a minimal global/shared pattern if approved by this task or report/defer.
-
-**Out of scope:**
-
-- sidebar nav pattern;
-- dashboard cards;
-- account/public shell.
-
-**Acceptance criteria:**
-
-- Topbar looks recognizably like the prototype anchors, even if production palette differs.
-- Resource chips are not flattened to one-line generic muted badges unless user approves that change.
-- `prototype visual anchors` report is complete.
-
----
-
-## UI-SHELL-3 — Sidebar selected server / Prestige context card
-
-**Goal:**  
-Implement the compact premium selected-server/prestige context surface from the shell prototype.
-
-**Required visual anchors:**
-
-- one compact premium sidebar surface;
-- selected server label/value/status row;
-- Prestige separated inside same surface;
-- label muted/secondary, value strong;
-- server name and Prestige rank not muted;
-- status is a semantic badge;
-- rank/tier badge aligned and readable.
-
-**Scope:**
-
-- Use DB-backed selected server and public Prestige summary.
-- Use existing `mg-card`, badge and utility foundations first.
-- If a true context-card pattern is missing, report it and use a minimal fallback only with visual-anchor comparison.
-
-**Acceptance criteria:**
-
-- Production surface resembles the prototype composition, not only the information content.
-- Muted-text audit passes.
-- Stale guard exists if Prestige is loaded async.
-
----
-
-## UI-SHELL-4 — Sidebar nav item and active state pattern
-
-**Goal:**  
-Create or choose the shared sidebar nav item pattern.
-
-**Scope:**
-
-- Existing nav/link patterns reuse check.
-- Active state with gold left inset.
-- Keyboard/focus states.
-- Decide whether `mg-card` is acceptable as temporary nav surface or whether a dedicated pattern is needed.
-
-**Out of scope:**
-
-- topbar resource chips;
-- dashboard redesign.
-
-**Acceptance criteria:**
-
-- No new local nav visual system hidden inside one feature.
-- If a new pattern is added, it is global/shared and documented.
-- Active state is not color-only.
-
----
-
-# 9. Account Entry and Hero Creation
-
-## UI-ACCOUNT-1 — Account Entry Shell
-
-**Goal:**  
-Implement account/public shell before the player enters a specific server+hero game context.
-
-**Required visual anchors:**
-
-- different navigation than in-game shell;
-- main options: `Enter the game`, `Create new hero` / `Join new world`;
-- existing hero contexts show server + hero and route to dashboard;
-- new hero flow shows eligible creation servers;
-- district A capacity/free slots visible for standard server creation eligibility;
-- sandbox/test multi-hero selector is explicit;
-- Stat Allocation is not shown as an onboarding wizard step.
-
-**Data/source rules:**
-
-- Use selected server → active hero semantics.
-- Creation eligibility and district A capacity must come from DB/RPC/read model.
-- Angular must not guess starting address capacity.
-
-**Acceptance criteria:**
-
-- Existing hero routes to dashboard/game shell.
-- Eligible server routes to Hero Creation.
-- Full/blocked server is clear and not fake-resolved.
-- No direct hero creation table writes.
-
----
-
-## UI-HERO-CREATION-1 — Hero Creation Origin Carousel
-
-**Goal:**  
-Implement the second and final account-side creation screen: name + origin + create hero.
-
-**Required visual anchors:**
-
-- selected server context is readonly;
-- hero name input is editable;
-- origin selection is a visual carousel or equally dynamic origin selector;
-- origin artwork is central, not a tiny static icon;
-- origins: Spartanin, Ateńczyk, Kreteńczyk, Koryntianin;
-- origin detail area shows lore/description and concrete bonuses from DB/admin content;
-- exact origin bonuses must not be hardcoded in Angular;
-- creation summary remains visible;
-- after creation, player enters in-game shell and routes to Stat Allocation as first in-game location.
-
-**Data/source rules:**
-
-- Hero creation must use canonical DB/RPC/domain workflow.
-- No direct Angular writes to hero, origin, Character Points, estate, resource, audit or onboarding tables.
-- New heroes start with 1000 Character Points and random free district A estate through backend workflow.
-- Origin content/artwork/bonuses must come from DB/admin-configurable read model or report blocker.
-
-**Acceptance criteria:**
-
-- Name + origin are the only player inputs.
-- Origin visual hierarchy is preserved.
-- Bonus display is DB-backed or explicitly data-blocked.
-- Post-create route is in-game Stat Allocation, not onboarding step 3.
-
----
-
-# 10. Item Popover and Armory
-
-## UI-ITEM-POPOVER-1 — Shared item popover production pass
-
-**Goal:**  
-Implement shared item popover/detail pattern for Armory, Auction House, Direct Trade, Reports and loot/result screens.
-
-**Required visual anchors:**
-
-- popover has item header with name, type/slot, value context and status badges;
-- item stats and bonuses are separate sections;
-- requirements are explicit and semantic, not hidden/muted;
-- drachma value is evaluation/vendor value, not player-trade price;
-- same component can render safe partial/historical item snapshots when full live item data is unavailable.
-
-**Data/source rules:**
-
-- Use DB/read models and item popover contract.
-- Do not calculate item bonuses or requirements in Angular.
-- Historical reports/trades use snapshots, not mutable current item truth.
-
-**Acceptance criteria:**
-
-- Works for equipped/current item where read model exists.
-- Shows missing-data diagnostic instead of fake stats.
-- Uses PrimeNG popover/tooltip wrapper where appropriate.
-
----
-
-# 11. Exploration, Reports, Combat and Trials
-
-## UI-EXPLORATION-1 — Exploration production pass
-
-**Required visual anchors:**
-
-- no invented map/route names;
-- difficulty/status/step result hierarchy is clear;
-- choose direction surfaces are visually important;
-- pending step timer/progress is readable;
-- result screen/report handoff is durable and DB-backed;
-- if no Trial manifests, report is a valid no-manifest outcome, not an error.
-
-## UI-REPORTS-1 — Report detail/result pattern
-
-**Required visual anchors:**
-
-- durable report detail, not transient toast;
-- clear header → result → narrative → details/rewards → actions;
-- result/outcome is never muted;
-- rewards are read from report/result snapshot, not recomputed;
-- combat log order is start-to-finish if displayed as report detail.
-
-## UI-COMBAT-1 — Manual combat minigame host
-
-**Required visual anchors:**
-
-- combatants left/right, action/timing center;
-- HP and stats visible enough to understand the fight;
-- Walking Dead timing bar is manual action, not report result;
-- auto-resolve warning is explicit;
-- no rewards on minigame screen; rewards appear after durable result/report.
-
-## UI-TRIALS-1A — Trial minigame host spec and production mapping
-
-**Purpose:** define the shared Trial Minigame Host / Renderer Shell before any Angular implementation. This is a spec/mapping task, not a coding task.
-
-**Rules:**
-
-- shared Trial Minigame Host before nine independent shells;
-- host must define header, god/stat identity, manual/auto state, minigame slot, auto-resolve warning and durable result/report handoff;
-- minigame config/difficulty from DB/RPC/read model;
-- no flashing/strobe unsafe visuals;
-- minigame ends in durable result/report handoff;
-- implementation is blocked until the host mapping and runtime/read-model contract are confirmed.
-
-## UI-TRIALS-1B — Trial minigame host implementation
-
-**Purpose:** implement the shared Trial Minigame Host only after UI-TRIALS-1A is accepted and the required DB/RPC/read-model contract exists.
-
-**Rules:**
-
-- do not start implementation from conceptual prototype notes alone;
-- do not create nine separate shell/layout implementations;
-- do not hardcode trial difficulty or success/failure authority in Angular;
-- missing runtime contract is a blocker, not an excuse for local mock authority.
-
-## UI-TRIALS-2 — Accepted manual trial prototype map
-
-| Trial / God | Stat | Direction | Prototype status | HTML file/reference |
-|---|---|---|---|---|
-| Ares | Strength | Combat / DB-owned live combat session / Walking Dead manifest | accepted direction; combat prototype exists | current canvas: Combat Minigame Prototype / archive filename TBD |
-| Artemis | Dexterity | Harpy Hunt | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
-| Apollo | Agility | Path of Light | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
-| Hephaestus | Endurance | Divine Forge | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
-| Hermes | Cunning | Shifting Seals | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
-| Aphrodite | Charisma | Graces’ Court | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
-| Athena | Wisdom | Scales of Judgment | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
-| Hera | Intelligence | Labyrinth with Minotaur, no combat | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
-| Zeus | Spirituality | Storm Charge | accepted direction; prototype exists | current canvas/prototype reference; archive filename TBD |
-
----
-
-# 12. Trade, PvP, Estate and Admin production passes
-
-These tasks should be split using the v2 detailed inventory when implementation begins. v3 rules still govern execution.
-
-## UI-TRADE-1 — Auction House production pass
-
-Required anchors:
-
-- Auction House separate from Direct Trade;
-- one item per listing;
-- Character Points payment;
-- drachma item value only in item popover, not as listing price;
-- listing cards/list rows with pagination;
-- bid/buy-now actions reflect auction mode.
-
-## UI-TRADE-2 — Direct Trade production pass
-
-Required anchors:
-
-- private offer to one hero;
-- up to 5 items + Character Points per side;
-- creator cannot request target side during offer creation;
-- target response adds their side;
-- CP-only for CP-only blocked;
-- canonical RPC/domain operations only.
-
-## UI-PVP-1 — PvP vicinity target selection pass
-
-Required anchors:
-
-- target selection only;
-- no combat preview, no Walking Dead, no combat log;
-- target cards/list rows show eligibility and context;
-- `Select target`, not misleading `Fight now` unless combat starts immediately.
-
-## UI-ESTATE-1 — Estate production pass
-
-Required anchors:
-
-- one hero, one estate;
-- district/address shown clearly;
-- building cards show level, current bonus, next cost/time/action;
-- one active building job;
-- no player-facing cancel unless backend supports it;
-- completed job finalization is DB/read-workflow owned.
-
-## UI-ADMIN-1 — Admin overview and IA production pass
-
-Required anchors:
-
-- admin organized by work intent, not raw table names;
-- global/server/sandbox contexts not mixed;
-- selected server context visible for server-scoped pages;
-- raw keys/UUIDs secondary;
-- reasons/status reasons preserved;
-- PrimeNG table/list/paginator decision follows UI-CORE-14.
-
----
-
-# 13. Naming contract
+## 7.2. Naming contract
 
 CTA label must describe the real domain action, not the technical click.
 
@@ -850,19 +461,1728 @@ Avoid `Sell` when player trade could be confused with vendor/system conversion. 
 
 ---
 
-# Part II — Detailed canonical task inventory migrated from v2
+# 8. UI-SHELL — game shell hardening and implementation sequence
 
-The following inventory is included inside this same file so Codex does not need a separate v2 document.
+This section replaces broad shell tasks with microtasks. The goal is to make Codex execute one narrow, reviewable step at a time instead of improvising a full shell/topbar/sidebar redesign.
 
-Rules for this inventory:
+## 8.0. UI-SHELL execution rules
 
-- Treat these tasks as detailed scope material for planning and splitting implementation slices.
-- Every task below is governed by the v3 hardening rules above: README-first preflight, visual anchors, utilities-first, no utility shadowing, muted-text audit, missing-pattern escalation and required reporting.
-- If a task below lacks a v3-style `Required visual anchors` section, Codex must derive and report visual anchors from the accepted prototype map before coding.
-- If a task below is too broad, split it before coding.
-- If a task below has outdated wording such as Mythborne/Monster Hunt, prefer current user instruction and Mythsworn-facing UI naming unless the user explicitly asks otherwise.
+These rules apply to every `UI-SHELL-*` task.
 
-# 6. UI-CORE — Foundations and style contract
+### Mandatory README-first lookup
+
+Every task starts with `docs/ui-ux/README.md` and then the task-relevant UI-CORE docs. Codex must report concrete files/classes/patterns, not just `docs checked`.
+
+For shell/topbar/sidebar work, check at minimum:
+
+- `docs/ui-ux/README.md`;
+- `docs/ui-ux/mythsworn-style-contract.md`;
+- `docs/ui-ux/global-scss-shared-inventory.md`;
+- `docs/ui-ux/local-scss-budget-checklist.md`;
+- `docs/ui-ux/prototype-production-mapping.md`;
+- `docs/ui-ux/utility-class-audit.md`;
+- `docs/ui-ux/layout-section-pattern-cleanup.md`;
+- `docs/ui-ux/text-utility-semantics.md`;
+- `docs/ui-ux/shared-surface-patterns.md`;
+- `docs/ui-ux/surface-badge-pattern-expansion.md`;
+- `docs/ui-ux/icon-brand-registry.md`;
+- `docs/ui-ux/icon-placeholder-mapping.md`.
+
+### Default no-new-class rule
+
+Default assumption: **adding a new CSS class is wrong**.
+
+A new class is allowed only when all are true:
+
+1. the task explicitly permits that exact class or pattern;
+2. existing utilities/patterns were checked and listed;
+3. the class represents a real reusable pattern or unavoidable structural shell gap;
+4. the report explains why existing utilities are insufficient.
+
+Creating a class that merely rewrites flex/grid/gap/padding/position/sizing utilities is a blocker.
+
+### UI-SHELL source/prototype anchors
+
+Shell tasks are backed by `game-shell-v1.html` / accepted shell prototype direction. Codex must preserve these visual anchors unless a task explicitly says otherwise:
+
+- desktop topbar uses three-zone composition: left hero status, centered brand, right resources;
+- brand is centered in desktop topbar unless explicit task says otherwise;
+- fallback `M` brand mark is visible and visually distinct from a normal status badge;
+- left topbar shows Health and XP/Level summary;
+- right topbar shows Notifications/Staff when applicable plus Drachmas, Materials and Workforce;
+- resources are compact stacked chips/cards: icon + label + strong value + per-hour secondary line;
+- sidebar selected server/prestige block is a compact premium context card, not a flat generic row panel;
+- selected server block uses label/value/status hierarchy: small label, strong value, status badge;
+- Prestige is separated inside the same surface, with label, strong rank value and rank/tier badge;
+- active sidebar nav uses a gold left inset or equivalent active affordance;
+- hover/focus/active states use the accepted dark navy/gold/blue visual language;
+- important values are not muted.
+
+### Color and interaction rule
+
+Shell is responsible for establishing the reusable base for:
+
+- shell background/surface/border token usage;
+- brand mark fallback;
+- topbar resource chip fallback or later pattern;
+- sidebar selected context surface;
+- sidebar nav active state, hover state and focus-visible state;
+- semantic status badge usage.
+
+Color work must be token-level or global/shared-pattern-level. Do not add one-off component colors. If a color/hover/active need is repeated and no token/pattern exists, report a token/pattern gap and put it in the relevant microtask below.
+
+### Standard report for every UI-SHELL task
+
+Every task report must include:
+
+```md
+Preflight:
+- README checked:
+- UI-CORE docs checked:
+- source files checked:
+- dirty tree:
+
+Lookup:
+- existing utilities/classes/patterns used:
+- checked but not used:
+- missing patterns/gaps:
+
+Scope control:
+- files changed:
+- new classes added:
+- SCSS kept and why:
+- local/component SCSS added:
+- copied from prototype CSS/classes:
+
+Visual anchors:
+- matched:
+- not matched:
+- deferred:
+
+Verification:
+- tsc:
+- build:
+- focused specs:
+- manual/browser smoke or blocked reason:
+```
+
+---
+
+## UI-SHELL-00 — Shell README-first inventory, no code
+
+**Goal:** produce a concrete lookup table for the shell before any implementation.
+
+**Allowed changes:** none. Documentation/report only.
+
+**Scope:**
+
+- Read `docs/ui-ux/README.md` first.
+- Read the mandatory UI-CORE docs listed in `8.0`.
+- Inspect actual SCSS files, not only docs:
+  - `src/scss/base/_flex.scss`;
+  - `src/scss/layouts/_grid.scss`;
+  - `src/scss/utilities/_gap.scss`;
+  - `src/scss/utilities/_spacings.scss`;
+  - `src/scss/utilities/_width.scss`;
+  - `src/scss/utilities/_height.scss`;
+  - `src/scss/utilities/_display.scss`;
+  - `src/scss/utilities/_position.scss`;
+  - `src/scss/utilities/_overflow.scss`;
+  - `src/scss/utilities/_z-index.scss`;
+  - `src/scss/utilities/_backdrop.scss`;
+  - `src/scss/base/_surface.scss`;
+  - `src/scss/base/_badges.scss`;
+  - `src/scss/base/_typography.scss`;
+  - `src/scss/abstracts/_custom-icons.scss`.
+- Inspect current shell components:
+  - `src/app/layout/components/app-shell/*`;
+  - `src/app/layout/components/game-topbar/*`;
+  - `src/app/layout/components/game-sidebar/*`;
+  - notification bell components.
+
+**Output table:**
+
+| Shell need | Existing class/component/pattern | Source file | Use now? | Gap/follow-up |
+|---|---|---|---|---|
+| three-zone desktop topbar | ... | ... | yes/no | ... |
+| flex row start/center | ... | ... | yes/no | ... |
+| flex row end/center | ... | ... | yes/no | ... |
+| flex wrap | ... | ... | yes/no | ... |
+| full-width/flex fill | ... | ... | yes/no | ... |
+| compact resource chip fallback | ... | ... | yes/no | ... |
+| brand mark fallback | ... | ... | yes/no | ... |
+| selected server/prestige card | ... | ... | yes/no | ... |
+| active nav inset | ... | ... | yes/no | ... |
+| nav hover/focus states | ... | ... | yes/no | ... |
+| shell surface/background/border | ... | ... | yes/no | ... |
+
+**Acceptance criteria:** no code changed; reviewer can approve the exact next microtask.
+
+---
+
+## UI-SHELL-01 — Current shell diff and rollback boundary, no code
+
+**Goal:** identify which current shell changes are baseline, which are experimental UI-SHELL-1/2 leftovers, and what may be safely removed.
+
+**Allowed changes:** none.
+
+**Scope:**
+
+- Compare current `app-shell`, `game-topbar`, `game-sidebar`, `_game-shell.scss` with accepted prior state or current git diff.
+- Mark every shell class as one of:
+  - existing baseline;
+  - accepted UI-SHELL-1 skeleton;
+  - experimental UI-SHELL-2;
+  - should remove;
+  - unknown/user decision.
+
+**Acceptance criteria:** report lists exact remove/keep candidates before code changes.
+
+---
+
+## UI-SHELL-02 — Shell token and color anchor inventory, no code
+
+**Goal:** explicitly map shell prototype colors/interactions to current theme tokens and gaps.
+
+**Allowed changes:** none.
+
+**Scope:**
+
+- Check `src/scss/abstracts/_variables.scss` and `src/scss/themes/*`.
+- Check surface, badge, text and interaction utilities.
+- Map these visual needs:
+  - dark navy shell background;
+  - elevated topbar surface;
+  - sidebar surface;
+  - soft gold border;
+  - active nav gold inset;
+  - active nav hover gold/blue wash;
+  - brand mark gold/navy medallion;
+  - resource chip border/background;
+  - selected server/prestige premium card;
+  - focus-visible ring/outline.
+
+**Output:** token/pattern gap table.
+
+**Acceptance criteria:** color/hover/active needs are not left implicit; future color changes have owners.
+
+---
+
+## UI-SHELL-03 — Game shell skeleton ownership only
+
+**Goal:** keep or implement only the shell grid/areas and route containment.
+
+**Allowed files:**
+
+- `app-shell.html`;
+- `_game-shell.scss` only for named shell grid/areas and shell boundary styling when no utility exists.
+
+**Allowed new classes:** none beyond existing `mg-game-shell`, `mg-game-shell__topbar`, `mg-game-shell__sidebar`, `mg-game-shell__main` if already used by the shell.
+
+**Out of scope:** topbar content layout, brand mark, resources, selected server card, nav item pattern, dashboard.
+
+**Acceptance criteria:** shell renders topbar/sidebar/main; no guest/account flow; no utility shadowing.
+
+---
+
+## UI-SHELL-04 — Remove game shell guest/account/public leakage
+
+**Goal:** ensure game shell is only for active server + active hero context.
+
+**Allowed files:** shell/sidebar templates and minimal TS if current template still branches into guest/login/create-character.
+
+**Out of scope:** account entry shell and hero creation.
+
+**Acceptance criteria:** no `Guest`, `Login`, `Create character` or account/public flow is rendered inside game shell; blockers/redirects remain explicit.
+
+**Status:** Accepted on 2026-05-12. The shell/auth containment pass removes guest/login/create-character leakage from the authenticated game shell, keeps logged-in users with visible authenticated chrome/navigation, and hardens hard-refresh context restoration: `Auth.initialize()` shares the in-flight bootstrap, `ActiveServer` restores the preferred accessible server before default fallback, and `ActiveHero` restores the selected hero per `userId + serverId` before falling back to the first returned hero row. The sidebar server/hero switch copy is Polish. No DB/RPC/generated-type changes were made; manual smoke was user-side.
+
+---
+
+## UI-SHELL-05 — Main content containment and scroll boundary
+
+**Goal:** stabilize `main` and route content containment without touching visual patterns.
+
+**Allowed files:** `app-shell.html`, `_game-shell.scss` only if a structural shell gap exists.
+
+**Rules:** use `mg-container`, width, overflow and padding utilities if they exist. Do not write manual overflow/padding/width in SCSS.
+
+**Acceptance criteria:** main content scrolls, route content is contained, no feature layout is redesigned.
+
+**Status:** Accepted on 2026-05-12. The shell host now has a narrow `mg-game-shell` viewport containment rule because no existing `100dvh` utility exists, while the route body stays inside `mg-container`. Scroll containment is applied to `main` only; the sidebar keeps its fixed shell column without a separate scrollbar. The task preserved the accepted shell zones from the prototype direction and did not redesign route content, topbar, sidebar or feature pages. Manual smoke remains user-side for stable topbar/sidebar and main-only scrolling.
+
+---
+
+## UI-SHELL-06 — Shell boundary surfaces and theme tokens
+
+**Goal:** ensure topbar/sidebar/main boundaries use the global theme tokens established by UI-CORE-16 or current theme.
+
+**Allowed files:** `_game-shell.scss`, theme files only if a token gap is explicitly approved.
+
+**Scope:**
+
+- topbar border/background;
+- sidebar border/background;
+- main background inheritance;
+- no component-local color fixes.
+
+**Acceptance criteria:** no copied prototype rgba values; no random one-off color declarations; every declaration maps to current token.
+
+**Status:** Accepted with follow-up on 2026-05-12. Shell boundary styling now uses explicit `mg-game-shell__topbar`, `mg-game-shell__sidebar` and `mg-game-shell__main` structure classes instead of brittle structural selectors. The boundary declarations map to current theme tokens: `v.$color-bg`, `v.$color-bg-surface-elevated`, `v.$color-bg-surface` and `v.$color-border`; no `!important`, raw prototype colors, component-local color fixes, TS changes or specs were added. Final color/elevation matching remains deferred to UI-CORE-16 / later color pass, and manual smoke remains user-side.
+
+---
+
+## UI-SHELL-07 — Topbar visual-anchor mapping, no code
+
+**Goal:** map topbar anchors to current HTML/components/utilities before coding.
+
+**Allowed changes:** none.
+
+**Required output:**
+
+| Topbar anchor | Current implementation | Existing utility/component | Gap | Next task owner |
+|---|---|---|---|---|
+| left Health | ... | ... | ... | ... |
+| XP/Level | ... | ... | ... | ... |
+| centered brand | ... | ... | ... | ... |
+| right notifications | ... | ... | ... | ... |
+| staff bell | ... | ... | ... | ... |
+| Drachma chip | ... | ... | ... | ... |
+| Materials chip | ... | ... | ... | ... |
+| Workforce chip | ... | ... | ... | ... |
+| responsive wrap | ... | ... | ... | ... |
+
+**Acceptance criteria:** no code; reviewer can approve UI-SHELL-08/09/10 ordering.
+
+**Status:** Accepted on 2026-05-12. Completed as `docs/ui-ux/ui-shell-07-topbar-anchor-mapping.md`. The mapping separates prototype anchors from current production implementation, confirms `app-shell` as shell placement and `app-game-topbar` as the normal topbar content owner, and identifies gaps for guaranteed desktop brand centering, temporary `tag-badge` resource chips, staff fallback containment, and Health/XP/resource runtime semantics. No Angular, SCSS, TS, specs, generated types or runtime verification were added.
+
+---
+
+## UI-SHELL-08 — Topbar delegation boundary
+
+**Goal:** decide and implement where topbar composition lives.
+
+**Allowed files:** `app-shell.html`, `game-topbar.html`, `game-topbar.ts` only if imports are needed.
+
+**Rules:**
+
+- `app-shell` should own shell placement only.
+- `app-game-topbar` should own topbar content composition when visible.
+- Staff bell must be inside the right topbar zone or explicitly outside with centering proof.
+
+**Out of scope:** resource redesign, brand mark styling, health/XP data changes.
+
+**Acceptance criteria:** `app-shell` does not have parallel topbar children that break centering.
+
+**Status:** Accepted with follow-up on 2026-05-12. `app-shell` now owns only shell/header placement and renders `app-game-topbar` with a focused `showHeroContent` ownership input. `app-game-topbar` owns normal topbar content and the staff-only fallback composition; `StaffNotificationBell` was removed from `app-shell`. No resource redesign, brand styling, Health/XP data changes, SCSS, routes, generated types or extra specs were added. Follow-up: `GameTopbar` still initializes hero/resource loading when `showHeroContent=false`; leave this alone unless a later focused cleanup scopes it.
+
+---
+
+## UI-SHELL-09 — Topbar three-zone layout with existing utilities first
+
+**Goal:** implement the desktop left/center/right composition with the smallest possible production structure.
+
+**Allowed files:** `game-topbar.html`; `_game-shell.scss` only if no existing utility/grid pattern can express the three-zone layout.
+
+**Allowed new SCSS:** at most one structural `.mg-game-topbar` rule for three-zone grid, if and only if UI-SHELL-00/07 proved no exact utility/pattern exists.
+
+**Blocked:** `mg-game-topbar__hero`, `mg-game-topbar__resources`, `mg-game-topbar__brand`, `mg-game-topbar__metric`, or any BEM alias for flex/gap/width.
+
+**Acceptance criteria:** brand is centered relative to full topbar; left/right zones do not overlap.
+
+**Status:** Accepted on 2026-05-12. `game-topbar.html` now uses existing `mg-grid`, `grid-cols-3`, `grid-cols-1-lg` and `grid-items-center` utilities for the normal hero topbar, replacing flex-based pseudo-centering without adding new SCSS, `.mg-game-topbar` or BEM zone classes. The three zones keep existing content/components and remove obsolete `flex-1` / `flex-none` class noise. Manual visual smoke remains user-side; any further responsive overlap/wrap refinement belongs to UI-SHELL-18.
+
+---
+
+## UI-SHELL-10 — Topbar notifications and staff placement
+
+**Goal:** place player notification bell and staff notification bell in the right zone without affecting brand centering.
+
+**Allowed files:** `game-topbar.html`, `game-topbar.ts` only for imports.
+
+**Out of scope:** notification styling, unread count logic, staff access logic.
+
+**Acceptance criteria:** player and staff notifications are right-zone items; app-shell fallback is only for hidden topbar or non-game context if still required.
+
+**Status:** Accepted on 2026-05-12. Already satisfied by UI-SHELL-08/09 runtime changes: `app-shell` renders only `app-game-topbar`, while the normal hero topbar places both `app-notification-bell` and `app-staff-notification-bell` in the right grid zone before resource chips. The remaining staff-only fallback is owned by `game-topbar` and is not a parallel `app-shell` topbar. No notification styling, unread count logic or staff access logic was changed.
+
+---
+
+## UI-SHELL-11 — Health display semantics
+
+**Goal:** display hero health honestly without implying unavailable current/max state.
+
+**Allowed files:** `game-topbar.html`, `game-topbar.ts`.
+
+**Rules:**
+
+- If only derived/max health exists, label must not imply live current HP unless current HP is available.
+- Do not create fake full bars.
+- Use existing `app-game-bar` only when `value` and `max` are meaningful.
+
+**Acceptance criteria:** health display semantics are clear and report names the data source.
+
+**Status:** Postponed on 2026-05-12. The topbar must display `current / max` HP, but the current topbar read path only exposes derived/max health from `HeroDerivedStats.resolveActiveHeroDerivedStats()`. Until a canonical current-HP read model is scoped, the UI uses a temporary `max / max` fallback so the format stays correct without inventing live HP. Do not treat this as final Health semantics.
+
+---
+
+## UI-SHELL-12 — XP / Level progress semantics
+
+**Goal:** display Level and XP progress from existing service/RPC/read model.
+
+**Allowed files:** `game-topbar.html`, `game-topbar.ts`.
+
+**Rules:**
+
+- Do not hardcode `experienceMax = 1000` unless that is already the canonical service output.
+- Prefer existing `Hero.getHeroExperienceProgress()` or DB-backed experience-to-next read path if current.
+- If next threshold is missing, show XP as value only and report dependency.
+
+**Acceptance criteria:** no new hardcoded progression semantics; XP bar appears only when max/threshold is real.
+
+---
+
+## UI-SHELL-12B — Topbar Health/XP visual pattern
+
+**Goal:** align Health and XP/Level topbar chip/progress visuals with the accepted shell prototype without changing UI-SHELL-11/12 data semantics.
+
+**Status:** Accepted on 2026-05-12. Health and XP/Level now use the shared `mg-chip` skin primitive while layout/stretching stays in the template through existing flex/gap/width utilities. `app-game-bar` was cleaned up to one smooth shared progress pattern driven by `value`, `max`, `type`, `compact`, `showLabel` and `showValue`; the unused segmented API/template/CSS path was removed after checking current call sites. XP progress uses theme-backed progress tokens and fills the XP chip width. Health keeps the UI-SHELL-11 temporary `max / max` display until a canonical current-HP read model exists. Resource chip polish remains for later UI-SHELL/UI-CORE tasks.
+
+---
+
+## UI-SHELL-13 — Resource data source and live amount boundary
+
+**Goal:** confirm resource amounts/per-hour use current hero/resource read path and do not invent resource semantics.
+
+**Allowed files:** `game-topbar.ts` and existing resource service only if necessary.
+
+**Rules:**
+
+- Drachma, Materials, Workforce are production resources.
+- Character Points must not be shown as produced resource.
+- Live amount calculation must reuse existing service/helper if one exists; if not, report why local calculation is still current behavior.
+
+**Acceptance criteria:** data source is named; no resource meaning is hardcoded beyond existing resource type keys.
+
+**Status:** Accepted on 2026-05-12. `game-topbar` keeps the current active-hero `hero_resources` read path for resource rows and the existing live amount behavior based on `amount`, `per_hour` and `updated_at`, after checking that no shared live-amount helper exists. Drachma, Materials and Workforce display definitions now live in shared `CORE_RESOURCE_DISPLAY_DEFINITIONS` under `core/config/resource-display.config.ts`, labels come from `resourceTypeLabel(...)`, shared resource display types live in `core/types/resource-display.types.ts`, and the obsolete `game-topbar.types.ts` split was removed. Character Points are not shown as a produced resource. No HTML/SCSS visual changes, services, DB/RPC/generated-type edits or broad resource architecture were added; manual smoke remains user-side.
+
+---
+
+## UI-SHELL-14 — Resource chip fallback using existing classes only
+
+**Goal:** implement compact stacked resource display without adding a new resource-chip SCSS pattern.
+
+**Allowed files:** `game-topbar.html` only unless TS resource display shape needs no new semantics.
+
+**Allowed classes:** existing `tag-badge`, `tag-badge--*`, `mg-card`, flex/grid/spacing utilities, icon classes.
+
+**Blocked:** `mg-resource-chip`, `mg-resource-chip__*`, local chip SCSS.
+
+**Required visual anchors:** icon, label, strong value, per-hour secondary line.
+
+**Acceptance criteria:** icons visible for `pi pi-cash`, `pi pi-marble`, `pi pi-workforce`; values strong; per-hour readable; layout does not break topbar.
+
+**Status:** Accepted with follow-up on 2026-05-12 as fallback cleanup only. The existing resource fallback kept Drachma, Materials and Workforce visible with icon, label, strong value and rate using `tag-badge`/utility/icon classes, and the rate was no longer rendered as `muted-text`. This did not implement final resource visual styling, did not add `mg-resource-chip` classes or local SCSS, and did not change HTML structure beyond the text-hierarchy cleanup. Follow-up resolved by UI-SHELL-15, which replaced the fallback with accepted compact resource summaries.
+
+---
+
+## UI-SHELL-15 — Resource chips: prototype visual implementation
+
+**Goal:** zaimplementować finalny wygląd topbar resource chips zgodnie z zaakceptowanym prototypem.
+
+**Prototype anchors:**
+
+- osobne pill/medallion resource chips po prawej stronie topbara;
+- icon + label + strong value + rate;
+- ciemne tło, subtelny gold border/glow, czytelna hierarchia label/value/rate;
+- Drachma / Materials / Workforce tylko — bez Character Points.
+
+**Allowed files:**
+
+- `game-topbar.html`;
+- global/shared chip/badge SCSS, jeśli istniejący pattern nie wystarcza;
+- theme/token files, jeśli brakuje tokenów do odwzorowania prototypu;
+- resource display config/types, jeśli trzeba użyć istniejących definicji.
+
+**Rules:**
+
+- nie używać `tag-badge` jako finalnego resource chip patternu, jeśli nie matchuje prototypu;
+- jeśli brakuje właściwego patternu, utwórz lub rozszerz shared/global pattern, np. `mg-chip--resource`;
+- nie tworzyć lokalnego component-only `mg-resource-chip` bez powodu;
+- label może być mniej dominujący, value i rate muszą być czytelne;
+- żadnych raw kolorów poza theme token definitions;
+- żadnego kopiowania prototype classes 1:1.
+
+**Acceptance criteria:**
+
+- resource chips wizualnie przypominają prototyp, nie tylko zawierają te same dane;
+- wartości i rate nie są `muted-text`;
+- trzy resource chips mają stabilną szerokość/rytm i nie wyglądają jak zwykłe tagi;
+- brak lokalnego SCSS w komponencie;
+- raport wskazuje, które prototype anchors zostały odwzorowane.
+
+**Status:** Accepted with user-side visual adjustment on 2026-05-12. Final direction is compact right-side topbar resource summaries, not heavy bordered chips/pills: Drachma, Materials and Workforce keep icon, readable label, strong value and rate without `tag-badge` resource fallback or `mg-chip--resource`. Resource data/semantics stay on the UI-SHELL-13 shared definitions/read path, no DB/RPC/generated-type or TS changes were added, and the shared `mg-resource-summary*` shell pattern remains global. User patch moved size/weight to existing typography utilities where practical; the small pattern-level exception is that `mg-resource-summary__content` owns `text-align: right` and `line-height: 1.05`, while label/value/rate classes own semantic colors only. Manual smoke remains user-side.
+
+---
+
+## UI-SHELL-16 — Brand mark fallback: prototype medallion implementation
+
+**Goal:** doprowadzić brand mark `M` do kierunku prototypu, jeśli nadal nie istnieje dedykowany asset.
+
+**Scope:**
+
+- sprawdź istniejący icon/brand registry w preflight;
+- jeśli brak dedykowanego brand assetu, utrzymaj fallback `M`;
+- zaimplementuj fallback jako tymczasowy, ale wizualnie zbliżony do prototypu.
+
+**Allowed files:**
+
+- `game-topbar.html`;
+- `_game-shell.scss` albo global brand/icon SCSS, jeśli istnieje właściwsze miejsce;
+- theme tokens, jeśli konieczne.
+
+**Rules:**
+
+- `M` nie może wyglądać jak randomowy badge;
+- jedna semantyczna klasa jest OK, np. `mg-brand-mark-fallback`;
+- użyj tokenów, nie prototype CSS 1:1;
+- nie ruszaj topbar layoutu poza koniecznym osadzeniem markera;
+- jeśli istniejący pattern nie wystarcza, popraw pattern zamiast zostawiać zły fallback.
+
+**Acceptance criteria:**
+
+- widoczny gold/navy medallion direction;
+- klasa opisana/raportowana jako temporary until real brand asset;
+- brak rozbudowy brand systemu poza fallbackiem.
+
+---
+
+## UI-SHELL-17 — Topbar color/elevation pass against prototype
+
+**Goal:** dopasować topbar kolorystycznie i powierzchniowo do prototypu.
+
+**Prototype anchors:**
+
+- bardzo ciemny topbar;
+- delikatny gold/navy border;
+- topbar wyraźnie oddzielony od contentu;
+- brand/resource chips czytelne na tle topbara.
+
+**Allowed files:**
+
+- `_game-shell.scss`;
+- theme/token files;
+- `game-topbar.html` tylko jeśli trzeba poprawić klasy istniejących elementów.
+
+**Rules:**
+
+- najpierw popraw tokeny/shared patterny, nie hackuj pojedynczych komponentów;
+- nie dodawać przypadkowych utility stacks;
+- nie używać `!important`;
+- nie stylować przez brittle selectors typu `.mg-game-shell > div > aside`;
+- używać semantycznych shell classes, np. `mg-game-shell__topbar`;
+- jeśli tokeny są złe, popraw tokeny.
+
+**Acceptance criteria:**
+
+- topbar kolorystycznie bliższy prototypowi;
+- brak raw kolorów poza theme token definitions;
+- brak `!important`;
+- visual report porównuje: background, border, elevation, chip contrast.
+
+**Status:** Accepted with user-side visual adjustment on 2026-05-12. The topbar now uses the semantic `mg-game-shell__topbar` shell pattern with a darker token-based gradient, the existing shell gold border, and user-adjusted elevation through the `shadow-shell` utility backed by dark-theme shadow tokens. Brand and resource summaries remain readable on the darker topbar; no brittle structural selectors, local component SCSS, TS/resource semantics, DB/RPC or generated-type changes were added. Manual smoke remains user-side.
+
+---
+
+## UI-SHELL-18 — Topbar responsive behavior implementation
+
+**Goal:** topbar ma nie nachodzić na siebie i zachować czytelność na desktop/tablet/narrow widths.
+
+**Allowed files:**
+
+- `game-topbar.html`;
+- `_game-shell.scss` tylko jeśli utilities nie wystarczą.
+
+**Rules:**
+
+- nie przebudowuj danych ani resource semantics;
+- użyj istniejących grid/flex responsive utilities;
+- nie rób mobile-perfect redesign;
+- jeśli potrzebny jest structural class/pattern, zrób go jako layout pattern, nie visual hack.
+
+**Acceptance criteria:**
+
+- brand nie ucieka absurdalnie przez różne szerokości lewej/prawej strony;
+- left/status, brand, resources nie overlapują;
+- narrow layout pozostaje czytelny;
+- manual smoke user-side pozostaje acceptance gate.
+
+**Status:** Deferred / not implemented on 2026-05-12. The responsive-only utility patch was reverted after reviewer direction, restoring the accepted UI-SHELL-15/17 topbar state. Manual responsive smoke and any intentional topbar responsive fix remain deferred for a later user/reviewer-led pass.
+
+---
+
+## UI-SHELL-19 — Sidebar context card: prototype visual implementation
+
+**Goal:** zaimplementować selected server / Prestige context card zgodnie z prototypem.
+
+**Prototype anchors:**
+
+- compact premium card;
+- selected server label/value/status;
+- separator między server i prestige;
+- prestige label/rank/tier;
+- label drugorzędny, wartości mocne;
+- status badge semantic.
+
+**Allowed files:**
+
+- `game-sidebar.html`;
+- minimal `game-sidebar.ts` tylko jeśli potrzebny display model bez nowej domenowej logiki;
+- global SCSS/tokeny, jeśli istniejący card pattern nie wystarcza.
+
+**Rules:**
+
+- nie zostawiać `mg-card--legend`, jeśli wizualnie nie odpowiada prototypowi;
+- jeśli brakuje context-card/elevated-card patternu, utwórz albo rozszerz właściwy shared/global pattern w ramach taska;
+- nie tworzyć lokalnego sidebar-only card systemu, jeśli pattern powinien być globalny;
+- nie używać `muted-text` dla server name, status, rank;
+- brak raw prestige points w player-facing sidebar.
+
+**Acceptance criteria:**
+
+- karta wygląda jak kontekstowa/premium powierzchnia, nie zwykły formularzowy card;
+- server name i prestige rank są strong;
+- status jest semantyczny;
+- separator/rytm carda zbliżony do prototypu.
+
+**Status:** Accepted on 2026-05-12. Sidebar context now uses a shared/global `mg-context-card` pattern instead of local/sidebar SCSS or `mg-card--legend`. Hero, selected server/status and Prestige live in one compact context card with separators; the separate sidebar `M` block was removed. Server/hero/prestige values remain strong, status and rank use semantic badges, spacing uses existing spacing tokens, `letter-spacing: 0.15em` remains a label typography detail, and `v.$shadow-soft` remains until a semantic premium/elevated shadow variable exists. No TS, DB/RPC, generated-type or sidebar data semantics changes were added. Manual visual smoke remains user-side.
+
+---
+
+## UI-SHELL-20 — Sidebar context data and stale guard cleanup
+
+**Goal:** upewnić się, że sidebar context card używa właściwych danych i nie pokazuje stale prestige/server state.
+
+**Allowed files:**
+
+- `game-sidebar.ts`;
+- `game-sidebar.html` tylko jeśli trzeba skorygować display binding.
+
+**Rules:**
+
+- selected server z `ActiveServer`;
+- Prestige z DB-backed public summary/read model;
+- brak raw points w player-facing UI;
+- stale guard przy async prestige zależnym od active hero/server;
+- nie zmieniać wizualu, jeśli UI-SHELL-19 jest już przyjęty.
+
+**Acceptance criteria:**
+
+- data source i stale guard są jawne;
+- zmiana hero/server nie zostawia starego prestige;
+- brak lokalnych fallbacków maskujących DB/read-model brak.
+
+**Status:** Accepted on 2026-05-12. Sidebar context data now uses `ActiveServer` for selected server/status and DB-backed `get_hero_prestige_public_summary` for Prestige. Async Prestige loading clears stale context on hero/server changes, guards returned rows against the current hero and selected server, and uses `takeUntilDestroyed` instead of manual subscription cleanup. Local `humanizeKey(...)` was removed in favor of `core/utils/normalize-text.humanizeKey`; `isGameplayMenuUrl(...)` / `isAdminMenuUrl(...)` remain local for now and should be revisited during sidebar IA/navigation cleanup. No HTML, SCSS, DB/RPC/generated-type or visual changes were added. Manual smoke remains user-side.
+
+---
+
+## UI-SHELL-21 — Sidebar nav: prototype grouping and visual rhythm
+
+**Goal:** ustawić grupy nawigacji i rytm menu zgodnie z prototypem, bez tworzenia fake routes.
+
+**Prototype anchors:**
+
+- grupy: Hero / World / Operations;
+- aktywny item wyraźny;
+- itemy kompaktowe, czytelne, z ikoną;
+- staff/admin odseparowane od player navigation.
+
+**Allowed files:**
+
+- menu config;
+- `game-sidebar.html`;
+- minimal `game-sidebar.ts` tylko dla display/group mapping.
+
+**Rules:**
+
+- bez fake links;
+- route visibility zgodnie z access policy;
+- nie dokładać lokalnego SCSS, jeśli utilities/pattern wystarczą;
+- jeśli obecne menu config jest błędne, popraw config zamiast hackować HTML.
+
+**Acceptance criteria:**
+
+- sidebar IA przypomina prototyp;
+- player/admin/staff routes są rozdzielone;
+- aktywny item dalej działa;
+- brak route bez istniejącego targetu.
+
+**Status:** Accepted on 2026-05-12. Sidebar navigation IA is now grouped from `menu-config.ts` as Hero, World and Operations, with `GameSidebar` rendering groups from config while preserving existing access-policy filtering and route active behavior. `Guild` lives under World, `Reports` remains under World as the accepted current IA decision because `/game/reports` owns Reports/Notifications tabs, and all grouped links were checked against existing routes. No fake links, SCSS, final nav visual styling, DB/RPC or generated-type changes were added. Manual smoke remains user-side.
+
+---
+
+## UI-SHELL-22 — Sidebar nav item final pattern implementation
+
+**Goal:** doprowadzić nav itemy do prototypowego wyglądu zamiast tymczasowego `mg-card` fallbacku.
+
+**Allowed files:**
+
+- `game-sidebar.html`;
+- global/shared nav SCSS pattern, jeśli `mg-card` fallback nie wystarcza;
+- theme tokens, jeśli brakuje tokenu.
+
+**Rules:**
+
+- nie używać `mg-card` jako finalnego nav itemu, jeśli wizualnie nie matchuje;
+- jeśli brakuje właściwego nav item patternu, stwórz albo rozszerz shared/global pattern, np. `mg-shell-nav-item`;
+- active, hover, focus-visible muszą być częścią patternu;
+- nie kopiować prototype CSS 1:1;
+- brak class soup w HTML.
+
+**Acceptance criteria:**
+
+- nav itemy przypominają prototypowe itemy, nie listę kart;
+- hover/focus/active istnieją i są tokenizowane;
+- active route ma gold emphasis/inset i nie jest color-only;
+- HTML pozostaje czytelny.
+
+**Status:** Accepted on 2026-05-12. The temporary `mg-card` sidebar nav fallback was replaced with the shared/global `mg-shell-nav-item` pattern in shell SCSS, while grouped IA remains owned by `menu-config.ts`. Active route state now has a visible left gold inset and hover/focus/active styling is centralized in the shell nav pattern rather than local sidebar SCSS. Sidebar menu icons use the accepted project/custom icon classes `pi pi-helmet`, `pi pi-skills`, `pi pi-hydra` and `pi pi-trade`. No local component SCSS, DB/RPC, generated-type or route semantics changes were added. Manual smoke remains user-side. Cleanup candidate: normalize the `menu-config.ts` import quote to project style when the file is next touched.
+
+---
+
+## UI-SHELL-23 — Sidebar active/hover/focus interaction pass
+
+**Goal:** dopracować interakcje sidebar nav: active, hover, focus-visible.
+
+**Allowed files:**
+
+- global/shared sidebar/nav SCSS pattern;
+- `game-sidebar.html` tylko jeśli brakuje required class/hook.
+
+**Rules:**
+
+- active state nie może być tylko kolorem tekstu;
+- focus-visible musi być widoczny;
+- hover nie może osłabiać active;
+- użyć tokenów;
+- pseudo-element jest dozwolony tylko dla rzeczy niewyrażalnych utility classes, np. left inset.
+
+**Acceptance criteria:**
+
+- active item ma wyraźny gold inset/emphasis;
+- hover/focus są czytelne;
+- selector scope jest bezpieczny;
+- brak lokalnych jednorazowych kolorów.
+
+**Status:** Accepted on 2026-05-12. `mg-shell-nav-item` now has a visible token-based `:focus-visible` ring while preserving the active left gold inset from UI-SHELL-22. Hover, focus and active styling remain centralized in the shared shell nav pattern in `_game-shell.scss`, with no HTML, IA, TS, DB/RPC, generated-type or local sidebar SCSS changes. `min-height: 100dvh` for `.mg-game-shell` is accepted as the current shell baseline because it avoids hard-locking sidebar/content height and keeps the page scrollable when sidebar content is taller than the viewport. Manual visual/a11y smoke remains user-side.
+
+---
+
+## UI-SHELL-24 — Sidebar icon visual and registry pass
+
+**Goal:** ikonki w sidebarze mają odpowiadać kierunkowi prototypu i używać właściwego registry/patternu.
+
+**Allowed files:**
+
+- menu config;
+- `game-sidebar.html`;
+- icon registry tylko jeśli dodawany jest zaakceptowany missing key.
+
+**Rules:**
+
+- używaj custom icon registry keys, jeśli istnieją;
+- missing icon keys raportuj zamiast zastępować emoji/prototype initials;
+- sizing przez istniejące utilities/pattern;
+- icon-only controls muszą mieć accessible label.
+
+**Acceptance criteria:**
+
+- ikonki renderują stabilnie;
+- brak broken image icon;
+- missing keys są wypisane;
+- rozmiar/rytm ikon zbliżony do prototypu.
+
+**Status:** Accepted on 2026-05-12 with user-side icon adjustments. Sidebar logged-in menu icons now use custom/project icon classes through the existing Prime/custom icon registry and render as `pi pi-*` icon entries instead of broken image assets. Accepted classes include `pi pi-helmet`, `pi pi-skills`, `pi pi-hydra`, `pi pi-shield-bash`, `pi pi-chest`, `pi pi-capitol`, `pi pi-trail`, `pi pi-overlord`, `pi pi-tied-scroll`, `pi pi-trade`, `pi pi-shop-bag` and `pi pi-d20`. Missing icon keys were resolved by existing registry entries plus the user-added `capitol` asset/key. No local sidebar SCSS, DB/RPC, generated-type, route or access-policy semantics changes were added. Manual smoke remains user-side.
+
+---
+
+## UI-SHELL-25 — Sidebar/topbar status badge visual semantics
+
+**Goal:** uporządkować statusy/badge w shellu tak, żeby ważne wartości nie były muted i miały właściwą semantykę.
+
+**Scope:**
+
+- server status;
+- membership/status chips;
+- resource values/rates;
+- staff/admin badges;
+- notification count;
+- selected/default/current hero markers.
+
+**Allowed files:**
+
+- shell/topbar/sidebar templates;
+- minimal global badge/chip SCSS tylko jeśli istniejący variant nie wystarcza.
+
+**Rules:**
+
+- label/helper/timestamp mogą być muted;
+- values/status/outcome/blocker/reason nie mogą być muted;
+- używać semantic variants: success, warn, danger, info, active, disabled, pending, conflict;
+- nie tworzyć nowych status variants bez potrzeby.
+
+**Acceptance criteria:**
+
+- muted-text audit przechodzi;
+- ważne wartości są strong/semantic;
+- badge hierarchy jest zgodna z prototypem.
+
+**Status:** Accepted on 2026-05-12. Shell status/badge semantics were tightened in the touched sidebar/blocker surfaces: non-live or unavailable selected-server status now uses `tag-badge--warn` instead of muted, membership suspension timing is shown as a warning badge, and membership block reason is strong/primary text instead of muted helper copy. Topbar resource values/rates and existing notification unread/error badges already had semantic/strong treatment, while timestamps, helper copy and read/dismissed metadata remain muted intentionally. No new badge variants, local sidebar SCSS, DB/RPC, generated-type or route/access semantics changes were added. Manual visual smoke remains user-side.
+
+---
+
+## UI-SHELL-26 — Shell surface palette alignment
+
+**Goal:** dopasować shell background, sidebar, cards i elevated surfaces do prototypowej dark navy/gold palety.
+
+**Allowed files:**
+
+- theme token files;
+- global shell/card/chip/nav SCSS;
+- templates tylko jeśli trzeba usunąć konfliktujące klasy.
+
+**Rules:**
+
+- najpierw popraw tokeny;
+- potem globalne patterny;
+- nie hackuj pojedynczych komponentów raw kolorami;
+- nie używaj `!important`;
+- nie nadpisuj całego app theme bez sprawdzenia wpływu na istniejące karty/formy.
+
+**Acceptance criteria:**
+
+- screenshot produkcyjny jest wyraźnie bliższy prototypowi kolorystycznie;
+- topbar/sidebar/content cards używają spójnej powierzchni;
+- gold border/glow są subtelne i tokenizowane;
+- brak local rgba/hex poza theme token definitions.
+
+**Status:** Accepted on 2026-05-12. Shell surface palette alignment now uses token-level/global shell changes: dark shell tokens were tuned toward the accepted navy/gold direction, `.mg-game-shell` consumes the theme background gradient, shell cards and context surfaces use shared shell surface tokens, and topbar/context/brand elevations consume `v.$shadow-shell`, `v.$shadow-premium` and `v.$shadow-brand-mark`. Raw shadow values remain in theme token definitions, while global shell/surface patterns consume `v.$shadow-*` variables. No templates, TS, local component SCSS, DB/RPC or generated-type changes were introduced. Manual visual smoke remains user-side.
+
+---
+
+## UI-SHELL-27 — Shell content container and card rhythm pass
+
+**Goal:** content area ma mieć prototypowy rytm: szerokości, odstępy, card density, bez przypadkowego rozciągania.
+
+**Allowed files:**
+
+- `app-shell.html`;
+- global container/card utilities;
+- feature page HTML tylko jeśli shell task wyraźnie wskazuje konkretny anchor.
+
+**Rules:**
+
+- `mg-container` pozostaje głównym wrapperem route content;
+- nie naprawiać każdego feature page osobno;
+- nie dodawać defensywnych `min-w-0`, `w-100`, `h-full` bez konkretnej potrzeby;
+- jeśli feature pages wymagają osobnego passu, zgłoś follow-up.
+
+**Acceptance criteria:**
+
+- main content nie wygląda jak przypadkowo przyklejony do lewej/prawej;
+- card spacing i width są bliższe prototypowi;
+- brak globalnego side effectu na admin/wide layout.
+
+**Status:** Accepted on 2026-05-12 after centering check. `mg-container` already centers constrained content with `margin: 0 auto`, so no extra centering rule was needed. The shell content rhythm pass keeps `mg-container` as the route wrapper, adds only a tokenized `$shell-container-max-width` and scopes the wider shell content width to `.mg-game-shell__main > .mg-container`; existing `max-w-none` still overrides this for admin/wide routes. No feature page templates, TS, DB/RPC, generated types or local component SCSS were touched. Manual visual smoke remains user-side.
+
+---
+
+## UI-SHELL-28 — Notifications and staff controls visual placement
+
+**Goal:** notification/staff controls mają siedzieć w prawym topbar zone i nie zaburzać brand centering.
+
+**Allowed files:**
+
+- `game-topbar.html`;
+- notification/staff components tylko jeśli ich wrapper łamie layout;
+- SCSS tylko w shared patternie.
+
+**Rules:**
+
+- nie robić dwóch równoległych topbarów;
+- normal topbar content owner: `GameTopbar`;
+- staff fallback w `GameTopbar`, nie w `AppShell`;
+- nie zmieniać notification data logic.
+
+**Acceptance criteria:**
+
+- notifications/staff są w prawej strefie;
+- brand pozostaje centered;
+- controls nie wyglądają jak przypadkowe tagi.
+
+**Status:** Accepted on 2026-05-12. Topbar notification and staff controls remain grouped in the right zone without changing brand/topbar/resource layout. Player and staff notification components remain separate domain components, while the shared `TopbarDropdownCoordinator` prevents overlapping open dropdowns and the shared `DropdownOutsideClose` directive closes the open dropdown on outside click. Dropdown rows are flatter and less noisy, with technical category/type metadata removed from topbar previews; `.dropdown-anchor` no longer uses `!important`, row padding uses spacing tokens, and the weak border-only unread highlight was removed because read/unread badges carry the state. No DB/RPC/generated-type changes or broad notification architecture rewrite were added. Manual smoke remains user-side.
+
+---
+
+## UI-SHELL-29 — Shell responsive visual pass
+
+**Goal:** po zmianach wizualnych shell ma działać na szerokościach desktop/tablet/narrow bez overlapu.
+
+**Allowed files:**
+
+- shell/topbar/sidebar templates;
+- global responsive utilities/pattern SCSS tylko jeśli brakuje patternu.
+
+**Rules:**
+
+- nie robić pełnego mobile redesignu;
+- nie ukrywać ważnych akcji bez alternatywy;
+- nie dodawać scrolla sidebarowi, jeśli UX kierunek tego nie chce;
+- main content może scrollować, sidebar nie powinien dostać osobnego scrolla bez decyzji.
+
+**Acceptance criteria:**
+
+- topbar nie overlapuje;
+- resource chips wrapują/degradują czytelnie;
+- sidebar nie rozwala shell height;
+- manual smoke user-side.
+
+**Status:** Deferred / not implemented on 2026-05-12. The responsive-only template changes were reverted after reviewer direction, restoring the last accepted shell/topbar baseline. Responsive smoke and any intentional shell/topbar responsive fixes remain deferred for a later dedicated pass. No TS, SCSS, data-layer, DB/RPC, generated-type, visual styling or resource-summary changes were added.
+
+---
+
+## UI-SHELL-30 — Shell prototype comparison and targeted fix pass
+
+**Goal:** porównać produkcyjny shell do prototypu po implementacji UI-SHELL-15–29 i wykonać drobne targeted poprawki.
+
+**Allowed changes:**
+
+- drobne template/class/token/pattern fixes;
+- brak dużych refactorów;
+- brak nowych systemów bez osobnego taska.
+
+**Scope comparison:**
+
+- topbar background/elevation;
+- brand mark;
+- Health/XP chips;
+- resource chips;
+- sidebar context card;
+- nav items active/hover/focus;
+- content surface rhythm;
+- dark navy/gold/blue language.
+
+**Acceptance criteria:**
+
+- raport `matched / not matched / fixed / deferred`;
+- drobne fixy w tym samym tasku są dozwolone;
+- większe braki trafiają jako nowe konkretne follow-up tasks, nie ogólne “visual polish”.
+
+**Status:** Accepted on 2026-05-12. The production shell was compared against the accepted shell prototype anchors after UI-SHELL-15-29. Matched anchors include topbar background/elevation, fallback brand medallion, Health/XP chips, compact resource summaries, sidebar context card, nav active/hover/focus states, content rhythm and the dark navy/gold/blue language. No runtime fix was needed in this pass. Deferred items are concrete: UI-SHELL-29 responsive smoke/fixes, canonical current-HP read model for true Health semantics, real brand asset replacement for fallback `M`, and user-side final manual visual smoke.
+---
+
+
+## UI-SHELL-31 — Shell cleanup: remove temporary and failed iteration code
+
+**Goal:** wyciąć klasy, SCSS, wrappers i fallbacki pozostałe po iteracjach shell/topbar/sidebar.
+
+**Allowed files:**
+
+- shell/topbar/sidebar templates;
+- global shell/chip/nav/card SCSS;
+- config/types tylko jeśli są orphaned.
+
+**Scope:**
+
+- grep for `mg-game-topbar__*`, `mg-resource-chip*`, old shell aliases, old brand/nav classes;
+- usunąć unused `host` layout classes;
+- usunąć transitional classes/wrappers;
+- nie usuwać prototype archive CSS ani docs.
+
+**Acceptance criteria:**
+
+- brak orphan production classes;
+- brak nieużywanych imports/types;
+- brak martwego HTML;
+- build passes.
+
+**Status:** Accepted on 2026-05-12. Cleanup removed the empty `game-sidebar.scss` production file and its obsolete `styleUrl` hook from `GameSidebar`. Static cleanup checks found no production `mg-game-topbar__*` or `mg-resource-chip*` classes. No templates, visual styling, TS behavior, DB/RPC or generated types were changed beyond removing the unused stylesheet hook.
+---
+
+
+## UI-SHELL-32 — Shell foundation acceptance report and known gaps
+
+**Goal:** przygotować decision-ready raport po faktycznych implementacjach visual shell foundation.
+
+**Allowed changes:** docs/report only.
+
+**Report must include:**
+
+- completed tasks;
+- exact classes/patterns kept;
+- global/shared patterns added;
+- visual anchors matched;
+- visual anchors still deferred;
+- known UI bugs/gaps;
+- DB/read-model dependencies;
+- responsive/accessibility/manual smoke checklist;
+- recommended next UI backlog tasks.
+
+**Acceptance criteria:**
+
+- reviewer/user może przyjąć shell foundation bez odtwarzania całej historii;
+- gaps są konkretne, np. “resource chip hover state missing”, nie “needs polish”;
+- status docs można zsynchronizować dopiero po akceptacji.
+
+**Status:** Accepted on 2026-05-12. Decision-ready report added at `docs/ui-ux/ui-shell-32-foundation-acceptance-report.md`. The report records completed shell tasks, exact kept runtime classes/patterns, added global/shared patterns, matched visual anchors, deferred known gaps, DB/read-model dependencies, verification checklist and recommended next tasks. Shell foundation is now ready to leave in favor of dashboard work, with UI-SHELL-29 responsive work explicitly deferred.
+
+---
+
+# 9. UI-DASHBOARD — Hero dashboard and persistent player state
+
+This section preserves dashboard work that was intentionally removed from `UI-SHELL-*`.
+
+`UI-SHELL-*` owns only shell/topbar/sidebar/layout chrome.  
+`UI-DASHBOARD-*` owns the `/hero/dashboard` route content.
+
+Dashboard must be hero-centric. It is not a second sidebar, not a system portal, not an admin diagnostics page and not a fake task queue.
+
+Accepted visual/source anchor:
+- `docs/ui-ux/prototypes/mythborne_ui_shell_prototype.html`
+- dashboard body direction: hero banner, base stats, derived stats, equipment preview, light home/vicinity context, compact persistent state;
+- no heavy right sidebar on dashboard;
+- no fake live metrics.
+
+Global UI-DASHBOARD rules:
+
+- Use active hero + selected server context.
+- Use real read models/services only.
+- Do not hardcode permanent stat/resource/equipment labels if DB/read models already expose them.
+- Do not invent local dashboard state.
+- Do not duplicate sidebar navigation.
+- Do not add action cards only because a route exists.
+- Important values, statuses, blockers and action-needed states must not be `muted-text`.
+- Missing read model = blocker/gap report, not fake placeholder UI.
+- Manual visual/gameplay smoke is user-side.
+
+---
+
+## UI-DASHBOARD-00 — Dashboard source and current implementation inventory
+
+**Goal:** establish the exact production baseline before editing `/hero/dashboard`.
+
+**Allowed changes:** none unless the current dashboard has obvious dead imports from an earlier failed implementation.
+
+**Scope:**
+
+- inspect current dashboard page/component/state/template/SCSS;
+- inspect current active hero/server services used by dashboard;
+- inspect available hero stats / derived stats / equipment / estate / exploration / report / notification read paths;
+- inspect existing UI patterns already created during UI-SHELL:
+  - `mg-game-shell`;
+  - `mg-context-card`;
+  - `mg-chip`;
+  - `mg-card`;
+  - `mg-resource-summary`;
+  - `mg-shell-nav-item`;
+  - `app-game-bar`;
+  - global grid/flex/spacing/font utilities.
+
+**Output must include:**
+
+- current dashboard files;
+- available real data sources;
+- missing read models;
+- obsolete dashboard cards/fallbacks to remove later;
+- prototype anchors that can be implemented now;
+- prototype anchors blocked by missing data.
+
+**Acceptance criteria:**
+
+- report identifies exact implementation targets;
+- no visual redesign yet;
+- no fake data proposed;
+- no new dashboard architecture invented.
+
+---
+
+## UI-DASHBOARD-01 — Remove generic portal/dashboard noise
+
+**Goal:** clean the current dashboard so it stops behaving like a duplicate navigation portal.
+
+**Allowed files:** dashboard template/component only, plus imports cleanup.
+
+**Scope:**
+
+- remove generic route shortcut cards that duplicate sidebar navigation;
+- remove fake counters, fake queues, fake “recommended tasks” and placeholder metrics;
+- remove admin/debug/diagnostic snippets from player-facing dashboard;
+- preserve any real hero/player data already used correctly.
+
+**Rules:**
+
+- Do not replace removed fake content with new fake content.
+- Do not add new feature cards just because a feature route exists.
+- Do not touch shell/topbar/sidebar.
+
+**Acceptance criteria:**
+
+- dashboard no longer duplicates sidebar menu;
+- no fake live metrics remain;
+- no raw admin/debug diagnostics remain;
+- build passes.
+
+---
+
+## UI-DASHBOARD-02 — Dashboard page frame and card rhythm
+
+**Status:** Accepted on 2026-05-13 as a desktop-first dashboard frame. The accepted dashboard uses the route `mg-container` full-width path, one full-width hero card with avatar | identity/progress | vertical context, direct non-duplicated `app-game-bar` Health/Experience rows, real conditional `/game/vicinity` Address, and separate Hero Stats / Derived Stats cards. No dashboard-local SCSS, fake Guild/Prestige/District/equipment/estate cards, generated type edits or responsive redesign were added. Mobile/tablet responsiveness, lower dashboard polish, Guild/Prestige/District context and equipment/estate/persistent widgets remain deferred to later tasks.
+
+**Goal:** create the production dashboard layout skeleton matching the accepted prototype direction.
+
+**Allowed files:** dashboard HTML and only existing/global SCSS if a missing shared pattern is genuinely required.
+
+**Prototype anchors:**
+
+- main dashboard content uses route `mg-container`;
+- dashboard body starts with a hero banner;
+- below it: stats/derived stats;
+- then equipment preview;
+- then light estate/persistent state context;
+- no heavy right sidebar.
+
+**Rules:**
+
+- Use existing `mg-grid`, `mg-card`, flex/gap/spacing utilities first.
+- Do not introduce a dashboard-local SCSS system.
+- Do not implement data-heavy widgets yet; this task is layout frame only.
+- Do not add placeholder values.
+
+**Acceptance criteria:**
+
+- dashboard has the correct production layout hierarchy;
+- empty sections are not rendered as fake cards;
+- class usage is minimal and justified;
+- no local SCSS unless a real shared pattern gap is reported.
+
+---
+
+## UI-DASHBOARD-03 — Hero banner identity block
+
+**Status:** Accepted on 2026-05-13 as the desktop-first hero banner identity/context pass. The accepted banner preserves the avatar | identity/progress | context structure, removes the extra `Current hero` label, keeps Health and Experience as direct non-duplicated `app-game-bar` rows, keeps Origin / Character Points / real conditional Address as the primary vertical context stack, and adds selected Server from the real `ActiveServer.selectedServer` source in a separate secondary context column. No fake Guild/Prestige/District/equipment/estate cards, dashboard-local SCSS, generated type edits or responsive redesign were added.
+
+**Goal:** implement the top hero banner as the dashboard’s primary visual anchor.
+
+**Data sources:**
+
+- `ActiveHero` / active hero state;
+- selected server from `ActiveServer`;
+- origin data only if already available through an existing read model/service;
+- current estate/address only if already available through current active hero/estate address path.
+
+**Prototype anchors:**
+
+- hero identity is dominant;
+- hero name is the main heading;
+- server/origin/address/Character Points/membership-style metadata are secondary badges;
+- portrait/silhouette area exists, but must not invent a fake avatar system.
+
+**Rules:**
+
+- If real portrait/avatar asset is missing, use existing accepted placeholder/brand/portrait pattern, not a random new local illustration system.
+- Hero name, origin, server and important values are not muted.
+- Metadata labels may be muted; values must be strong or badge-like.
+- Do not add action buttons here unless a real immediate action belongs in UI-DASHBOARD-04.
+
+**Acceptance criteria:**
+
+- dashboard immediately communicates “this is the current hero”;
+- no fake origin/address/portrait data;
+- no debug IDs unless explicitly player-safe and secondary.
+
+---
+
+## UI-DASHBOARD-04 — Primary hero action strip
+
+**Status:** Accepted on 2026-05-13 as a desktop-first action strip. The dashboard now shows a small `Hero actions / Next steps` strip with real route CTAs only: neutral `Continue Exploration` to `/game/exploration`, conditional `Spend Character Points` to `/hero/attributes` only when unspent Character Points are available, and conditional `Open Vicinity` to `/game/vicinity` only when the real estate address exists. Armory and Reports actions remain omitted until scoped dashboard equipment preview or unread/action-needed report state exists. No TS/services, dashboard-local SCSS, new classes, fake data, generated type edits or responsive redesign were added.
+
+**Goal:** provide a small set of immediate, hero-relevant next actions without duplicating the sidebar.
+
+**Allowed actions only if routes/flows exist:**
+
+- continue/start Exploration;
+- spend Character Points / open Attributes when unspent CP exists;
+- open Armory/equipment if equipment preview exists;
+- open Mansion/Vicinity if estate context exists;
+- open Reports only if there is a real unread/action-needed state.
+
+**Rules:**
+
+- No generic “go to every system” card grid.
+- No action for missing or future features.
+- No fake priority/recommendation algorithm.
+- If action depends on state, use real state; otherwise use neutral route CTA.
+
+**Acceptance criteria:**
+
+- actions are few and useful;
+- dashboard remains hero-centered;
+- sidebar remains primary full navigation.
+
+---
+
+## UI-DASHBOARD-05 — Base stats card
+
+**Goal:** render canonical hero base stats in a compact dashboard card.
+
+**Data source:**
+
+- existing hero stats read model/service/state.
+
+**Rules:**
+
+- Stat labels must come from existing DB-backed labels/read model if available.
+- Do not hardcode the canonical stat list unless the current production stat service already exposes only keys and no labels.
+- If stat labels are missing, report metadata gap instead of inventing permanent copy.
+- Values must be strong and readable, not muted.
+- Unspent Character Points may be shown as a badge if real.
+
+**Acceptance criteria:**
+
+- base stats render from real active hero data;
+- no fake stat values;
+- no local stat dictionary if a shared one exists;
+- stat card visually resembles the prototype stat tile rhythm.
+
+**Implementation note:** accepted on 2026-05-13. Base Stats render through `DashboardPageFacade.baseStatRows()`, pairing runtime `get_hero_dashboard_runtime_stats.stats_json` values with `StatsService.getStats()` labels and omitting missing runtime values instead of rendering empty tiles. The dashboard route template was split into thin presentational section components over the existing page facade, with the existing `d-block w-100` component-host pattern preserving the accepted desktop-first width rhythm. Display projections moved into focused dashboard mappers, and repeated dashboard value/label colors now use normal text color utilities from `src/scss/utilities/_text-colors.scss` instead of `heading-color` gradient or status text classes. No fake values, local dashboard SCSS, generated type edits or responsive/mobile redesign were added.
+
+---
+
+## Health State frontend integration — Dashboard/topbar shared vitals cleanup
+
+**Status:** Accepted on 2026-05-13. Frontend Health display now consumes canonical DB-owned `current_health / max_health` through `HeroHealthState` and shared `ActiveHeroVitalsState`. Dashboard and topbar share the same active-hero vitals state for current Health, max Health, level and XP progress; dashboard runtime stats remains scoped to dashboard-only stats/derived/damage rows. Topbar no longer directly loads `HeroHealthState`, `HeroDerivedStats` or `Hero.getHeroExperienceProgress()`, and `DashboardPageFacade` no longer owns separate XP loading. No generated type edits, fake Health fallback, local current-HP calculation/reset, `hero_derived` dashboard/topbar runtime authority, local dashboard SCSS or responsive redesign were added.
+
+**Deferred:** manual smoke for Vlad `152 / 152`, a non-full-health hero and combat/report health; optional later split if backend/read models stop returning health in dashboard runtime stats; optional partial-failure resilience for shared vitals if topbar resilience needs it.
+
+---
+
+## UI-DASHBOARD-06 — Derived stats card
+
+**Status:** Accepted on 2026-05-13. Derived Stats now render as a compact full-width row list from dashboard runtime read-model rows instead of repeated stat cards. Damage rows use the DB-owned `damage_rows_json` display contract through the dashboard runtime mapper, with main-hand/off-hand labels coming from the runtime row label and values shown only when the runtime row exposes a damage display. Defense, Luck, critical chance, critical damage, evasion and attack count remain player-safe runtime rows. Row rhythm uses existing global utilities (`flex-row-between-end`, `border-bottom`, `pb-xs`, `color-muted`, `small-caps`, `uppercase`, `text-xs`, `color-heading`, `text-md`) and the Hero Stats / Derived Stats cards are height-aligned with existing height/host utilities. Item popover is intentionally deferred because the dashboard damage row contract exposes no stable item reference; future integration belongs to the shared UI-CORE-6 / UI-ITEMS item popover contract.
+
+**Goal:** render current derived combat/progression stats without exposing raw debug formula internals.
+
+**Data source:**
+
+- existing `HeroDerivedStats` / derived stats read model/service;
+- existing XP/level/progression read path where needed.
+
+**Allowed values if available:**
+
+- Health;
+- Defense;
+- damage range / attack profile summaries;
+- Luck;
+- critical chance/damage;
+- other player-safe derived stats already exposed by the read model.
+
+**Rules:**
+
+- Do not compute durable formulas locally.
+- Do not expose admin/debug formula internals.
+- If a derived stat is missing from the read model, omit it and report the gap.
+- Labels may be secondary; values must be strong.
+
+**Acceptance criteria:**
+
+- derived stats are real and player-safe;
+- no frontend formula authority is introduced;
+- missing derived stats are not faked.
+
+---
+
+## UI-DASHBOARD-07 — Equipment preview source check
+
+**Goal:** determine whether the dashboard can render a real equipment preview now.
+
+**Allowed changes:** none unless removing dead dashboard equipment placeholder code.
+
+**Scope:**
+
+- inspect existing armory/equipment/current loadout read paths;
+- identify available equipped item slots;
+- identify whether item names/quality/bonus snippets are player-safe;
+- identify whether paperdoll-style slot layout can be rendered with current data.
+
+**Output must say:**
+
+- data source found;
+- slots available;
+- missing slots or labels;
+- whether UI-DASHBOARD-08 can proceed;
+- blockers/gaps if not.
+
+**Acceptance criteria:**
+
+- no fake equipment preview is created;
+- no direct item/equipment table writes;
+- no local fake equipment model.
+
+---
+
+## UI-DASHBOARD-08 — Equipment preview implementation
+
+**Goal:** implement the dashboard equipment preview if UI-DASHBOARD-07 confirms real data is available.
+
+**Status:** Accepted on 2026-05-13 as a reusable paperdoll-style equipment preview. The dashboard now renders real equipment slots from `HeroEquipment.getEquipmentSlots()` and current equipped items from `CurrentEquipmentState` through display-only `EquipmentPreviewSlotRow` rows, with empty slots shown only from confirmed slot definitions. The shared `app-equipment-preview` component uses `warrior.png`, config-driven stable `slotKey` placement, typed icon classes and dashboard-only `Open Armory` CTA via `isArmory=false`; Armory mode is prepared without action wiring. No fake slots/items, equipment mutation/direct writes, local dashboard SCSS, generated type edits or local item popover were added.
+
+**Allowed files:** dashboard component/template; shared equipment display helpers only if already existing or clearly reusable.
+
+**Prototype anchors:**
+
+- paperdoll-style or slot-focused equipment preview;
+- main hand / off hand visible;
+- armor/jewelry slots visible if data exists;
+- compact equipped item list or slot labels;
+- CTA to Armory.
+
+**Rules:**
+
+- Use existing equipped item/read model data only.
+- Empty slots may be shown only if the read model confirms the slot exists.
+- Do not invent fake equipped items.
+- Do not implement equipment mutation here.
+- Do not directly query workflow tables if a canonical service/read model exists.
+
+**Acceptance criteria:**
+
+- equipment preview is real;
+- missing slots are handled cleanly;
+- Armory CTA exists;
+- no gameplay mutation added.
+
+---
+
+## UI-DASHBOARD-09 — Home / estate / vicinity context card
+
+**Status:** Accepted on 2026-05-13. Dashboard estate context uses real `EstateAddresses.getActiveHeroCurrentAddress()` data, with `estateAddress` computed from `currentEstateAddress`. Server context and Address stay in the hero banner; District and `/game/vicinity` row action were later merged into the UI-DASHBOARD-11 `World State` card. Nearby range remains deferred until a real read model exposes it, and no fake range, local dashboard SCSS or generated type edits were added.
+
+**Goal:** add light world context without turning dashboard into Mansion/Vicinity.
+
+**Data sources:**
+
+- active hero estate/address read path;
+- selected server;
+- current district/address;
+- current mansion/building state only if already available.
+
+**Prototype anchors:**
+
+- estate/address/district context;
+- optional CTA to Vicinity or Mansion;
+- compact, secondary dashboard section.
+
+**Rules:**
+
+- Dashboard must not duplicate Mansion page.
+- No local address generation.
+- No fake nearby range unless generated by existing read model.
+- No building control actions here unless explicitly scoped later.
+
+**Acceptance criteria:**
+
+- player sees where the hero currently belongs in the world;
+- no fake vicinity data;
+- clear CTA to the correct route if route exists.
+
+---
+
+## UI-DASHBOARD-10 — Persistent state source matrix
+
+**Status:** Accepted on 2026-05-13. The source matrix lives at `docs/ui-ux/ui-dashboard-10-persistent-state-source-matrix.md`. UI-DASHBOARD-11 may implement only states with dashboard-safe read sources; active exploration, active step and challenge handoff remain blocked/conditional until a dashboard-safe current exploration difficulty source exists. Dashboard must not guess or hardcode `difficultyKey`, reuse page-local `ExplorationOverviewState` selection as a fallback, or show fake Nearby range values.
+
+**Goal:** define which persistent states can be shown now using real sources.
+
+**Allowed changes:** none unless deleting fake persistent state placeholders.
+
+**Candidate sources:**
+
+- active exploration / pending exploration result;
+- active estate building job;
+- unread reports / notifications;
+- current Trial/Encounter/Combat handoff;
+- active exploration effect;
+- other durable states explicitly backed by DB/RPC/read model.
+
+**Output must include table:**
+
+- state;
+- read model/service source;
+- hero/server scoping;
+- stale-clear rule;
+- action/CTA allowed;
+- implementation status: implement now / blocked / defer.
+
+**Rules:**
+
+- Missing source = dependency/gap, not placeholder.
+- No fake countdowns.
+- No local-only production state.
+
+**Acceptance criteria:**
+
+- dashboard persistent state work is grounded in real read models;
+- no speculative widget list is approved.
+
+---
+
+## UI-DASHBOARD-11 — Persistent state container implementation
+
+**Status:** Accepted on 2026-05-13. `World State` is a compact row-list placed under Derived Stats in the right dashboard column. It is backed by approved sources: estate building job with DB-owned `remainingSeconds` countdown display, trials remaining from the latest permission-safe `hero_daily_action_counters` row scoped by hero/server/`action_kind = trial`, active state from `get_hero_pending_combat_effect_state(p_hero_id)`, unread reports, and District/Vicinity rows from `EstateAddresses.getActiveHeroCurrentAddress()`. Active exploration, active step and challenge handoff remain deferred until a dashboard-safe difficulty/current exploration context source exists; notifications remain out of dashboard scope.
+
+**Goal:** implement the shared dashboard area for real persistent states.
+
+**Allowed files:** dashboard template/component; global/shared pattern only if needed and reusable.
+
+**Rules:**
+
+- Render only widgets that have real sources from UI-DASHBOARD-10.
+- Empty state may say there is no current persistent state only if that is true from loaded sources.
+- Do not add fake tiles for blocked/deferred states.
+- Stale state clears on active hero/server change.
+
+**Acceptance criteria:**
+
+- persistent state area exists;
+- no fake persistent state appears;
+- important/action-needed states are visually clear;
+- data loading/empty/error states are clear.
+
+---
+
+## UI-DASHBOARD-12 — Exploration persistent state widget
+
+**Status:** Deferred / cancelled on 2026-05-14 by user direction. Active exploration, pending step and challenge handoff remain blocked by the missing dashboard-safe current exploration difficulty/source; do not implement this as a separate dashboard widget until that source exists.
+
+**Goal:** show current Exploration state if the current read model supports it.
+
+**Allowed states:**
+
+- active exploration;
+- pending movement/result;
+- Trial/Encounter/Combat handoff returned by exploration state;
+- active effect if DB returns it.
+
+**Rules:**
+
+- Use canonical exploration state/read model.
+- Do not infer rewards from latest armory/report/etc.
+- Do not create local timers unless display-only and DB owns time.
+- CTA must go to `/game/exploration`.
+
+**Acceptance criteria:**
+
+- widget appears only when real exploration state exists;
+- stale result/reward/combat state is not shown for the next step;
+- CTA is clear;
+- no fake exploration queue.
+
+---
+
+## UI-DASHBOARD-13 — Estate building job persistent state widget
+
+**Status:** Deferred / cancelled on 2026-05-14 by user direction. The real estate job row is already covered inside the accepted UI-DASHBOARD-11 `World State` container, so no separate widget task should be implemented now.
+
+**Goal:** show active estate building job if current settled mansion/estate runtime exposes one.
+
+**Rules:**
+
+- Use existing settled estate/mansion runtime read path.
+- Countdown/progress is display-only; backend owns job timestamps.
+- No start/cancel/build action here.
+- CTA goes to Mansion if route exists.
+
+**Acceptance criteria:**
+
+- active building job appears only when real;
+- completed/no-job state is handled without fake urgency;
+- stale state clears when active hero/server changes.
+
+---
+
+## UI-DASHBOARD-14 — Reports/notifications attention widget
+
+**Status:** Deferred / cancelled on 2026-05-14 by user direction. Unread reports are already covered by the accepted UI-DASHBOARD-11 `World State` row, while dashboard notifications remain deferred to avoid duplicating the topbar inbox.
+
+**Goal:** show compact attention state for unread/action-needed reports or notifications if existing read models expose it.
+
+**Rules:**
+
+- Use existing notification/report unread count or list services.
+- No heavy inbox duplication on dashboard.
+- No staff/admin notification content on player dashboard.
+- CTA goes to Reports/Notifications route if available.
+
+**Acceptance criteria:**
+
+- dashboard shows attention only when real;
+- no admin/staff leakage;
+- no fake notification/task count.
+
+---
+
+## UI-DASHBOARD-15 — Trial/Encounter/Combat handoff widget
+
+**Status:** Deferred / cancelled on 2026-05-14 by user direction. Durable Trial/Encounter/Combat handoff stays deferred until a player-safe dashboard read model exposes that continuation state.
+
+**Goal:** show blocking gameplay handoff only if backend/read model exposes a durable handoff state.
+
+**Allowed examples:**
+
+- unresolved Trial offer;
+- active Manual Trial session;
+- unresolved Encounter/Combat continuation;
+- live combat session awaiting player action.
+
+**Rules:**
+
+- If current DB/RPC/read model does not expose this as player-safe dashboard data, report blocker/gap.
+- Do not infer from route history.
+- Do not inspect raw admin/debug tables.
+- CTA must route to the canonical continuation screen.
+
+**Acceptance criteria:**
+
+- widget never appears from guessed frontend state;
+- if missing, explicit follow-up DB/RPC/read-model dependency is documented.
+
+---
+
+## UI-DASHBOARD-16 — Dashboard text hierarchy and muted-text audit
+
+**Interim note (2026-05-14):** Dashboard presentation/order cleanup keeps source-backed values out of muted styling, plain dashboard row links use global base link styling, Derived Stats render display-contract tone classes from `display_stats_json`, Luck is pinned to the final Derived Stats row while remaining neutral through `colorableFinalValue=false`, and World State rows render in the reviewed order: Trials remaining, Active state, Building job, District, Vicinity view, Unread reports. This is not UI-DASHBOARD-16 completion/acceptance. No dashboard-local SCSS, local stat math, display-string parsing, generated type edits or DB/RPC changes were added.
+
+**Goal:** clean dashboard label/value/status hierarchy.
+
+**Scope:**
+
+- hero name;
+- server/origin/address;
+- Character Points;
+- stats;
+- derived stats;
+- equipment names;
+- persistent states;
+- CTAs.
+
+**Rules:**
+
+- labels/helper/timestamps may be muted;
+- values/statuses/outcomes/action-needed states are strong or semantic;
+- hero/item/rank/state names are not muted;
+- empty states are calm but readable.
+
+**Acceptance criteria:**
+
+- no important dashboard value is muted;
+- no action-needed state is visually hidden;
+- text hierarchy is consistent with shell/topbar/sidebar patterns.
+
+---
+
+## UI-DASHBOARD-17 — Dashboard visual prototype alignment pass
+
+**Status:** Checked on 2026-05-14; decision changed and accepted as-is during implementation. The dashboard visual direction remains the current production composition using existing global utilities/shared patterns. No extra prototype-alignment patch is required here; future dashboard content may add other statistic surfaces, but Character Points history is not part of the dashboard direction.
+
+**Goal:** make the dashboard visually approach the accepted prototype using production patterns.
+
+**Scope:**
+
+- hero banner surface;
+- stats cards;
+- derived stat rows;
+- equipment preview;
+- estate/persistent-state cards;
+- CTA hierarchy;
+- card rhythm and spacing.
+
+**Rules:**
+
+- This is not a no-code comparison task.
+- If a visual mismatch is fixable with existing tokens/utilities/shared patterns, fix it.
+- If a repeated pattern is missing, add one shared/global pattern only if clearly justified.
+- Do not copy `mb-*` classes or prototype CSS directly.
+- Do not add local dashboard SCSS unless no global/shared pattern can own it.
+
+**Acceptance criteria:**
+
+- production dashboard visibly resembles the accepted dashboard direction;
+- remaining differences are named as concrete follow-up tasks;
+- no generic “polish later” bucket.
+
+---
+
+## UI-DASHBOARD-18 — Dashboard stale state and active hero/server switch hardening
+
+**Status:** Accepted on 2026-05-14. Dashboard data now reloads on active hero/server context changes, clears existing dashboard cards before the new load resolves, and guards hero, runtime stats, estate address, equipment slot and persistent-state responses with the active hero/server context, including stale estate address success/error after selected server changes. Character Points History was removed from the dashboard composition because CP ledger history is no longer a dashboard widget. No DB/RPC changes, generated type edits, local stat math, display-string parsing, global store or dashboard-local SCSS were added.
+
+**Goal:** ensure dashboard does not show stale hero/dashboard data after active hero or selected server changes.
+
+**Scope:**
+
+- dashboard data loads;
+- stats/derived/equipment/estate/persistent state widgets;
+- error/loading state cleanup.
+
+**Rules:**
+
+- stale success must not overwrite current hero/server context;
+- stale error must not show after context switch;
+- state clears when active hero/server changes;
+- use existing state/stale guard patterns;
+- do not add broad test suites; add only focused regression if TS/state changed.
+
+**Acceptance criteria:**
+
+- switching hero/server does not leave old dashboard cards visible;
+- async dashboard reads are guarded;
+- no local global store is introduced.
+
+---
+
+## UI-DASHBOARD-19 — Dashboard cleanup and orphan removal
+
+**Status:** Accepted on 2026-05-14. Dashboard cleanup removed the obsolete `mapDashboardDerivedDisplay` / `derivedDisplay` legacy path and the dashboard mapper no longer imports `IHeroDerived`. The remaining dashboard presentation uses `display_stats_json` rows plus the separate vitals-backed `healthDisplay`. Focused specs, `npx tsc --noEmit` and `npm run build` passed; manual smoke remains user-side/pending.
+
+**Goal:** remove leftover dashboard code from failed iterations.
+
+**Scope:**
+
+- dead template blocks;
+- unused imports;
+- obsolete dashboard-only helpers;
+- temporary class names;
+- fake fixtures in production code;
+- unused local SCSS.
+
+**Rules:**
+
+- Do not remove shared patterns still used by shell/topbar/sidebar.
+- Do not delete prototype archive files.
+- Do not update status docs before acceptance.
+
+**Acceptance criteria:**
+
+- dashboard production code is lean;
+- no old dashboard portal/action-card leftovers remain;
+- build passes.
+
+---
+
+## UI-DASHBOARD-20 — Dashboard final acceptance report
+
+**Status:** Completed on 2026-05-14 by acceptance decision. Dashboard finalization is closed for this UI-DASHBOARD pass; manual smoke remains user-side/pending before commit handoff. Next scope moves to UI-ACCOUNT.
+
+**Goal:** produce final decision-ready dashboard report.
+
+**Allowed changes:** none.
+
+**Report must include:**
+
+- implemented dashboard sources and widgets;
+- data sources used;
+- deferred read-model dependencies;
+- visual anchors matched;
+- visual anchors intentionally not matched;
+- known UI follow-ups;
+- stale guard status;
+- manual smoke checklist.
+
+**Acceptance criteria:**
+
+- dashboard can be accepted without rereading UI-SHELL history;
+- remaining items are concrete and actionable.
+
+<!-- This section preserves the former `UI-SHELL-2 — Dashboard hero-centric layout` and `UI-SHELL-5 — Persistent state widget boundary` scopes.
+
+The `UI-SHELL-00–32` microtasks above replace shell/topbar/sidebar implementation only. They do **not** delete dashboard or persistent-state work. -->
+
+<!-- ## UI-DASHBOARD-1 — Dashboard hero-centric layout
+
+**Goal:** keep the game dashboard as a hero-centric overview, not a generic portal to every system and not a copy of the sidebar.
+
+**Scope:**
+
+- hero identity and current server context;
+- current progression/state summary;
+- clear entry points to immediate gameplay actions;
+- no fake live dashboard metrics;
+- no raw admin/debug diagnostics.
+
+**Rules:**
+
+- dashboard is player-facing and hero-centered;
+- use real active hero/server/read-model data;
+- do not add fake action cards just because a feature exists in navigation;
+- persistent-state surfaces belong in `UI-DASHBOARD-2`, not as ad hoc cards.
+
+**Acceptance criteria:**
+
+- dashboard explains “what matters for this hero now”;
+- sidebar/navigation remains navigation, not duplicated dashboard content;
+- no fake counters or fake task queue;
+- important values are not muted.
+
+## UI-DASHBOARD-2 — Persistent state widget boundary
+
+**Goal:** define and implement the boundary for persistent player state widgets that may appear on dashboard/shell-adjacent surfaces.
+
+**Allowed states:** real states from real read models/services, such as:
+
+- active exploration / pending exploration result;
+- active estate building job;
+- unread report/notification attention state;
+- current blocking Trial/Encounter/Combat handoff when backend exposes it;
+- other durable states explicitly backed by DB/RPC/read model.
+
+**Out of scope:**
+
+- fake action queue;
+- fake timers;
+- local-only production state;
+- speculative future workflow cards;
+- admin diagnostics as player-facing widgets.
+
+**Rules:**
+
+- each widget must name its read model/service source;
+- frontend countdowns are display-only if backend owns time;
+- if the read model is missing, report dependency instead of creating local placeholder state;
+- no direct mutation from persistent-state widget unless the task explicitly scopes the canonical action.
+
+**Acceptance criteria:**
+
+- persistent state widgets are backed by durable source of truth;
+- missing states do not appear as fake placeholders;
+- action-needed states are visually clear and not muted;
+- stale state is cleared on active hero/server changes.
+
+## UI-DASHBOARD-3 — Dashboard prototype comparison and cleanup pass
+
+**Goal:** after dashboard/persistent-state implementation slices, compare production dashboard to accepted dashboard/shell prototype direction and remove leftover temporary dashboard code.
+
+**Scope:**
+
+- compare hero-centric layout, persistent state widgets, card rhythm and CTA hierarchy;
+- remove obsolete dashboard cards, fallback helpers and dead template sections;
+- report matched / not matched / deferred anchors.
+
+**Acceptance criteria:**
+
+- dashboard is accepted without relying on old shell task history;
+- remaining gaps are concrete follow-up tasks, not generic “polish”. -->
+
+# 10. UI-CORE — Foundations and style contract
 
 Cel: ustabilizować wspólne wzorce, globalne SCSS, reuse rules, vendor wrapper lookup i zasady przenoszenia prototypów do Angulara. UI-CORE jest **phase zero** dla większych ekranów.
 
@@ -1653,712 +2973,741 @@ Required Codex report:
 - components intentionally not touched:
 - local SCSS added: none / explain:
 
----
+## UI-CORE-CARD-SELECTED-1 — Global selected / featured card glow
 
-# 7. UI-SHELL — game shell hardening and implementation sequence
-
-This section replaces broad shell tasks with microtasks. The goal is to make Codex execute one narrow, reviewable step at a time instead of improvising a full shell/topbar/sidebar redesign.
-
-## 7.0. UI-SHELL execution rules
-
-These rules apply to every `UI-SHELL-*` task.
-
-### Mandatory README-first lookup
-
-Every task starts with `docs/ui-ux/README.md` and then the task-relevant UI-CORE docs. Codex must report concrete files/classes/patterns, not just `docs checked`.
-
-For shell/topbar/sidebar work, check at minimum:
-
-- `docs/ui-ux/README.md`;
-- `docs/ui-ux/mythsworn-style-contract.md`;
-- `docs/ui-ux/global-scss-shared-inventory.md`;
-- `docs/ui-ux/local-scss-budget-checklist.md`;
-- `docs/ui-ux/prototype-production-mapping.md`;
-- `docs/ui-ux/utility-class-audit.md`;
-- `docs/ui-ux/layout-section-pattern-cleanup.md`;
-- `docs/ui-ux/text-utility-semantics.md`;
-- `docs/ui-ux/shared-surface-patterns.md`;
-- `docs/ui-ux/surface-badge-pattern-expansion.md`;
-- `docs/ui-ux/icon-brand-registry.md`;
-- `docs/ui-ux/icon-placeholder-mapping.md`.
-
-### Default no-new-class rule
-
-Default assumption: **adding a new CSS class is wrong**.
-
-A new class is allowed only when all are true:
-
-1. the task explicitly permits that exact class or pattern;
-2. existing utilities/patterns were checked and listed;
-3. the class represents a real reusable pattern or unavoidable structural shell gap;
-4. the report explains why existing utilities are insufficient.
-
-Creating a class that merely rewrites flex/grid/gap/padding/position/sizing utilities is a blocker.
-
-### UI-SHELL source/prototype anchors
-
-Shell tasks are backed by `game-shell-v1.html` / accepted shell prototype direction. Codex must preserve these visual anchors unless a task explicitly says otherwise:
-
-- desktop topbar uses three-zone composition: left hero status, centered brand, right resources;
-- brand is centered in desktop topbar unless explicit task says otherwise;
-- fallback `M` brand mark is visible and visually distinct from a normal status badge;
-- left topbar shows Health and XP/Level summary;
-- right topbar shows Notifications/Staff when applicable plus Drachmas, Materials and Workforce;
-- resources are compact stacked chips/cards: icon + label + strong value + per-hour secondary line;
-- sidebar selected server/prestige block is a compact premium context card, not a flat generic row panel;
-- selected server block uses label/value/status hierarchy: small label, strong value, status badge;
-- Prestige is separated inside the same surface, with label, strong rank value and rank/tier badge;
-- active sidebar nav uses a gold left inset or equivalent active affordance;
-- hover/focus/active states use the accepted dark navy/gold/blue visual language;
-- important values are not muted.
-
-### Color and interaction rule
-
-Shell is responsible for establishing the reusable base for:
-
-- shell background/surface/border token usage;
-- brand mark fallback;
-- topbar resource chip fallback or later pattern;
-- sidebar selected context surface;
-- sidebar nav active state, hover state and focus-visible state;
-- semantic status badge usage.
-
-Color work must be token-level or global/shared-pattern-level. Do not add one-off component colors. If a color/hover/active need is repeated and no token/pattern exists, report a token/pattern gap and put it in the relevant microtask below.
-
-### Standard report for every UI-SHELL task
-
-Every task report must include:
-
-```md
-Preflight:
-- README checked:
-- UI-CORE docs checked:
-- source files checked:
-- dirty tree:
-
-Lookup:
-- existing utilities/classes/patterns used:
-- checked but not used:
-- missing patterns/gaps:
-
-Scope control:
-- files changed:
-- new classes added:
-- SCSS kept and why:
-- local/component SCSS added:
-- copied from prototype CSS/classes:
-
-Visual anchors:
-- matched:
-- not matched:
-- deferred:
-
-Verification:
-- tsc:
-- build:
-- focused specs:
-- manual/browser smoke or blocked reason:
-```
+**Status:** Accepted/completed on 2026-05-20 after Armory and Exploration selected-card smoke. The global `.mg-card--selected` pattern in
+`src/scss/base/_surface.scss` now provides the reusable selected/featured card treatment for production surfaces. The
+implementation adapts the accepted Exploration prototype selected difficulty card direction into Mythsworn tokens rather
+than copying prototype `mb-*` classes or raw values: a modest warm border, subtle top radial wash, warm linear surface
+overlay and restrained inner highlight. `.mg-game-shell .mg-card--selected` is tuned for game-shell surfaces, with
+`/game/exploration` Difficulty cards as the first consumer through `[class.mg-card--selected]="selected"` and Armory
+Inventory item cards as the second consumer through `[class.mg-card--selected]="isBulkItemSelected(item)"`. The selected
+state now explicitly wins over card hover/focus/focus-within variants, and item popover trigger hover/focus styles apply
+only to non-selected cards so selected ownership remains global in `_surface.scss`. No page-local SCSS, selection logic,
+move/drag/drop/loadout behavior, DB/RPC/schema/generated changes or unrelated UI changes were added. Verification passed
+with `npx tsc --noEmit`, `npm run build` with known budget/CommonJS warnings, and static greps.
 
 ---
 
-## UI-SHELL-00 — Shell README-first inventory, no code
+# 11. UI-ACCOUNT / UI-ONBOARDING — Account entry and hero creation
 
-**Goal:** produce a concrete lookup table for the shell before any implementation.
+## UI-ACCOUNT-1 — Account Entry Shell
 
-**Allowed changes:** none. Documentation/report only.
+**Status:** Accepted on 2026-05-14. Account entry now separates existing hero entry from creation with `Enter game`, `Join new world` and `Create new hero` copy, shows standard-server District A free/capacity values from `get_start_flow_server_availability`, keeps sandbox multi-hero selection compact and DB-backed, and avoids duplicating existing hero context beside the sandbox switcher. No DB/RPC changes, generated type edits, auth/start-flow rewrite or local SCSS were added. Manual visual smoke remains user-side/pending.
+
+**Goal:**  
+Implement account/public shell before the player enters a specific server+hero game context.
+
+**Required visual anchors:**
+
+- different navigation than in-game shell;
+- main options: `Enter the game`, `Create new hero` / `Join new world`;
+- existing hero contexts show server + hero and route to dashboard;
+- new hero flow shows eligible creation servers;
+- district A capacity/free slots visible for standard server creation eligibility;
+- sandbox/test multi-hero selector is explicit;
+- Stat Allocation is not shown as an onboarding wizard step.
+
+**Data/source rules:**
+
+- Use selected server → active hero semantics.
+- Creation eligibility and district A capacity must come from DB/RPC/read model.
+- Angular must not guess starting address capacity.
+
+**Acceptance criteria:**
+
+- Existing hero routes to dashboard/game shell.
+- Eligible server routes to Hero Creation.
+- Full/blocked server is clear and not fake-resolved.
+- No direct hero creation table writes.
+
+---
+
+## UI-ACCOUNT-2 — Sandbox create new hero entry action
+
+**Status:** Accepted on 2026-05-14. Sandbox/test server entry now exposes the secondary `Create new hero on this sandbox` CTA next to `Enter game` when the start-flow read model allows sandbox hero creation. Standard servers with an existing hero keep only the enter action. The route remains the existing `/auth/create-character` canonical start-flow path, with no DB/RPC changes, generated type edits, start-flow/auth rewrite, direct table writes or local SCSS. Manual smoke passed.
+
+**Goal:** allow privileged/test users on sandbox/test servers to start creation of an additional hero on the selected sandbox server without logging out.
+
+**Required anchors:**
+
+- server entry keeps existing `Continue` action for current/default hero;
+- sandbox/test server also exposes a secondary `Create new hero on this sandbox` action;
+- standard servers do not accidentally offer multi-hero creation when a hero already exists;
+- selected server context is preserved into hero creation;
+- no parallel hero creation workflow and no direct table writes.
+
+**Acceptance criteria:**
+
+- sandbox server entry with an existing hero offers both continue and create-new-hero;
+- standard server entry with an existing hero offers continue only;
+- creation uses the canonical hero creation/start-flow path;
+- no `hero.id === auth.uid()` assumption;
+- no direct hero/origin/estate/resource/Character Point table writes.
+
+## UI-ACCOUNT-3 — Visible logout action
+
+**Goal:** add a clear `Log out` / `Wyloguj` action in authenticated/account UI so users can leave the current session without browser/dev workarounds.
 
 **Scope:**
 
-- Read `docs/ui-ux/README.md` first.
-- Read the mandatory UI-CORE docs listed in `8.0`.
-- Inspect actual SCSS files, not only docs:
-  - `src/scss/base/_flex.scss`;
-  - `src/scss/layouts/_grid.scss`;
-  - `src/scss/utilities/_gap.scss`;
-  - `src/scss/utilities/_spacings.scss`;
-  - `src/scss/utilities/_width.scss`;
-  - `src/scss/utilities/_height.scss`;
-  - `src/scss/utilities/_display.scss`;
-  - `src/scss/utilities/_position.scss`;
-  - `src/scss/utilities/_overflow.scss`;
-  - `src/scss/utilities/_z-index.scss`;
-  - `src/scss/utilities/_backdrop.scss`;
-  - `src/scss/base/_surface.scss`;
-  - `src/scss/base/_badges.scss`;
-  - `src/scss/base/_typography.scss`;
-  - `src/scss/abstracts/_custom-icons.scss`.
-- Inspect current shell components:
-  - `src/app/layout/components/app-shell/*`;
-  - `src/app/layout/components/game-topbar/*`;
-  - `src/app/layout/components/game-sidebar/*`;
-  - notification bell components.
+- reuse existing auth/sign-out path;
+- place logout in the current authenticated shell/topbar/account area or reachable server-entry/auth area;
+- do not redesign account settings or auth architecture.
 
-**Output table:**
+**Acceptance criteria:**
 
-| Shell need | Existing class/component/pattern | Source file | Use now? | Gap/follow-up |
-|---|---|---|---|---|
-| three-zone desktop topbar | ... | ... | yes/no | ... |
-| flex row start/center | ... | ... | yes/no | ... |
-| flex row end/center | ... | ... | yes/no | ... |
-| flex wrap | ... | ... | yes/no | ... |
-| full-width/flex fill | ... | ... | yes/no | ... |
-| compact resource chip fallback | ... | ... | yes/no | ... |
-| brand mark fallback | ... | ... | yes/no | ... |
-| selected server/prestige card | ... | ... | yes/no | ... |
-| active nav inset | ... | ... | yes/no | ... |
-| nav hover/focus states | ... | ... | yes/no | ... |
-| shell surface/background/border | ... | ... | yes/no | ... |
+- authenticated user can visibly log out;
+- logout uses existing sign-out flow;
+- user returns to current unauthenticated/login behavior;
+- no unrelated shell/account refactor.
 
-**Acceptance criteria:** no code changed; reviewer can approve the exact next microtask.
+## UI-HERO-CREATION-1 — Hero Creation Origin Carousel
 
-**Status:** Accepted on 2026-05-10. Completed as part of the no-code `UI-SHELL-00/01/02` artifact at `docs/ui-ux/ui-shell-00-02-inventory.md`. The inventory starts from `docs/ui-ux/README.md`, names the UI-CORE docs read, inspects the required SCSS utility/surface/icon files plus current app-shell/topbar/sidebar/notification components, and records concrete shell needs, existing utilities/classes/components, current use decisions and follow-up gaps. No Angular, SCSS, generated type or runtime shell files were changed.
+**Status:** Accepted on 2026-05-14. Existing-account hero creation now uses one account-side screen with readonly selected server context, editable hero name, DB/read-model-backed origin carousel, creation summary and `Stwórz bohatera` action through the existing canonical `create_hero_start_flow` path. Player-facing copy was cleaned to Polish product language and no longer exposes DB/backend/Angular/workflow wording. No DB/RPC changes, generated type edits, direct writes, auth/start-flow rewrite or local SCSS were added. Manual visual smoke remains user-side/final confirmation.
+
+**Goal:**  
+Implement the second and final account-side creation screen: name + origin + create hero.
+
+**Required visual anchors:**
+
+- selected server context is readonly;
+- hero name input is editable;
+- origin selection is a visual carousel or equally dynamic origin selector;
+- origin artwork is central, not a tiny static icon;
+- origins: Spartanin, Ateńczyk, Kreteńczyk, Koryntianin;
+- origin detail area shows lore/description and concrete bonuses from DB/admin content;
+- exact origin bonuses must not be hardcoded in Angular;
+- creation summary remains visible;
+- after creation, player enters in-game shell and routes to Stat Allocation as first in-game location.
+
+**Data/source rules:**
+
+- Hero creation must use canonical DB/RPC/domain workflow.
+- No direct Angular writes to hero, origin, Character Points, estate, resource, audit or onboarding tables.
+- New heroes start with 1000 Character Points and random free district A estate through backend workflow.
+- Origin content/artwork/bonuses must come from DB/admin-configurable read model or report blocker.
+
+**Acceptance criteria:**
+
+- Name + origin are the only player inputs.
+- Origin visual hierarchy is preserved.
+- Bonus display is DB-backed or explicitly data-blocked.
+- Post-create route is in-game Stat Allocation, not onboarding step 3.
 
 ---
 
-## UI-SHELL-01 — Current shell diff and rollback boundary, no code
+## UI-ACCOUNT-PREP — Prototype/task handoff
 
-**Goal:** identify which current shell changes are baseline, which are experimental UI-SHELL-1/2 leftovers, and what may be safely removed.
+## UI-ONBOARDING-PREP-1 — Prototype Hero Creation / Onboarding Flow
 
-**Allowed changes:** none.
+**Goal:**  
+Przygotować następny ręczny canvas prototype dla canonical player entry flow before Codex implementation.
+
+**Scope:**
+- Prototype should cover:
+  - server selection,
+  - server full/no free district A address state,
+  - existing hero -> dashboard/game shell path,
+  - no hero -> hero creation path,
+  - sandbox/test multi-hero switcher placeholder,
+  - hero name,
+  - origin selection with DB-backed content placeholder,
+  - origin bonuses/lore presentation,
+  - create hero action,
+  - post-creation route to stat allocation,
+  - stat allocation is not a tutorial lock.
+
+**Out of scope:**
+- Angular implementation.
+- DB/RPC implementation.
+- Direct table write assumptions.
+- Final origin content hardcoding.
+
+**Data/source rules:**
+- Prototype must reflect decisions:
+  - player entry starts from server selection,
+  - existing hero enters dashboard/game shell by default,
+  - hero creation is a coherent DB/RPC workflow,
+  - origin content is admin-configurable,
+  - new hero starts with 1000 Character Points,
+  - estate is assigned during creation,
+  - player does not choose/preview exact starting address.
+
+**UI/SCSS rules:**
+- Canvas HTML only for visual exploration.
+- No production CSS copy.
+- Keep Mythsworn player-facing premium RPG direction.
+
+**Acceptance criteria:**
+- Prototype clarifies the onboarding UX before implementation tasks.
+- No fake backend authority is implied.
+- Flow states are visually understandable.
+
+**Verification/smoke:**
+- Canvas visual review only.
+
+**Required Codex report:**
+- not applicable until implementation.
+
+---
+
+## Detailed account/onboarding follow-up tasks
+
+This section is part of the canonical UI/UX backlog. It records the accepted account/public shell, server/hero entry and Hero Creation origin carousel direction. Stat allocation is the default first in-game location after creation, not a third account-onboarding step.
+
+All tasks below inherit Part I strict execution rules: prototype visual anchors are a contract, production must use DB/RPC/read models, `database.types.ts` is read-only, critical mutations use canonical backend workflows, new/touched forms use Reactive Forms, and Codex must not copy prototype CSS/JS/`mb-*` classes into Angular.
+
+---
+
+## UI-ONBOARDING-ADD-1 — Account Entry Shell information architecture
+
+**Status:** Accepted on 2026-05-14 as the account/onboarding shell-frame implementation. `/auth/server-entry` now uses a separate account shell frame instead of GameTopbar/GameSidebar, with a centered Mythsworn topbar, account context panel and distinct `Wejdź do gry` / `Stwórz bohatera` account navigation. The central enter-game selector/detail-card redesign is intentionally deferred to UI-ONBOARDING-ADD-2, not omitted.
+
+**Goal:**  
+Zdefiniować i wdrożyć account/public shell dla zalogowanego użytkownika przed wejściem w konkretny server+hero game shell.
 
 **Scope:**
 
-- Compare current `app-shell`, `game-topbar`, `game-sidebar`, `_game-shell.scss` with accepted prior state or current git diff.
-- Mark every shell class as one of:
-  - existing baseline;
-  - accepted UI-SHELL-1 skeleton;
-  - experimental UI-SHELL-2;
-  - should remove;
-  - unknown/user decision.
+- Account/public shell ma inne boczne menu niż in-game shell.
+- Minimalne menu account shell:
+  - `Enter the game`;
+  - `Create new hero` / `Join new world`;
+  - account-related options such as account settings, notifications, sign out.
+- Shell pokazuje account identity, ale nie udaje aktywnego hero contextu, dopóki hero/server nie zostaną wybrane.
+- Shell musi jasno odróżniać:
+  - account context;
+  - selected server context;
+  - active hero context;
+  - no active hero yet.
+- Dla większych ekranów użyć istniejącego layout/shell patternu, o ile istnieje, zamiast tworzyć osobny lokalny shell.
 
-**Acceptance criteria:** report lists exact remove/keep candidates before code changes.
+**Out of scope:**
 
-**Status:** Accepted on 2026-05-10. Completed as part of `docs/ui-ux/ui-shell-00-02-inventory.md`. The report classifies current shell host/topbar/sidebar/brand/nav patterns as accepted skeleton, current baseline, temporary fallback/debt, remove candidate or unknown/user decision. It keeps the current runtime shell untouched, marks the empty `game-sidebar.scss` as a cleanup candidate on the next sidebar touch, and records that `mg-card` nav links plus `is-active heading-color` are temporary fallback debt for later sidebar nav tasks.
+- In-game sidebar/dashboard redesign.
+- Hero creation mutation.
+- Stat allocation redesign.
+- Direct DB writes.
+- Status docs update.
+
+**Data/source rules:**
+
+- Account/user identity comes from auth/account context.
+- Server/hero state comes from existing selected/current server + active hero read layers or dedicated start-flow read model.
+- Sandbox/test privileges must come from access/membership/staff read layer.
+- Do not infer sandbox privileges client-side.
+
+**UI/SCSS rules:**
+
+- Use account/public shell as its own route/layout area, not the in-game shell.
+- Use global page/card/sidebar/nav patterns where available.
+- Do not copy canvas sidebar/topbar CSS.
+- If a missing account-shell pattern is discovered, report it as shared/layout follow-up.
+
+**Dependencies/blockers:**
+
+- Missing account/server/hero read model.
+- Missing access layer for sandbox/test privileges.
+- Missing route boundary between account shell and in-game shell.
+
+**Acceptance criteria:**
+
+- Account shell does not show in-game navigation as if a hero were active.
+- `Enter the game` and `Create new hero` are distinct flows.
+- User can switch between these account-shell sections without logging out.
+- Existing hero flow leads toward in-game dashboard context.
+- New hero flow leads toward server eligibility / hero creation context.
+- No `Step 1 of 4` or wizard language appears in account shell.
+
+**Verification/smoke:**
+
+- `npx tsc --noEmit`
+- `npm run build`
+- Route smoke for account entry route if implemented.
+- Manual smoke:
+  - authenticated account with existing hero;
+  - authenticated account with no hero on an eligible server;
+  - sandbox/test account with multiple heroes where representative data exists.
 
 ---
 
-## UI-SHELL-02 — Shell token and color anchor inventory, no code
+## UI-ONBOARDING-ADD-2 — Enter The Game existing-hero selector
 
-**Goal:** explicitly map shell prototype colors/interactions to current theme tokens and gaps.
+**Status:** Accepted/completed on 2026-05-14 as the routed account-entry existing-hero selector. `/auth/server-entry` and `/auth/create-character` now render under the real `AccountEntryLayout` with `<router-outlet />`; `ServerEntryPage` owns only the entry page content and no longer contains account shell chrome or local enter/create section routing. The existing-hero selector uses the player-safe `get_account_entry_hero_contexts` read model for selectable hero contexts, displays server, hero, level and address, and keeps `enterHeroContext(serverId, heroId)` as the canonical dashboard entry action. Manual smoke remains user-side before commit handoff.
 
-**Allowed changes:** none.
+**Goal:**  
+Utworzyć account-shell section `Enter the game`, która pokazuje tylko istniejące grywalne hero contexty i prowadzi do dashboard/game shell.
 
 **Scope:**
 
-- Check `src/scss/abstracts/_variables.scss` and `src/scss/themes/*`.
-- Check surface, badge, text and interaction utilities.
-- Map these visual needs:
-  - dark navy shell background;
-  - elevated topbar surface;
-  - sidebar surface;
-  - soft gold border;
-  - active nav gold inset;
-  - active nav hover gold/blue wash;
-  - brand mark gold/navy medallion;
-  - resource chip border/background;
-  - selected server/prestige premium card;
-  - focus-visible ring/outline.
+- Show server/hero selector for contexts where the logged-in account already has a playable hero.
+- A combined server+hero select is acceptable.
+- For standard servers, one normal hero per account/server is expected.
+- Sandbox/test servers may show multiple heroes for privileged users.
+- Selected context detail should show:
+  - server name/kind/status;
+  - hero name;
+  - safe hero summary, e.g. level/rank if available;
+  - next route: dashboard/game shell.
+- CTA: `Enter dashboard` / `Enter the game`.
+- On enter, set/refresh selected server and active hero context, then route into the in-game shell.
 
-**Output:** token/pattern gap table.
+**Out of scope:**
 
-**Acceptance criteria:** color/hover/active needs are not left implicit; future color changes have owners.
+- Hero creation.
+- Origin editing.
+- Stat allocation route for existing heroes.
+- Player profile redesign.
 
-**Status:** Accepted on 2026-05-10. Completed as part of `docs/ui-ux/ui-shell-00-02-inventory.md`. The token table maps dark navy shell background, elevated topbar surface, sidebar surface, soft gold border, active nav inset, hover gold/blue wash, brand mark medallion, resource chip fallback, selected server/prestige premium card and focus-visible ring to existing tokens/patterns or named gaps. Missing runtime patterns are explicitly assigned to later UI-SHELL owners such as `UI-SHELL-06/09`, `UI-SHELL-14/15`, `UI-SHELL-19/21/22` and `UI-SHELL-26/27`.
+**Data/source rules:**
 
----
+- Existing hero contexts must come from DB/RPC/read model.
+- Do not assume one global hero per account.
+- Do not assume `hero.id === auth.uid()`.
+- Player-facing payload must not expose account ids, staff-only data or raw internal row ids unless already part of safe route state.
 
-## UI-SHELL-03 — Game shell skeleton ownership only
+**UI/SCSS rules:**
 
-**Goal:** keep or implement only the shell grid/areas and route containment.
+- Prefer compact select/dropdown plus detail card over a large grid.
+- Use global form/select wrappers and card/summary-row patterns.
+- Do not create permanent local badge/card systems.
 
-**Allowed files:**
+**Dependencies/blockers:**
 
-- `app-shell.html`;
-- `_game-shell.scss` only for named shell grid/areas and shell boundary styling when no utility exists.
+- Missing read model for account-accessible hero contexts.
+- Missing active hero context setter/reloader.
+- Missing dashboard route or route guard behavior.
 
-**Allowed new classes:** none beyond existing `mg-game-shell`, `mg-game-shell__topbar`, `mg-game-shell__sidebar`, `mg-game-shell__main` if already used by the shell.
+**Acceptance criteria:**
 
-**Out of scope:** topbar content layout, brand mark, resources, selected server card, nav item pattern, dashboard.
+- Existing hero on selected server routes to dashboard/game shell by default.
+- Existing hero does not route back to stat allocation unless the user explicitly chooses that in-game route later.
+- Sandbox/test multi-hero user can select another hero where permissions allow.
+- Selected server and active hero remain explicit.
+- Stale responses from context switch do not overwrite current selection.
 
-**Acceptance criteria:** shell renders topbar/sidebar/main; no guest/account flow; no utility shadowing.
+**Verification/smoke:**
 
----
-
-## UI-SHELL-04 — Remove game shell guest/account/public leakage
-
-**Goal:** ensure game shell is only for active server + active hero context.
-
-**Allowed files:** shell/sidebar templates and minimal TS if current template still branches into guest/login/create-character.
-
-**Out of scope:** account entry shell and hero creation.
-
-**Acceptance criteria:** no `Guest`, `Login`, `Create character` or account/public flow is rendered inside game shell; blockers/redirects remain explicit.
-
----
-
-## UI-SHELL-05 — Main content containment and scroll boundary
-
-**Goal:** stabilize `main` and route content containment without touching visual patterns.
-
-**Allowed files:** `app-shell.html`, `_game-shell.scss` only if a structural shell gap exists.
-
-**Rules:** use `mg-container`, width, overflow and padding utilities if they exist. Do not write manual overflow/padding/width in SCSS.
-
-**Acceptance criteria:** main content scrolls, route content is contained, no feature layout is redesigned.
+- `npx tsc --noEmit`
+- focused active-context specs if added
+- `npm run build`
+- Manual smoke:
+  - one existing standard hero;
+  - multiple server contexts;
+  - sandbox/test multi-hero context if data exists.
 
 ---
 
-## UI-SHELL-06 — Shell boundary surfaces and theme tokens
+## UI-ONBOARDING-ADD-3 — Create New Hero / Join New World server eligibility selector
 
-**Goal:** ensure topbar/sidebar/main boundaries use the global theme tokens established by UI-CORE-16 or current theme.
+**Status:** Accepted with follow-up on 2026-05-14. `/auth/create-character` now starts existing-account hero creation with a compact server eligibility selector before the Hero Creation stage. The selected-server detail shows DB/read-model District A free/capacity values, full District A disables the creation CTA with a visible reason, standard servers with an existing hero are blocked from create flow, and sandbox/test creation remains available when the backend returns `canCreateHero=true` without `blockReason`. The ADD-3 selector does not render hero name, origin carousel or create mutation before handoff to the creation stage. Final layout smoke was user-side confirmed after the account selector width/top-spacing correction. Follow-ups are non-blocking: polish emphasis for `Dzielnica A` / `Tworzenie`, copy improvements and broader helper/template cleanup when this area is next touched.
 
-**Allowed files:** `_game-shell.scss`, theme files only if a token gap is explicitly approved.
+**Goal:**  
+Utworzyć account-shell section `Create new hero` / `Join new world`, która pozwala wybrać serwer kwalifikujący się do stworzenia postaci i pokazuje creation availability oraz district A capacity.
 
 **Scope:**
 
-- topbar border/background;
-- sidebar border/background;
-- main background inheritance;
-- no component-local color fixes.
+- Use a compact server select/dropdown, not a large server card grid by default.
+- Detail card under select must show:
+  - server name;
+  - server kind, e.g. `standard`, `sandbox/test`;
+  - server status;
+  - hero state for current user;
+  - creation availability;
+  - visible district A starting-estate capacity/free slots for standard servers;
+  - next route.
+- Eligible standard server with no hero and free district A slots routes to Hero Creation.
+- Full standard server can be shown as blocked/unavailable or included as explanatory disabled option.
+- Sandbox/test server can show privileged creation / hero selector behavior where access permits.
+- CTA should be visually prominent near the selected server details, not hidden only in a distant footer if the final layout allows it.
 
-**Acceptance criteria:** no copied prototype rgba values; no random one-off color declarations; every declaration maps to current token.
+**Out of scope:**
 
----
+- Hero name form.
+- Origin selection.
+- Estate address preview.
+- Direct creation mutation.
+- Final server marketing/lore page.
 
-## UI-SHELL-07 — Topbar visual-anchor mapping, no code
+**Data/source rules:**
 
-**Goal:** map topbar anchors to current HTML/components/utilities before coding.
+- Server availability must account for whether the selected standard server can provide a free district A starting address.
+- Capacity/free-slot display comes from DB/RPC/read model.
+- Angular must not guess capacity or assign addresses.
+- Player does not choose or preview exact starting estate address before creation.
 
-**Allowed changes:** none.
+**UI/SCSS rules:**
 
-**Required output:**
+- Use PrimeNG/select wrapper or approved form pattern for server selection.
+- Use shared summary rows for server facts.
+- Use status badges/pills for availability.
+- No copied `mb-*` class names from prototype.
 
-| Topbar anchor | Current implementation | Existing utility/component | Gap | Next task owner |
-|---|---|---|---|---|
-| left Health | ... | ... | ... | ... |
-| XP/Level | ... | ... | ... | ... |
-| centered brand | ... | ... | ... | ... |
-| right notifications | ... | ... | ... | ... |
-| staff bell | ... | ... | ... | ... |
-| Drachma chip | ... | ... | ... | ... |
-| Materials chip | ... | ... | ... | ... |
-| Workforce chip | ... | ... | ... | ... |
-| responsive wrap | ... | ... | ... | ... |
+**Dependencies/blockers:**
 
-**Acceptance criteria:** no code; reviewer can approve UI-SHELL-08/09/10 ordering.
+- Missing server eligibility read model with district A capacity/free slots.
+- Missing route to Hero Creation.
+- Missing sandbox/test privilege read model.
 
----
+**Acceptance criteria:**
 
-## UI-SHELL-08 — Topbar delegation boundary
+- Server selector is compact and readable.
+- District A free starting slots are visible for standard server creation state.
+- Full standard server cannot proceed to hero creation.
+- Eligible server proceeds to Hero Creation screen.
+- Existing hero state is not mixed with origin/name form on this screen.
 
-**Goal:** decide and implement where topbar composition lives.
+**Verification/smoke:**
 
-**Allowed files:** `app-shell.html`, `game-topbar.html`, `game-topbar.ts` only if imports are needed.
-
-**Rules:**
-
-- `app-shell` should own shell placement only.
-- `app-game-topbar` should own topbar content composition when visible.
-- Staff bell must be inside the right topbar zone or explicitly outside with centering proof.
-
-**Out of scope:** resource redesign, brand mark styling, health/XP data changes.
-
-**Acceptance criteria:** `app-shell` does not have parallel topbar children that break centering.
-
----
-
-## UI-SHELL-09 — Topbar three-zone layout with existing utilities first
-
-**Goal:** implement the desktop left/center/right composition with the smallest possible production structure.
-
-**Allowed files:** `game-topbar.html`; `_game-shell.scss` only if no existing utility/grid pattern can express the three-zone layout.
-
-**Allowed new SCSS:** at most one structural `.mg-game-topbar` rule for three-zone grid, if and only if UI-SHELL-00/07 proved no exact utility/pattern exists.
-
-**Blocked:** `mg-game-topbar__hero`, `mg-game-topbar__resources`, `mg-game-topbar__brand`, `mg-game-topbar__metric`, or any BEM alias for flex/gap/width.
-
-**Acceptance criteria:** brand is centered relative to full topbar; left/right zones do not overlap.
+- `npx tsc --noEmit`
+- `npm run build`
+- Manual smoke:
+  - eligible standard server;
+  - standard server full/no free district A starts;
+  - server with existing hero;
+  - sandbox/test if data exists.
 
 ---
 
-## UI-SHELL-10 — Topbar notifications and staff placement
+## UI-ONBOARDING-ADD-4 — Hero Creation screen: name + origin carousel
 
-**Goal:** place player notification bell and staff notification bell in the right zone without affecting brand centering.
+**Status:** Accepted with follow-up on 2026-05-14. Existing-account `/auth/create-character` opens the Hero Creation stage after eligible server selection and shows readonly selected-server context, `Imię bohatera`, the existing start-flow-backed origin carousel, creation summary with `Punkty postaci: 1000`, and the canonical `Stwórz bohatera` action disabled while the hero name is invalid. Direct origin buttons/dots, stat allocation UI, server selector UI, account registration UI and technical backend/read-model copy are not part of this stage. Status docs/generated types were not touched during implementation. Follow-ups are non-blocking: visual polish against the dashboard/game-shell baseline, carousel typography/color tuning, summary card polish and possible later rename/cleanup of `shared/carousel` if it remains origin-specific.
 
-**Allowed files:** `game-topbar.html`, `game-topbar.ts` only for imports.
-
-**Out of scope:** notification styling, unread count logic, staff access logic.
-
-**Acceptance criteria:** player and staff notifications are right-zone items; app-shell fallback is only for hidden topbar or non-game context if still required.
-
----
-
-## UI-SHELL-11 — Health display semantics
-
-**Goal:** display hero health honestly without implying unavailable current/max state.
-
-**Allowed files:** `game-topbar.html`, `game-topbar.ts`.
-
-**Rules:**
-
-- If only derived/max health exists, label must not imply live current HP unless current HP is available.
-- Do not create fake full bars.
-- Use existing `app-game-bar` only when `value` and `max` are meaningful.
-
-**Acceptance criteria:** health display semantics are clear and report names the data source.
-
----
-
-## UI-SHELL-12 — XP / Level progress semantics
-
-**Goal:** display Level and XP progress from existing service/RPC/read model.
-
-**Allowed files:** `game-topbar.html`, `game-topbar.ts`.
-
-**Rules:**
-
-- Do not hardcode `experienceMax = 1000` unless that is already the canonical service output.
-- Prefer existing `Hero.getHeroExperienceProgress()` or DB-backed experience-to-next read path if current.
-- If next threshold is missing, show XP as value only and report dependency.
-
-**Acceptance criteria:** no new hardcoded progression semantics; XP bar appears only when max/threshold is real.
-
----
-
-## UI-SHELL-13 — Resource data source and live amount boundary
-
-**Goal:** confirm resource amounts/per-hour use current hero/resource read path and do not invent resource semantics.
-
-**Allowed files:** `game-topbar.ts` and existing resource service only if necessary.
-
-**Rules:**
-
-- Drachma, Materials, Workforce are production resources.
-- Character Points must not be shown as produced resource.
-- Live amount calculation must reuse existing service/helper if one exists; if not, report why local calculation is still current behavior.
-
-**Acceptance criteria:** data source is named; no resource meaning is hardcoded beyond existing resource type keys.
-
----
-
-## UI-SHELL-14 — Resource chip fallback using existing classes only
-
-**Goal:** implement compact stacked resource display without adding a new resource-chip SCSS pattern.
-
-**Allowed files:** `game-topbar.html` only unless TS resource display shape needs no new semantics.
-
-**Allowed classes:** existing `tag-badge`, `tag-badge--*`, `mg-card`, flex/grid/spacing utilities, icon classes.
-
-**Blocked:** `mg-resource-chip`, `mg-resource-chip__*`, local chip SCSS.
-
-**Required visual anchors:** icon, label, strong value, per-hour secondary line.
-
-**Acceptance criteria:** icons visible for `pi pi-cash`, `pi pi-marble`, `pi pi-workforce`; values strong; per-hour readable; layout does not break topbar.
-
----
-
-## UI-SHELL-15 — Resource chip final pattern decision, no code unless explicitly approved
-
-**Goal:** decide whether a real global `mg-chip` / resource-chip pattern should be implemented now or deferred.
-
-**Allowed changes:** report only unless user explicitly approves runtime SCSS.
-
-**Output:**
-
-- current fallback screenshot/manual observation;
-- whether existing `tag-badge` fallback is visually sufficient;
-- whether `mg-chip` should be implemented in UI-CORE pattern work;
-- proposed class contract if needed: icon / label / value / rate.
-
-**Acceptance criteria:** no accidental resource chip SCSS in shell task.
-
----
-
-## UI-SHELL-16 — Brand mark fallback inventory, no code
-
-**Goal:** verify brand asset state and fallback rule before editing the `M` mark.
-
-**Allowed changes:** none.
+**Goal:**  
+Wdrożyć Hero Creation screen jako drugi i ostatni account-side creation screen: readonly server context, hero name, origin carousel, creation summary and `Create hero`.
 
 **Scope:**
 
-- Check `icon-brand-registry.md`.
-- Check actual custom icon registry.
-- Check existing shell brand markup.
-- Confirm no dedicated `brand-mark-m` asset/key exists.
+- Screen opens only after an eligible server has already been selected.
+- Show readonly selected server context, including creation open and district A availability summary.
+- Show hero name field.
+- Show origin selection as a visual carousel, not four static cards only.
+- Canonical prototype origins:
+  - `Spartanin` / Spartan;
+  - `Ateńczyk` / Athenian;
+  - `Kreteńczyk` / Cretan;
+  - `Koryntianin` / Corinthian.
+- Carousel should include:
+  - large central active artwork;
+  - previous/next navigation;
+  - quick origin tabs or dots;
+  - selected origin summary;
+  - bonus/lore display area.
+- Use origin artwork assets through a production asset registry/read model, not hardcoded asset paths in feature code.
+- Origin bonus display must render concrete DB-backed bonus rows when available.
+- Known design note: Koryntianin / Corinthian has `+10 Luck`, but production must still read it from canonical origin bonus data rather than hardcoding Angular constants.
 
-**Acceptance criteria:** report says whether fallback CSS/text `M` is required.
+**Out of scope:**
 
----
+- Designing final origin balance values.
+- Direct hero table writes.
+- Editing origin after creation.
+- Stat allocation UI redesign.
+- Implementing image generation or changing assets.
 
-## UI-SHELL-17 — Brand mark fallback implementation
+**Data/source rules:**
 
-**Goal:** implement only the temporary `M` brand fallback if still needed.
+- Origin labels, descriptions, lore, helper text, artwork keys and bonuses are DB/admin-configurable content in production.
+- Do not hardcode final origin content as the long-term source of truth.
+- Origin bonuses should flow through canonical bonus model/read model, e.g. `entity_bonuses(entity_type = origin)` / resolved bonus read model where available.
+- If origin content/read model does not include exact bonuses/artwork keys, report a DB/content blocker or implement only a read-only placeholder surface if explicitly scoped.
+- Hero name uniqueness is per server and must be validated by backend/RPC on create; optional frontend precheck is not authoritative.
 
-**Allowed files:** `game-topbar.html`, `_game-shell.scss` or a more appropriate global brand/icon SCSS file if one exists.
+**UI/SCSS rules:**
 
-**Allowed new class:** one class only, e.g. `mg-brand-mark-fallback`, if no better global pattern exists.
+- Prototype carousel motion is visual direction only; do not copy canvas JS/CSS.
+- Production should use Angular component/state with accessible controls.
+- Carousel must support keyboard path and reduced motion.
+- Origin artwork must have alt text or accessible label.
+- Use global cards/summary rows/badges/buttons/select/input wrappers.
+- Local SCSS only for constrained carousel layout if no shared pattern exists; report why.
 
-**Rules:**
+**Dependencies/blockers:**
 
-- Do not use ordinary `tag-badge` if it makes the brand look like a random badge.
-- Do not copy prototype `.mb-brand-mark` CSS 1:1.
-- Use production tokens.
+- Missing DB/RPC origin read model with lore/bonus/artwork content.
+- Missing canonical hero creation RPC/workflow.
+- Missing asset registry convention for origin artwork.
+- Missing Reactive Forms/form factory pattern for creation form.
 
-**Acceptance criteria:** visible gold/navy `M` medallion direction is preserved; class is documented as temporary until `brand-mark-m`.
+**Acceptance criteria:**
 
----
+- Hero Creation contains only selected server context, hero name, origin carousel and create actions.
+- It does not show server list as a new choice.
+- It does not present stat allocation as account-onboarding step.
+- Selecting origins updates main artwork, details, bonuses and summary.
+- `Create hero` remains disabled/invalid when hero name is empty.
+- Exact origin bonus values are not hardcoded in Angular.
+- Koryntianin `+10 Luck`, if displayed, comes from the DB/read model or is clearly marked as prototype-only placeholder in non-production scope.
+- Create action uses canonical backend workflow when implemented.
 
-## UI-SHELL-18 — Topbar responsive wrapping smoke and minimal fix
+**Verification/smoke:**
 
-**Goal:** make topbar degrade without overlap at narrower widths.
-
-**Allowed files:** `game-topbar.html`, `_game-shell.scss` only for structural responsive grid if no utility exists.
-
-**Rules:**
-
-- No new visual pattern.
-- Use existing responsive utility classes first.
-- Do not solve mobile-perfect design here; avoid overlap and unreadable controls.
-
-**Acceptance criteria:** desktop and tablet/narrow shell do not overlap; report manual smoke or environment-blocked.
-
----
-
-## UI-SHELL-19 — Sidebar context card visual-anchor mapping, no code
-
-**Goal:** map the selected server / Prestige card from prototype to production classes.
-
-**Allowed changes:** none.
-
-**Required mapping:**
-
-- compact premium surface;
-- selected server label/value/status;
-- separator between server and prestige;
-- Prestige label/rank/tier;
-- label muted, values strong;
-- status badge semantic.
-
-**Acceptance criteria:** report identifies whether existing `mg-card`/`mg-card--legend` fallback is sufficient or whether a context-card pattern is missing.
-
----
-
-## UI-SHELL-20 — Sidebar context card data semantics
-
-**Goal:** verify selected server/status/Prestige data sources before visual work.
-
-**Allowed files:** `game-sidebar.ts` only if current data loading is wrong or stale-guard missing.
-
-**Rules:**
-
-- selected server from `ActiveServer`/current resolver;
-- Prestige from DB-backed public summary/read model;
-- no raw points in player-facing sidebar;
-- stale guard if async Prestige summary depends on active hero/server.
-
-**Acceptance criteria:** data source and stale guard are clear; no visual layout change required.
-
----
-
-## UI-SHELL-21 — Sidebar selected server / Prestige card implementation
-
-**Goal:** implement the compact premium context card using existing surfaces/utilities first.
-
-**Allowed files:** `game-sidebar.html`, minimal `game-sidebar.ts` if existing display model needs no new domain logic.
-
-**Blocked:** new local/sidebar card SCSS unless UI-SHELL-19 approved a global/shared pattern task.
-
-**Acceptance criteria:** card resembles prototype composition, not just content; muted-text audit passes; server name and rank are strong.
+- `npx tsc --noEmit`
+- focused form/state/component specs if added
+- `npm run build`
+- Manual smoke:
+  - type hero name;
+  - cycle carousel left/right;
+  - select each origin through quick tab/dot;
+  - view DB-backed bonuses;
+  - submit with valid name/origin;
+  - submit with duplicate name shows backend error;
+  - full server cannot reach this screen except as blocked route guard case.
 
 ---
 
-## UI-SHELL-22 — Sidebar context card color/hover/active surface token check
+## UI-ONBOARDING-ADD-5 — Hero Creation canonical workflow and post-create handoff
 
-**Goal:** make sure the context card uses the same shell surface/token language as topbar and cards.
-
-**Allowed files:** global theme/surface SCSS only if a token/pattern gap was approved; otherwise template classes only.
-
-**Acceptance criteria:** no one-off rgba colors; any elevated/premium surface gap reported for future `mg-card--elevated` / context-card work.
-
----
-
-## UI-SHELL-23 — Sidebar nav inventory, no code
-
-**Goal:** check existing nav/link/card/button patterns before touching nav items.
-
-**Allowed changes:** none.
+**Goal:**  
+Ensure the UI handoff from Hero Creation to gameplay matches Epic X: one backend workflow creates the hero and routes into in-game stat allocation as the default first location.
 
 **Scope:**
 
-- Check current `game-sidebar` template and SCSS.
-- Check global link/card/badge/flex utilities.
-- Check whether a nav item pattern already exists.
+- Use canonical DB/RPC/domain workflow for hero creation.
+- Payload should include only approved input:
+  - selected server id;
+  - hero name;
+  - selected origin id/key as required by RPC.
+- Backend workflow owns:
+  - hero row creation;
+  - origin assignment;
+  - 1000 Character Points;
+  - random free district A estate assignment;
+  - any resource/audit/onboarding side effects;
+  - duplicate-name and server-full validation.
+- After success:
+  - refresh selected/current server if needed;
+  - refresh active hero context;
+  - enter in-game shell;
+  - default route to stat allocation.
+- Later entries with existing hero route to dashboard, not stat allocation.
 
-**Acceptance criteria:** report lists actual patterns checked and recommends either fallback or new global nav item pattern.
+**Out of scope:**
+
+- DB migration or RPC creation in a pure UI task.
+- Angular fallback creation through direct `.insert()` / `.update()` / `.upsert()`.
+- Changing stat allocation save behavior.
+- Forcing player to spend all 1000 CP immediately.
+
+**Data/source rules:**
+
+- If canonical creation RPC is missing from generated types/schema, stop and report DB/RPC blocker.
+- Do not patch generated `database.types.ts`.
+- Do not create temporary manual interfaces hiding missing generated RPC contract unless explicitly approved as a spike.
+- All durable effects are backend-owned.
+
+**UI/SCSS rules:**
+
+- Submit/loading/success/error states must be explicit.
+- Backend validation errors must be readable, especially duplicate name and full server.
+- Stale guard required if selected server/origin/name changes during async submit.
+
+**Dependencies/blockers:**
+
+- Missing canonical creation RPC/domain service.
+- Missing active hero reload path after creation.
+- Missing stat allocation route.
+- Missing error mapping for duplicate name/full server.
+
+**Acceptance criteria:**
+
+- No direct table writes to `hero`, origin assignment, `hero_stats`, Character Points, estate/resources/audit/onboarding tables.
+- Successful creation refreshes active hero and routes to in-game stat allocation.
+- Existing hero refresh/re-entry routes to dashboard.
+- Duplicate name and full server errors are surfaced without corrupting UI state.
+- Player can leave stat allocation later.
+
+**Verification/smoke:**
+
+- `npx tsc --noEmit`
+- focused submit/routing/state specs if added
+- `npm run build`
+- static grep:
+  - no `.insert(` / `.update(` / `.upsert(` in hero creation feature path for durable workflow tables;
+  - no `ngModel` in new/touched form;
+  - no hardcoded origin bonus constants as production source.
+- Manual smoke:
+  - successful new hero;
+  - duplicate name;
+  - server full between selection and submit;
+  - refresh after creation routes to dashboard on later entry;
+  - stat allocation can be left.
+
+**Status:** Accepted with follow-up on 2026-05-15. Hero Creation still uses the canonical `create_hero_start_flow` backend workflow through the existing start-flow/create-hero services, blocks unknown post-create `route_next_action` values instead of silently routing, and keeps fresh hero creation routed to in-game Stat Allocation. The submit path now guards stale success/error responses with the submitted server/name/origin context, so changed context does not overwrite UI state or navigate. No DB/RPC/generated-type/status-doc changes were made during implementation, and focused stale-submit specs cover the success/error guard. Follow-ups are non-blocking: split `CreateCharacterPageFacade` when this flow is next touched, align remaining `Nazwa bohatera` validation/toast copy to `Imię bohatera` in a later copy cleanup, and keep UI-ONBOARDING-ADD-6/7 docs/audit plus UI-ONBOARDING-ADD-8 responsive/manual smoke as separate tasks.
 
 ---
 
-## UI-SHELL-24 — Sidebar navigation IA groups
+## UI-ONBOARDING-ADD-6 — Origin content and artwork registry/read-model follow-up
 
-**Goal:** align player sidebar grouping without redesigning nav visuals.
-
-**Allowed files:** menu config and sidebar template only if labels/groups are wrong.
-
-**Required groups:**
-
-- Hero: Dashboard, Exploration, Attributes/Statistics, Challenges/Trials if current route exists, Armory;
-- World: Mansion/Estate, Vicinity, Trade, Auctions, PvP where current routes exist;
-- Reports/Notifications where current IA decides;
-- Operations/Staff/Admin separated from player navigation and access-gated.
-
-**Acceptance criteria:** no fake links; route visibility follows current access policy; no visual pattern work.
-
----
-
-## UI-SHELL-25 — Sidebar nav item temporary fallback
-
-**Goal:** use existing classes for nav items until a final pattern is approved.
-
-**Allowed files:** `game-sidebar.html` only unless route config is wrong.
-
-**Rules:**
-
-- Prefer existing link/card utilities.
-- Do not add `mg-game-sidebar__nav-link` visual system.
-- If `mg-card` is used as nav surface, mark as temporary debt to UI-SHELL-27.
-
-**Acceptance criteria:** nav remains usable; no new nav SCSS except active inset if already baseline.
-
----
-
-## UI-SHELL-26 — Sidebar active state gold inset
-
-**Goal:** implement or preserve active route gold inset as its own narrowly scoped task.
-
-**Allowed files:** global shell/sidebar SCSS only if no utility can express pseudo-element inset.
-
-**Rules:**
-
-- Active state must be visible and not color-only.
-- Parent link must use existing `position-relative` utility if needed.
-- Pseudo-element CSS is allowed only because utilities cannot be applied to `::before`.
-
-**Acceptance criteria:** active route has left gold inset; selector is safely scoped; no hover visual system added here.
-
----
-
-## UI-SHELL-27 — Sidebar nav hover/focus color pass
-
-**Goal:** implement hover and focus-visible behavior for sidebar nav using tokens/global pattern, not local one-off colors.
-
-**Allowed files:** global/shared nav pattern SCSS if UI-SHELL-23 approved creating one; otherwise no code and report gap.
+**Goal:**  
+Define the content/read-model requirements for production origin carousel implementation so Codex does not hardcode origin lore, artwork paths or bonuses.
 
 **Scope:**
 
-- hover background/wash;
-- focus-visible outline/ring;
-- active + hover interaction;
-- text/icon contrast.
+- Audit current DB/read models for origin content:
+  - origin label/name;
+  - description/lore/helper text;
+  - artwork key/path/registry reference;
+  - resolved bonuses from canonical bonus system;
+  - active/sort order.
+- Decide whether artwork keys live in DB content metadata, asset registry, or a small app-side mapping keyed by DB-owned origin key.
+- Ensure canonical origins are represented:
+  - Spartan / Spartanin;
+  - Athenian / Ateńczyk;
+  - Cretan / Kreteńczyk;
+  - Corinthian / Koryntianin.
+- Confirm exact origin bonuses are visible from a read model before production carousel uses them.
+- Produce a blocker list for missing content/data, not a frontend-hardcoded substitute.
 
-**Acceptance criteria:** hover/focus matches accepted dark navy/gold/blue language; no copied prototype CSS; no unapproved local classes.
+**Out of scope:**
+
+- Creating/changing DB schema unless the user explicitly asks for DB/migrator work.
+- Final balance design.
+- Asset generation.
+- Updating generated database types.
+
+**Data/source rules:**
+
+- Prefer current schema/dump and `database-current.md` over legacy concept docs.
+- Origin bonuses should use canonical bonus model, not legacy hardcoded presentation.
+- If DB contains legacy `origin_bonuses` but app target is `entity_bonuses`, report transitional status clearly.
+
+**UI/SCSS rules:**
+
+- This task may be documentation/audit-only if content contracts are missing.
+- No prototype CSS changes required.
+
+**Dependencies/blockers:**
+
+- Missing origin artwork content source.
+- Missing resolved bonus read model.
+- Missing admin/content route to edit origin lore/bonus presentation.
+
+**Acceptance criteria:**
+
+- Report identifies the current source of origin names, descriptions, artwork and bonuses.
+- Report states whether Hero Creation carousel can be implemented without hardcoding permanent content.
+- Missing content is listed as DB/content/admin blocker.
+- If implementation proceeds, it consumes DB/read-model content and safe asset keys.
+
+**Verification/smoke:**
+
+- No build required if audit-only.
+- If code changes are made: `npx tsc --noEmit`, `npm run build`.
+
+**Status:** Accepted on 2026-05-15 as documentation/audit only. `docs/ui-ux/onboarding-origin-content-read-model-audit.md` records that origin labels, descriptions, active/sort order and bonus display are currently sourced from `get_start_flow_origin_options()` over `origin` plus canonical `entity_bonuses(entity_type = origin)`, while artwork remains the existing app-side asset convention derived from DB-owned `origin_key`. Missing live seed confirmation for the four canonical origins, DB/content-backed artwork, and an admin/content editing route remain content/admin follow-ups, not Angular fallbacks. No code, DB/RPC, generated types or status-independent runtime changes were made.
 
 ---
 
-## UI-SHELL-28 — Sidebar icon registry and sizing pass
+## UI-ONBOARDING-ADD-7 — Archive accepted onboarding prototypes and production mapping
 
-**Goal:** ensure sidebar icons use existing custom/Prime/icon registry and stable sizing.
-
-**Allowed files:** menu config, sidebar template; no direct SVG refs unless current legacy menu already uses them and task explicitly preserves them.
-
-**Rules:**
-
-- Use custom icon registry keys where available.
-- Missing keys are reported, not silently replaced by emoji/prototype initials.
-- Icon sizing uses existing utilities/patterns.
-
-**Acceptance criteria:** icons render; missing icons are listed; icon-only controls have accessible labels if any.
-
----
-
-## UI-SHELL-29 — Shell status/badge semantics pass
-
-**Goal:** clean shell badge/status usage so `muted` is not the default for important state.
-
-**Allowed files:** topbar/sidebar templates only.
+**Goal:**  
+Add the accepted account entry and hero creation carousel prototypes to the UI/UX prototype archive/mapping so future Codex work uses them as visual reference only.
 
 **Scope:**
 
-- server status;
-- membership/status chips;
-- resource labels vs values;
-- staff/admin badges;
-- notification count.
+- Archive accepted prototypes, using final names agreed by user:
+  - Account Entry Shell / server+hero context selector prototype;
+  - Hero Creation Origin Carousel prototype.
+- Add mapping entries to prototype-to-production mapping:
+  - account/public shell;
+  - enter game existing-hero selector;
+  - create new hero server eligibility selector;
+  - hero creation origin carousel;
+  - origin artwork/content read model;
+  - post-create route into stat allocation.
+- Each mapping entry must state:
+  - production pattern target;
+  - missing shared/global pattern if any;
+  - local layout-only exception if any;
+  - DB/RPC/read-model blocker if any.
 
-**Rules:** labels may be muted; values/statuses must be normal/strong/semantic.
+**Out of scope:**
 
-**Acceptance criteria:** muted-text audit passes; no important value is muted.
+- Angular implementation.
+- Copying prototype CSS/JS.
+- Marking task complete in status docs.
+
+**Data/source rules:**
+
+- Archive entries must not claim DB/RPC exists if it does not.
+- Prototype is visual reference only.
+- Use current decisions for flow semantics.
+
+**UI/SCSS rules:**
+
+- Include standard `VISUAL REFERENCE ONLY` header in archived prototype HTML.
+- Do not archive placeholder screens invented without user acceptance.
+
+**Acceptance criteria:**
+
+- UI/UX backlog points to the accepted prototypes.
+- Prototype-production mapping prevents copying canvas classes/CSS.
+- Future Codex task can identify which prototype to consult and which production patterns to use.
+
+**Verification/smoke:**
+
+- Docs-only review.
+- Confirm filenames/paths with user before status docs update.
+
+**Status:** Accepted on 2026-05-15 as documentation/mapping only. The accepted onboarding prototype archive paths are now recorded in the UI/UX backlog and README: `docs/ui-ux/prototypes/mythsworn_server_select.html` for Account Entry Shell / server+hero context selector and `docs/ui-ux/prototypes/mythsworn_origin_screen.html` for Hero Creation Origin Carousel. The ADD-7 onboarding entries in `docs/ui-ux/prototype-production-mapping.md` now map account shell, existing-hero entry, create-new-hero eligibility, hero creation carousel, origin content/artwork read-model boundaries and post-create Stat Allocation handoff to current production patterns and blockers; the broader UI-CORE-11 document remains marked draft for review. Prototype CSS/JS remains visual reference only and was not copied into Angular.
 
 ---
 
-## UI-SHELL-30 — Shell visual color interaction smoke
+## UI-ONBOARDING-ADD-8 — Mobile/responsive check for account entry and hero creation carousel
 
-**Goal:** compare production shell against accepted visual anchors after UI-SHELL-09 through UI-SHELL-29.
-
-**Allowed changes:** none unless reviewer explicitly approves tiny token/pattern fix.
+**Goal:**  
+Zapisać i później sprawdzić minimalne mobile/tablet constraints dla account entry i Hero Creation carousel, bez pełnego mobile redesignu.
 
 **Scope:**
 
-- screenshot or browser smoke at desktop width;
-- active nav visible;
-- hover/focus observed;
-- topbar centered brand;
-- resources readable;
-- server/prestige card resembles premium context card;
-- dark navy/gold/blue language visible.
+- Account Entry Shell:
+  - sidebar may stack above content on narrow screens;
+  - select/dropdown remains reachable;
+  - CTA remains visible without horizontal scroll.
+- Hero Creation carousel:
+  - origin artwork and details stack on mobile;
+  - carousel arrows/tabs are large enough for touch;
+  - no hover-only critical information;
+  - reduced motion supported;
+  - page can scroll vertically, but the create action remains reachable.
+- Stat allocation handoff:
+  - after creation, mobile user should not be trapped in a confusing route state.
 
-**Acceptance criteria:** report says matched / not matched / missing pattern for each anchor.
+**Out of scope:**
+
+- Full mobile redesign.
+- Rewriting in-game shell navigation.
+- Native app gestures.
+
+**Data/source rules:**
+
+- No DB changes.
+
+**UI/SCSS rules:**
+
+- Use responsive global utilities/patterns where available.
+- Feature-local responsive CSS only for carousel geometry if no shared pattern exists.
+- Report any unavoidable local SCSS.
+
+**Acceptance criteria:**
+
+- No horizontal scroll for primary controls at mobile width.
+- Keyboard and touch paths exist for origin selection.
+- Reduced motion does not break selection.
+- CTA remains reachable.
+
+**Verification/smoke:**
+
+- Browser responsive smoke at desktop/tablet/mobile widths.
+- Keyboard smoke for carousel controls.
+- Reduced-motion smoke where practical.
+
+**Status:** Postponed on 2026-05-15. Responsive/mobile verification for account entry and Hero Creation carousel remains a separate manual/browser smoke task. No responsive runtime changes, browser smoke, dev server or mobile redesign were performed in this documentation batch.
 
 ---
 
-## UI-SHELL-31 — Shell cleanup: remove orphan classes and dead SCSS
-
-**Goal:** remove leftover shell/topbar/sidebar classes created during failed iterations.
-
-**Allowed files:** shell SCSS/templates only.
-
-**Scope:**
-
-- grep for `mg-game-topbar__*`, `mg-resource-chip*`, old shell aliases, unused brand/nav classes;
-- remove only if no production usage remains;
-- do not delete v2/prototype archive CSS.
-
-**Acceptance criteria:** no orphan production classes from failed shell iterations; build passes.
-
----
-
-## UI-SHELL-32 — Shell final acceptance report
-
-**Goal:** produce a final decision-ready shell report before marking shell foundation accepted.
-
-**Allowed changes:** none.
-
-**Report must include:**
-
-- completed microtasks;
-- remaining deferred patterns;
-- exact SCSS classes kept for shell;
-- exact global/shared patterns added, if any;
-- visual anchors matched;
-- visual anchors still deferred;
-- DB/read model dependencies;
-- accessibility/responsive smoke;
-- manual smoke checklist.
-
-**Acceptance criteria:** reviewer/user can accept shell foundation or name remaining blockers without re-reading all implementation history.
-
-# 8. UI-HERO — Statistics and character growth
+# 12. UI-HERO — Statistics and character growth
 
 Cel: stat allocation, base stats, derived preview i Character Points spending UI. UI-HERO musi respektować istniejący canonical stat allocation workflow i nie może direct-write hero stats/CP.
 
@@ -2432,6 +3781,8 @@ Zbudować Statistics/Hero stats page jako player-facing ekran rozdawania base st
 - local SCSS added:
 - not added intentionally:
 
+**Status:** Accepted on 2026-05-15. `/hero/attributes` is the accepted UI-HERO-1 base-stat allocation screen: it uses the wide game-shell content path, a dashboard-aligned header with one summary card, compact stat allocation rows, an `Allocation draft` panel using the same divider-row pattern as the header/derived preview, and a current-only derived preview. Save/reset/cap/cost/no-Character-Points behavior remains on the canonical stat allocation workflow. `AttributeAllocationPageFacade` was reduced and cleaned after review, base stat definition/value mapping is centralized in `mapBaseStatSnapshots(...)`, and combat now reuses the same mapper for base stat entries. Verification accepted by the user: focused allocation and combat specs passed, `npx tsc --noEmit` passed, `npm run build` passed with existing budget/CommonJS warnings, and manual smoke was user-side. Copy/i18n polish remains a non-blocking later pass.
+
 ## UI-HERO-2 — Derived stat delta preview
 
 **Goal:**  
@@ -2485,6 +3836,8 @@ Pokazać, jak derived stats zmienią się po zapisaniu aktualnego draftu stat al
 - checked but not reused:
 - limitations:
 - local SCSS added:
+
+**Status:** Accepted on 2026-05-15. `/hero/attributes` Derived preview now uses the canonical `get_hero_attribute_allocation_preview_manifest(...)` one-shot manifest and a descriptor-driven local interpreter for allocation draft deltas, split from manifest normalization. User-side manual smoke confirmed `+ Endurance` Health `156 -> 161 (+5)` and Defense `142 -> 143 (+1)`, plus `+ Strength` Demonic Dagger `35-51 -> 36-52 (+1)` and Quality Cunning Mace `44-63 -> 45-64 (+1)`. Current-only, unsupported and unknown-descriptor rows remain current-only; future supported scalar rows with `draftDependencies`, `currentValue` and allowlisted descriptors are handled by the generic scalar path without row-key branches. Damage rows use DB-provided `currentMin/currentMax/currentStrength/strengthVariable`; plus/minus remains local draft state with no per-click RPC. Verification accepted by the user: focused specs, `npx tsc --noEmit`, `npm run build` with existing warnings only, static greps for no debug logs/eval/new Function/display-string parsing, and user-side manual smoke.
 
 ## UI-HERO-3 — Stat allocation draft and save flow
 
@@ -2591,7 +3944,7 @@ Ustalić i wdrożyć jedną, niedublowaną prezentację Character Points na Stat
 
 ---
 
-# 9. UI-ITEMS — Armory, equipment and item display
+# 13. UI-ITEMS — Armory, equipment and item display
 
 Cel: armory, equipment preview, stands/sorting, item capacity and shared item popover. UI-ITEMS jest mocno zależne od UI-CORE-6 item popover contract oraz od aktualnego item/equipment read modelu. Nie wolno wymyślać equip/unequip workflow, jeśli DB/RPC go jeszcze nie ma.
 
@@ -2602,6 +3955,10 @@ Cel: armory, equipment preview, stands/sorting, item capacity and shared item po
 - UI-ITEMS-3 — Item popover shared display
 - UI-ITEMS-4 — Equipment/paperdoll preview reuse
 - UI-ITEMS-5 — Armory item list filtering and visibility
+- UI-ITEMS-MOVE-1 — Armory item move action + selected-card cleanup
+- UI-ITEMS-MOVE-2 — Armory drag-and-drop move between stands
+- UI-ITEMS-MOVE-3 — Armory bulk move selected items to stand
+- UI-ITEMS-MOVE-4 — Armory bulk drag-and-drop selected items
 
 ## UI-ITEMS-1 — Armory overview and capacity
 
@@ -2666,15 +4023,17 @@ Zbudować Armory overview pokazujące wyposażenie bohatera oraz listę posiadan
 - local SCSS added:
 - not added intentionally:
 
+**Status:** Accepted on 2026-05-16. `/game/armory` now uses the shared dashboard equipment preview path for equipped items, with the Armory page host following the accepted full-width host pattern. The inventory surface shows visible/owned count, capacity and hidden count clearly, renders shelves from highest position down with Unsorted last, and uses the same order for move targets. Item cards preserve name/status/guild context, drachma value on a separate line, Details popover entry, equip, bulk equip, move, vendor and guild restriction behavior. Full requirements remain available through the existing Details popover/detail contract; always-visible list-card requirement/type/slot summaries are a future read-model enhancement, not a blocker. No fake item semantics, direct DB writes, generated type changes or player-facing admin links were added. Manual visual smoke was user-side accepted.
+
 ## UI-ITEMS-2 — Stands sorting UI
 
 **Goal:**  
-Dodać stands as armory organization/visibility priority UI: stand 10 has highest visibility priority, stand 1 is default/lowest.
+Dodać stands as armory organization/visibility priority UI: stand 10 has highest visibility priority, stand 0 is default/lowest.
 
 **Scope:**
 - 10 stands visible,
-- default stand = 1,
-- display item groups from stand 10 down to stand 1,
+- default stand = 0,
+- display item groups from stand 10 down to stand 0,
 - empty stands visibly present,
 - item assignment/stand movement UI if backend/state exists,
 - optional drag/drop as UX enhancement only if safe,
@@ -2720,6 +4079,8 @@ Dodać stands as armory organization/visibility priority UI: stand 10 has highes
 - move/persistence path:
 - drag/drop used or deferred:
 - local SCSS added:
+
+**Status:** Accepted on 2026-05-16 as the Armory standy visual cleanup. The `Visible armory` standy presentation now uses full-width elevated inventory surfaces, full-width headers with fixed number badges, normal text-color stand titles, secondary visible-count state and subtle empty stand content below the header. Rename is inline through PrimeNG Inplace in the stand header, uses Reactive Forms, dark themed `pInputText`, icon-only confirm/cancel actions and no checkbox or speculative selection behavior. The stand number badge uses reusable global `radius-circle` and `square-9` utilities instead of inline styles or Armory-local CSS. The paperdoll/equipment preview layout was not changed in this pass. No fake item/type/slot/requirement logic, DB/read-model changes or new item actions were added. Focused Armory specs, `npx tsc --noEmit`, `npm run build` and static greps passed; manual visual smoke was user-side accepted.
 
 ## UI-ITEMS-3 — Item popover shared display
 
@@ -2781,6 +4142,8 @@ Wprowadzić lub zastosować shared item popover display wszędzie tam, gdzie poj
 - missing fields:
 - local SCSS added:
 
+**Status:** Accepted on 2026-05-18 for the core shared item popover behavior. Item popovers on item icons/cards are usable, item detail display covers the accepted value/stat/bonus/requirement behavior for this task, icons render visibly, requirement state does not rely on visible `Met` / `Not met` row badges, and stats/bonus/value alignment is acceptable. Known non-blocking follow-up: `EquipmentPreview` / paperdoll responsive geometry remains imperfect across breakpoints, including possible boots/greaves ordering and slot positioning issues; handle this later as a dedicated paperdoll breakpoint refactor, not as a blocker for UI-ITEMS-3. Broader manual breakpoint smoke remains tester-side/future.
+
 ## UI-ITEMS-4 — Equipment/paperdoll preview reuse
 
 **Goal:**  
@@ -2831,2829 +4194,2054 @@ Ujednolicić equipment/paperdoll preview między Dashboard, Armory i przyszłymi
 - mutation intentionally not added:
 - local SCSS added:
 
-## UI-ITEMS-5 — Armory item list filtering and visibility
+**Status:** Accepted/completed on 2026-05-18 for Armory shared `EquipmentPreview` reuse, paperdoll equipped-item selection and bulk unequip actions. Armory mode now controls selected equipped slots through page state, exposes `Unequip Selected` and `Unequip All`, and uses the canonical `bulk_unequip_hero_items(...)` RPC path without direct `hero_equipment` writes, DB/RPC/schema changes or generated type edits. The accepted item popover behavior remains preserved. Known follow-up: paperdoll responsive geometry/breakpoint polish remains imperfect and should be handled later as a dedicated paperdoll breakpoint pass, not as a blocker for UI-ITEMS-4. Broader manual visual smoke remains user/tester-side pending.
+
+## UI-ITEMS-5 — Armory top header and summary badges
 
 **Goal:**  
-Dodać podstawowe, rozsądne filtrowanie itemów w Armory bez komplikowania inventory UI.
+Make the top `/game/armory` header read closer to the prototype: clear Armory title, short explanatory copy, and compact owned/visible/capacity/hidden/hero luck badges.
 
 **Scope:**
-- filters by slot/kind, equippable/not equippable, stand, search,
-- visible count respects armory capacity and stand priority,
-- pagination/scrolling if item count large,
-- row/card states for locked_trade, locked_auction, scrapped hidden from normal inventory where appropriate.
+- Only the Armory top page header section.
+- Arrange existing title/copy/badges into a cleaner hierarchy.
+- Use current read-model values already available in the page.
+- Keep badge labels short and readable.
+- Keep production shell style, not prototype CSS.
 
 **Out of scope:**
-- advanced sorting economy tools,
-- auction/direct trade creation from Armory unless explicitly routed,
-- vendor scrap UI unless separate task.
+- Stand cards.
+- Item cards.
+- Filters.
+- Search.
+- Paperdoll changes.
+- Equip/unequip logic.
+- DB/RPC/read model changes.
 
-**Data/source rules:**
-- item statuses from item lifecycle read model,
-- normal inventory hides scrapped items,
-- locked trade/auction states are visible if relevant and not selectable for equip/trade actions,
-- no direct item writes.
-
-**UI/SCSS rules:**
-- use shared filters/paginator/list patterns,
-- do not build local dense item table unless UI-CORE-14 chooses table for this context,
-- important lock/equippable states use badges/status pills.
-
-**Dependencies/blockers:**
-- if read model lacks status/stand/equippable fields, report dependency,
-- if item count pagination missing, use safe client display only for prototype or report service gap.
+**File limit:**
+- Prefer `armory-page.html` only.
+- If unavoidable, one small SCSS/global utility touch may be reported first before coding.
 
 **Acceptance criteria:**
-- filters are clear and not overbuilt,
-- visible items respect capacity/stand priority,
-- locked/scrapped handling follows lifecycle rules,
-- build passes.
+- Header visually reads as Armory landing/header, not a random card.
+- Owned/visible/capacity/hidden/luck summary remains correct.
+- No behavior changes.
+- Dashboard unaffected.
 
 **Verification/smoke:**
-- filter smoke,
-- locked item display smoke if data exists,
-- large list smoke if available,
-- build/tsc.
+- `/game/armory` visual smoke desktop.
+- Counts still display.
+- Build/tsc.
 
 **Required Codex report:**
-- item filter data source:
-- lifecycle statuses handled:
-- paginator/list pattern used:
+- files changed:
+- header hierarchy changed:
+- data fields used:
 - local SCSS added:
+- manual smoke pending:
+
+**Status:** Accepted on 2026-05-18 for the current Armory visual/header slice only. The `/game/armory` top header now follows the accepted title, description and structured metrics direction, with `Armory capacity`, `Total items`, `Equipped items` and `Saved loadouts` displayed as compact metric rows. Saved loadouts reuse the shared `HeroLoadoutPresetsState` path rather than a fake value or separate local fetch, and `.mg-section__title` no longer applies a gold gradient by default; gradient heading treatment is opt-in only. This acceptance covers the split header task, not the original broad filtering/list-visibility scope. Manual visual smoke remains user-side pending. Follow-ups: filtering/visibility/pagination/locked-status work remains in later split UI-ITEMS tasks; Armory page component split/cleanup remains a future refactor; do not churn `EquipmentPreview` geometry or accepted popover behavior from this status update.
 
 ---
 
-# 10. UI-EXPLORATION — Exploration flow
-
-Cel: difficulty choice, trial detail, progress timer/modal, direction choice, result/report boundary. Exploration UI musi rozróżniać start flow, progress state, trial/encounter challenge and report result. Nie wolno budować fake mapy ani fake action queue.
-
-## UI-EXPLORATION task index
-
-- UI-EXPLORATION-1 — Exploration start/difficulty screen
-- UI-EXPLORATION-2 — Trial detail by stat
-- UI-EXPLORATION-3 — Exploration timer/modal and inline state
-- UI-EXPLORATION-4 — Direction choice and step state
-- UI-EXPLORATION-5 — Result/report boundary
-
-## UI-EXPLORATION-1 — Exploration start/difficulty screen
+## UI-ITEMS-6 — Visible Armory panel header only
 
 **Goal:**  
-Zbudować czytelny start screen do wyboru difficulty i rozpoczęcia exploration, bez udawania mapy/story systemu, którego nie ma.
+Improve only the header area of the `Visible armory` panel so it matches the prototype direction: title, short capacity explanation, and compact status badges.
 
 **Scope:**
-- route/page target: existing exploration route if present,
-- difficulty cards/list,
-- available attempts/daily counters if read model exists,
-- current exploration state if already in progress,
-- clear start action,
-- helper copy explaining difficulty impact,
-- disabled/locked difficulty states if backend/read model provides them.
+- Only the top header block inside the `Visible armory` panel.
+- Keep existing item/stand rendering untouched.
+- Add or rearrange badges for visible/owned/capacity/hidden if already available.
+- Keep text concise.
 
 **Out of scope:**
-- full branching map,
-- trial challenge implementation,
-- encounter result screen,
-- reward persistence,
-- fake timer if backend state missing.
+- Stand section redesign.
+- Item card redesign.
+- Filters/search.
+- Bulk selection changes.
+- Any paperdoll work.
+- DB/RPC changes.
 
-**Data/source rules:**
-- difficulty/dictionary labels from DB/read model if available,
-- active hero/server context required,
-- start action must use canonical exploration RPC/service if exists,
-- no hardcoded permanent difficulty lists if DB exists.
-
-**UI/SCSS rules:**
-- use global card/page header/button patterns,
-- difficulty cards should not become separate local card system,
-- locked/disabled states use semantic badges/status, not opacity only.
-
-**Dependencies/blockers:**
-- if exploration start RPC/read model missing, render planning/prototype surface only and report blocker,
-- if daily action counters missing, do not fake counters.
+**File limit:**
+- Prefer `armory-page.html` only.
 
 **Acceptance criteria:**
-- player can understand/select difficulty where supported,
-- unavailable choices are clearly disabled/blocked,
-- no fake map,
-- start action not direct-write,
-- build passes.
+- `Visible armory` header is clearer and closer to prototype.
+- Existing stand/item behavior unchanged.
+- No new local component.
 
 **Verification/smoke:**
-- route smoke,
-- difficulty selection smoke,
-- start action smoke if backend exists; otherwise pending manual/dependency,
+- Armory visual smoke.
+- Existing equip/move controls still present.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- panel header changes:
+- counts/badges used:
+- behavior unchanged confirmation:
+
+**Status:** Accepted/completed on 2026-05-18. The `Visible armory` panel header was intentionally simplified to a single `Inventory` heading so it no longer duplicates the main Armory page header metrics or capacity explanation. The existing capacity mini-summary cards remain below the header, and stand sections, item cards, filters, EquipmentPreview, equip/unequip behavior, DB/RPC contracts and generated types were not changed for this accepted slice. Manual visual smoke remains user-side pending. Follow-ups remain separate: Armory page split/refactor and later item/stand/filter tasks.
+
+---
+
+## UI-ITEMS-7 — Remove redundant Inventory mini-summary cards
+
+**Goal:**  
+Remove the redundant Inventory mini-summary cards because `Armory capacity`, `Total items`, `Equipped items` and `Saved loadouts` are owned by the main Armory header.
+
+**Scope:**
+- remove the three Inventory mini summary cards: `Owned items`, `Visible capacity`, `Hidden`;
+- leave the simple `Inventory` panel header;
+- leave bulk selection toolbar below it;
+- do not replace the removed cards with another summary/copy/badge row.
+
+**Out of scope:**
+- Search/filter controls.
+- Stand sections.
+- Item cards.
+- Pagination.
+- Top Armory header.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.html` only.
+
+**Acceptance criteria:**
+- `Inventory` panel no longer repeats metrics already shown in the main header.
+- No new replacement summary is added.
+- Layout still reads cleanly.
+
+**Verification/smoke:**
+- `/game/armory` visual smoke.
+- Inventory panel starts with one `Inventory` heading, then bulk selection / content.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- exact removed block:
+- confirmation no replacement summary added:
+- confirmation no TS/SCSS/behavior changes:
+- manual smoke pending:
+
+**Status:** Accepted/completed on 2026-05-18. The three Inventory mini-summary cards (`Owned items`, `Visible capacity`, `Hidden`) were removed because those metrics are owned by the main Armory header (`Armory capacity`, `Total items`, `Equipped items`, `Saved loadouts`). No replacement summary/copy/badge row was added; the Inventory panel now starts with the single `Inventory` heading followed by bulk selection/content. User-side visual smoke passed. No TS, SCSS, EquipmentPreview, item cards, stand sections, filters, equip/unequip behavior, DB/RPC contracts or generated types were changed for this accepted task.
+
+---
+
+## UI-ITEMS-8 — Stand section header compact polish
+
+**Goal:**  
+Make each stand section header more like the prototype: clear stand number, stand label, item count badge, and rename action without visual noise.
+
+**Scope:**
+- Only stand section headers.
+- Preserve existing stand order.
+- Preserve rename behavior.
+- Keep empty and occupied stand headers structurally consistent.
+- Use existing badges/status utilities.
+
+**Out of scope:**
+- Item card layout inside stands.
+- Empty stand body.
+- Filtering.
+- Drag/drop.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.html` only.
+- No TS unless a tiny computed label is absolutely required; ask/report before adding.
+
+**Acceptance criteria:**
+- Stand headers are visually consistent.
+- Stand number and item count are easy to scan.
+- Rename action remains available.
+- No action behavior changes.
+
+**Verification/smoke:**
+- Stand 10/9/empty stand header smoke.
+- Rename UI still appears.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- stand header fields used:
+- rename behavior preserved:
+- local SCSS added:
+
+**Status:** Accepted/completed on 2026-05-18. Stand section headers now keep the stand number, primary stand label, item-count badge and rename action compact and consistent without changing stand order or rename behavior. Manual visual smoke remains user-side pending for: custom persisted stand label, default `Stand N` label, `Unsorted` label, item-count badge, and rename open/save/cancel.
+
+---
+
+## UI-ITEMS-9 — Empty stand body visual state
+
+**Goal:**  
+Make empty stands look intentional and prototype-like: visible empty state, ready/reserved copy, no broken large blank panels.
+
+**Scope:**
+- Only empty stand body rendering.
+- Keep existing stand header untouched except where already changed in UI-ITEMS-8.
+- Use current copy or simple improved copy.
+- Use existing card/border/muted/warn/status utility patterns.
+
+**Out of scope:**
+- Drag/drop.
+- Reserving stands.
+- Item movement behavior.
+- Filtering.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.html` only.
+
+**Acceptance criteria:**
+- Empty stands are clearly empty, not broken.
+- Empty stand body aligns visually with occupied stand sections.
+- No action behavior changes.
+
+**Verification/smoke:**
+- Empty stand visible.
+- Occupied stand unchanged.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- empty-state copy:
+- behavior unchanged confirmation:
+
+**Status:** Accepted/completed on 2026-05-18. Empty stand body now renders as a simple intentional empty state with an icon and `Empty stand` only, without replacement summary copy or behavior changes. Manual visual smoke is user-side accepted for this slice.
+
+---
+
+## UI-ITEMS-10 — Visible item card shell
+
+**Goal:**  
+Create a consistent shell for item cards in visible stands, without changing item actions yet.
+
+**Scope:**
+- Only the outer visual shell of item cards in `Visible armory`.
+- Keep existing item action controls and popover wrapper.
+- Use a consistent icon/name/value stack.
+- Preserve item popover behavior.
+- Preserve equip/vendor/move controls for now.
+
+**Out of scope:**
+- Action redesign.
+- Filters.
+- Sorting.
+- New component extraction.
+- DB/RPC changes.
+- Paperdoll.
+
+**File limit:**
+- Prefer `armory-page.html`.
+- No new component in this task.
+
+**Acceptance criteria:**
+- Item cards look consistent.
+- Item name and drachma value are readable.
+- Popover still opens.
+- Existing actions still appear.
+
+**Verification/smoke:**
+- Item card hover/focus/click popover.
+- Equip button still visible.
+- Vendor/move controls still visible if previously visible.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- item card shell changes:
+- popover preserved:
+- local SCSS added:
+
+**Status:** Accepted/completed on 2026-05-18 after user-side visual checkpoint. The visible Inventory item cards now follow the accepted compact prototype direction with real project item icons, item name, classification-backed metadata, drachma value, visible `Equip` / `Sell to vendor` actions and click-to-select card state. The item grid uses the accepted compact global utility direction so cards distribute without overflowing the stand. The current card/grid direction is frozen for UI-ITEMS-10; do not change EquipmentPreview, paperdoll, popover behavior, stand headers, empty stand cards, TS services, DB/RPC contracts or generated types from this accepted task.
+
+---
+
+## UI-ITEMS-11 — Item card status badges
+
+**Goal:**  
+Make equipped/private/locked/lifecycle state badges readable and consistent on item cards.
+
+**Scope:**
+- Only item-card badges/status labels.
+- Use existing lifecycle/guild usage labels already available.
+- Important statuses must not be muted if they communicate action restrictions.
+- Keep actions unchanged.
+
+**Out of scope:**
+- New lifecycle logic.
+- New read-model fields.
+- Filters.
+- Sorting.
+- Item card shell changes beyond small badge placement.
+
+**File limit:**
+- Prefer `armory-page.html` only.
+
+**Acceptance criteria:**
+- Equipped/private/locked states are visible.
+- Badges do not overwhelm the card.
+- No fake status inference.
+
+**Verification/smoke:**
+- Active item smoke.
+- Equipped item smoke.
+- Locked item smoke if data exists.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- statuses displayed:
+- statuses not available:
+- behavior unchanged confirmation:
+
+**Status:** Accepted/completed on 2026-05-18. Visible Inventory item cards now show lifecycle/guild badges only for non-default states, keeping default `Active` and `Owned private item` hidden so compact cards do not regain status noise. The accepted UI-ITEMS-10 grid/card direction, popover behavior and visible `Equip` / `Sell to vendor` actions were preserved; no DB/RPC contracts, generated types or status-inference logic were changed. Follow-up capacity semantics and TS cleanup are also accepted: equipped items are filtered out of visible Inventory stands and the displayed `Armory capacity` numerator, while dead checkbox/select/Move form/control code was removed and bulk selection remains signal-based. Full manual Inventory smoke remains user-side/pending.
+
+---
+
+## UI-ITEMS-12 — Bulk selection toolbar polish
+
+**Goal:**  
+Make bulk selection controls clear and prototype-adjacent without changing the bulk equip workflow.
+
+**Scope:**
+- Only the bulk selection toolbar above visible stands.
+- Keep existing bulk equip behavior.
+- Display selected count clearly.
+- Keep disabled state readable.
+- Do not add new actions.
+
+**Out of scope:**
+- Item card selection redesign.
+- Filtering.
+- Sorting.
+- Bulk unequip paperdoll actions.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.html` only.
+
+**Acceptance criteria:**
+- Selected count and `Equip selected` are easy to understand.
+- Disabled state is clear.
+- No workflow changes.
+
+**Verification/smoke:**
+- Select visible item for bulk equip.
+- Button enabled/disabled state.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- toolbar changes:
+- behavior unchanged confirmation:
+
+**Status:** Accepted/completed on 2026-05-18. The Armory bulk actions toolbar is now a compact reusable `app-armory-bulk-actions-toolbar` rendered both above and below the visible stand list, showing `N selected · X drachma` with clear disabled/action-busy states. Bulk equip keeps the existing equipment workflow, and bulk vendor sell now uses the canonical `bulk_vendor_scrap_hero_items(...)` path with a PrimeNG `ConfirmDialogModule` confirmation, project dialog styling, success/danger confirm buttons and toast-based action feedback. The accepted Inventory card/grid direction, EquipmentPreview, popovers, stand headers and empty states were not changed. Manual smoke remains user-side/pending.
+
+---
+
+## UI-ITEMS-13 — Item card action layout cleanup
+
+**Goal:**  
+Reduce visual noise of per-item actions inside visible item cards while preserving behavior.
+
+**Scope:**
+- Only layout/order/grouping of existing actions: Equip, Sell to vendor, Move, shelf select.
+- Do not add or remove actions unless already conditionally hidden by existing logic.
+- Keep form controls and handlers unchanged.
+- Keep PrimeNG usage valid.
+
+**Out of scope:**
+- New action workflows.
+- Auction/trade creation.
+- Vendor economy changes.
+- DB/RPC changes.
+- Component extraction.
+
+**File limit:**
+- Prefer `armory-page.html` only.
+
+**Acceptance criteria:**
+- Actions are easier to scan.
+- Item cards are less chaotic.
+- Existing controls still work.
+
+**Verification/smoke:**
+- Equip item action.
+- Move item action.
+- Vendor scrap if available.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- action layout changes:
+- handlers preserved:
+- manual smoke pending:
+
+**Status:** Rejected/superseded on 2026-05-19 after concept change. Per-item action layout cleanup is not pursued as a separate task; continue with the simplified Armory search pass in UI-ITEMS-14.
+
+---
+
+## UI-ITEMS-14 — Basic Armory search only
+
+**Goal:**  
+Add a simple search input for visible armory items after the visual layout is stable.
+
+**Scope:**
+- Search by item name only at first.
+- Client-side filtering over current visible read model only.
+- Clear empty filtered state.
+- Preserve stand grouping: stands remain visible or hidden according to simple, documented rule.
+
+**Out of scope:**
+- Slot/kind/status filters.
+- Server-side search.
+- Pagination.
+- Sorting.
+- Search by bonus/requirement unless already trivial and safe.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.ts` + `armory-page.html`.
+- No new service.
+
+**Acceptance criteria:**
+- Search is clear and not overbuilt.
+- Empty result is understandable.
+- Existing actions still work on filtered items.
+
+**Verification/smoke:**
+- Search matching item.
+- Search with no result.
+- Clear search.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- search fields used:
+- filtering location:
+- empty result behavior:
+
+**Status:** Accepted/completed on 2026-05-19 as the current Armory search/filter pass. The Inventory panel now has a wide production-styled filter bar with text search over visible card text (item name plus compact type/slot metadata), one player-facing `Pierścień` slot option that covers both ring slots, a slot dropdown that preserves off-hand/shield matching for `Druga ręka`, and an availability dropdown with player-facing labels (`Available`, `Offered in trade`, `Listed on auction`). Clear resets text, slot and availability filters; no-match uses the accepted maze empty state; search highlights exact normalized visible matches without `Matched ...` chips or hidden/system tokens such as `none`. The implementation keeps top and bottom bulk toolbars, selection is not cleared merely by emitting bulk actions, and bonus search is explicitly deferred until `get_hero_armory_items` / `ArmoryItemSummary` expose list-facing DB/RPC-backed bonus labels/targets/search tokens. Manual smoke was user-side accepted for the current scope. Follow-up: at the next larger Armory touch, continue reducing `ArmoryInventorySection` and separating inventory state/rendering where it provides real cleanup value.
+
+---
+
+## UI-ITEMS-15 — Slot/kind filter only
+
+**Goal:**  
+Add one compact slot/kind filter after search is stable.
+
+**Scope:**
+- One filter control for item slot/kind group.
+- Use fields already present in current item read model.
+- If field is missing/ambiguous, report dependency instead of inventing logic.
+- Preserve search behavior from UI-ITEMS-14.
+
+**Out of scope:**
+- Lifecycle/status filter.
+- Stand filter.
+- Sorting.
+- Server-side filtering.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.ts` + `armory-page.html`.
+
+**Acceptance criteria:**
+- Filter options are clear.
+- Filter combines predictably with search.
+- No fake classification if data missing.
+
+**Verification/smoke:**
+- Weapons filter.
+- Armor filter.
+- Jewelry filter if data exists.
+- Search + filter combined.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- filter data fields:
+- missing fields:
+- filter combination rule:
+
+---
+
+## UI-ITEMS-16 — Lifecycle/status filter only
+
+**Goal:**  
+Add lifecycle/status filter after search and slot/kind filter are stable.
+
+**Scope:**
+- Filter by status/action state available in read model: active, equipped, locked_trade, locked_auction where available.
+- Normal inventory should not surface scrapped items unless current read model explicitly includes relevant recoverable/scrapped state.
+- Locked states must not appear selectable for invalid actions.
+
+**Out of scope:**
+- New lifecycle rules.
+- Recover scrapped UI.
+- Auction/trade workflows.
+- Server-side filter.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.ts` + `armory-page.html`.
+
+**Acceptance criteria:**
+- Status filter is readable.
+- Locked/equipped/active states are handled honestly from data.
+- Missing statuses are reported, not faked.
+
+**Verification/smoke:**
+- Active status filter.
+- Equipped filter.
+- Locked status smoke if data exists.
+- Build/tsc.
+
+**Required Codex report:**
+- lifecycle source:
+- statuses handled:
+- statuses unavailable:
+- no fake status inference confirmation:
+
+---
+
+## UI-ITEMS-17 — Stand filter only
+
+**Goal:**  
+Add a simple stand filter after item search/status filters are stable.
+
+**Scope:**
+- Filter visible items by stand/shelf position.
+- Use current shelf/stand data.
+- Keep stand sections understandable.
+- Preserve search/slot/status filters.
+
+**Out of scope:**
+- Stand priority logic changes.
+- Capacity rule changes.
+- Drag/drop.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.ts` + `armory-page.html`.
+
+**Acceptance criteria:**
+- Stand filter options match visible stands.
+- Empty stand/filter result state is clear.
+- Existing item actions work.
+
+**Verification/smoke:**
+- Filter by Stand 10.
+- Filter by empty stand if applicable.
+- Combined filters.
+- Build/tsc.
+
+**Required Codex report:**
+- stand data source:
+- filter options:
+- empty result behavior:
+
+**Status:** Accepted/completed on 2026-05-19. The Armory Inventory filter bar now includes a stand dropdown backed by current shelf/read-model data, preserving search, slot and availability filters in the same wide control row. Selecting an empty stand renders that stand in its normal empty-stand state without the global maze/no-match banner; global no-result state now keys off rendered shelf state (`visibleShelves().length === 0`). The duplicated filter-bar `X matching item(s)` badge was removed, while Clear still resets text, slot, availability and stand filters. User-side smoke accepted `Pierścień`, empty current data for trade/auction availability, combined filter behavior and bulk toolbar preservation. Follow-ups remain non-blocking: bonus search needs list-facing DB/RPC/read-model support; `ArmoryInventorySection` can be reduced further on a later Armory touch; filter controls may move into a `FormGroup` if the bar grows; PrimeNG wrapper styling can be revisited in a future vendor-wrapper cleanup.
+
+---
+
+## UI-ITEMS-18 — Capacity cutoff explanation
+
+**Goal:**  
+Make current visible capacity and hidden item count understandable without implementing pagination yet.
+
+**Resolved prerequisite:**  
+Capacity semantics for equipped vs stored inventory were implemented after UI-ITEMS-11 acceptance. Equipped items remain in Equipment Preview / Current loadout, are filtered out of visible Inventory stands, and `Armory capacity` displays the stored visible item count rather than stored plus equipped items. The UI should not show confusing states such as `39 / 30` only because items are currently equipped.
+
+**Scope:**
+- Explain owned / visible / hidden relationship.
+- If capacity cuts off lower-priority stands, show a small note/badge.
+- Do not change actual visibility logic.
+- Do not add pagination.
+
+**Out of scope:**
+- Large-list pagination.
+- Server-side pagination.
+- Stand priority changes.
+- DB/RPC changes.
+
+**File limit:**
+- Prefer `armory-page.html` only.
+
+**Acceptance criteria:**
+- User can understand why some items are hidden.
+- Counts match read model.
+- No fake data.
+
+**Verification/smoke:**
+- Capacity full state.
+- Hidden count > 0 state.
+- Hidden count = 0 state if data available.
+- Build/tsc.
+
+**Required Codex report:**
+- capacity fields used:
+- copy added:
+- no logic change confirmation:
+
+**Status:** Accepted/completed on 2026-05-19. The Armory summary card was reduced to the accepted scope: `Hidden by capacity` and explanatory capacity copy were removed, `Armory capacity` shows only the visibility limit, and `Total items` uses the stored inventory item count from the existing visible/stored Armory item path so equipped items are excluded. `Equipped items` and `Saved loadouts` remain unchanged. No visibility/capacity logic, filters, stands, pagination, DB/RPC contracts, generated types or specs were changed. Manual smoke was user-side accepted for the header values.
+
+---
+
+## UI-ITEMS-19 — Large visible list safe display
+
+**Goal:**  
+Prevent large visible item lists from making Armory unusable, using existing project list/scroll/paginator patterns only.
+
+**Scope:**
+- Review existing list/paginator/scroll patterns.
+- Apply the smallest existing pattern that fits.
+- If no good pattern exists, report follow-up instead of building custom local virtual scroll.
+- Keep filters from UI-ITEMS-14–17 intact.
+
+**Out of scope:**
+- New backend pagination.
+- Custom virtual scroll.
+- Table redesign.
+- Economy sorting.
+- DB/RPC changes.
+
+**File limit:**
+- Depends on existing pattern, but Codex must report planned touched files before implementing if more than 3 production files.
+
+**Acceptance criteria:**
+- Large visible list remains usable.
+- Existing visual hierarchy remains intact.
+- No local dense table unless already an accepted project pattern.
+
+**Verification/smoke:**
+- Large list smoke if data exists.
+- Filter + large list smoke.
+- Build/tsc.
+
+**Required Codex report:**
+- existing pattern checked:
+- pattern used or rejected:
+- files changed:
+- large-list smoke:
+
+**Status:** Deferred / potentially cancelled on 2026-05-19 after the accepted UI-ITEMS-14, UI-ITEMS-17 and UI-ITEMS-18 Armory passes. Current user smoke considers the visible Inventory usable enough for this UI slice, so large-list pagination/scroll work should not be added speculatively. Reopen only if representative large-list testing shows the Armory becomes hard to use, and then follow UI-CORE-14 rather than adding custom local pagination.
+
+---
+
+## UI-ITEMS-20 — Armory final visual consolidation checkpoint
+
+**Goal:**  
+Do a final small visual consistency pass after UI-ITEMS-5–19, without adding new features.
+
+**Scope:**
+- Check spacing consistency between header, equipment preview, visible armory, stand sections and item cards.
+- Remove only obvious duplicate/obsolete local classes introduced in these Armory tasks.
+- Verify no prototype CSS/`mb-*` leaked.
+- Verify no `NgClass`.
+- Verify no unnecessary local SCSS.
+
+**Out of scope:**
+- New filters.
+- New actions.
+- Component split.
+- Large TS refactor.
+- DB/RPC changes.
+- Paperdoll geometry redesign.
+
+**File limit:**
+- Codex must provide a no-code inventory first if it expects to touch more than 3 production files.
+
+**Acceptance criteria:**
+- Armory is visually coherent enough for tester usage.
+- No obvious temporary classes/comments/debug markup.
+- No broad churn.
+- Manual smoke checklist is documented.
+
+**Verification/smoke:**
+- Armory desktop visual smoke.
+- Dashboard preview smoke.
+- Popover smoke.
+- Bulk equip/unequip smoke.
+- Build/tsc.
+
+**Required Codex report:**
+- files changed:
+- obsolete classes removed:
+- static greps:
+- manual smoke pending/done:
+- known follow-ups:
+
+**Status:** Accepted/completed on 2026-05-19. Final Armory visual consolidation stayed intentionally small: the obsolete nested Inventory heading wrapper was removed, the Inventory heading keeps the existing `mg-section__title` rhythm and spacing, and the pass confirmed no `NgClass`/`ngClass`, `className`, `ngModel`, `FormsModule`, `button pButton`, prototype `mb-*`, debug/TODO/temporary copy, hidden-capacity copy or `Matched` chip in the touched Armory paths. No TS logic, filters, actions, DB/RPC/schema/generated types, specs, SCSS or unrelated docs were changed. Manual smoke remains minimal/user-side for Armory desktop rhythm, filter bar layout, item popover sanity and bulk toolbar sanity.
+
+---
+
+## UI-ITEMS-MOVE-1 — Armory item move action + selected-card cleanup
+
+**Goal:**
+Add an explicit non-drag action for moving a stored Armory item between stands/shelves while cleaning local selected-card styling to use the global selected-card treatment.
+
+**Scope:**
+- selected-items toolbar action, beside `Equip selected` and `Sell selected`;
+- canonical `move_hero_armory_item_to_shelf` path through existing Armory service/state wrappers;
+- stored items only;
+- one eligible selected item only unless a canonical bulk move path exists;
+- destination selector sourced from current shelf/read-model data;
+- current stand omitted from destination options;
+- global `.mg-card--selected` for selected item cards.
+
+**Out of scope:**
+- drag-and-drop;
+- uncontrolled multi-RPC bulk move loops;
+- shelf creation/deletion;
+- DB/RPC/schema/generated type edits;
+- local Armory SCSS.
+
+**Acceptance criteria:**
+- selecting one eligible stored item enables a toolbar `Move selected` workflow;
+- selecting a valid destination enables the button immediately;
+- move uses `ArmoryShelfState.moveItemToShelf(...)` / `PlayerArmory.moveItemToShelf(...)` / `move_hero_armory_item_to_shelf`;
+- current stand is not offered as destination;
+- ineligible/guild/locked items cannot be moved through private action UI;
+- no per-card move selector or CDK drag/drop remains;
+- selected item styling uses global `.mg-card--selected`;
+- build/tsc/static greps pass.
+
+**Verification/smoke:**
+- select one eligible stored item, choose destination, move succeeds and refreshed item appears under destination stand;
+- two selected items keep move disabled because no canonical bulk move path exists;
+- current stand omitted from destination options;
+- selected-card visual remains acceptable.
+
+**Status:** Accepted/completed on 2026-05-19. `Move selected` now lives in the reusable selected-items toolbar, beside `Equip selected` and `Sell selected`, and uses the canonical single-item Armory shelf move path (`ArmoryShelfState.moveItemToShelf(...)` -> `PlayerArmory.moveItemToShelf(...)` -> `move_hero_armory_item_to_shelf`). Because no canonical bulk move path exists, move is intentionally limited to exactly one eligible selected stored item; no uncontrolled loop of single-item RPCs was added. Destination options come from the current shelf read model and omit the selected item's current stand. The stale disabled state was fixed by bridging `moveTargetControl.valueChanges` through `toSignal(...)`, so selecting a destination enables `Move selected` immediately. Per-card move selectors and CDK drag/drop are not part of this task. Selected item cards now use global `.mg-card--selected`. User-side smoke confirmed the move path works. No local SCSS, direct DB writes, DB/RPC/schema/generated edits or specs were added.
+
+---
+
+## UI-ITEMS-MOVE-2 — Armory drag-and-drop move between stands
+
+**Goal:**  
+Add drag-and-drop move for stored Armory items between stands/shelves as a separate follow-up after the normal selected-toolbar move action.
+
+**Scope:**
+- reuse the canonical move service/state path from UI-ITEMS-MOVE-1;
+- check existing project drag/drop pattern first;
+- if no project pattern exists, use the smallest standard Angular-supported approach and report it;
+- same-stand drop must not call the RPC;
+- blocked/private/guild/locked items must not be draggable;
+- keep the toolbar move action as accessibility/fallback path.
+
+**Out of scope:**
+- reordering items within one stand unless backend explicitly supports it;
+- bulk drag;
+- shelf creation/deletion;
+- mobile-perfect drag UX beyond fallback action;
+- DB/RPC/schema/generated edits;
+- local Armory SCSS unless a missing global pattern is explicitly accepted.
+
+**Status:** Accepted/completed on 2026-05-19 after user-side smoke. Stored Armory item cards can now be dragged by grabbing the card surface and dropped onto another rendered stand/shelf, including empty stands, through Angular CDK drag/drop and the existing canonical move path (`ArmoryShelfState.moveItemToShelf(...)` -> `PlayerArmory.moveItemToShelf(...)` -> `move_hero_armory_item_to_shelf`). Same-stand drops return before mutation. Drag eligibility reuses the same active/private-action lifecycle rules as move/equip/sell, so guild/locked/non-active/private-action-blocked items are not draggable. The selected-toolbar `Move selected` fallback remains unchanged. Item selection, popover behavior, filters, selected-card styling and stand rendering were preserved. No local Armory SCSS, direct DB writes, DB/RPC/schema/generated edits, bulk drag or reorder behavior were added. Verification passed with `npx tsc --noEmit`, `npm run build` with existing warnings and static greps; focused Armory specs remain blocked by pre-existing stale spec compile errors unrelated to this task.
+
+---
+
+## UI-ITEMS-MOVE-3 — Armory bulk move selected items to stand
+
+**Goal:**  
+Replace the selected-toolbar one-item move limitation with canonical multi-item move through `bulk_move_hero_armory_items_to_shelf(...)`, while keeping drag-and-drop as the single-item path.
+
+**Scope:**
+- use `ArmoryShelfState.bulkMoveItemsToShelf(...)` -> `PlayerArmory.bulkMoveItemsToShelf(...)` -> `bulk_move_hero_armory_items_to_shelf`;
+- keep toolbar `Move selected` beside `Equip selected` and `Sell selected`;
+- support eligible selected stored items from one or many stands;
+- do not loop the old single-item move RPC;
+- preserve DnD single-item move, filters, selection and popovers.
+
+**Out of scope:**
+- bulk drag;
+- reordering within a stand;
+- DB/RPC/schema/generated edits;
+- direct DB writes;
+- local Armory SCSS;
+- broader Armory page or preset cleanup.
+
+**Status:** Accepted/completed on 2026-05-20 after user-side smoke. The selected-items toolbar now moves multiple eligible stored items from one or many stands through the canonical bulk RPC path (`ArmoryShelfState.bulkMoveItemsToShelf(...)` -> `PlayerArmory.bulkMoveItemsToShelf(...)` -> `bulk_move_hero_armory_items_to_shelf`). The frontend does not loop the old single-item `moveItemToShelf(...)` RPC for toolbar bulk move. Mapper logic lives in `core/utils/armory-actions-mappers.ts`, bulk move feedback formatting lives in `core/utils/armory-bulk-move-feedback.ts`, and the public result model exposes mapped `resultJournal` without raw `resultJournalJson`. Toast copy is player-facing, clean success reads like `You moved 2 items to Shelf 10.`, skipped/no-op outcomes are not fatal, and failed rows can surface short journal detail. Existing DnD single-item move remains preserved. No local SCSS, direct DB writes, DB/RPC/schema/generated edits or specs were added. Verification passed with `npx tsc --noEmit`, `npm run build` with existing warnings and static greps.
+
+---
+
+## UI-ITEMS-MOVE-4 — Armory bulk drag-and-drop selected items
+
+**Goal:**
+Extend Armory drag-and-drop so dragging one selected eligible item moves the whole selected eligible group to a target stand through the canonical bulk move RPC, while unselected item drag keeps the existing single-item move path.
+
+**Scope:**
+- selected-item drag resolves the current selected movable group and emits the accepted bulk move output/path;
+- unselected item drag continues through `move_hero_armory_item_to_shelf`;
+- same-stand group drops no-op when nothing meaningful would move;
+- empty stands remain valid drop targets;
+- compact custom CDK drag preview/placeholder communicates single-item vs selected-group drag;
+- active group drag hides moved selected items from source positions during drag;
+- Escape cancels the active CDK drag UI and guards against a follow-up drop mutation.
+
+**Out of scope:**
+- move RPC, DB/RPC/schema/generated edits;
+- direct DB writes;
+- toolbar bulk move changes;
+- loadout preset UI changes;
+- local Armory SCSS.
+
+**Status:** Accepted/completed on 2026-05-20 after user-side smoke and final cleanup. Dragging an unselected eligible stored item still uses the canonical single-item move path, while dragging a selected eligible item moves the selected movable group through `ArmoryShelfState.bulkMoveItemsToShelf(...)` / `PlayerArmory.bulkMoveItemsToShelf(...)` / `bulk_move_hero_armory_items_to_shelf` without looping `moveItemToShelf(...)`. Same-stand group drops no-op when all moved items are already on target, empty stands work as valid targets, ineligible/guild/locked/non-active/private-action-blocked items are excluded by the existing eligibility guards, and toolbar `Move selected` remains preserved. Custom `cdkDragPreview` / `cdkDragPlaceholder` use a reusable `ArmoryItemDragPreview` component plus global reusable drag-drop styles under `src/scss/components`, with compact single-card and group stack/summary visuals; no local Armory SCSS was added. Active selected-group drag hides moved items from source positions, Escape cancels drag UI and prevents a later drop mutation. The accepted cleanup also refreshes equipment plus Armory state after equip/unequip/bulk equip/bulk unequip, moves equipment action toast formatting to `core/utils/equipment-action-feedback.ts`, and fixes Armory page spacing by keeping the route content wrapper as the first layout-affecting element with `app-loading-overlay` rendered after it. Verification passed with `npx tsc --noEmit` and `npm run build` with existing warnings; focused Armory specs remain blocked by pre-existing stale spec compile errors unrelated to this task.
+
+---
+
+## UI-ITEMS-PRESETS-1 — Compact Armory saved presets panel
+
+**Goal:**
+Replace the noisy Armory loadout preset management surface with a compact `Saved presets` panel that keeps canonical preset RPC/service behavior intact.
+
+**Scope:**
+- show the panel in the left Armory column below Equipment Preview;
+- keep five compact horizontal preset rows with inline rename plus `Save preset`, `Apply` and `Clear`;
+- open saved preset preview from the preset name hover/focus instead of a dedicated Preview button;
+- keep preview content compact and item-focused, using available saved item rows and explicit slot-icon fallback where the read model lacks item classification fields;
+- preserve current save, apply, clear, rename and preview service/RPC paths.
+
+**Out of scope:**
+- preset RPC contracts, generated types, DB/RPC changes;
+- equipment equip/unequip flow;
+- Armory move/drag/drop and inventory layout;
+- selected-card styling.
+
+**Status:** Accepted/completed on 2026-05-20 after user-side review. The Armory left column now keeps Equipment Preview first and renders a compact `Saved presets` panel below it, while the Armory header owns the saved preset count. Preset rows use stable full-width layout containment, truncated names, inline `p-inplace` rename, `Save preset`, saved-only `Apply`, and saved-only danger `Clear` with the accepted icon. Saved preset preview opens from the preset name hover/focus using the existing popover visual language, shows saved item rows once with name, slot label and unavailable status only when needed, and separates rendered item rows without adding local SCSS. Preview icons use an explicitly named `previewSlotFallbackIconClass(...)` because the current preset preview read model does not expose item classification fields needed for true item-type icons. No preset RPC, DB/generated type, move/drag/drop, inventory or Equipment Preview behavior changes were added. Verification passed with `npx tsc --noEmit` and `npm run build` with existing warnings; focused preset specs remain covered by the task changes but broader focused Armory specs are still blocked by pre-existing stale spec compile errors unrelated to this task.
+
+---
+
+# 14. UI-EXPLORATION — Exploration flow
+
+Execution rule for all UI-EXPLORATION tasks:
+
+- Treat `mythborne_exploration_flow_v_2.html` as visual/UX anchor, not production CSS source.
+- Do not copy prototype `mb-*` classes, raw colors, raw gradients, raw dimensions or local prototype CSS.
+- Adapt the prototype intent to the current accepted Mythsworn dashboard/game-shell style.
+- Use existing global card/page-header/button/badge/progress/panel patterns.
+- No local SCSS unless the task explicitly proves a missing production pattern.
+- No DB/RPC/schema/generated type changes unless the task explicitly says so.
+- No fake gameplay state, fake counters, fake timers, fake chance math or fake map/story content.
+- Runtime/gameplay authority remains backend/RPC/read-model owned.
+- If required data is missing from the current read model, report dependency instead of inventing frontend fallback.
+- Use `<p-button />`, PrimeNG standalone components and existing wrappers/patterns. Do not use native `<button pButton>`, `ngModel`, `FormsModule`, `NgClass`/`ngClass`, or `className`.
+- Important values, outcomes, state, probabilities and action-needed text must not be `muted-text`.
+- Helper/metadata/descriptions may be muted.
+- Each task must report exact reused helpers/components/services/patterns, checked-but-not-reused, and any new helpers/components.
+- Manual smoke may remain user-side pending if Codex cannot execute real session/data smoke.
+
+
+## UI-EXPLORATION-0 — Exploration UI source/prototype preflight
+
+**Goal:**  
+Prepare a no-code map of the current `/game/exploration` UI, backend/read-model support and prototype anchors before implementation continues.
+
+**Scope:**
+- Read `AGENTS.md`, UI/UX backlog, UI-CORE guidance and this UI-EXPLORATION section.
+- Inspect `mythborne_exploration_flow_v_2.html` as visual anchor.
+- Inspect current `/game/exploration` route/page/components.
+- Identify current services/read models/RPC paths used by Exploration UI.
+- Map prototype areas to current implementation readiness:
+  - implement now;
+  - already implemented;
+  - dependency/blocker;
+  - later task.
+
+**Out of scope:**
+- Production code changes.
+- New components.
+- DB/RPC/schema/generated type edits.
+- Fake data/timers/counters/chance values.
+
+**Data/source rules:**
+- Difficulty, status, active step, timer, trial chance preview, direction choices, result/reward/report values must be mapped to existing sources or marked missing.
+- Do not infer backend contracts from prototype text.
+
+**Acceptance criteria:**
+- Report lists exact files checked.
+- Report lists exact service/read-model/RPC sources.
+- Report lists which prototype anchors are in scope for UI-EXPLORATION-1–14.
+- No code changes.
+
+**Verification/smoke:**
+- N/A no-code.
+
+**Required Codex report:**
+- prototype source:
+- files checked:
+- services/read models/RPC sources:
+- implement now:
+- dependencies/blockers:
+- deferred prototype anchors:
+- local SCSS needed: no/why:
+
+**Status:** Accepted/completed on 2026-05-19 as the Exploration UI source/prototype preflight. The production pass mapped `docs/ui-ux/prototypes/mythborne_exploration_flow_v_2.html`, the Exploration row in `docs/ui-ux/prototype-production-mapping.md`, current `/game/exploration` page/status/state files, `HeroExplorations.getActiveDifficultyTiers()` over `exploration_difficulty_tiers`, and `HeroExplorations.getHeroExplorationState(...)` over `get_hero_exploration_state`. Difficulty labels, top route state, remaining Trials and active effect are backed by current read models; difficulty card redesign, compact status card, timer, trial detail, route/direction, result/reward/report and any missing richer prototype anchors remain deferred to later UI-EXPLORATION tasks. No code, DB/RPC/schema/generated types, SCSS or specs were changed for this preflight.
+
+
+## UI-EXPLORATION-1 — Page header and top state summary
+
+**Goal:**  
+Create the top Exploration page header and compact state summary, without touching difficulty cards or runtime panels.
+
+**Scope:**
+- Header/title/copy for `/game/exploration`.
+- Compact summary surface aligned with prototype intent:
+  - exploration readiness/state;
+  - selected/current difficulty label;
+  - daily Trial availability if read model exists;
+  - blocking content/active effect summary if read model exists.
+- Keep summary short and player-facing.
+
+**Out of scope:**
+- Difficulty card layout.
+- Active step/timer panel.
+- Trial detail by stat.
+- Direction choices.
+- Result/reward/report UI.
+- Modal.
+- New data reads.
+
+**Data/source rules:**
+- Difficulty label must come from current difficulty read model where available.
+- Do not show raw difficulty key as the main badge/value.
+- Daily counters only if existing read model provides them.
+- No fake “daily reset”/counter values.
+
+**UI/SCSS rules:**
+- Use existing `mg-card`, `mg-section__title`, `tag-badge`, grid/flex utilities.
+- Important summary values use `color-text`, `color-heading` or semantic badge, not `muted-text`.
+- Helper copy may be muted.
+- No local SCSS.
+
+**Dependencies/blockers:**
+- Missing daily counter/readiness field → omit and report dependency.
+- Missing readable difficulty label → use existing humanizer or report source gap.
+
+**Acceptance criteria:**
+- Header communicates what Exploration screen is for.
+- Compact state summary is readable.
+- No raw key as primary state label.
+- No fake counters or chance values.
+- Build passes.
+
+**Verification/smoke:**
+- `/game/exploration` route visual smoke.
+- No-exploration state smoke.
+- Existing exploration state smoke if data exists.
+- `npx tsc --noEmit`.
+- `npm run build`.
+
+**Required Codex report:**
+- header/status data source:
+- difficulty label source:
+- daily counter source or dependency:
+- reused UI patterns:
+- local SCSS added:
+
+**Status:** Accepted/completed on 2026-05-19. The `/game/exploration` header now uses the accepted production rhythm with a concise Exploration title/description and a right-side premium summary surface (`mg-card p-lg flex-col gap-sm w-100 shadow-premium`). Difficulty uses the current selected difficulty read model label, shows `Loading` only while the page is loading, and otherwise shows a non-misleading no-selection fallback; route state, remaining Trials and active effect use the existing page/read-model signals without fake counters or new reads. Current status section, timer, trial detail, directions, rewards/reports, TS logic, SCSS, DB/RPC/schema/generated types and specs were not changed. Manual smoke remains user-side pending for header rhythm, no-exploration state, existing exploration state and selected difficulty/top summary values.
+
+
+## UI-EXPLORATION-2 — Current status compact card
+
+**Goal:**  
+Make the current Exploration runtime status readable as a compact card under/near the header, without touching difficulty cards.
+
+**Scope:**
+- Current status section only.
+- Show current runtime status if available:
+  - route/exploration state;
+  - difficulty label;
+  - current node/step/challenge/effect labels where available;
+  - blockers / “ready to start” / no-exploration state.
+- Remove or demote debug/raw-looking display from the main player-facing section.
+
+**Out of scope:**
+- Active timer/progress bar.
+- Direction choices.
+- Result/reward/report summaries.
+- Difficulty card redesign.
+- New backend reads.
+
+**Data/source rules:**
+- Use existing Exploration page/state/facade/read model.
+- Raw IDs/keys only in gated diagnostics, not primary UI.
+- If a label is missing, use existing label/humanizer helper or report gap.
+
+**UI/SCSS rules:**
+- Primary status values not muted.
+- Helper/metadata may be muted.
+- Status/outcome/blocking values use badges/status styles.
+- No local SCSS.
+
+**Dependencies/blockers:**
+- If diagnostics are visible, confirm they are gated by existing debug/staff condition.
+- If current status read model is missing key labels, report dependency rather than fake text.
+
+**Acceptance criteria:**
+- Player can understand whether exploration exists, is ready, blocked, or in progress.
+- Current status is no longer debug-looking.
+- Important values are not muted.
+- Build passes.
+
+**Verification/smoke:**
+- no-exploration state;
+- active exploration state if data exists;
+- diagnostics hidden/gated where expected;
+- `tsc`;
+- build.
+
+**Required Codex report:**
+- current status data source:
+- label/humanizer sources:
+- diagnostics gating:
+- local SCSS added:
+
+**Status:** Accepted/completed on 2026-05-19. The `/game/exploration` no-exploration flow now goes from the header/top
+summary directly to Difficulty without an extra status card. Header `Route state` uses the shared page
+`runtimeStatusLabel()` display source, and the active-only compact current-route details surface is gated by
+`state.hasExploration && state.exploration`, so it appears only when there is real current exploration runtime state to
+summarize. Difficulty remains in the header summary to avoid duplicate rows. Raw node ids are no longer used as a
+player-facing fallback; missing current node labels use neutral copy instead. `ExplorationActiveEffectDisplay` was moved
+from the helper file into `core/interfaces`. The lower legacy `ExplorationStatusSection` remains after Difficulty as the
+runtime surface for timer, directions, result/reward/report and diagnostics content; it is not the top compact status
+card. Verification passed with `npx tsc --noEmit`, `npm run build` with known budget/CommonJS warnings, and static
+greps. User-side manual smoke remains pending for no-exploration, existing-exploration duplication, no raw node id, and
+no duplicated start action outside the difficulty/start flow. Follow-ups: clean raw-ish active step/challenge labels and
+the broad `ExplorationPageState` facade in later runtime tasks / UI-EXPLORATION-14.
+
+
+## UI-EXPLORATION-3 — Active exploration step inline panel
+
+**Goal:**  
+Show active exploration step/progress inline when a step is running or ready to resolve.
+
+**Scope:**
+- Active step inline card/panel.
+- Time remaining / ready state.
+- Check result button only when allowed.
+- Step status and progress display from current read model.
+- Loading/error/unavailable states.
+
+**Out of scope:**
+- Modal timer.
+- Direction choice.
+- Result/reward/report UI.
+- Fake timer authority.
+- LocalStorage gameplay state.
+- New RPCs.
+
+**Data/source rules:**
+- Timer/progress/readiness from existing exploration read model/service.
+- Frontend countdown is display only over backend-owned timestamps.
+- Check result action through existing canonical service/RPC only.
+
+**UI/SCSS rules:**
+- Use shared card/progress/timer/button patterns.
+- Ready/action-needed state not muted.
+- Raw timestamps can be secondary metadata, not dominant UI.
+- No local SCSS.
+
+**Dependencies/blockers:**
+- Missing timer/readiness fields → dependency.
+- Missing check-result action → show dependency, not fake action.
+
+**Acceptance criteria:**
+- Active step state is clear.
+- Time remaining/ready state is visible.
+- Check result appears only when allowed.
+- No fake timer authority.
+- Build passes.
+
+**Verification/smoke:**
+- active step state smoke;
+- ready-to-check state smoke if data exists;
+- no-active-step state smoke;
+- `tsc`;
+- build.
+
+**Required Codex report:**
+- active step data source:
+- timer/readiness source:
+- check-result source:
+- stale guard approach:
+- local SCSS added:
+
+**Status:** Accepted/completed on 2026-05-19. The active-step inline panel is now owned by `/game/exploration`
+composition in `exploration-page.html`, gated directly by `page.activeStep()`, and rendered after the header/feedback
+messages before Difficulty. It uses existing `ExplorationStepState` display signals for backend-owned timestamp progress,
+readiness and remaining-time labels, keeps `Check result` visible only while `page.canCheckResult()` or resolving state
+applies, and preserves loading/disabled behavior during resolve. `GameBar type="xp"` is accepted as a temporary wrapper
+limitation because the shared component currently exposes only `hp | xp`. The lower legacy `ExplorationStatusSection`
+no longer contains the duplicate `Movement step` / active-step timer block or the stale no-exploration `Start
+exploration` branch, and its repeated `page.state()` guards were cleaned up through a local `@let state = page.state()`
+while one-off nullable blocks remain scoped locally. No DB/RPC/schema/generated types, specs, local SCSS, native `<button pButton>`, `ngModel`,
+`FormsModule`, direct exploration writes or `localStorage` were introduced. Verification passed with `npx tsc --noEmit`,
+`npm run build` with known budget/CommonJS warnings, and static greps. Manual smoke remains data-blocked until a real
+active-step scenario exists. Follow-ups: clean remaining legacy raw-ish runtime/status chips in later
+UI-EXPLORATION-14/runtime cleanup and add a neutral shared progress `GameBar` type if needed.
+
+
+## UI-EXPLORATION-4 — Difficulty card shell and selected state
+
+**Goal:**  
+Build the difficulty card shell and selected-state behavior only, without adding detailed chance breakdowns.
+
+**Scope:**
+- Difficulty cards/list layout.
+- Difficulty label/description/helper copy.
+- Selected difficulty visual state.
+- Available/locked/disabled badges if data exists.
+- Basic card action:
+  - `Select` on non-selected cards;
+  - selected card visually highlighted.
+
+**Out of scope:**
+- Start exploration CTA.
+- Chance/probability rows.
+- Stat-by-stat breakdown.
+- Timer/active step.
+- Result/reward/report UI.
+- New chance math.
+
+**Data/source rules:**
+- Difficulty list from existing service/read model.
+- Labels/descriptions from DB/read model where available.
+- No hardcoded permanent difficulty list if DB/read model exists.
+
+**UI/SCSS rules:**
+- Use existing card/badge/button patterns.
+- Selected state through existing border/glow/badge patterns.
+- Disabled states use semantic badges/status, not opacity only.
+- No local card system or local SCSS.
+
+**Dependencies/blockers:**
+- Missing difficulty read model → dependency/blocker.
+- Missing labels → use existing humanizer or report gap.
+
+**Acceptance criteria:**
+- Difficulty cards render from real data.
+- Selected card is visually clear.
+- Unavailable/locked states are clear where data exists.
+- No start action yet except existing unchanged behavior if already present.
+- Build passes.
+
+**Verification/smoke:**
+- difficulty list render;
+- selection change;
+- selected state;
 - build/tsc.
 
 **Required Codex report:**
 - difficulty source:
-- start workflow source:
+- label/source metadata:
+- selected state pattern reused:
 - checked but not reused:
 - local SCSS added:
 
-## UI-EXPLORATION-2 — Trial detail by stat
+**Status:** Accepted/completed on 2026-05-19. The Difficulty section now keeps the shell/selected-state work scoped to
+`exploration-page.html`: each card derives `isSelected` from `page.selectedDifficultyKey() === difficulty.key`, selected
+cards use existing production `border-secondary` and `shadow-premium` classes plus a `Selected` badge, and selected or
+unavailable cards have disabled selection actions. Availability badges are driven only by the current
+`difficulty.isActive` read-model field, so unavailable/locked nuance remains limited to data that exists today.
+Repeated `page.previewRows(difficulty.key)` calls were replaced by local `@let previewRows`; the preview rows themselves
+remain the legacy/simple display and are deferred to UI-EXPLORATION-5. No start CTA, stat detail, timer, directions,
+results, rewards, DB/RPC/schema/generated types, specs or local SCSS were changed. Verification passed with
+`npx tsc --noEmit`, `npm run build` with known budget/CommonJS warnings, and static greps. Manual smoke remains
+user-side pending for difficulty list render, selection change, selected visual distinction and selected/unavailable
+disabled action behavior.
+
+
+## UI-EXPLORATION-5 — Difficulty card DB-backed preview values
 
 **Goal:**  
-Pokazać trial detail z jasnym rozdzieleniem manifestation chance i auto-result success chance według konkretnej statystyki.
+Add compact DB-backed preview values to difficulty cards.
 
 **Scope:**
-- trial type/label,
-- tested stat,
-- manifestation chance display,
-- auto-result success chance display,
-- manual challenge entry if needed,
-- stat contribution/explanation,
-- clear failure/success state placeholders if result already known.
+- Per-card compact preview rows/bars if current read model supports them:
+  - step time;
+  - Trial opportunity chance;
+  - approximate manifestation chance;
+  - approximate auto-result chance;
+  - reward profile/multiplier.
+- Preview values only on difficulty cards.
+- No stat-by-stat detail.
 
 **Out of scope:**
-- final minigame implementations,
-- combat challenge UI,
-- reward granting,
-- local chance calculations if backend/read model owns them.
+- Trial detail by stat section.
+- Local chance calculations.
+- Start CTA logic changes.
+- Timer/direction/result UI.
+- DB/RPC edits.
 
 **Data/source rules:**
-- trial definitions, tested stat, minigame, labels from DB-backed definitions/dictionaries,
-- chance values from backend/read model if available,
-- if chance values missing, show dependency rather than fake formulas,
-- no hardcoded stat list if stats dictionary exists.
+- Values from backend/read model only.
+- If a value is missing, omit it or show dependency state; do not fake.
+- Do not call `page.previewRows(difficulty.key)` repeatedly in template; assign once with `@let` or equivalent.
 
 **UI/SCSS rules:**
-- two separate visual bars/rows for manifestation and auto-result,
-- labels must make difference obvious,
-- use shared progress/bar/stat patterns if available,
-- important probabilities not muted.
+- Important probabilities/values not muted.
+- Use existing progress/bar/value row patterns where available.
+- No local SCSS.
+- Labels must not conflate manifestation and auto-result.
 
 **Dependencies/blockers:**
-- missing chance read model -> blocker/dependency,
-- missing minigame route -> show route pending, not fake.
+- Missing preview read model → dependency, not fake.
+- Missing labels → report source gap.
 
 **Acceptance criteria:**
-- manifestation and auto-result are not conflated,
-- tested stat visible,
-- labels/descriptions DB-backed where available,
-- no fake chance math,
-- build passes.
+- Preview values are visible and readable where data exists.
+- Manifestation and auto-result are not conflated.
+- No fake chance math.
+- Build passes.
 
 **Verification/smoke:**
-- visual smoke for one trial,
-- missing-data state smoke,
+- one difficulty with preview values;
+- missing preview value state;
 - build/tsc.
 
 **Required Codex report:**
-- trial data source:
+- preview source:
 - chance source:
-- DB labels/metadata used:
+- missing-value handling:
 - local SCSS added:
 
-## UI-EXPLORATION-3 — Exploration timer/modal and inline state
+
+**Status:** Accepted/completed on 2026-05-19. UI-EXPLORATION-5 now uses
+`get_hero_exploration_difficulty_card_previews(...)` as the canonical source for Difficulty card preview values and
+selected difficulty Trial detail rows. The old `preview_trial_opportunity_curve(...)` path is not used as the card
+source. Difficulty preview UI was split into focused standalone components for the section, card, chance metric row and
+Trial detail section; cards show DB-provided Step time, Trial opportunity, Approx. manifestation, Approx. auto result and
+Reward items, with chance values rendered through the shared `GameBar type="chance"` variant and `max=100`. The selected
+difficulty drives the Trial detail by stat section, which renders 9 DB-backed stat rows without Trial power, Tested stat
+or source/debug rows in player-facing UI. The mapper keeps required DB contract fields strict, including exactly 9 stat
+detail rows and required manifestation/auto-result display plus numeric chance fields. No local chance math, direct table
+reads, DB/RPC/schema/generated edits or local page SCSS were added. Verification passed with `npx tsc --noEmit`,
+`npm run build` with known budget/CommonJS warnings, and static greps. Manual visual smoke remains user-side for 3 cards,
+selected card glow, full-width chance bars, selected difficulty switching and 9 visible stat rows. Follow-ups: polish card
+typography/hierarchy, tune global `.mg-card--selected` if visual smoke says the glow is too weak, and keep
+`GameBar type="chance"` percent formatting player-safe if future usage enables `showValue=true`.
+
+
+## UI-EXPLORATION-6 — Difficulty start/continue CTA behavior
 
 **Goal:**  
-Pokazać exploration progress timer jako modal first, a po dismiss jako inline persistent progress state.
+Wire and present the start/continue action for the selected difficulty card only.
 
 **Scope:**
-- modal with timer/progress when exploration step starts,
-- dismiss action moves progress to inline panel/card,
-- inline state shows time remaining / check result availability,
-- route back to current exploration state,
-- safe stale/loading/error handling.
+- Selected difficulty owns `Start exploration` CTA.
+- If exploration already exists, show route/current-state CTA or “current route ready” state using existing behavior.
+- Disabled/loading/starting states.
+- Error/success feedback placement if already available.
+- Ensure no direct writes.
 
 **Out of scope:**
-- global action queue,
-- timers for unrelated systems,
-- fake local-only timer as production state,
-- combat/PvP timers.
+- Card layout redesign.
+- Preview rows.
+- Timer modal.
+- Direction choices.
+- Result/reward/report UI.
+- New backend workflow.
 
 **Data/source rules:**
-- timer state from exploration read model/service,
-- if timer is backend-owned, frontend countdown is display only,
-- stale guard if active hero/server changes,
-- no localStorage permanent gameplay state.
+- Start action through canonical existing Exploration service/RPC.
+- Active hero/server context required.
+- No direct table writes.
+- No invented request payload fields.
 
 **UI/SCSS rules:**
-- modal/dialog through PrimeNG/vendor wrapper,
-- progress/timer through global/shared pattern,
-- inline state uses persistent state pattern from UI-SHELL-5,
-- action-needed state not muted.
+- Use `<p-button />`.
+- Loading/disabled state clear.
+- Action-needed state not muted.
+- No local SCSS.
 
 **Dependencies/blockers:**
-- missing timer read model -> dependency,
-- missing modal/vendor wrapper -> use existing PrimeNG dialog wrapper or report gap.
+- Missing canonical start service/RPC → dependency/blocker.
+- Missing selected difficulty state → dependency.
 
 **Acceptance criteria:**
-- modal appears at start where state exists,
-- dismiss leaves inline progress visible,
-- check result action appears only when available,
-- no fake action queue,
-- build passes.
+- Player can start exploration from selected difficulty where backend supports it.
+- Start disabled/loading state is clear.
+- Existing exploration state does not show misleading start action.
+- Build passes.
 
 **Verification/smoke:**
-- modal open/dismiss smoke,
-- inline progress smoke,
-- completed timer/check result smoke if data available,
+- select difficulty + start smoke if backend/data exists;
+- disabled/loading state;
+- already-has-exploration state;
 - build/tsc.
 
 **Required Codex report:**
-- timer data source:
-- dialog/progress wrapper reused:
-- stale guard approach:
+- start workflow source:
+- active hero/server guard source:
+- mutation path:
 - local SCSS added:
 
-## UI-EXPLORATION-4 — Direction choice and step state
+
+**Status:** Accepted/completed on 2026-05-20 as the Difficulty entry-screen CTA pass. Non-selected available Difficulty cards are whole-card selectable with keyboard selection preserved, selected state uses the global `.mg-card--selected` treatment, status badges were removed, and only the selected card renders the stable bottom-aligned `Start exploration` / `Continue adventure` CTA through the existing `ExplorationStartState.startSelectedDifficulty()` / `HeroExplorations.startOrGetHeroExploration(...)` workflow. The top summary now shows Difficulty, Approx. auto result, Trials today and Effect; Approx. auto result comes from the selected difficulty preview read model, not local chance math. The separate current-route/status card is not rendered on this entry screen, existing exploration state uses `Continue adventure`, and loading/start feedback uses the existing `app-loading-overlay`. No runtime direction/result screen, local SCSS, DB/RPC/schema/generated edits or direct table writes were added. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused Exploration spec run was blocked before execution by unrelated existing compile errors in `src/app/core/utils/armory-inventory-filter.spec.ts`.
+
+## UI-EXPLORATION-7 — Runtime screen boundary and entry/runtime split
 
 **Goal:**  
-Zaprojektować/zaimplementować ekran wyboru kierunku po kroku exploration, jeśli backend/read model go wspiera.
+Separate the difficulty entry screen from the active Exploration runtime screen so the player no longer moves through runtime state inside the difficulty selection layout.
 
 **Scope:**
-- current exploration scene/step summary,
-- up to three direction choices,
-- direction labels/descriptions,
-- disabled/locked states if any,
-- action starts next wait/timer,
-- link to report/result when step resolved.
+- Split `/game/exploration` composition into:
+  - difficulty entry screen;
+  - active/runtime exploration screen.
+- Keep the existing difficulty entry screen from UI-EXPLORATION-6 as the entry point.
+- Move active-step/current-runtime UI out of the entry screen and into the runtime screen.
+- `Continue adventure` on an existing selected difficulty should enter/show the runtime screen, not leave the player on difficulty selection with disabled/current-route copy.
+- Keep runtime screen shell minimal:
+  - selected/current difficulty context;
+  - current exploration state summary where useful;
+  - placeholder/slot for pending step, result, challenge, directions and reward/report sections.
+- Use existing state/services/signals; do not invent new route state if current page state is enough.
 
 **Out of scope:**
-- procedural map generation,
-- story authoring system,
-- fake branching if backend has no choices,
-- reward result UI.
+- Full pending timer redesign.
+- Direction choice card implementation.
+- Step result/reward/report redesign.
+- Trial/combat implementation.
+- New DB/RPC/schema/generated type changes.
+- Fake runtime state or local route persistence.
 
 **Data/source rules:**
-- direction choices from exploration read model/backend,
-- if no direction model exists, report dependency and keep prototype only,
-- mutations through canonical exploration service/RPC,
-- active hero/server guard required.
+- Runtime mode is driven by existing `get_hero_exploration_state` read model and current page state.
+- Do not infer exploration progress from client-only state.
+- If the current read model cannot reliably distinguish entry/runtime states, report dependency instead of adding fake state.
 
 **UI/SCSS rules:**
-- choice cards use shared card/action pattern,
-- direction arrows/icons from custom icon registry or placeholders in prototype only,
-- no local map CSS.
+- Use existing `mg-card`, page shell, grid/flex utilities and shared components.
+- No local SCSS.
+- No prototype `mb-*`.
+- Important runtime/action state must not be muted.
+- Keep difficulty entry and runtime screen visually distinct.
 
 **Dependencies/blockers:**
-- missing choice read model -> dependency,
-- missing next-step RPC -> dependency.
+- If current state cannot support entry/runtime split without ambiguity, report the exact missing field/contract.
+- If a route/subroute is needed later, report it as a follow-up rather than implementing routing in this task.
 
 **Acceptance criteria:**
-- direction choices are readable,
-- max three choices supported,
-- unavailable choices clear,
-- next action starts proper state where backend exists,
-- build passes.
+- Difficulty entry screen does not show active-step/current-route runtime panels.
+- Existing active exploration can be continued into a distinct runtime screen/surface.
+- Runtime screen does not show the full difficulty selection as the primary content.
+- No fake runtime data.
+- No DB/RPC/generated changes.
+- Build passes.
 
 **Verification/smoke:**
-- choice selection smoke if backend exists,
-- no-choice/loading state smoke,
-- build/tsc.
+- no-exploration entry screen;
+- existing exploration → continue runtime screen;
+- active step present → runtime screen;
+- no duplicate active step/current route panels;
+- `npx tsc --noEmit`;
+- `npm run build`.
+
+**Required Codex report:**
+- runtime/entry state source:
+- files changed:
+- components reused:
+- checked but not reused:
+- new components/helpers:
+- local SCSS added:
+
+
+**Status:** Accepted/completed on 2026-05-20 as the entry/runtime boundary split. `/game/exploration` now keeps the UI-EXPLORATION-6 Difficulty entry screen as the entry surface and switches to a distinct runtime shell when Start/Continue succeeds or when the read model has active runtime state. Runtime mode is driven by the existing `get_hero_exploration_state` read model through current page state, with a small `runtimeScreenRequested` UI state only for the local entry/runtime presentation. The runtime shell is intentionally minimal and player-facing: selected difficulty/status context, current node, Trials today, active effect and neutral state slots for pending step, result/reward and runtime state. It does not render the pending timer/check-result UI, direction board, step result card, reward card, challenge panel or diagnostics; those remain scoped to later UI-EXPLORATION runtime tasks. No DB/RPC/schema/generated edits, route changes, local SCSS, direct writes or runtime workflow changes were added. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused Exploration spec command remains blocked before execution by unrelated existing compile errors in `src/app/core/utils/armory-inventory-filter.spec.ts`.
+
+## UI-EXPLORATION-8 — Pending movement step screen
+
+**Status:** Accepted/completed on 2026-05-20 as the pending movement step runtime screen. When the existing exploration read model exposes an active movement step, `/game/exploration` now keeps the Difficulty entry cards out of the primary content and renders the pending step as the main runtime surface. Progress, remaining time, ready state and the `Check result` action are driven by existing `ExplorationStepState` display/readiness values over backend-owned `startedAt` / `resolvesAt`; the runtime header and pending card agree on `Result ready` when the step can be checked. Raw ISO timestamps are no longer shown as player-facing badges, no fake timer authority was added, and no direction board, step result, reward/report, challenge UI, DB/RPC/schema/generated-type change, local SCSS or workflow change was introduced. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused Exploration spec command remains blocked before execution by unrelated existing compile errors in `src/app/core/utils/armory-inventory-filter.spec.ts`.
+
+**Goal:**  
+Render the backend-owned pending movement step as the main runtime screen while a step is running or ready to resolve.
+
+**Scope:**
+- Pending movement step screen inside Exploration runtime mode.
+- Show:
+  - selected/current difficulty context;
+  - step progress/time remaining from backend-owned timestamps;
+  - ready-to-check state;
+  - `Check result` action only when backend/read model allows it;
+  - loading/resolving state.
+- Reuse the existing active-step work from earlier tasks, but relocate it into the runtime screen.
+- Keep the pending screen focused: it is not the difficulty entry screen.
+
+**Out of scope:**
+- Timer modal.
+- Direction choice board.
+- Step result summary.
+- Reward/report display.
+- Trial/combat challenge UI.
+- LocalStorage gameplay state.
+- New timer authority.
+
+**Data/source rules:**
+- Step progress/readiness must come from existing exploration read model/state.
+- Frontend countdown/progress is display-only over backend-owned `startedAt` / `resolvesAt` or equivalent fields.
+- `Check result` uses existing canonical service/RPC path only.
+
+**UI/SCSS rules:**
+- Use shared card/progress/button patterns.
+- Ready/action-needed state not muted.
+- Raw timestamps may be secondary metadata only.
+- No local SCSS.
+- No fake timers.
+
+**Dependencies/blockers:**
+- Missing active step timestamps/readiness → report dependency.
+- Missing check-result action → report dependency.
+- Missing selected difficulty context → report dependency.
+
+**Acceptance criteria:**
+- Pending step is readable as the main runtime screen.
+- Progress/remaining/ready state is visible and backend-derived.
+- `Check result` appears only when allowed.
+- Resolving/loading state is clear.
+- Difficulty entry cards are not shown as the primary content while a step is pending.
+- Build passes.
+
+**Verification/smoke:**
+- active pending step state;
+- ready-to-check state;
+- resolving state;
+- no-active-step runtime fallback;
+- `npx tsc --noEmit`;
+- `npm run build`.
+
+**Required Codex report:**
+- active step source:
+- timer/progress source:
+- check-result source:
+- reused components:
+- local SCSS added:
+
+
+## UI-EXPLORATION-9 — Step result screen and outcome summary
+
+**Status:** Accepted/completed on 2026-05-20 as the resolved step result runtime surface. After checking a movement step, `/game/exploration` now shows a scoped `Step report` using the existing step resolution workflow state plus `exploration-step-result-ui` title/description/flavor helpers, with short handoff cards for challenge, reward/report and next action. Nothing, Trial and Encounter outcomes remain distinct through existing backend/read-model-backed result fields and labels; sandbox selection diagnostics are rendered only through the existing gated diagnostics component. This task did not implement the direction choice board, full reward UI, full challenge panel, DB/RPC/schema/generated-type changes, local SCSS, fake result text or local result recomputation. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused Exploration spec command remains blocked before execution by unrelated existing compile errors in `src/app/core/utils/armory-inventory-filter.spec.ts`.
+
+**Goal:**  
+After checking a movement step, show a clear step outcome/result screen before the player chooses the next direction or enters a challenge.
+
+**Scope:**
+- Step result screen inside Exploration runtime mode.
+- Show the resolved outcome:
+  - nothing;
+  - Trial opportunity/challenge;
+  - Encounter/combat/challenge;
+  - other backend-supported outcome kinds if present.
+- Show short player-facing summary from backend/read model where available.
+- Preserve diagnostics only if already gated for sandbox/staff/debug use.
+- Provide a clear next-state handoff:
+  - no challenge → directions/continue section;
+  - challenge exists → challenge handoff section;
+  - reward/report exists → reward/report section.
+
+**Out of scope:**
+- Direction choice board implementation.
+- Full Trial UI/minigame.
+- Full combat UI.
+- Full reward/drop/report redesign.
+- Fake result text or local result recompute.
+
+**Data/source rules:**
+- Use durable backend/result/read-model data from existing step resolution workflow.
+- Do not locally recompute result/outcome/chance.
+- Raw keys/IDs only in gated diagnostics.
+
+**UI/SCSS rules:**
+- Outcome/status/action-needed values not muted.
+- Use shared card/status/action patterns.
+- Keep helper/flavor copy secondary.
+- No local SCSS.
+
+**Dependencies/blockers:**
+- Missing result read model → report dependency.
+- Missing outcome labels/descriptions → use existing mapper/humanizer only if accepted; otherwise report gap.
+- Missing durable result after route refresh → report dependency.
+
+**Acceptance criteria:**
+- Player can understand what happened after checking the step.
+- Nothing/trial/encounter outcomes are not conflated.
+- Result display is backend/read-model-backed.
+- Debug shape is not primary player UI.
+- Build passes.
+
+**Verification/smoke:**
+- nothing result;
+- trial/encounter result if data exists;
+- no-result state;
+- diagnostics gated;
+- `npx tsc --noEmit`;
+- `npm run build`.
+
+**Required Codex report:**
+- result data source:
+- outcome label source:
+- diagnostics gating:
+- reused components:
+- local SCSS added:
+
+
+## UI-EXPLORATION-10 — Direction choice board
+
+**Goal:**  
+Render backend-provided direction choices as the main continuation action after a step/result is clear.
+
+**Scope:**
+- Direction choice board inside Exploration runtime mode.
+- Show available directions from current node:
+  - direction label;
+  - destination/discovery state where available;
+  - disabled/blocked state where available;
+  - short helper/status copy where available.
+- Starting a direction uses the existing canonical movement/start-step service/RPC path.
+- Board appears only when it makes sense:
+  - no active pending step;
+  - no unresolved blocking challenge;
+  - exploration route exists and can continue.
+
+**Out of scope:**
+- Procedural map UI.
+- Story/map authoring.
+- Fake branching/directions.
+- Timer modal.
+- Reward/result UI.
+- New backend mutations.
+- Combat/Trial UI.
+
+**Data/source rules:**
+- Direction choices come from the existing exploration state/read model.
+- Direction action uses canonical existing service/RPC.
+- No hardcoded fake directions.
+- No direct table writes.
+
+**UI/SCSS rules:**
+- Use shared card/action layout.
+- Do not overuse badges; use them only for real semantic blocked/available state.
+- Direction labels/action-needed text not muted.
+- No local map CSS.
+- No prototype `mb-*`.
+
+**Dependencies/blockers:**
+- Missing direction read model → report dependency.
+- Missing next-step RPC/action → report dependency.
+- Missing readable direction labels → use existing helper or report gap.
+
+**Acceptance criteria:**
+- Direction choices are readable where data exists.
+- Unavailable/blocked choices are clear where data exists.
+- Choosing a direction starts the backend-owned next movement step.
+- Same screen transitions cleanly to pending step state.
+- No fake directions.
+- Build passes.
+
+**Verification/smoke:**
+- direction board render;
+- direction choice action;
+- no-choice state;
+- blocked/disabled state if data exists;
+- `npx tsc --noEmit`;
+- `npm run build`.
 
 **Required Codex report:**
 - direction data source:
 - mutation path:
-- missing backend notes:
+- blocked/disabled source:
+- reused components:
 - local SCSS added:
 
-## UI-EXPLORATION-5 — Result/report boundary
+**Status:** Functionally accepted on 2026-05-20 for movement-option integration. The direction board now renders backend-owned `get_hero_exploration_state(...).movementOptions[]` rather than legacy `edges()` and starts movement through the canonical `start_hero_exploration_step(...)` path. Edge options require `edgeId` plus non-empty `stepKind`; backtrack requires `edgeId: null` and `stepKind: 'backtrack'`; active step/challenge state blocks movement through the existing runtime state. The board remains option-driven, does not fabricate directions, and does not add reward/challenge/combat/trial UI. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused Exploration spec command remains blocked before execution by unrelated existing compile errors in `src/app/core/utils/armory-inventory-filter.spec.ts`. Manual smoke remains required for 1/2/3 edge options, optional backtrack, and active step/challenge blocking. Visual direction-board prototype polish is explicitly deferred as a separate follow-up task.
+
+**Follow-up status:** Accepted on 2026-05-21 for canonical initial movement flow. `Start exploration` now uses backend-owned `start_or_get_hero_exploration_and_start_initial_step(p_hero_id, p_difficulty_key, p_request_id)` instead of frontend movement inference; fresh explorations enter `activeStep`, the direction board stays hidden while an active step exists, and ready/resolved routes continue to render `movementOptions[]`. Directed edge movement still uses `edgeId + stepKind`, and backtrack remains the only `edgeId: null` movement path outside the initial-start RPC. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; focused Exploration specs remain blocked before execution by unrelated existing compile errors in `src/app/core/utils/armory-inventory-filter.spec.ts`. Follow-up smoke remains required for double-click Start idempotency, existing active-step timer recovery and existing ready-route movement-option rendering.
+
+
+## UI-EXPLORATION-10-FOLLOW-UP — Direction board visual/prototype alignment
 
 **Goal:**  
-Ustalić UI boundary między exploration result summary a pełnym reportem.
+Bring the `/game/exploration` runtime direction board visually closer to the accepted Exploration Direction Board prototype, while preserving the already accepted `movementOptions[]` functional contract from UI-EXPLORATION-10.
+
+This is a visual/prototype-alignment task only. The direction board must stop looking like a plain grid of generic cards and become a clear gameplay surface: central board/core, generated direction gates around it, compact runtime HUD, and visually obvious primary continuation action.
+
+**Status:** Accepted/completed on 2026-05-21 as the direction board visual/composition pass. The runtime direction board now uses a centered gameplay board scene with fixed oracle geometry, inner frames, subtle directional rays, a Polish `Wybierz kierunek` core, full-card keyboard/clickable route gates, and a disabled visual Back placeholder when no real backtrack option exists. The functional UI-EXPLORATION-10 movement contract is preserved: rendered choices still come from backend-owned `movementOptions[]`, real backtrack remains `edgeId: null` plus `stepKind: 'backtrack'`, unsupported directions remain handled separately, and no direction is fabricated as a movement option. Styling ownership was cleaned up by removing local gate SCSS, using `mg-card` plus a shared `mg-card--interactive` surface variant, and keeping board-local SCSS limited to fixed board geometry/decorative rays. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps. User visual smoke is accepted enough for this pass; remaining hover/glow polish is deferred unless tester feedback or broader shared-card polish requires it.
+
+---
+
+### Sources to read first
+
+- `AGENTS.md`
+- `docs/ui-ux/README.md`
+- `docs/ui-ux/prototypes/mythsworn_exploration_direction_choice.html`
+- `docs/ui-ux/prototype-production-mapping.md`
+- `docs/ui-ux/global-scss-shared-inventory.md`
+- `docs/ui-ux/utility-class-audit.md`
+- `docs/ui-ux/shared-surface-patterns.md`
+- `docs/ui-ux/primeng-vendor-wrapper-lookup.md`
+
+Use the attached screenshot of the prototype as visual comparison.
+
+Prototype is visual reference only. Do not copy prototype CSS, `mb-*` classes, raw colors, raw gradients, raw dimensions, or mock content.
+
+---
+
+### Current state / starting point
+
+UI-EXPLORATION-10 functionally accepts the movement option contract:
+
+- direction board renders from `state.movementOptions[]`;
+- edge options use `edgeId + stepKind`;
+- backtrack uses `edgeId: null` and `stepKind: 'backtrack'`;
+- UI supports 1, 2, or 3 edge options plus optional backtrack;
+- no local generation of missing directions;
+- no direct DB reads/writes.
+
+This follow-up must preserve that.
+
+---
+
+### Prototype anchors to translate
+
+Inspect the prototype structure and translate these visual/product ideas into current Mythsworn production patterns:
+
+1. **Large gameplay stage**
+   - Prototype intent: `.mb-hero-stage` / cinematic gameplay board surface.
+   - Production translation: one strong board surface inside the current game shell, using `mg-card`, existing tokens/utilities, and only minimal global reusable SCSS if utilities cannot express the board.
+   - Do not copy the full prototype page shell/topbar/sidebar.
+
+2. **Compact exploration mini-HUD**
+   - Prototype intent: `.mb-exploration-minihud`.
+   - Production translation: a compact text/HUD strip for current node, trials, effect, difficulty/status.
+   - It should not look like random debug badges.
+   - Important values must remain readable and not be muted.
+
+3. **Central direction board**
+   - Prototype intent: `.mb-oracle-board` with central composition and visual relationship between choices.
+   - Production translation: central “Direction board” / current-step core that visually anchors the available movement options.
+   - It should be visually dominant enough to read as the main gameplay interaction, not a small nested card.
+
+4. **Generated direction gates**
+   - Prototype intent: `.mb-path-gate` cards around the board.
+   - Production translation: `ExplorationDirectionGate` remains a small component, but it should look like a route choice/gate, not a generic stat card.
+   - Forward/left/right/back positions should be visually meaningful:
+     - forward above/forward from core;
+     - left and right around the core;
+     - back below when present.
+   - Missing directions must not be fabricated. If DB does not provide a slot, do not create a fake path.
+   - If DB provides an unavailable option, show it as disabled/unavailable with visible reason/status, not opacity only.
+
+5. **Board summary**
+   - Prototype intent: central “N paths open · Back available”.
+   - Production translation: derive from actual `movementOptions[]`.
+   - Show open path count and back availability from real options only.
+   - Do not hardcode or infer fake options.
+
+6. **Generated choices, not map nodes**
+   - No invented route/location names.
+   - No labels like “Broken Colonnade”, “Sunken Courtyard”, “safe/risky/balanced”.
+   - Direction labels/status must come from `movementOptions[]` / read model.
+
+---
+
+### Scope
+
+Allowed files are limited to the direction board visual layer and narrowly necessary global style support:
+
+- `src/app/game/pages/exploration/exploration-direction-board.*`
+- `src/app/game/pages/exploration/exploration-direction-gate.*`
+- existing global SCSS/layout/style aggregators only if a small reusable board/stage pattern is truly needed
+
+If global SCSS is needed, it must be token-driven and placed in the appropriate global SCSS area, not component-scoped `styleUrl`.
+
+---
+
+### Out of scope
+
+- DB/RPC/schema changes
+- manual generated type edits
+- changing `movementOptions[]` contract
+- changing movement service/RPC logic
+- Armory
+- Trial/combat/challenge/reward implementation
+- pending-step timer behavior
+- full step report/reward redesign
+- status docs unless the task is accepted afterward
+
+---
+
+### UI/SCSS rules
+
+- No component-scoped SCSS for this board unless explicitly justified before implementation.
+- No `mb-*` classes.
+- No copied prototype raw colors, gradients, shadows, dimensions, or media queries.
+- Use existing `mg-card`, `mg-section__title`, grid/flex utilities, PrimeNG buttons and wrappers first.
+- If existing utilities are insufficient for the board geometry, add the smallest global reusable class set and explain why it is not duplicating existing utilities.
+- Do not create a new local card/badge/button system.
+- Do not use `NgTemplateOutlet`, `NgClass` / `ngClass`, `FormsModule`, `ngModel`, or native `<button pButton>`.
+- Use `<p-button />` where a PrimeNG button is needed.
+- Disabled/unavailable gates must have actual disabled/aria-disabled behavior plus visible text, not opacity alone.
+
+---
+
+### Functional preservation
+
+The visual pass must preserve:
+
+- board renders from `movementOptions[]`;
+- no fallback to `page.edges()`;
+- no local movement option generation;
+- no local randomization;
+- no assumption that exactly 3 directions exist;
+- backtrack rendered only if DB provides it;
+- unknown/unsupported direction keys still render in fallback rather than disappearing;
+- `chooseMovementOption(...)` guard stays intact;
+- `start_hero_exploration_step` payload semantics stay unchanged.
+
+---
+
+### Acceptance criteria
+
+- Direction board is visually close to the prototype structure:
+  - large gameplay surface;
+  - central board/core;
+  - direction gates arranged around the core;
+  - compact exploration HUD;
+  - path count/back availability shown from real options.
+- Board no longer looks like a plain generic card grid.
+- All backend-provided movement options remain visible or explicitly handled.
+- Missing directions are not fabricated.
+- Backtrack appears below/behind the core when present.
+- Unavailable options are visibly disabled and non-clickable.
+- No copied prototype CSS/classes/tokens.
+- No component-scoped SCSS unless explicitly justified and approved in report.
+- No DB/RPC/generated/manual type edits.
+- `npx tsc --noEmit`: pass.
+- `npm run build`: pass, existing warnings only.
+- Manual visual smoke: compare against attached prototype screenshot at desktop width.
+
+---
+
+### Required short report
+
+Return only:
+
+- files changed;
+- prototype anchors matched;
+- movement contract preserved: yes/no;
+- global SCSS added/changed: yes/no + exact file;
+- local/component SCSS added: yes/no;
+- copied from prototype: yes/no;
+- verification;
+- known remaining visual gaps, if any.
+
+Do not paste full files/code unless explicitly asked.
+
+## UI-EXPLORATION-11 — Challenge handoff shell
+
+**Goal:**  
+When a resolved step produces an active Trial/Encounter/challenge, show a clear handoff shell without implementing Trial or Combat internals in this task.
 
 **Scope:**
-- trial result summary,
-- encounter result summary,
-- reward summary,
-- item drops with shared item popovers,
-- Open full report action,
-- Continue exploration / return actions where backend supports them.
+- Challenge handoff section inside Exploration runtime mode.
+- Show:
+  - challenge kind/type label where available;
+  - player-facing challenge title/description where available;
+  - available existing actions:
+    - auto/manual resolve if already supported;
+    - enter combat if existing combat handoff exists;
+    - enter Trial if existing Trial handoff exists;
+  - unsupported/missing state if backend/frontend contract is not ready.
+- Reuse existing `ExplorationChallengeState` / challenge panel logic where it is still valid, but do not keep it as a broad legacy dump.
 
 **Out of scope:**
-- full report route implementation if handled by UI-REPORTS,
-- live recomputation of historical results,
-- reward granting logic,
-- permanent local result storage.
+- Manual Trial minigame implementation.
+- Combat live UI implementation.
+- Backend verdict/reward logic.
+- New Trial/combat RPCs.
+- Fake challenge state.
+- Direction choice while challenge blocks continuation.
 
 **Data/source rules:**
-- result from durable backend result/read model,
-- report from game report snapshot/source where available,
-- item drops through item read model or report references,
-- no live recompute of historical rewards.
+- Challenge state from current exploration read model/state.
+- Actions only from existing canonical services/RPCs.
+- No local challenge outcome authority.
+- If combat/trial handoff data is missing, report dependency.
 
 **UI/SCSS rules:**
-- use shared report/result summary pattern,
-- item popovers via UI-CORE-6,
-- success/failure outcomes use badges/status, not just color text.
+- Use shared card/action/panel patterns.
+- Challenge/action-needed values not muted.
+- Keep copy player-facing.
+- No local SCSS.
 
 **Dependencies/blockers:**
-- if report generation not implemented, show result summary and report dependency,
-- if reward snapshot missing, report data gap.
+- Missing challenge labels/metadata → report dependency or use existing accepted mapper.
+- Missing combat/Trial handoff route/action → report dependency.
+- Missing stale/session guard → report dependency.
 
 **Acceptance criteria:**
-- result summary is readable,
-- full report handoff clear,
-- item drops show shared popover where possible,
-- no recompute/fake report,
-- build passes.
+- Active challenge is clearly visible and not confused with directions/difficulty selection.
+- Existing supported actions are available.
+- Unsupported handoffs fail closed with clear non-fake state.
+- Directions are not shown as the main next action while a blocking challenge is unresolved.
+- Build passes.
 
 **Verification/smoke:**
-- result summary smoke with sample/read data,
-- full report link smoke if available,
-- item popover smoke,
-- build/tsc.
+- active challenge state;
+- no challenge state;
+- existing auto/manual action if supported;
+- combat/Trial handoff dependency state if unsupported;
+- `npx tsc --noEmit`;
+- `npm run build`.
 
 **Required Codex report:**
-- result data source:
+- challenge data source:
+- available actions:
+- unsupported handoff dependencies:
+- reused components:
+- local SCSS added:
+
+**Status:** Accepted/completed on 2026-05-22 as the Exploration runtime challenge handoff, live-combat report and cleanup pass. Active challenges now render through source-aware report surfaces under `src/app/game/components`; Trial combat is labeled as a combat Trial, Encounter combat as an ambush, sandbox tools/diagnostics remain sandbox-gated, and operational success feedback uses toasts. The resolved-step and completed-combat reports render backend/read-model narrative, reward, effect and combat fields where available, keep local fallback copy minimal, filter player-facing reward labels appropriately, and keep direction choices below the full report. Combat challenges keep the accepted DB-owned live boundary only: `ensure_exploration_combat_session(...)` for start/recovery, `get_combat_live_state(...)` for read/delta/recovery, Walking Dead only when DB returns `awaitingPlayerAction` with a timing manifest, `submit_combat_player_action(...)` for timing input, and `get_combat_result_detail(...)` after finalization. The UI does not use `advance_combat_live_to_next_player_action`, does not add a frontend combat continuation/resolution, and keeps non-actionable live states as DB/runtime data issues rather than pushing them forward from Angular. Report actions render after rewards; public copy uses `/report/:publicToken` only when the current payload or existing report detail exposes a public token/link, otherwise the internal Reports route remains an open-detail fallback. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; no new specs were added. Follow-ups kept for later accepted tasks: richer backend-provided report copy/narratives, public/external report token coverage where backend step/combat payloads still omit it, and later visual/prototype refinement after the final HTML/template review and representative manual smoke.
+
+
+## UI-EXPLORATION-12 — Reward and report handoff
+
+**Goal:**  
+Show rewards, drops and report handoff after step/challenge resolution where durable backend data exists.
+
+**Scope:**
+- Reward/result handoff inside Exploration runtime mode.
+- Show reward summary where available:
+  - resources;
+  - item drops;
+  - effect/buff/debuff result where available;
+  - reward unavailable state where backend says not available.
+- Use shared item popover for item drops if item references/read model support it.
+- Show `Open report` / report handoff if a report reference/link exists.
+- Preserve continue/direction flow where appropriate.
+
+**Out of scope:**
+- Reward granting logic.
+- Full report route implementation if owned by reports epic.
+- Fake item drops.
+- Live recompute of rewards.
+- New DB/RPC contracts.
+- Permanent local reward storage.
+
+**Data/source rules:**
+- Rewards from durable backend/read model only.
+- Report from game report snapshot/source where available.
+- Item drops through item read model/report item references.
+- No fake report generation.
+- No fake item popovers without item refs.
+
+**UI/SCSS rules:**
+- Reward values not muted.
+- Use shared item popover/report/result patterns where possible.
+- Keep reward/report UI compact; do not bury direction continuation.
+- No local SCSS.
+
+**Dependencies/blockers:**
+- Missing reward snapshot/read model → report dependency.
+- Missing report link/ref → report dependency.
+- Missing item refs/details → omit popover and report limitation, do not fake.
+
+**Acceptance criteria:**
+- Reward summary is readable where data exists.
+- Missing reward state is clear and non-fake.
+- Report handoff is clear where available.
+- Item drops use shared popover where possible.
+- Build passes.
+
+**Verification/smoke:**
+- reward summary with data;
+- no reward/unavailable state;
+- report link/handoff if data exists;
+- item drop popover if data exists;
+- `npx tsc --noEmit`;
+- `npm run build`.
+
+**Required Codex report:**
+- reward data source:
 - report source/link:
-- item popover reused:
-- limitations:
+- item popover reuse:
+- missing-data limitations:
+- local SCSS added:
+
+**Follow-up status:** Accepted on 2026-05-23. The pending active exploration step now uses the shared `PendingTimerOracle` Time Oracle surface in the production exploration runtime shell instead of the old plain progress card. The surface keeps the outer exploration card full-width, centers the circular oracle, uses one coherent timer/progress display model from `core/utils/pending-timer`, shows a central ready state with the only `Sprawdź wynik` CTA, and keeps direction/result/report surfaces hidden while a step is pending. The shared oracle is presentational and receives labels, timer display, updating/resolving state and primary action input; exploration state keeps workflow readiness separate from UI display readiness. Cleanup removed the wrapper `ExplorationPendingStepOracle`, obsolete timer aliases/suspend APIs, footer action panel leftovers and one-off local/global SCSS utilities. The accepted direction-board cleanup now renders one shared direction board block for all `canShowDirectionBoard()` states and adds a secondary `Zmień poziom trudności` footer action below it; the action only switches the local runtime view back to Difficulty preview when no active step/challenge is running and does not add DB/RPC flow. The accepted combat auto-resolve follow-up adds a secondary `Rozstrzygnij automatycznie` action for Exploration combat encounters/ambushes and combat Trials only, calls the dedicated `auto_resolve_exploration_combat_challenge_attempt(p_challenge_attempt_id, p_request_id)` RPC through typed service/mappers, keeps non-combat Trial auto-resolve on the existing RPC, keeps PvP out of scope, and preserves the manual Walking Dead flow (`ensure_exploration_combat_session(...)`, `get_combat_live_state(...)`, `submit_combat_player_action(...)`, `get_combat_result_detail(...)`) without using `advance_combat_live_to_next_player_action`. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused service spec addition remains blocked in the Angular test build by unrelated existing item-generation fixture type errors. Manual smoke remains user-side pending for representative pending/ready steps, Hard duration, sandbox `Skróć czas`, the direction-board footer return action, and combat auto-resolve for Encounter combat plus Trial combat.
+
+
+## UI-EXPLORATION-13 — Runtime composition cleanup and legacy section removal
+
+**Goal:**  
+Remove remaining legacy Exploration runtime duplication after the pending/result/direction/reward sections have been split into focused runtime components.
+
+**Scope:**
+- Review current `/game/exploration` templates/components after UI-EXPLORATION-7–12.
+- Remove or split broad legacy runtime surfaces, especially any catch-all status section that still duplicates:
+  - active step;
+  - result;
+  - challenge;
+  - reward;
+  - directions;
+  - debug diagnostics.
+- Ensure player-facing Exploration runtime has a single clear flow:
+  - entry difficulty screen;
+  - runtime pending/result/challenge/direction/reward screens.
+- Keep gated diagnostics available only where still useful and properly gated.
+- Clean repeated template calls into `@let` where useful.
+
+**Out of scope:**
+- New feature implementation.
+- New DB/RPC/schema/generated edits.
+- Broad redesign outside Exploration.
+- Combat/Trial internals.
+- Fake data or fallback contracts.
+
+**Data/source rules:**
+- Do not add data fields.
+- If a data gap remains, document dependency.
+- Do not replace backend-owned runtime state with frontend-only state.
+
+**UI/SCSS rules:**
+- No `button pButton`.
+- No `ngModel` / `FormsModule`.
+- No `NgClass`/`ngClass` for simple class state.
+- No `className`.
+- No prototype `mb-*`.
+- No local SCSS unless already accepted and justified.
+- Important values/outcomes/action-needed text not muted.
+
+**Dependencies/blockers:**
+- Any runtime/browser smoke error in touched Exploration UI is blocker.
+- Any missing backend contract discovered late should be reported, not patched with fallback.
+
+**Acceptance criteria:**
+- No duplicate active-step/result/challenge/reward/direction panels.
+- No broad legacy status component owns multiple unrelated runtime concerns.
+- Player-facing UI does not expose raw IDs/keys where labels exist.
+- Diagnostics remain gated.
+- Build passes.
+
+**Verification/smoke:**
+- no-exploration entry screen;
+- existing exploration runtime screen;
+- active pending step;
+- ready/check result;
+- result state;
+- challenge state if available;
+- direction board;
+- reward/report if available;
+- static greps for banned patterns;
+- `npx tsc --noEmit`;
+- `npm run build`.
+
+**Required Codex report:**
+- files reviewed:
+- legacy blocks removed:
+- components split/reused:
+- diagnostics remaining/gating:
+- issues intentionally left as follow-up:
+- static greps:
+- local SCSS remaining:
+
+**Status:** Accepted/completed on 2026-05-23 as the runtime composition cleanup. The legacy catch-all `ExplorationStatusSection` was removed and `/game/exploration` runtime now composes focused blocks directly: `ExplorationRuntimePrimarySurface` for pending/result/challenge/combat handoff, `ExplorationRuntimeDirectionSection` for the direction board plus difficulty-return footer, and `ExplorationRuntimeDiagnosticsSection` for sandbox tools and gated diagnostics. Direction-board availability, the optional board header and the difficulty-return action now live in `ExplorationPageState`, so runtime components consume one shared state owner instead of duplicating local conditions. Diagnostics remain sandbox-gated, no DB/RPC/generated-type changes or local SCSS were added, and the pending timer, challenge, report, reward and combat flows were not changed. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; manual smoke remains user-side pending for the full runtime matrix.
+
+
+## UI-EXPLORATION-14 — Exploration UI final control pass
+
+**Goal:**  
+Perform the final Exploration UI control pass after UI-EXPLORATION-7–13 to ensure the full flow is consistent, production-styled and free of accidental prototype/debug/local patterns.
+
+**Scope:**
+- Review all touched Exploration templates/components/state from UI-EXPLORATION-1–13.
+- Check complete player flow:
+  - entry difficulty screen;
+  - start/continue;
+  - pending movement step;
+  - check result;
+  - result/challenge/reward/report;
+  - direction choice and next movement.
+- Remove accidental duplication, stale UI and debug-looking player UI.
+- Check copy, values, labels and muted-text usage.
+- Check selected/loading/disabled/action-needed states.
+- Check keyboard/click interaction for cards/buttons where touched.
+- Check component boundaries and obvious overgrown components.
+
+**Out of scope:**
+- New features.
+- DB/RPC/schema/generated changes.
+- Broad redesign outside Exploration.
+- Combat/Trial implementation beyond handoff.
+- Rewriting accepted UI from scratch.
+
+**Data/source rules:**
+- Do not add fake data or frontend gameplay authority.
+- Any missing field/contract discovered late must be reported as dependency.
+- Runtime/gameplay authority remains backend/RPC/read-model owned.
+
+**UI/SCSS rules:**
+- Use accepted dashboard/game-shell visual style.
+- Prototype remains UX anchor only.
+- No prototype `mb-*`.
+- No raw prototype colors/gradients/dimensions.
+- No unnecessary local SCSS.
+- Important values/outcomes/action-needed text not muted.
+- No badges/chips unless they carry real semantic status and are visually necessary.
+
+**Dependencies/blockers:**
+- Runtime browser smoke errors are blockers.
+- Missing backend contracts that make a UI misleading are blockers/dependencies.
+- Self-fulfilling tests that only validate local mocks are not enough for acceptance.
+
+**Acceptance criteria:**
+- Exploration UI reads as one coherent flow, not a pile of legacy panels.
+- Entry screen and runtime screen are clearly separated.
+- Pending/result/direction/reward states are not duplicated.
+- No raw player-facing keys/IDs where labels exist.
+- No fake runtime/chance/result/reward data.
+- Build passes.
+- Manual smoke list is explicit.
+
+**Verification/smoke:**
+- `/game/exploration` route smoke;
+- no-exploration entry screen;
+- selected difficulty/start;
+- existing exploration continue;
+- active pending step;
+- ready-to-check;
+- result state;
+- direction choice;
+- challenge handoff if available;
+- reward/report if available;
+- keyboard selection/action smoke for difficulty cards;
+- static greps:
+  - `button pButton`;
+  - `ngModel`;
+  - `FormsModule`;
+  - `NgClass`/`ngClass`;
+  - `className`;
+  - prototype `mb-*`;
+  - debug/TODO/temporary copy;
+- `npx tsc --noEmit`;
+- `npm run build`.
+
+**Required Codex report:**
+- files reviewed:
+- flow states smoke checklist:
+- issues removed:
+- issues intentionally left as follow-up:
+- static greps:
+- local SCSS remaining:
+- manual smoke pending:
+
+**Status:** Accepted/completed on 2026-05-23 as the Exploration final player-facing copy/control pass. The pass cleaned the accepted `/game/exploration` entry/runtime flow without changing DB/RPC/generated contracts, runtime authority, timer, challenge, reward, report or combat logic. Difficulty entry, selected Difficulty action labels, card aria-labels, Trial detail preview labels and start/movement feedback are now Polish player-facing copy, while sandbox diagnostics remain explicitly gated and technical by design. No local SCSS, new components, new helpers or new specs were added. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and scoped static greps for banned Angular/prototype patterns plus remaining English player-facing copy; manual smoke remains user-side pending for the full Exploration matrix.
 
 ---
 
-# 11. UI-ESTATE — Estate, buildings and vicinity
-
-Cel: estate overview, building cards, active building job, build action boundary and future vicinity/list entry. Estate UI musi pokazywać budynki dostępne dla aktualnego district context i nie może oferować cancel/claim, jeśli gameplay decyzje tego nie przewidują.
-
-## UI-ESTATE task index
-
-- UI-ESTATE-1 / formerly UI-23 — Estate overview
-- UI-ESTATE-2 / formerly UI-24 — Building cards and district grouping
-- UI-ESTATE-3 / formerly UI-25 — Active building job panel
-- UI-ESTATE-4 / formerly UI-26 — Build action RPC boundary
-- UI-ESTATE-5 / formerly UI-27 — Estate list / vicinity entry boundary
-
-## UI-ESTATE-1 / formerly UI-23 — Estate overview
-
-**Goal:**  
-Zbudować Estate overview jako player-facing ekran posiadłości z budynkami dostępnymi w aktualnym district context, active building job i build actions.
-
-**Scope:**
-- route/page target: existing estate route/page if present,
-- page header with estate/address context,
-- available building summary,
-- building cards/grid,
-- current level,
-- current bonus/effect,
-- next level bonus/effect,
-- next level build time,
-- next level cost,
-- build button/action where eligible,
-- active building job shown prominently if one exists,
-- link/entry to estate list/vicinity if present in navigation.
-
-**Out of scope:**
-- cancel building job player action,
-- claim/collect completed building job if DB finalizes lazily,
-- building admin/configurator,
-- DB schema changes,
-- fake production values if backend/read model missing.
-
-**Data/source rules:**
-- estate data from active hero/selected server estate read model,
-- address source should use `district_code + address_number` where current decisions require it,
-- building definitions and current levels from canonical building/estate services,
-- costs/time/requirements from DB/read model/formula preview where available,
-- no direct writes to estate/building tables.
-
-**UI/SCSS rules:**
-- use shared page header/card/stat/note patterns,
-- building image/placeholder uses global image/card pattern,
-- no local repeated building-card CSS if global card pattern can cover it,
-- no player-facing technical copy like “one estate per hero”.
-
-**Dependencies/blockers:**
-- if build execution RPC is missing, show read-only/disabled action and report dependency,
-- if active job read model missing, report dependency,
-- if cost/time preview missing, show safe partial and report data gap.
-
-**Acceptance criteria:**
-- estate overview shows available buildings for current context,
-- each building card shows current level, bonus, next build time/cost where data exists,
-- active job visible if present,
-- no Cancel button/copy,
-- no fake claim/collect flow,
-- build passes.
-
-**Verification/smoke:**
-- route smoke for Estate,
-- visual smoke with active job and without active job if data possible,
-- disabled/ineligible build smoke,
-- build/tsc.
-
-**Required Codex report:**
-- reused estate/building services:
-- cost/time source:
-- active job source:
-- checked but not reused:
-- local SCSS added:
-
-## UI-ESTATE-2 / formerly UI-24 — Building cards and district grouping
-
-**Goal:**  
-Pokazać budynki według district availability, tak aby district B mógł pokazywać budynki z A+B, a wyższe district contexts mogły rozszerzać dostępność.
-
-**Scope:**
-- building grouping/sections by source district or availability band,
-- available buildings count,
-- visual distinction between current district and inherited lower-district buildings,
-- building cards with image/placeholder, current level, next cost/time/effect,
-- desktop-first grid, mobile later as responsive fallback,
-- link to estate list/vicinity where relevant.
-
-**Out of scope:**
-- player-facing copy about internal district logic,
-- building district cap editor,
-- admin building configuration,
-- new DB schema for district grouping.
-
-**Data/source rules:**
-- `buildings.district_code` is minimum district where building is available,
-- building available in that district and higher districts unless current DB says otherwise,
-- level caps/requirements from read model/canonical building services,
-- no hardcoded permanent building list if DB definitions exist.
-
-**UI/SCSS rules:**
-- use section/card/chip patterns,
-- avoid badge copy like “A+B buildings available” if it reads technical/player-hostile,
-- show “Available buildings” or more player-facing label instead of “Buildings on”.
-
-**Dependencies/blockers:**
-- if district availability resolver missing, report dependency,
-- if building images/assets missing, use consistent placeholder and report asset gap.
-
-**Acceptance criteria:**
-- district B example can show A+B building availability,
-- buildings outside available districts are not shown,
-- grouping is understandable without technical jargon,
-- build passes.
-
-**Verification/smoke:**
-- visual smoke for district A and B contexts if data available,
-- empty/no-buildings smoke,
-- build/tsc.
-
-**Required Codex report:**
-- building availability source:
-- grouping logic source:
-- image/asset fallback:
-- local SCSS added:
-
-## UI-ESTATE-3 / formerly UI-25 — Active building job panel
-
-**Goal:**  
-Pokazać aktywną budowę w estate UI bez sugerowania cancel/claim, jeśli te akcje nie są player-facing.
-
-**Scope:**
-- active job card/panel,
-- building name/image/icon,
-- target level,
-- started/remaining/completes at,
-- cost summary if useful,
-- progress bar/timer,
-- link/highlight matching building card,
-- completed state messaging if backend surfaces completed but not finalized.
-
-**Out of scope:**
-- cancel action,
-- claim/collect action,
-- multi-job queue unless backend supports it,
-- action queue dashboard.
-
-**Data/source rules:**
-- active job from canonical estate_building_job read model/service,
-- status labels from DB enum/read model where available,
-- timer is display-only if backend owns completion,
-- no local mutation to mark job completed.
-
-**UI/SCSS rules:**
-- use global progress/timer/status card pattern,
-- active job must be visually clear but not oversized,
-- completed/failed/cancelled internal statuses should be handled safely without player-facing cancel flow.
-
-**Dependencies/blockers:**
-- missing active job read model -> dependency,
-- missing timer/progress global pattern -> link to UI-CORE/shell persistent state.
-
-**Acceptance criteria:**
-- active job visible when present,
-- no cancel UI,
-- progress/remaining time displayed where data exists,
-- state remains safe if no active job,
-- build passes.
-
-**Verification/smoke:**
-- active job smoke,
-- no active job smoke,
-- completed job edge smoke if available,
-- build/tsc.
-
-**Required Codex report:**
-- active job source:
-- timer/progress pattern reused:
-- statuses handled:
-- not added intentionally:
-
-## UI-ESTATE-4 / formerly UI-26 — Build action RPC boundary
-
-**Goal:**  
-Upewnić się, że Build action w Estate przechodzi przez canonical DB/RPC workflow, z właściwymi disabled states i feedbackiem.
-
-**Scope:**
-- build button on eligible building cards,
-- disabled states for missing requirements/resources/active job/max level,
-- cost/requirement display,
-- canonical build RPC/service call where available,
-- success toast / inline error using PrimeNG/vendor wrappers,
-- stale guard if active hero/server changes.
-
-**Out of scope:**
-- direct writes to estate/building/job/resource tables,
-- cancel/claim actions,
-- cost formula redesign,
-- admin build correction.
-
-**Data/source rules:**
-- build action through existing canonical RPC/service only,
-- requirement/cost validation from backend/read model,
-- frontend preview is explanatory and not authority,
-- after success refresh estate/job/resources through existing services.
-
-**UI/SCSS rules:**
-- use shared buttons/messages/toasts/vendor wrappers,
-- blocked reason visible and not muted if action is blocked,
-- no local loading button CSS if shared pattern exists.
-
-**Dependencies/blockers:**
-- if canonical build RPC/service missing, report blocker and do not implement fake mutation,
-- if requirements read model missing, show safe disabled state/dependency.
-
-**Acceptance criteria:**
-- build button only enabled when read model says eligible,
-- action uses canonical workflow,
-- stale success/error cannot update wrong hero/server context,
-- resources/job refresh after success,
-- build passes.
-
-**Verification/smoke:**
-- route smoke,
-- disabled build smoke,
-- build action smoke if backend/test data available,
-- stale/context note if not testable,
-- build/tsc.
-
-**Required Codex report:**
-- build RPC/service used:
-- requirement/cost source:
-- stale guard approach:
-- local SCSS added:
-- not added intentionally:
-
-## UI-ESTATE-5 / formerly UI-27 — Estate list / vicinity entry boundary
-
-**Goal:**  
-Zdefiniować granicę między własnym Estate overview a listą posiadłości/vicinity, która może służyć wejściu do PvP target selection i world browsing.
-
-**Scope:**
-- entry/link from Estate to estate list/vicinity if route exists,
-- short orientation copy,
-- clarify that own estate view is not the full vicinity list,
-- if estate list route exists: show lightweight navigation slot,
-- if route missing: show no fake working link or mark pending by project convention.
-
-**Out of scope:**
-- full estate list implementation,
-- PvP target selection implementation,
-- ranking/vicinity table,
-- siege/spy actions.
-
-**Data/source rules:**
-- estate list/vicinity data comes from server estate read model if implemented,
-- no hardcoded estate list,
-- PvP target actions belong to UI-PVP tasks.
-
-**UI/SCSS rules:**
-- link/card uses global navigation/entry pattern,
-- avoid confusing labels like technical “Buildings on”,
-- no second sidebar/duplicated nav.
-
-**Dependencies/blockers:**
-- if estate list route missing, report future route/UX dependency,
-- if PvP vicinity is the intended route, link only when available and gated.
-
-**Acceptance criteria:**
-- user can see how Estate relates to wider estate list/vicinity,
-- no fake list rendered without data,
-- no PvP actions on Estate overview unless explicitly part of route,
-- build passes if code changed.
-
-**Verification/smoke:**
-- link smoke if route exists,
-- no-link/pending state smoke if route missing,
-- build/tsc.
-
-**Required Codex report:**
-- route/link checked:
-- read model availability:
-- not added intentionally:
-- local SCSS added:
-
----
-
-# 12. UI-TRADE — Auction House and Direct Trade
-
-Cel: osobne player-facing ekrany Auction House i Direct Trade, zgodne z CP economy, item lock rules, market slot rules i anti-abuse/audit boundaries. Trade UI nie może direct-write item/auction/trade/CP tables.
-
-## UI-TRADE task index
-
-- UI-TRADE-1 / formerly UI-29 — Auction House one-item listing browser
-- UI-TRADE-2 / formerly UI-30 — Auction filters, summary and pagination
-- UI-TRADE-3 / formerly UI-32 — Auction actions through canonical RPC/domain paths
-- UI-TRADE-4 / formerly UI-33 — Direct Trade offer builder
-- UI-TRADE-5 / formerly UI-34 — Direct Trade pending offers with pagination
-- UI-TRADE-6 / formerly UI-35 — Trade market slot summary
-- UI-TRADE-7 / formerly UI-36 — Direct Trade create offer RPC workflow
-- UI-TRADE-8 / formerly UI-37 — Direct Trade target response UI
-- UI-TRADE-9 / formerly UI-38 — Trade item display and popover integration
-
-## UI-TRADE-1 / formerly UI-29 — Auction House one-item listing browser
-
-**Goal:**  
-Zbudować Auction House listing browser jako osobny ekran od Direct Trade. Auction listing pokazuje maksymalnie jeden item i CP-based price/bid actions.
-
-**Scope:**
-- route/page target: existing auction/trade route if present,
-- listing list/table/card pattern per UI-CORE-14 decision,
-- one item per listing,
-- item name with shared item popover,
-- current bid in Character Points,
-- buy now amount in Character Points if available,
-- auction mode: bidding, buy now, bidding with buy now,
-- actions:
-  - bidding listing: Bid, Watch, Buy now if available,
-  - buy-now-only listing: Buy,
-- seller/listing metadata,
-- pagination.
-
-**Out of scope:**
-- Direct Trade builder,
-- bundle/set auctions,
-- drachma pricing for player-to-player trade,
-- create listing flow unless separate task,
-- anti-abuse case UI.
-
-**Data/source rules:**
-- listings from auction read model/service,
-- item display from item snapshot/read model,
-- prices/bids in Character Points only,
-- drachmas may appear only as item inherent/vendor value in popover, not trade price,
-- no direct writes to auction/item/CP tables.
-
-**UI/SCSS rules:**
-- use PrimeNG paginator/table or global list pattern per UI-CORE-14,
-- item hover/focus uses shared popover,
-- actions use shared buttons/action icons,
-- status/requirements as badges/status pills.
-
-**Dependencies/blockers:**
-- if auction read model/service missing, report blocker,
-- if item popover missing, link UI-CORE-6 dependency,
-- if watch action unsupported, omit or mark pending, do not fake.
-
-**Acceptance criteria:**
-- auction and direct trade are visually/route-separated,
-- one item per listing,
-- CP displayed for bid/buy now,
-- no drachma P2P price,
-- actions match auction mode,
-- pagination visible,
-- build passes.
-
-**Verification/smoke:**
-- route smoke,
-- listing render smoke,
-- mode/action smoke for bidding vs buy-now,
-- item popover smoke,
-- build/tsc.
-
-**Required Codex report:**
-- auction read model used:
-- item popover reused:
-- paginator/list pattern:
-- unsupported actions omitted:
-- local SCSS added:
-
-## UI-TRADE-2 / formerly UI-30 — Auction filters, summary and pagination
-
-**Goal:**  
-Dodać wygodne filtrowanie i paginację dla Auction House bez tworzenia niemożliwych filtrów albo fake danych.
-
-**Scope:**
-- filters by item category/slot/kind,
-- equippable / not equippable / requirements warning if read model supports it,
-- auction mode filter,
-- search by item/seller/listing where available,
-- summary cards/chips: available CP, locked CP, active bids, your listings,
-- page controls and current range.
-
-**Out of scope:**
-- advanced market analytics,
-- price history,
-- sorting by hidden item usefulness,
-- local fake counts.
-
-**Data/source rules:**
-- filter options from dictionaries/read models where available,
-- available/locked CP from Character Point read model/locks,
-- active bids/listings from auction service,
-- if read model does not support a filter, do not show it as functional.
-
-**UI/SCSS rules:**
-- filters use PrimeNG/vendor inputs/selects/chips,
-- pagination uses project/PrimeNG paginator pattern if available,
-- no local custom paginator unless justified by UI-CORE-14.
-
-**Dependencies/blockers:**
-- missing pagination in service -> report service dependency,
-- missing CP lock summary -> show only available CP and report gap.
-
-**Acceptance criteria:**
-- filters are functional or clearly omitted,
-- summary values are not hardcoded,
-- pagination shows current range/page,
-- no filter implies unavailable backend behavior,
-- build passes.
-
-**Verification/smoke:**
-- filter change smoke,
-- pagination smoke,
-- empty result smoke,
-- build/tsc.
-
-**Required Codex report:**
-- filters source:
-- CP/lock source:
-- pagination source:
-- filters omitted intentionally:
-
-## UI-TRADE-3 / formerly UI-32 — Auction actions through canonical RPC/domain paths
-
-**Goal:**  
-Podpiąć/wyznaczyć granicę dla Auction House actions przez canonical domain/RPC paths.
-
-**Scope:**
-- bid action,
-- buy now action,
-- watch action only if supported,
-- disabled/blocked states,
-- confirmation where needed,
-- success/error feedback,
-- refresh listing/CP locks after action,
-- stale guard if active hero/server changes.
-
-**Out of scope:**
-- direct table writes,
-- new auction RPCs unless task explicitly includes backend,
-- create listing flow,
-- anti-abuse admin review.
-
-**Data/source rules:**
-- use existing auction mutation service/RPC,
-- CP locks/refunds reflected from backend read model,
-- no direct `items`, `player_auction_*`, `character_point_*` mutations,
-- active hero/server context required.
-
-**UI/SCSS rules:**
-- shared buttons/confirm/toast/messages,
-- error states not muted,
-- no local dialog CSS.
-
-**Dependencies/blockers:**
-- if action RPC missing, report blocker and leave disabled/pending,
-- if watch unsupported, omit.
-
-**Acceptance criteria:**
-- actions call canonical paths,
-- invalid/blocked actions disabled or show backend error cleanly,
-- state refreshes after success,
-- stale responses ignored if context changed,
-- build passes.
-
-**Verification/smoke:**
-- bid smoke if backend/test data available,
-- buy now smoke if available,
-- blocked insufficient CP smoke,
-- build/tsc.
-
-**Required Codex report:**
-- RPC/service used:
-- locks/refunds source:
-- stale guard:
-- unsupported actions:
-
-## UI-TRADE-4 / formerly UI-33 — Direct Trade offer builder
-
-**Goal:**  
-Zbudować Direct Trade offer builder, w którym creator wybiera wyłącznie własne itemy i własne Character Points. Creator nie może żądać konkretnych itemów/CP od targeta.
-
-**Scope:**
-- route/page target: Direct Trade route or Trade route tab,
-- target hero search/select,
-- creator item selection 0–5,
-- creator CP amount,
-- offer note/message,
-- creator side preview,
-- target response placeholder,
-- item popover on selected items,
-- rules/helper panel explaining creator side vs target response,
-- validation: item count, CP amount, target required.
-
-**Out of scope:**
-- target inventory browsing,
-- requested item/CP UI,
-- CP-only-for-CP-only explanation in main UI unless backend error requires it,
-- auction UI,
-- direct writes.
-
-**Data/source rules:**
-- target hero search from server-scoped hero search/read service,
-- creator items from active hero inventory with eligible statuses,
-- creator CP from active hero/CP read model,
-- create action through canonical direct trade RPC/service,
-- no direct write to trade/item/CP tables.
-
-**UI/SCSS rules:**
-- use shared item row/popover,
-- use vendor form inputs/selects,
-- target response panel visibly empty until target answers,
-- no local copied prototype CSS.
-
-**Dependencies/blockers:**
-- missing hero search -> report dependency,
-- missing direct trade create service/RPC -> report blocker,
-- missing item eligibility data -> show safe disabled selection and report gap.
-
-**Acceptance criteria:**
-- no requested item/CP UI exists,
-- target response placeholder is clear,
-- creator can select up to five own eligible items,
-- CP validation prevents overspend,
-- create offer uses canonical workflow,
-- build passes.
-
-**Verification/smoke:**
-- route smoke,
-- target select smoke,
-- item selection count smoke,
-- CP overspend smoke,
-- create smoke if backend data available,
-- build/tsc.
-
-**Required Codex report:**
-- target search source:
-- item eligibility source:
-- CP source:
-- create RPC/service:
-- local SCSS added:
-
-## UI-TRADE-5 / formerly UI-34 — Direct Trade pending offers with pagination
-
-**Goal:**  
-Pokazać pending direct trade offers jako paged list, maksymalnie pięć widocznych na panel/stronę.
-
-**Scope:**
-- pending offers list,
-- total count,
-- page controls,
-- statuses: pending target, pending creator, incoming, expires soon, completed/rejected if included by filter,
-- selected offer detail summary,
-- incoming empty offer state does not block market slot,
-- action entry points where supported: respond, review, cancel own offer if backend supports it.
-
-**Out of scope:**
-- full response builder if handled by UI-TRADE-8,
-- fake cancel if no backend action,
-- auction listings.
-
-**Data/source rules:**
-- offers from direct trade read model/service,
-- market slot blocking from backend/read model if available,
-- incoming empty offers must not be counted as blocking creator’s slot unless backend says otherwise,
-- no local status inference that conflicts with backend.
-
-**UI/SCSS rules:**
-- use shared list/pagination/status patterns,
-- pagination should fit pending panel width,
-- status labels as badges/pills, not muted text.
-
-**Dependencies/blockers:**
-- missing pagination/read model -> report dependency,
-- missing slot impact info -> report limitation.
-
-**Acceptance criteria:**
-- five visible offers per page,
-- total pending count visible,
-- empty incoming offer does not visually block slot,
-- statuses clear,
-- build passes.
-
-**Verification/smoke:**
-- pagination smoke,
-- selected offer smoke,
-- empty incoming offer smoke if data available,
-- build/tsc.
-
-**Required Codex report:**
-- pending offers source:
-- pagination source:
-- slot impact source:
-- local SCSS added:
-
-## UI-TRADE-6 / formerly UI-35 — Trade market slot summary
-
-**Goal:**  
-Pokazać market slot budget i CP lock context w sposób zrozumiały dla gracza.
-
-**Scope:**
-- available CP,
-- locked CP,
-- market slots,
-- remaining slots,
-- helper/tooltip explaining that direct offers, active auction listings and active winning bids share slot budget for now,
-- slot impact in Direct Trade and Auction House screens.
-
-**Out of scope:**
-- building/Trade Routes design changes,
-- changing slot calculation,
-- admin config of slots,
-- fake slot numbers.
-
-**Data/source rules:**
-- slot limit from trade rules/building/runtime read model where available,
-- CP locks from CP lock read model,
-- if slot source missing, report dependency and avoid hardcoded production values.
-
-**UI/SCSS rules:**
-- summary values important, not muted,
-- use shared summary/card/chip patterns,
-- helper copy can be muted/secondary but must be readable.
-
-**Dependencies/blockers:**
-- missing slot read model -> dependency,
-- missing CP lock summary -> partial summary and report gap.
-
-**Acceptance criteria:**
-- summary visible on trade screens,
-- no confusing technical copy in main UI,
-- values sourced or dependency reported,
-- build passes.
-
-**Verification/smoke:**
-- visual smoke,
-- lock/slot values smoke if data available,
-- build/tsc.
-
-**Required Codex report:**
-- market slot source:
-- CP lock source:
-- values hardcoded yes/no:
-- local SCSS added:
-
-## UI-TRADE-7 / formerly UI-36 — Direct Trade create offer RPC workflow
-
-**Goal:**  
-Podpiąć Direct Trade create offer do canonical RPC/service z walidacją, feedbackiem i stale guards.
-
-**Scope:**
-- validate target, items 0–5, CP amount,
-- call direct trade create RPC/service,
-- show success toast and refresh offers/locks/items,
-- show inline/form errors for validation/RPC errors,
-- stale guard for active hero/server/target changes.
-
-**Out of scope:**
-- target response workflow,
-- auction create listing,
-- direct table writes,
-- backend RPC creation unless task explicitly includes backend.
-
-**Data/source rules:**
-- canonical direct trade RPC/service only,
-- item locks/CP locks backend-owned,
-- no direct writes to `items`, trade tables, CP tables,
-- refresh active hero/items/offers after success.
-
-**UI/SCSS rules:**
-- vendor form messages/toasts,
-- no local loading/error CSS if shared pattern exists,
-- important RPC errors not muted.
-
-**Dependencies/blockers:**
-- missing create RPC/service -> blocker,
-- missing lock refresh read model -> report limitation.
-
-**Acceptance criteria:**
-- invalid drafts cannot submit,
-- successful create locks creator assets via backend,
-- stale response guarded,
-- UI refreshes after success,
-- build passes.
-
-**Verification/smoke:**
-- validation smoke,
-- create offer smoke if data available,
-- failure smoke for insufficient CP/ineligible item if available,
-- build/tsc.
-
-**Required Codex report:**
-- create RPC/service:
-- validation rules:
-- refresh paths:
-- stale guard:
-
-## UI-TRADE-8 / formerly UI-37 — Direct Trade target response UI
-
-**Goal:**  
-Zaprojektować/zaimplementować target-side response UI, gdzie target widzi creator side i wybiera własne itemy/CP jako odpowiedź.
-
-**Scope:**
-- show creator committed side from offer snapshot/read model,
-- target selects own eligible items 0–5,
-- target CP amount,
-- accept/respond/reject actions where backend supports them,
-- target response preview,
-- item popovers,
-- validation.
-
-**Out of scope:**
-- target seeing creator private inventory beyond offer,
-- modifying creator side,
-- auction UI,
-- direct table writes.
-
-**Data/source rules:**
-- creator side from direct trade offer snapshot/read model,
-- target items from active hero eligible inventory,
-- response through canonical RPC/service,
-- no access to other hero inventory except committed offer items.
-
-**UI/SCSS rules:**
-- two-side offer layout reusable with builder,
-- item popovers shared,
-- response statuses as badges/pills.
-
-**Dependencies/blockers:**
-- missing response RPC/service -> blocker,
-- missing offer snapshot read model -> dependency.
-
-**Acceptance criteria:**
-- target can understand creator side,
-- target cannot edit creator side,
-- response uses canonical path,
-- no privacy leak,
-- build passes.
-
-**Verification/smoke:**
-- open incoming offer smoke,
-- response validation smoke,
-- accept/reject smoke if backend exists,
-- build/tsc.
-
-**Required Codex report:**
-- offer snapshot source:
-- target item source:
-- response RPC/service:
-- privacy boundaries:
-
-## UI-TRADE-9 / formerly UI-38 — Trade item display and popover integration
-
-**Goal:**  
-Upewnić się, że każdy item w Auction House i Direct Trade korzysta ze shared item display/popover.
-
-**Scope:**
-- Auction listing item,
-- Direct Trade selected/offered item,
-- pending offer item summary,
-- report/trade transaction item if present,
-- requirements/equippable status,
-- drachma value in popover or item row as appropriate.
-
-**Out of scope:**
-- CP item valuation,
-- local tooltip CSS,
-- item generation changes.
-
-**Data/source rules:**
-- item display from item read model/snapshot,
-- historical transaction items use snapshots where available,
-- no live recompute if snapshot exists,
-- no private data leakage.
-
-**UI/SCSS rules:**
-- UI-CORE-6 shared item popover,
-- status/requirements badges,
-- no duplicate per-screen item styling.
-
-**Dependencies/blockers:**
-- missing shared popover -> dependency,
-- missing snapshot data -> report gap and safe fallback.
-
-**Acceptance criteria:**
-- item hover/focus detail consistent across trade screens,
-- requirements, bonuses and drachma value visible,
-- no CP inherent value,
-- build passes.
-
-**Verification/smoke:**
-- item popover smoke in auction and direct trade,
-- not-equippable item smoke if data exists,
-- build/tsc.
-
-**Required Codex report:**
-- item popover reused:
-- item data/snapshot source:
-- local CSS avoided:
-- missing data fields:
-
----
-
-# 13. UI-PVP — PvP target selection and future combat boundary
-
-Cel: PvP target selection przez Vicinity/Ranking, z jasną granicą względem właściwego combat screen. UI-PVP target selection nie może zawierać Walking Dead, combat preview, result preview ani combat log. Dostępność akcji musi pochodzić z backend/read modelu.
-
-## UI-PVP task index
-
-- UI-PVP-1 / formerly UI-39 — PvP Vicinity target selection screen
-- UI-PVP-2 / formerly UI-40 — Selected target side panel
-- UI-PVP-3 / formerly UI-41 — Vicinity pagination and search
-- UI-PVP-4 / formerly UI-42 — PvP action start boundaries
-- UI-PVP-5 / formerly UI-43 — PvP Ranking entry point
-- UI-PVP-6 / formerly UI-44 — PvP combat screen boundary note
-
-## UI-PVP-1 / formerly UI-39 — PvP Vicinity target selection screen
-
-**Goal:**  
-Zbudować PvP target selection screen oparty o Vicinity, gdzie gracz wybiera cel ataku/szpiegowania/oblężenia z listy posiadłości w okolicy.
-
-**Scope:**
-- route/page target: existing PvP route/page if present,
-- top tabs/entry points: Vicinity and Ranking,
-- self hero/estate address visible,
-- list/table of nearby estates,
-- fields: address, hero name, level/rank if available, attack travel time, spy travel time, action availability,
-- row states: self, empty plot, protected, guild member, attackable, siege-only/spy-only,
-- compact action icons/buttons: Spy, Attack, Lay siege where available,
-- selected target side panel summary,
-- pagination if many nearby estates.
-
-**Out of scope:**
-- Walking Dead timing,
-- combat preview,
-- result preview,
-- combat log,
-- spy result detail,
-- siege setup form,
-- ranking full implementation unless part of separate task.
-
-**Data/source rules:**
-- target list from backend/read model for vicinity/estate list,
-- eligibility and action availability from backend/read model, not frontend guessing,
-- attack travel time and spy travel time from backend/read model,
-- guild membership/protection/range rules from backend/read model,
-- no direct writes to PvP/combat/report tables,
-- do not assume `hero.id === auth.uid()`.
-
-**UI/SCSS rules:**
-- use shared table/list/pagination patterns per UI-CORE-14,
-- action icons should use custom icon registry where available,
-- disabled/protected/guild states use badges/status pills, not opacity only,
-- no local combat-specific CSS on target selection screen.
-
-**Dependencies/blockers:**
-- missing vicinity read model -> dependency/blocker,
-- missing eligibility flags -> do not infer; report backend dependency,
-- missing PvP action RPCs -> actions disabled/pending and reported.
-
-**Acceptance criteria:**
-- Vicinity and Ranking controls fit in one line where desktop space allows,
-- own estate row clearly marked,
-- empty plots are visible but not attackable,
-- protected target shows Spy/Siege where allowed plus Protected state, no overflowing button text,
-- guild member shows Spy + Guild, no Attack/Siege,
-- target selection does not show combat UI,
-- build passes.
-
-**Verification/smoke:**
-- route smoke,
-- visual smoke for self, empty, protected, guild, attackable rows,
-- pagination smoke if data supports it,
-- build/tsc.
-
-**Required Codex report:**
-- target/vicinity data source:
-- eligibility source:
-- actions implemented/omitted:
-- checked but not reused:
-- local SCSS added:
-
-## UI-PVP-2 / formerly UI-40 — Selected target side panel
-
-**Goal:**  
-Dodać compact selected target side panel pokazujący najważniejsze dane i dostępne akcje dla wybranego celu.
-
-**Scope:**
-- target hero name,
-- address,
-- attack travel time,
-- spy travel time,
-- siege available yes/no,
-- protection/guild/range state if relevant,
-- action buttons/icons: Start attack, Spy, Lay siege when available,
-- short “what happens next” helper copy.
-
-**Out of scope:**
-- Clear button,
-- combat log/preview,
-- detailed enemy equipment,
-- spy result details,
-- siege setup options.
-
-**Data/source rules:**
-- selected target state from current row/read model,
-- action availability from backend flags,
-- do not reveal private defender equipment,
-- if data stale after refresh, selected target should update or clear safely.
-
-**UI/SCSS rules:**
-- use shared detail side panel/card patterns,
-- buttons must fit; prefer icon actions if text buttons overflow,
-- no redundant distance/district if address already carries location context,
-- statuses as badges/status pills.
-
-**Dependencies/blockers:**
-- missing selected target read model fields -> partial display and report dependency,
-- missing action workflow -> disabled action with dependency report.
-
-**Acceptance criteria:**
-- target, address, attack travel time, spy travel time and siege availability visible,
-- actions fit and match row eligibility,
-- no Clear button,
-- no defender private data leak,
-- build passes.
-
-**Verification/smoke:**
-- select row smoke,
-- protected/guild row selected smoke,
-- refresh/stale note if not testable,
-- build/tsc.
-
-**Required Codex report:**
-- selected target data source:
-- action availability source:
-- private data avoided:
-- local SCSS added:
-
-## UI-PVP-3 / formerly UI-41 — Vicinity pagination and search
-
-**Goal:**  
-Dodać pagination/search/filtering dla Vicinity target list bez tworzenia fake sortowania przeciwników.
-
-**Scope:**
-- search by hero/address if backend/read model supports it,
-- pagination with current range, e.g. showing 1–20,
-- optional “attackable only” filter if supported,
-- ranking tab remains separate entry point,
-- stable selected target behavior across pages.
-
-**Out of scope:**
-- arbitrary strength sorting,
-- frontend-calculated match range,
-- enemy recommendations,
-- full ranking UI.
-
-**Data/source rules:**
-- pagination and search should use backend/read model where available,
-- if only client-side list exists, do not imply server-side search,
-- availability filters only if backend supports them,
-- no frontend guessing attack range/match range.
-
-**UI/SCSS rules:**
-- use PrimeNG paginator/global pagination pattern,
-- search input through vendor input wrapper,
-- no local custom paginator unless justified by UI-CORE-14.
-
-**Dependencies/blockers:**
-- missing server-side pagination/search -> report service dependency,
-- missing filter support -> omit filter or mark disabled per convention.
-
-**Acceptance criteria:**
-- page controls visible and fit table/list width,
-- search/filter does not imply unsupported backend behavior,
-- selected target updates safely when page changes,
-- build passes.
-
-**Verification/smoke:**
-- pagination smoke,
-- search smoke if backend supports it,
-- selected target page-change smoke,
-- build/tsc.
-
-**Required Codex report:**
-- pagination source:
-- search/filter support:
-- paginator pattern reused:
-- local SCSS added:
-
-## UI-PVP-4 / formerly UI-42 — PvP action start boundaries
-
-**Goal:**  
-Ustalić i/lub podpiąć action start boundaries dla Attack, Spy i Lay siege bez implementowania samego combat/spy/siege result screen.
-
-**Scope:**
-- action handlers for available row/selected target actions,
-- pre-action confirmation if needed,
-- call canonical PvP/spy/siege start RPC/service where available,
-- show travel timer/state if backend returns one and UI pattern exists,
-- success/error feedback,
-- refresh action availability after start.
-
-**Out of scope:**
-- combat screen,
-- Walking Dead,
-- spy result details,
-- siege configuration details,
-- direct writes to combat/pvp/report tables.
-
-**Data/source rules:**
-- use canonical backend RPC/service for each action,
-- frontend is not authority for eligibility,
-- backend error wins and must be shown cleanly,
-- no direct persistent mutations,
-- active hero/server context required.
-
-**UI/SCSS rules:**
-- confirmation/dialog/toast through vendor wrappers,
-- action-needed/error text not muted,
-- no local timer styling unless global pattern missing and justified.
-
-**Dependencies/blockers:**
-- missing attack/spy/siege RPC -> leave action disabled/pending and report blocker,
-- missing travel timer read model -> show success and report persistent state dependency.
-
-**Acceptance criteria:**
-- unavailable actions cannot start,
-- available actions call canonical path if implemented,
-- errors/blocked states clear,
-- target selection remains separate from combat,
-- build passes.
-
-**Verification/smoke:**
-- action click smoke if backend available,
-- blocked action smoke,
-- success feedback smoke,
-- build/tsc.
-
-**Required Codex report:**
-- action RPCs/services used:
-- backend blockers:
-- refresh paths:
-- local SCSS added:
-
-## UI-PVP-5 / formerly UI-43 — PvP Ranking entry point
-
-**Goal:**  
-Dodać Ranking jako drugi target source / entry point obok Vicinity, bez pełnego projektowania rankingu, jeśli nie jest jeszcze gotowy.
-
-**Scope:**
-- Ranking tab/route entry,
-- placeholder/disabled state only if route/data missing and project convention allows it,
-- if ranking read model exists: list entries with same action availability rules as Vicinity,
-- clear separation between ranking list and vicinity list.
-
-**Out of scope:**
-- full ranking algorithm,
-- leaderboards polish,
-- opponent sorting hacks,
-- duplicate eligibility logic.
-
-**Data/source rules:**
-- ranking list from backend/read model,
-- action eligibility still from backend flags,
-- no frontend match range guessing.
-
-**UI/SCSS rules:**
-- reuse target list/action patterns from Vicinity,
-- no separate local ranking card system,
-- pending/empty state uses shared empty state pattern.
-
-**Dependencies/blockers:**
-- if ranking read model missing, report dependency and keep entry pending/omitted per project convention.
-
-**Acceptance criteria:**
-- ranking entry exists only if useful and not misleading,
-- no fake working ranking,
-- action rules consistent with Vicinity,
-- build passes if implemented.
-
-**Verification/smoke:**
-- tab/route smoke,
-- pending state smoke if no data,
-- build/tsc.
-
-**Required Codex report:**
-- ranking source:
-- omitted/pending reason:
-- reused target patterns:
-- local SCSS added:
-
-## UI-PVP-6 / formerly UI-44 — PvP combat screen boundary note
-
-**Goal:**  
-Utrwalić granicę: target selection kończy się na rozpoczęciu akcji, a właściwy combat screen jest osobnym widokiem/taskiem.
-
-**Scope:**
-- add code comments/docs/task notes where useful,
-- ensure PvP target screen does not include combat timing/log/result,
-- route/action handoff points to future combat/travel/report flow,
-- align with UI-COMBAT future tasks.
-
-**Out of scope:**
-- combat screen implementation,
-- combat engine/RPC changes,
-- reports generation,
-- Walking Dead.
-
-**Data/source rules:**
-- combat result/report data belongs to combat/report read models,
-- target selection should not read defender private equipment beyond allowed eligibility/display fields.
-
-**UI/SCSS rules:**
-- no combat-specific widgets on target selection,
-- helper copy should be concise and player-facing.
-
-**Dependencies/blockers:**
-- if current UI mixes combat preview into target selection, report cleanup scope.
-
-**Acceptance criteria:**
-- boundary documented,
-- target selection UI remains clean,
-- future combat screen has clear next task,
-- build passes if code changed.
-
-**Verification/smoke:**
-- visual scan/no combat widgets,
-- route smoke if code changed.
-
-**Required Codex report:**
-- combat-related elements removed/avoided:
-- future dependencies:
-- not added intentionally:
-
----
-
-# 14. UI-REPORTS — Reports and Notifications
-
-Cel: Reports Center, Reports archive, Notifications archive, full report detail, topbar bell/dropdown i toast-to-notification contract. Reports i Notifications są różnymi typami informacji i nie mogą być mieszane w jednej liście.
-
-## UI-REPORTS task index
-
-- UI-REPORTS-1 / formerly UI-45 — Reports Center shell
-- UI-REPORTS-2 / formerly UI-46 — Reports list/archive screen
-- UI-REPORTS-3 / formerly UI-47 — Full report detail route
-- UI-REPORTS-4 / formerly UI-48 — Notifications archive tab
-- UI-REPORTS-5 / formerly UI-49 — Topbar notification bell and recent notifications dropdown
-- UI-REPORTS-6 / formerly UI-50 — Toast-to-notification behavior contract
-
-## UI-REPORTS-1 / formerly UI-45 — Reports Center shell
-
-**Goal:**  
-Zbudować wspólny Reports Center shell dla dwóch osobnych archiwów: Reports i Notifications.
-
-**Scope:**
-- route/page target: existing reports route if present,
-- tabs: Reports and Notifications,
-- shared page header,
-- shared filter/list/detail layout,
-- read/unread visual state,
-- pagination,
-- empty/loading states,
-- topbar bell considered quick access only, not archive replacement.
-
-**Out of scope:**
-- full report detail route,
-- notification settings,
-- public share report route,
-- action queue/timer dashboard,
-- audit/admin logs.
-
-**Data/source rules:**
-- Reports and Notifications should use separate read models/services if backend separates them,
-- read/unread is user/hero scoped according to backend contract,
-- do not mix audit/player-abuse reports with gameplay reports,
-- if Notifications backend/archive missing, report dependency.
-
-**UI/SCSS rules:**
-- use global tabs/list/detail/pagination patterns,
-- no local copied report card CSS,
-- icons from custom registry/placeholders,
-- statuses as badges/pills.
-
-**Dependencies/blockers:**
-- missing reports read model -> blocker for Reports tab,
-- missing notifications read model -> blocker for Notifications tab,
-- missing read state mutation -> open marks read disabled/dependency.
-
-**Acceptance criteria:**
-- Reports and Notifications tabs exist,
-- entries are not mixed,
-- layout supports list + detail panel,
-- topbar bell not treated as archive,
-- build passes.
-
-**Verification/smoke:**
-- route smoke,
-- tab switch smoke,
-- empty/loading state smoke,
-- build/tsc.
-
-**Required Codex report:**
-- reports source:
-- notifications source:
-- shared components reused:
-- local SCSS added:
-- not added intentionally:
-
-## UI-REPORTS-2 / formerly UI-46 — Reports list/archive screen
-
-**Goal:**  
-Zbudować Reports tab jako archiwum pełnych gameplay records, z listą, filtrami i summary/detail panelem.
-
-**Scope:**
-- report list rows/cards,
-- categories: Combat, Trial, Encounter, PvP, Spy/Siege, Trade/Auction,
-- report title, short summary, type, outcome/status, created time, read/unread,
-- filters by type/status/time/search,
-- pagination,
-- detail side panel with participants/source/outcome/rewards/changes summary,
-- actions: Open full report, Share.
-
-**Out of scope:**
-- Mark read button; opening marks read automatically,
-- Share later label,
-- full detail route implementation,
-- public report route,
-- live recomputation of historical reports,
-- audit/player-abuse reports.
-
-**Data/source rules:**
-- reports render from durable report/snapshot data,
-- item references use report item references/snapshots where available,
-- opening report/detail should mark read through canonical read-state path if available,
-- no private defender equipment leak.
-
-**UI/SCSS rules:**
-- use shared list/pagination/detail side panel patterns,
-- type/outcome as badges/icons,
-- report content not muted if meaningful,
-- no local card system.
-
-**Dependencies/blockers:**
-- missing report read model -> dependency,
-- missing mark-read path -> report limitation,
-- missing share token/path -> show Share only if available or report dependency.
-
-**Acceptance criteria:**
-- Reports tab lists full reports,
-- read state visible,
-- clicking/opening marks read where backend supports it,
-- detail summary visible,
-- Open full report and Share actions present only where supported,
-- build passes.
-
-**Verification/smoke:**
-- list render smoke,
-- filter smoke,
-- pagination smoke,
-- open/mark-read smoke if backend available,
-- build/tsc.
-
-**Required Codex report:**
-- report read model:
-- mark-read path:
-- share path:
-- item snapshot handling:
-- local SCSS added:
-
-## UI-REPORTS-3 / formerly UI-47 — Full report detail route
-
-**Goal:**  
-Zbudować osobny full report detail screen dla trwałego gameplay reportu.
-
-**Scope:**
-- route/page target: e.g. `/reports/:reportId` or project route convention,
-- header with report type/outcome/date,
-- participants/source,
-- main result summary,
-- combat timeline/turns/log if combat report,
-- rewards/loot/resource changes,
-- item references with shared item popovers,
-- Share action where allowed,
-- read state update on open.
-
-**Out of scope:**
-- public share route unless separate task,
-- report producer backend,
-- live recomputation from current state,
-- exposing private data not in snapshot.
-
-**Data/source rules:**
-- read durable report snapshot/read model,
-- combat reports read combat result snapshots,
-- trade reports show exact buyer/seller/item/CP summary from transaction-time data,
-- item references use report item reference fallback where source item is missing,
-- mark read through canonical path if available.
-
-**UI/SCSS rules:**
-- use report detail/page header/timeline patterns,
-- item popovers via UI-CORE-6,
-- technical ids secondary,
-- no raw JSON payload as player-facing UI.
-
-**Dependencies/blockers:**
-- missing report detail read model -> blocker,
-- missing timeline/log data -> render summary and report partial dependency,
-- missing share token -> hide/disable Share and report dependency.
-
-**Acceptance criteria:**
-- full report route opens from Reports Center,
-- report content is durable snapshot-based,
-- opening marks read where supported,
-- item references display safely,
-- no privacy leak,
-- build passes.
-
-**Verification/smoke:**
-- route smoke for report detail,
-- combat report smoke if data exists,
-- trade/report item smoke if data exists,
-- missing report/404 smoke,
-- build/tsc.
-
-**Required Codex report:**
-- report detail source:
-- mark-read path:
-- item reference handling:
-- share capability:
-- local SCSS added:
-
-## UI-REPORTS-4 / formerly UI-48 — Notifications archive tab
-
-**Goal:**  
-Zbudować Notifications tab jako pełne archiwum krótkich komunikatów systemowych/gameplayowych.
-
-**Scope:**
-- four summary cards:
-  - Unread,
-  - Needs attention,
-  - Last 24h,
-  - Muted categories,
-- notification list rows,
-- category/severity/status/read state,
-- filters: category/status/severity/search,
-- pagination,
-- detail side panel,
-- linked source/report action,
-- opening notification marks read where supported.
-
-**Out of scope:**
-- full notification settings page,
-- report detail inside notification detail,
-- action queue/timer dashboard,
-- audit logs,
-- raw technical payloads.
-
-**Data/source rules:**
-- notifications from persistent notification read model,
-- online toasts do not replace archive,
-- read/unread user/hero scoped per backend,
-- severity/category from DB/dictionary/read model where available,
-- if backend archive missing, report dependency and do not create permanent local store.
-
-**UI/SCSS rules:**
-- short scannable rows,
-- notification detail remains short-form,
-- severity as badges/status, not only colored text,
-- no localStorage archive UI.
-
-**Dependencies/blockers:**
-- missing notification read model -> blocker,
-- missing mark-read path -> read state limitation,
-- missing muted categories source -> hide/placeholder according to convention.
-
-**Acceptance criteria:**
-- Notifications tab has four summary cards,
-- list is short-form and scannable,
-- detail panel links to source/report where available,
-- opening marks read where supported,
-- no fake local archive,
-- build passes.
-
-**Verification/smoke:**
-- tab smoke,
-- filter/pagination smoke,
-- open/mark-read smoke if backend available,
-- empty state smoke,
-- build/tsc.
-
-**Required Codex report:**
-- notification source:
-- category/severity source:
-- mark-read path:
-- source/report link handling:
-- local SCSS added:
-
-## UI-REPORTS-5 / formerly UI-49 — Topbar notification bell and recent notifications dropdown
-
-**Goal:**  
-Dodać topbar bell/dropdown jako quick access do najnowszych notifications, bez zastępowania pełnego archiwum.
-
-**Scope:**
-- bell icon/button in topbar,
-- unread count badge,
-- dropdown with latest 5–10 notifications,
-- entry title, short subtitle, severity/category icon, time, unread marker,
-- footer/action: View all -> Reports Center > Notifications,
-- zero-count inactive state,
-- close/click outside behavior through existing overlay pattern.
-
-**Out of scope:**
-- full notifications archive,
-- notification settings,
-- reports list in dropdown,
-- custom overlay system if PrimeNG/vendor exists.
-
-**Data/source rules:**
-- same notification read model as archive but limited to latest entries,
-- unread count from backend/read model,
-- clicking item may route to source/report/detail if supported,
-- no local permanent state.
-
-**UI/SCSS rules:**
-- use topbar/bell/overlay/popover vendor patterns,
-- no orphan dropdown nodes in topbar,
-- bell coexists with resource chips without layout breakage.
-
-**Dependencies/blockers:**
-- missing latest notifications source -> hide/dropdown pending and report dependency,
-- missing overlay wrapper -> use PrimeNG overlay/popover or report gap.
-
-**Acceptance criteria:**
-- bell shows unread count,
-- dropdown shows recent notifications only,
-- View all opens Notifications archive,
-- topbar layout stable,
-- build passes.
-
-**Verification/smoke:**
-- open/close dropdown smoke,
-- unread count smoke,
-- View all route smoke,
-- zero notifications smoke,
-- build/tsc.
-
-**Required Codex report:**
-- latest notification source:
-- overlay/wrapper reused:
-- topbar layout changed:
-- local SCSS added:
-
-## UI-REPORTS-6 / formerly UI-50 — Toast-to-notification behavior contract
-
-**Goal:**  
-Opisać i/lub wdrożyć kontrakt między online toastami a persistent notification archive.
-
-**Scope:**
-- online active event can show toast where live event delivery exists,
-- persistent archive remains source for historical items,
-- toast fields: title, summary, severity, optional action/link,
-- archive fields: category, severity, title, message, created time, read state, optional linked source/report,
-- toast click routes to source/detail where supported,
-- if opened from toast, mark read where appropriate.
-
-**Out of scope:**
-- building backend notification system if missing,
-- permanent localStorage notification store,
-- audit/event log substitute,
-- staff/private payloads in player notifications.
-
-**Data/source rules:**
-- backend decides which events persist,
-- frontend displays received live events,
-- backend/read model owns archive and read/unread,
-- no inference of persistence from toast state only.
-
-**UI/SCSS rules:**
-- use PrimeNG/vendor toast wrapper,
-- severities map to Mythsworn notification severity names,
-- toast content short and action-oriented.
-
-**Dependencies/blockers:**
-- missing live event channel -> document dependency and implement archive surfaces only,
-- missing notification archive backend -> no permanent local substitute.
-
-**Acceptance criteria:**
-- contract documented in code/docs/task notes,
-- toasts and archive responsibilities not confused,
-- click routing described/implemented where supported,
-- no local-only permanent store,
-- build passes if code changed.
-
-**Verification/smoke:**
-- toast visual smoke if event/mock available,
-- route/action smoke from toast if implemented,
-- archive still source of truth,
-- build/tsc.
-
-**Required Codex report:**
-- live event source:
-- archive source:
-- toast wrapper reused:
-- persistence not added intentionally:
-
----
-
-# 15. UI-ADMIN — Admin Overview and admin IA
-
-Cel: admin shell, global/admin/operator distinctions, Admin Overview, Admin Area Map, Server Management, Launch New Server and future concrete admin modules. Admin UI ma być uporządkowane według intencji pracy, nie raw table names. Admin overview jest orientation hub, nie fake dashboard.
-
-## UI-ADMIN task index
-
-- UI-ADMIN-1 / formerly UI-51 — Admin Overview shell and global admin variant
-- UI-ADMIN-2 / formerly UI-52 — Admin scope strip and operator/server-scoped variant boundary
-- UI-ADMIN-3 / formerly UI-53 — Admin sidebar information architecture
-- UI-ADMIN-4 / formerly UI-54 — Admin Area Map and Coverage Checklist
-- UI-ADMIN-5 / formerly UI-55 — Admin Context / Explainability panel
-- UI-ADMIN-6 / formerly UI-56 — Server Management admin entry and staff assignment boundary
-- UI-ADMIN-7 / formerly UI-57 — Launch New Server admin entry
-- UI-ADMIN-8 / formerly UI-58 — Admin Overview status cards
-- UI-ADMIN-9 — Concrete admin module shell pattern
-- UI-ADMIN-10 — Admin route coverage matrix
-
-## UI-ADMIN-1 / formerly UI-51 — Admin Overview shell and global admin variant
-
-**Goal:**  
-Zbudować Admin Overview jako global admin orientation hub zgodny z zaakceptowanym Admin Overview V7: czysty, lekki, bez fake live dashboardu i bez Recent Staff Activity.
-
-**Scope:**
-- route/page target: existing `/admin` overview route if present,
-- admin shell/branding with `M` mark,
-- global admin topbar:
-  - edit level,
-  - server focus,
-  - role/scope chips,
-  - search/audit entry if route exists,
-- sidebar groups:
-  - Overview,
-  - Priority Operations,
-  - Content & Balance,
-  - World & Economy,
-  - Gameplay Tools / Sandbox,
-- page header and summary card,
-- global admin scope strip,
-- cautious status cards,
-- Admin Area Map,
-- Coverage Checklist,
-- Context / Explainability panel.
-
-**Out of scope:**
-- concrete admin module implementation,
-- full audit view,
-- fake recent staff activity,
-- fake command board/live queue,
-- DB/admin navigation registry design,
-- staff assignment form,
-- server launch workflow.
-
-**Data/source rules:**
-- current user global role/access from canonical access/read model,
-- server focus list from existing server/admin server switcher/read model where available,
-- counts/cards must come from real read models or be omitted/placeholder per project convention,
-- no hardcoded production counts,
-- do not infer global admin from selected server role.
-
-**UI/SCSS rules:**
-- use admin shell/global surface patterns from UI-CORE,
-- no local copied Admin Overview canvas CSS,
-- scope strip only global admin,
-- technical keys are secondary metadata,
-- no `muted-text` for role/access/status values.
-
-**Dependencies/blockers:**
-- missing global admin route/access resolver -> dependency,
-- missing status card read models -> omit/placeholder and report,
-- missing server focus service -> show current context only and report.
-
-**Acceptance criteria:**
-- Admin Overview renders as global admin variant,
-- user role shows Admin, not Operator,
-- Server focus can be All servers or one server where supported,
-- no fake Recent Staff Activity,
-- Admin Area Map and Coverage Checklist present,
-- `M` mark preserved,
-- build passes.
-
-**Verification/smoke:**
-- admin route smoke,
-- global admin visual smoke,
-- non-admin access smoke if route guard exists,
-- build/tsc.
-
-**Required Codex report:**
-- reused admin shell/access services:
-- server focus source:
-- status card sources:
-- checked but not reused:
-- local SCSS added:
-- not added intentionally:
-
-## UI-ADMIN-2 / formerly UI-52 — Admin scope strip and operator/server-scoped variant boundary
-
-**Goal:**  
-Wprowadzić jasną granicę UI między global adminem a server-scoped operatorem. Scope strip jest widoczny tylko dla global admina.
-
-**Scope:**
-- global admin scope strip:
-  - Global Admin,
-  - Selected Server,
-  - Launch New Server,
-  - Sandbox / Test,
-- operator variant:
-  - no global scope strip,
-  - selected server context,
-  - Role: Operator,
-  - Edit level: Selected server,
-- clear labeling of role vs server focus vs edit level.
-
-**Out of scope:**
-- backend role model redesign,
-- full operator dashboard,
-- staff assignment mutation,
-- RLS/RPC changes.
-
-**Data/source rules:**
-- global admin role and server staff role are separate,
-- do not infer admin from server staff assignment,
-- operator can only see assigned server scope according to backend/access model,
-- CSS visibility is not access control.
-
-**UI/SCSS rules:**
-- scope strip uses shared admin pattern,
-- hidden controls must also be blocked by route/access logic,
-- labels must not conflate Admin with Operator.
-
-**Dependencies/blockers:**
-- if current access model cannot distinguish global admin vs server operator, report blocker,
-- if operator selected server resolution missing, report dependency.
-
-**Acceptance criteria:**
-- scope strip visible only for global admin,
-- operator cannot switch to global/launch modes,
-- global admin can focus All servers or one server,
-- labels clear,
-- build passes.
-
-**Verification/smoke:**
-- global admin smoke,
-- operator/scoped user smoke if test user available,
-- access/visibility smoke,
-- build/tsc.
-
-**Required Codex report:**
-- access model source:
-- role/scope states tested:
-- controls hidden/disabled:
-- local SCSS added:
-
-## UI-ADMIN-3 / formerly UI-53 — Admin sidebar information architecture
-
-**Goal:**  
-Ułożyć admin sidebar według zaakceptowanej intencji pracy, bez dublowania raw table names i bez mieszania global/server/sandbox narzędzi.
-
-**Accepted groups and entries:**
-- Overview:
-  - Overview
-- Priority Operations:
-  - Config Governance
-  - Anti-abuse
-- Content & Balance:
-  - Exploration
-  - Rewards & Loot
-  - Combat Foundation
-  - Formulas
-- World & Economy:
-  - Estate & Buildings
-  - Economy & Trade
-  - Server Management
-  - Launch New Server
-- Gameplay Tools / Sandbox:
-  - Sandbox Helpers
-
-**Scope:**
-- update/admin navigation config if present,
-- keep existing reachable routes,
-- hide/disable missing routes by project convention,
-- indicate route groups/section labels,
-- ensure Config Governance and Anti-abuse are visually prioritized.
-
-**Out of scope:**
-- concrete module screens,
-- DB-backed admin nav registry,
-- route guard redesign unless needed for visibility bug,
-- removing existing routes without replacement.
-
-**Data/source rules:**
-- route visibility from admin/global/server role/access model,
-- server-scoped routes must honor selected server context,
-- sandbox tools visible only to allowed roles/server kinds.
-
-**UI/SCSS rules:**
-- use shared admin sidebar/nav patterns,
-- active state matches style contract,
-- raw technical keys are not primary labels,
-- icon placeholders only where registry key missing.
-
-**Dependencies/blockers:**
-- if route does not exist, mark pending/omit per convention,
-- if coverage unknown, add to UI-ADMIN-10 coverage matrix.
-
-**Acceptance criteria:**
-- sidebar matches accepted grouping,
-- Config Governance and Anti-abuse prioritized,
-- Trials/Encounters grouped under Exploration,
-- Reward profiles and item generation grouped under Rewards & Loot,
-- Combat Opponents under Combat Foundation,
-- Server Management and Launch New Server separate,
-- build passes.
-
-**Verification/smoke:**
-- route smoke for existing admin entries,
-- active nav visual smoke,
-- non-authorized visibility smoke if possible,
-- build/tsc.
-
-**Required Codex report:**
-- navigation config reused:
-- routes checked:
-- missing routes:
-- access visibility source:
-- local SCSS added:
-
-## UI-ADMIN-4 / formerly UI-54 — Admin Area Map and Coverage Checklist
-
-**Goal:**  
-Zastąpić Workspaces/Command Board uczciwym orientation blockiem: Admin Area Map + Coverage Checklist.
-
-**Scope:**
-- central Admin Area Map with major admin areas:
-  - Config Governance,
-  - Anti-abuse,
-  - Exploration,
-  - Rewards & Loot,
-  - Server Management,
-- subarea chips under each area,
-- Coverage Checklist:
-  - Global config — covered,
-  - Server config — covered,
-  - Launch new server — slot,
-  - Staff assignment — covered,
-  - Sandbox tools — separate,
-- note that overview is intentionally light,
-- selected area can feed Context / Explainability panel.
-
-**Out of scope:**
-- fake live queue,
-- recent staff activity,
-- command board,
-- full route coverage audit implementation,
-- DB-backed admin area registry design.
-
-**Data/source rules:**
-- content may start as typed local registry/static config,
-- do not fetch fake live data to fill overview,
-- if counts/statuses appear, they must come from real source.
-
-**UI/SCSS rules:**
-- use admin area map/global card/chip patterns,
-- not a second menu pretending to be dashboard,
-- no local copied card CSS.
-
-**Dependencies/blockers:**
-- if selected-area state should drive explainability, define local state or registry; no DB schema design in this task.
-
-**Acceptance criteria:**
-- Workspaces/Command Board not present,
-- Admin Area Map visible,
-- Coverage Checklist visible and secondary,
-- no Recent Staff Activity,
-- overview feels like orientation hub,
-- build passes.
-
-**Verification/smoke:**
-- route visual smoke,
-- selected area/explainability smoke if interactive,
-- build/tsc.
-
-**Required Codex report:**
-- area registry/source:
-- live data intentionally not used:
-- shared patterns reused:
-- local SCSS added:
-
-## UI-ADMIN-5 / formerly UI-55 — Admin Context / Explainability panel
-
-**Goal:**  
-Dodać reusable admin Context / Explainability panel pokazujący label/description/helper/admin_description dla zaznaczonego obszaru lub konfiguracji.
-
-**Scope:**
-- right panel with:
-  - Label,
-  - Description,
-  - Helper text,
-  - Admin description,
-  - Technical key,
-  - Why this matters,
-- selected Admin Area Map area as initial source,
-- future compatibility with config definitions and dictionary metadata,
-- safe missing metadata state.
-
-**Out of scope:**
-- DB metadata table design,
-- full config definition editor,
-- raw JSON payload viewer,
-- staff-only private data exposure.
-
-**Data/source rules:**
-- prefer DB/read model metadata where available: label, description, helper_text, admin_description, gameplay impact/warning,
-- fallback to typed local registry if no DB metadata,
-- raw key secondary only,
-- missing important metadata should be visible as content debt where appropriate.
-
-**UI/SCSS rules:**
-- use shared detail side panel/note/code chip patterns,
-- important descriptions readable, not over-muted,
-- technical key as small secondary chip.
-
-**Dependencies/blockers:**
-- if metadata read model exists but not wired, report wiring task,
-- if metadata missing, record key/area gap.
-
-**Acceptance criteria:**
-- context panel renders selected area metadata,
-- human-readable text first,
-- technical key secondary,
-- no private data leak,
-- build passes.
-
-**Verification/smoke:**
-- selected area smoke,
-- missing metadata smoke,
-- build/tsc.
-
-**Required Codex report:**
-- metadata source:
-- fallback registry used:
-- missing metadata keys:
-- local SCSS added:
-
-## UI-ADMIN-6 / formerly UI-56 — Server Management admin entry and staff assignment boundary
-
-**Goal:**  
-Ująć Server Management jako pełnoprawny admin area z jasną granicą między global adminem i scoped operatorem.
-
-**Scope:**
-- sidebar entry: Server Management,
-- Admin Area Map coverage:
-  - server list,
-  - server settings,
-  - operator,
-  - moderators,
-  - staff scopes,
-- global admin capabilities described/represented,
-- scoped operator capabilities described/represented,
-- no fake staff assignment form unless real workflow exists.
-
-**Out of scope:**
-- full staff assignment form,
-- server launch flow,
-- DB role model changes,
-- bypassing backend/RPC permission checks,
-- direct write to staff assignment tables.
-
-**Data/source rules:**
-- global admin can manage server list/operator/moderators if backend allows,
-- operator may manage moderators only within assigned server and backend rules,
-- staff assignment must use canonical audited RPC/service where available,
-- reason requirement must be preserved,
-- staff-disqualifying history warnings respected.
-
-**UI/SCSS rules:**
-- labels clearly distinguish Admin, Operator, Moderator, Tester,
-- access/status values not muted,
-- use admin cards/forms/vendor wrappers.
-
-**Dependencies/blockers:**
-- missing server staff read model/RPC -> dependency,
-- missing user search for staff assignment -> dependency,
-- missing disqualifying history warning source -> dependency.
-
-**Acceptance criteria:**
-- Server Management appears in sidebar and Area Map,
-- global admin/operator capabilities not conflated,
-- operator assignment and multiple moderator assignment represented as future/covered subareas,
-- no fake staff mutation,
-- build passes.
-
-**Verification/smoke:**
-- navigation smoke,
-- visibility smoke for admin/operator if available,
-- no mutation smoke unless workflow exists,
-- build/tsc.
-
-**Required Codex report:**
-- server/staff sources:
-- RPCs checked:
-- access boundaries:
-- not added intentionally:
-
-## UI-ADMIN-7 / formerly UI-57 — Launch New Server admin entry
-
-**Goal:**  
-Dodać Launch New Server jako osobny admin area od live Server Management i live server overrides.
-
-**Scope:**
-- sidebar entry: Launch New Server,
-- scope strip includes Launch New Server for global admin,
-- Area Map/Coverage Checklist includes launch templates, snapshots, pre-live checks,
-- topbar/edit level can represent Launch New Server mode if supported,
-- clear pre-live setup labeling.
-
-**Out of scope:**
-- launch flow forms,
-- creating server records,
-- DB schema for launch templates,
-- config snapshot application,
-- direct writes to server/config tables.
-
-**Data/source rules:**
-- launch config should eventually use config governance/server_launch scope,
-- if launch read models/RPCs missing, route entry can be pending/disabled per convention,
-- pre-live checks backend/read-model driven when implemented.
-
-**UI/SCSS rules:**
-- launch entry distinct from Server Management,
-- no fake server creation button if backend missing,
-- use admin status/cards/patterns.
-
-**Dependencies/blockers:**
-- missing launch route/workflow -> dependency,
-- missing launch snapshot source -> dependency.
-
-**Acceptance criteria:**
-- Launch New Server is separate from Server Management,
-- launch mode not available to scoped operator,
-- overview does not imply implemented launch flow if missing,
-- build passes.
-
-**Verification/smoke:**
-- nav/entry smoke,
-- disabled/pending state smoke if route missing,
-- access smoke if possible,
-- build/tsc.
-
-**Required Codex report:**
-- launch route/source checked:
-- scope/access behavior:
-- pending/disabled reason:
-- local SCSS added:
-
-## UI-ADMIN-8 / formerly UI-58 — Admin Overview status cards
-
-**Goal:**  
-Dodać ostrożne, niewymyślone status cards do Admin Overview.
-
-**Accepted cards:**
-- Pending Global Changes,
-- Server Staff Gaps,
-- Open Anti-abuse Cases,
-- Sandbox Tools Ready.
-
-**Scope:**
-- render four status cards when data/source exists,
-- cards adapt by role/scope:
-  - global admin may aggregate across server focus,
-  - operator sees server-scoped cards only,
-- each card links or routes to relevant area if route exists,
-- safe empty/loading states.
-
-**Out of scope:**
-- Balance Warnings without real engine/read model,
-- fake staff gaps,
-- Recent Staff Activity,
-- fake command queue,
-- audit list on overview.
-
-**Data/source rules:**
-- Pending Global Changes from config change set read model,
-- Server Staff Gaps from server/staff coverage read model if exists,
-- Open Anti-abuse Cases from anti-abuse read model, server-scoped where appropriate,
-- Sandbox Tools Ready from access/server kind/tool availability if exists,
-- no hardcoded production counts.
-
-**UI/SCSS rules:**
-- use summary/stat card patterns,
-- counts important, not muted,
-- cards should not visually overpower orientation map.
-
-**Dependencies/blockers:**
-- missing source -> omit/placeholder and report dependency,
-- no balance warning engine -> do not add Balance Warnings.
-
-**Acceptance criteria:**
-- accepted cards appear only with real source or safe placeholder convention,
-- no Balance Warnings card,
-- operator/admin visibility differs correctly,
-- no Recent Staff Activity,
-- build passes.
-
-**Verification/smoke:**
-- card render smoke,
-- missing source smoke,
-- role/scope smoke if possible,
-- build/tsc.
-
-**Required Codex report:**
-- source per card:
-- omitted cards:
-- hardcoded counts yes/no:
-- local SCSS added:
-
-## UI-ADMIN-9 — Concrete admin module shell pattern
-
-**Goal:**  
-Zdefiniować reusable shell/pattern dla konkretnych admin modułów takich jak Config Governance, Exploration, Rewards, Combat Foundation, Server Management.
-
-**Scope:**
-- page header with module label/context,
-- tab/section layout,
-- list/detail/editor split where appropriate,
-- reason-required action block,
-- metadata/explainability panel,
-- read-only vs edit state,
-- scoped server/global context chip,
-- audit/change summary slot.
-
-**Out of scope:**
-- implementing every admin module,
-- DB metadata design,
-- concrete forms for each module,
-- global admin overview.
-
-**Data/source rules:**
-- module metadata from DB/read model where available,
-- reason required for governed mutations,
-- direct table writes forbidden,
-- global vs server scope must be explicit.
-
-**UI/SCSS rules:**
-- use admin global patterns from UI-CORE/UI-ADMIN,
-- no per-module card/form CSS duplication,
-- PrimeNG tabs/table/forms/vendor wrappers first.
-
-**Dependencies/blockers:**
-- if existing admin modules have divergent layout, report migration candidates,
-- if module metadata missing, show safe fallback and report content debt.
-
-**Acceptance criteria:**
-- reusable module shell pattern documented or implemented,
-- supports DB-backed explainability,
-- supports reason-required mutations,
-- future admin modules have consistent structure,
-- build passes if code changed.
-
-**Verification/smoke:**
-- apply pattern to one admin module if in scope,
-- build/tsc,
-- visual smoke for read-only and edit states if implemented.
-
-**Required Codex report:**
-- existing admin modules checked:
-- pattern reused/added:
-- metadata source:
-- local SCSS added:
-
-## UI-ADMIN-10 — Admin route coverage matrix
-
-**Goal:**  
-Przygotować route/configurator → admin area coverage matrix, żeby sidebar/Admin Area Map pokrywały realne istniejące konfiguratory i admin routes.
-
-**Scope:**
-- inventory current admin routes/navigation config,
-- inventory known configurators from backlog/docs/current route files,
-- map each route to:
-  - admin area,
-  - global/server/launch/sandbox scope,
-  - required role/access,
-  - metadata/explainability source,
-  - route status: implemented/pending/deprecated,
-- identify gaps/duplicates.
-
-**Out of scope:**
-- moving routes unless explicitly approved,
-- DB admin nav registry design,
-- implementing missing pages,
-- removing routes without user acceptance.
-
-**Data/source rules:**
-- route coverage based on actual repo route config and docs,
-- access based on current guards/services/RPC semantics where visible,
-- if route source uncertain, mark unknown instead of guessing.
-
-**UI/SCSS rules:**
-- not a visual task unless navigation config changes are included,
-- if navigation updated, use admin sidebar patterns.
-
-**Dependencies/blockers:**
-- repo route files required for accurate matrix,
-- if routes incomplete, report limitations.
-
-**Acceptance criteria:**
-- matrix exists,
-- every known admin route/configurator has a proposed area,
-- duplicates/gaps identified,
-- Admin sidebar IA can be reviewed against real coverage.
-
-**Verification/smoke:**
-- docs-only no build,
-- if nav config changed: route smoke/build.
-
-**Required Codex report:**
-- routes inventoried:
-- unmapped routes:
-- deprecated/pending routes:
-- recommended moves:
-
----
-
-# 16. UI-COMBAT — Future combat screen
-
-Cel: osobny future combat screen dla Walking Dead, combatants, combat log, attack source labels i outcome/report handoff. Combat UI jest źródłowo neutralny: Trial, Encounter, PvP, Sandbox/Admin Test mogą używać tego samego combat result presentation. Target selection i combat result/report są osobnymi ekranami.
-
-## UI-COMBAT task index
-
-- UI-COMBAT-1 — Combat screen shell
-- UI-COMBAT-2 — Combatants panels and health bars
-- UI-COMBAT-3 — Walking Dead timing component
-- UI-COMBAT-4 — Combat log and attack source labels
-- UI-COMBAT-5 — Combat result display and report handoff
-- UI-COMBAT-6 — Combat privacy and snapshot boundary
-
-## UI-COMBAT-1 — Combat screen shell
-
-**Goal:**  
-Zdefiniować/zbudować combat screen shell jako osobny ekran po rozpoczęciu walki, niezależny od PvP target selection.
-
-**Scope:**
-- route/page target proposal or existing combat route,
-- combat source label: trial/encounter/pvp/sandbox/admin_test,
-- initiator/defender side labels,
-- combatants area,
-- Walking Dead timing slot,
-- combat log slot,
-- outcome/report handoff slot,
-- loading/error/no combat state.
-
-**Out of scope:**
-- PvP target selection,
-- target eligibility,
-- combat engine implementation,
-- reward persistence,
-- live recomputation of completed results.
-
-**Data/source rules:**
-- combat data from combat result/session/read model where available,
-- source type from DB-backed combat source type dictionary/read model,
-- participant sides use initiator/defender semantics, not hero/opponent assumptions,
-- completed combat should prefer durable snapshot.
-
-**UI/SCSS rules:**
-- use global page/card/timeline/progress patterns,
-- no local heavy decorative arena unless accepted,
-- combat screen must remain readable and not overdecorated,
-- labels from dictionaries/metadata where available.
-
-**Dependencies/blockers:**
-- if no active combat/session read model exists, keep task as prototype/shell and report backend dependency,
-- if combat result snapshot exists only after completion, live combat UI may be future blocker.
-
-**Acceptance criteria:**
-- combat screen is separate from PvP target selection,
-- source/side labels visible,
-- shell supports combatants/timer/log/result slots,
-- no fake live combat data,
-- build passes if implemented.
-
-**Verification/smoke:**
-- route smoke if route exists,
-- loading/no combat state smoke,
-- completed result smoke if data exists,
-- build/tsc.
-
-**Required Codex report:**
-- combat data source:
-- source/side dictionary source:
-- missing live data blockers:
-- local SCSS added:
-
-## UI-COMBAT-2 — Combatants panels and health bars
-
-**Goal:**  
-Pokazać combatants in a clear two-side layout, with health bars and allowed snapshot data.
-
-**Scope:**
-- initiator panel,
-- defender panel,
-- participant kind: hero/opponent,
-- name/label,
-- health/current HP,
-- key visible stats if allowed,
-- status/effects if available,
-- attack source/equipment summary only where allowed by snapshot/privacy.
-
-**Out of scope:**
-- full private equipment reveal,
-- live derived stat recompute,
-- equip/unequip,
-- admin opponent editor.
-
-**Data/source rules:**
-- combatants from combat participant snapshot/read model,
-- defender private equipment not exposed unless snapshot/report policy allows,
-- opponent equipment is blueprint/generated fight snapshot, not real player item,
-- health values from combat snapshot/session state.
-
-**UI/SCSS rules:**
-- health bars use shared progress pattern,
-- two panels balanced visually,
-- important HP/status not muted,
-- icons via custom registry/placeholders.
-
-**Dependencies/blockers:**
-- missing HP/current state -> show static participant summary and report blocker,
-- missing privacy policy fields -> omit sensitive details.
-
-**Acceptance criteria:**
-- initiator/defender both visible,
-- HP bars readable,
-- participant kind clear,
-- privacy boundaries preserved,
-- build passes.
-
-**Verification/smoke:**
-- hero vs opponent smoke,
-- hero vs hero smoke if PvP data exists,
-- low HP/defeated state smoke,
-- build/tsc.
-
-**Required Codex report:**
-- participant data source:
-- privacy fields omitted:
-- progress pattern reused:
-- local SCSS added:
-
-## UI-COMBAT-3 — Walking Dead timing component
-
-**Goal:**  
-Zaprojektować Walking Dead timing component for the actual combat screen, not target selection.
-
-**Scope:**
-- timing bar/track,
-- current actor/next action indication where backend supports it,
-- turn/round or timing explanation,
-- paused/completed/loading states,
-- integration slot in combat screen.
-
-**Out of scope:**
-- combat timing engine,
-- target selection timing,
-- arbitrary animation without backend state,
-- live polling architecture unless current project supports it.
-
-**Data/source rules:**
-- timing state from combat session/read model if live combat exists,
-- if only final snapshots exist, component remains future/prototype or shows timeline from snapshot,
-- do not generate local fake timing for production.
-
-**UI/SCSS rules:**
-- use global progress/timer patterns where possible,
-- motion restrained and accessible,
-- no constant distracting animation unless useful.
-
-**Dependencies/blockers:**
-- missing live combat timing model -> blocker/future note,
-- missing timer pattern -> UI-CORE/shell dependency.
-
-**Acceptance criteria:**
-- component is clearly located on combat screen only,
-- supports loading/completed/no-live-state,
-- does not fake backend timing,
-- build passes if implemented.
-
-**Verification/smoke:**
-- static/completed state smoke,
-- live timing smoke if backend exists,
-- reduced-motion/accessibility consideration,
-- build/tsc.
-
-**Required Codex report:**
-- timing data source:
-- live support yes/no:
-- animation choices:
-- local SCSS added:
-
-## UI-COMBAT-4 — Combat log and attack source labels
-
-**Goal:**  
-Pokazać combat log/timeline z czytelnymi attack source labels i bez wycieku private equipment.
-
-**Scope:**
-- ordered combat log rows,
-- turn/sequence index,
-- actor side/name,
-- attack/source label,
-- damage/heal/effect summary,
-- miss/crit/block if data exists,
-- attack source kind labels: natural, unarmed, player_item, opponent_manual, opponent_generated where available.
-
-**Out of scope:**
-- generating combat log from scratch,
-- live recomputation,
-- exposing full defender equipment if not in snapshot,
-- raw JSON log display.
-
-**Data/source rules:**
-- log from combat result attacks/snapshot/read model,
-- attack source dictionaries from DB-backed combat explainability dictionaries,
-- item references only when snapshot/report policy allows,
-- opponent generated/manual equipment labels should not pretend to be player inventory.
-
-**UI/SCSS rules:**
-- use timeline/list row pattern,
-- source labels as badges/chips,
-- important outcomes not muted,
-- technical keys secondary.
-
-**Dependencies/blockers:**
-- missing combat attack rows -> show summary only and report data gap,
-- missing dictionaries -> report metadata dependency or fallback safely.
-
-**Acceptance criteria:**
-- combat log rows readable,
-- attack source labels meaningful,
-- no raw JSON player-facing,
-- privacy preserved,
-- build passes.
-
-**Verification/smoke:**
-- log render smoke with sample/snapshot data,
-- source kind variety smoke if available,
-- empty log smoke,
-- build/tsc.
-
-**Required Codex report:**
-- combat log source:
-- dictionary/metadata source:
-- privacy omissions:
-- local SCSS added:
-
-## UI-COMBAT-5 — Combat result display and report handoff
-
-**Goal:**  
-Pokazać wynik walki i przejście do durable report, bez mieszania live combat screen z report archive.
-
-**Scope:**
-- outcome banner: initiator victory, defender victory, draw,
-- rewards/resource/item summary if allowed and available,
-- participant final HP/status,
-- action: Open report,
-- action: Return to source context where available,
-- share/report action only where report supports it.
-
-**Out of scope:**
-- reward granting logic,
-- report producer backend,
-- public share route,
-- live recomputation of rewards.
-
-**Data/source rules:**
-- outcome from combat result snapshot,
-- rewards from reward/result/report read model if available,
-- report handoff through game_reports/source mapping where implemented,
-- no fake reward summary if backend missing.
-
-**UI/SCSS rules:**
-- outcome as prominent but readable banner/card,
-- status badges for victory/defeat/draw,
-- item popovers via UI-CORE-6,
-- report button clear.
-
-**Dependencies/blockers:**
-- missing report link -> show result only and report dependency,
-- missing reward snapshot -> omit reward summary and report gap.
-
-**Acceptance criteria:**
-- result state visible,
-- report handoff clear if available,
-- no fake rewards,
-- no privacy leak,
-- build passes.
-
-**Verification/smoke:**
-- victory/defeat/draw visual smoke if data available,
-- report link smoke,
-- missing report state smoke,
-- build/tsc.
-
-**Required Codex report:**
-- outcome source:
-- reward/report source:
-- omitted rewards/reports:
-- local SCSS added:
-
-## UI-COMBAT-6 — Combat privacy and snapshot boundary
-
-**Goal:**  
-Utrwalić zasady prywatności i snapshotów dla combat UI, szczególnie PvP.
-
-**Scope:**
-- document/display rules for hero vs opponent combat,
-- allowed fields for defender/player equipment,
-- source labels vs full item details,
-- completed result snapshot vs live state,
-- admin/sandbox exceptions if any.
-
-**Out of scope:**
-- RLS/RPC policy changes,
-- changing snapshot schema,
-- defender equipment reveal,
-- admin debug payload UI.
-
-**Data/source rules:**
-- combat result snapshots are durable source for completed reports,
-- live player state should not be used to reconstruct historical combat,
-- defender private equipment not exposed unless snapshot/report policy allows,
-- admin_test/sandbox may have different debug permissions but must be explicit.
-
-**UI/SCSS rules:**
-- technical/debug data not player-facing,
-- privacy omissions should fail closed,
-- helper copy concise if a field is hidden.
-
-**Dependencies/blockers:**
-- unclear snapshot/privacy policy -> decision dependency,
-- missing allowed labels -> metadata dependency.
-
-**Acceptance criteria:**
-- privacy rules documented for combat UI,
-- player-facing combat/report screens fail closed,
-- admin/sandbox exceptions explicit,
-- build passes if code changed.
-
-**Verification/smoke:**
-- review checklist item added,
-- no private equipment shown in PvP smoke if data available.
-
-**Required Codex report:**
-- privacy policy source:
-- fields intentionally omitted:
-- snapshot vs live source:
-- open decisions:
-
----
-
-# 17. UI-OPEN — Open questions
-
-- Exact Game Icons mapping.
-- Mobile layout strategy for dense tables and admin screens.
-- Full PvP combat UX.
-- Full Exploration result UX.
-- Full Siege setup/result UX.
-- Full Spy result UX.
-- Public report share page.
-- Notification settings page.
-- Admin route coverage matrix and possible DB/registry source.
-- Full concrete admin modules after overview IA.
-
----
-
-# UI-TRIALS / UI-REPORTS / UI-ONBOARDING — Additional canonical production tasks
-
-This section was migrated from accepted addenda and is now part of the single canonical UI/UX backlog. It is a merged canonical section governed by Part I strict execution rules, mandatory preflight, prototype visual anchors, utilities-first execution, missing-pattern escalation and required reporting.
-
----
-
-# UI-TRIALS — Trial minigame prototypes and renderer boundary
+# 15. UI-TRIALS — Trial minigame prototypes and renderer boundary
 
 Cel: uporządkować zaakceptowane kierunki manual Trial minigames, wspólny host/rendering boundary oraz integrację z reports/result flow.
 
@@ -6376,9 +6964,1152 @@ Dopisać zaakceptowany kierunek Spirituality Trial jako hold-to-charge ritual co
 
 ---
 
-# UI-REPORTS-ADD — Report/result prototype integration follow-ups
+# 16. UI-COMBAT — Combat screen, Walking Dead, combat report
 
-## UI-REPORTS-ADD-1 — Trial Result Report Variants
+## Cel epica
+
+Zbudować wspólny ekran walki i raportu walki dla:
+
+- Exploration Encounter / zasadzki;
+- Trial Combat;
+- PvP Attack;
+- Sandbox/Admin Test.
+
+Combat UI jest źródłowo neutralny. Target selection, wybór PvP celu, wybór trudności eksploracji i archiwum raportów są osobnymi powierzchniami.
+
+Ekran aktywnej walki ma bazować konstrukcyjnie na prototypie `mythborne_combat_minigame_prototype.html`:
+
+- maksymalna szerokość ok. `1180px`;
+- panel walczącego po lewej;
+- panel przeciwnika/obrońcy po prawej;
+- centralny panel akcji z Walking Dead;
+- health bary obu stron;
+- combat log pod spodem na pełną szerokość;
+- auto-resolve jako jawna akcja, bez zastępowania manualnego flow.
+
+Completed combat report ma bazować konstrukcyjnie na prototypach:
+
+- `mythborne_combat_report_attacker_victory_prototype.html`;
+- `mythborne_combat_report_defender_victy_prototype.html` / defender victory variant.
+
+Raport walki ma pokazywać:
+
+- header raportu;
+- outcome banner;
+- finalne HP obu stron;
+- statystyki/snapshoty walczących;
+- pełny combat log/timeline z backendu;
+- nagrody/straty tam, gdzie backend je zwraca;
+- przejście do trwałego raportu i kopiowanie linku publicznego, jeśli raport go udostępnia.
+
+---
+
+## Globalne zasady techniczne
+
+### DB/RPC authority
+
+Angular nie liczy:
+
+- zwycięzcy;
+- trafień;
+- uników;
+- krytyków;
+- obrażeń;
+- leczenia;
+- kolejności ataków;
+- liczby tur;
+- nagród;
+- strat;
+- timeline walki.
+
+Angular renderuje wyłącznie backendowy live state, snapshot, read model albo report sections.
+
+### Generated types
+
+Codex nie regeneruje Supabase generated types i nie edytuje `database.types.ts`.
+
+Jeżeli nowy RPC albo wymagane pola nie istnieją w generated types, task jest zablokowany do momentu, aż użytkownik dostarczy zregenerowane typy.
+
+### Manual combat flow
+
+Manual combat flow zostaje osobny od auto-resolve.
+
+Dla Exploration combat obecny accepted manual flow używa:
+
+- `ensure_exploration_combat_session(...)`;
+- `get_combat_live_state(...)`;
+- `submit_combat_player_action(...)`;
+- `get_combat_result_detail(...)`.
+
+Nie używać `advance_combat_live_to_next_player_action(...)` z Angulara jako player flow.
+
+### Exploration combat auto-resolve
+
+Nowy RPC:
+
+```ts
+auto_resolve_exploration_combat_challenge_attempt(p_challenge_attempt_id, p_request_id)
+```
+
+Zakres:
+
+- Exploration combat encounters / ambushes;
+- Trial combat attempts, gdy `challenge_kind = trial` i `minigame_key = combat`;
+- nie dla non-combat Trials;
+- nie dla PvP;
+- nie dla PvP spy.
+
+Zachowanie:
+
+- backend używa canonical live combat runtime;
+- backend auto-resolve’uje akcje gracza;
+- backend przepycha NPC actions przez live progressor;
+- backend finalizuje przez `finalize_exploration_combat_session(...)`;
+- backend kończy challenge z `completion_mode = auto`;
+- response może zawierać `combat_result_id`, `reward_grant_id`, `game_report_id`, outcome/success/status i event counts.
+
+Frontend:
+
+- używa RPC tylko dla jawnej akcji auto-resolve / skip manual combat / timeout-style combat auto path;
+- nie liczy wyniku w Angularze;
+- po sukcesie renderuje wynik przez istniejący report/reward/combat result flow.
+
+### PvP combat follow-up boundary
+
+PvP auto-resolve/report flow is not part of the current UI-COMBAT closure.
+
+It returns only in a separate UI-PVP / PvP combat epic after the frontend-safe
+PvP contracts, generated types, privacy rules and report surface are explicitly
+scoped.
+
+Until then Combat UI tasks must not call `auto_resolve_pvp_attack_action(...)`,
+start a PvP report flow, infer PvP combat outcomes/timelines in Angular, or
+reveal private defender snapshots without a dedicated backend contract.
+
+### Report/timeline contract
+
+Backend powinien dostarczać player-facing pola dla logu i raportu, np.:
+
+- `title`;
+- `summary`;
+- `outcomeLabel`;
+- `narrativeLines`;
+- `eventLabel`;
+- `detailText`;
+- `displayText`;
+- `damageDisplay`;
+- `attackSourceLabel`;
+- `actorDisplayName`;
+- `targetDisplayName`;
+- `roundLabel`;
+- `turnLabel`;
+- `eventKind` / `presentationKind`;
+- `publicToken` / public report URL, jeśli raport jest shareable.
+
+Angular ma renderować te pola, a nie tłumaczyć raw enumy i nie budować narracji lokalnie.
+
+---
+
+## UI-COMBAT task index
+
+- UI-COMBAT-0 — Contract preflight and source boundary
+- UI-COMBAT-1 — Combat screen shell
+- UI-COMBAT-2 — Combatant panels and health bars
+- UI-COMBAT-3 — Walking Dead timing panel
+- UI-COMBAT-4 — Active combat log
+- UI-COMBAT-5 — Completed combat report layout
+- UI-COMBAT-6 — Combat timeline row renderer
+- UI-COMBAT-7 — Rewards, losses and report actions
+- UI-COMBAT-8 — Exploration combat auto-resolve integration
+- UI-COMBAT-9 — Final combat UI polish and closure
+
+Deferred outside this Combat UI index: PvP attack auto-resolve/report flow,
+PvP privacy/snapshot policy expansion, broader backend copy contracts and shared
+UI extraction. Those return only as separate UI-PVP / PvP combat or targeted
+cleanup tasks.
+
+---
+
+# UI-COMBAT-0 — Contract preflight and source boundary
+
+## Goal
+
+Potwierdzić, jakie frontend-safe pola istnieją dla active combat, completed combat i report sections, zanim UI zacznie renderować nowe powierzchnie.
+
+## Scope
+
+- sprawdzić aktualne generated types dostarczone przez użytkownika;
+- wypisać dostępne RPC/read modele dla active combat i completed combat;
+- rozdzielić live combat state od durable combat result/report snapshot;
+- potwierdzić dostępność pól dla:
+  - combat source;
+  - participant side;
+  - player/enemy/opponent/hero kind;
+  - current/final HP;
+  - base stats;
+  - combat stats;
+  - attack source labels;
+  - Walking Dead timing manifest;
+  - combat log/timeline;
+  - public/internal report links;
+  - rewards/losses.
+
+## Out of scope
+
+- regenerowanie typów;
+- DB migration;
+- lokalne fallbackowe modele danych w Angularze;
+- fake data.
+
+## Data rules
+
+- completed combat preferuje durable snapshot/report section;
+- live combat używa live state/session read model;
+- PvP defender private equipment nie może być rekonstruowany z aktualnego stanu gracza;
+- opponent/generated equipment musi pochodzić ze snapshotu albo player-safe labela.
+
+## Acceptance
+
+- znany jest source danych dla active combat i completed report;
+- brak edycji `database.types.ts`;
+- brak lokalnego combat outcome/timeline resolvera;
+- jeżeli wymagany contract nie istnieje, task zatrzymuje się jako blocker.
+
+---
+
+# UI-COMBAT-1 — Combat screen shell
+
+## Goal
+
+Zbudować source-neutral combat screen shell dla aktywnej walki, niezależny od PvP target selection i niezależny od Exploration direction board.
+
+## Scope
+
+- route albo embedded runtime surface dla active combat;
+- page/surface width ok. `1180px`;
+- combat source label:
+  - Exploration Encounter;
+  - Trial Combat;
+  - PvP Attack;
+  - Sandbox/Admin Test;
+- header z tytułem aktywnej walki;
+- meta badges: source, resolution mode, turn/round;
+- trzyczęściowy layout:
+  - left combatant panel;
+  - center timing/action panel;
+  - right combatant panel;
+- combat log pod spodem;
+- loading/error/no combat state.
+
+## Out of scope
+
+- PvP target selection;
+- target eligibility;
+- backend combat engine;
+- reward persistence;
+- completed report archive.
+
+## UI rules
+
+- layout zgodny konstrukcyjnie z Combat Minigame Prototype;
+- nie kopiować CSS prototypu 1:1;
+- użyć istniejącego game shell/page container/card utilities;
+- jeśli trzeba dodać lokalny SCSS, tylko dla unikalnej geometrii combat screen;
+- nie tworzyć oddzielnych stylistycznych systemów kart/statystyk, jeśli istnieją globalne utilities.
+
+## Acceptance
+
+- combat screen nie jest target selection;
+- source/side labels są widoczne;
+- shell obsługuje sloty dla combatants, Walking Dead, combat log i result handoff;
+- brak fake live data;
+- `tsc` i build przechodzą.
+
+**Status:** Accepted/completed on 2026-05-23 as the initial source-neutral `/game/combat` shell, then superseded by UI-COMBAT-3 on 2026-05-24. The prototype shell proved the combat source/turn/result context, central Walking Dead action slot and compact combatant card direction, but the sandbox caller is no longer an active product surface. The accepted layout now lives on the real Exploration/Trial live combat surface. No DB/RPC flow, generated types, local stat label maps, local combat stat models, Angular-side attack-count calculation or `advance_combat_live_to_next_player_action(...)` player flow was added in UI-COMBAT-1. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and static greps; the focused combat spec run was blocked by unrelated existing item-generation fixture type errors.
+
+---
+
+# UI-COMBAT-2 — Combatant panels and health bars
+
+## Goal
+
+Pokazać obie strony walki w czytelnym układzie z health barami i snapshotowymi statystykami.
+
+## Scope
+
+- left combatant panel;
+- right combatant panel;
+- role/side:
+  - attacker / defender;
+  - initiator / target;
+  - player / enemy;
+  - hero / opponent;
+- display name;
+- level/kind label;
+- current HP dla active combat;
+- final HP dla completed report;
+- health bar;
+- base stats, jeśli backend udostępnia;
+- combat stats, jeśli backend udostępnia;
+- item/weapon/attack source label, jeśli snapshot policy pozwala.
+
+## Out of scope
+
+- pełny reveal prywatnego equipmentu defendera w PvP;
+- live recompute statystyk;
+- equip/unequip;
+- admin opponent editor.
+
+## Data rules
+
+- HP i stats pochodzą z combat state/snapshot/report, nie z lokalnej rekonstrukcji;
+- opponent equipment label to snapshot/generator label, nie realny item gracza;
+- PvP defender equipment jest ukryte, chyba że backend explicit pozwala przez report-safe snapshot.
+
+## UI rules
+
+- health bars widoczne zarówno w active minigame, jak i completed report;
+- ważne HP/statusy nie mogą być muted;
+- base stats i combat stats mają być skanowalne;
+- panele lewy/prawy mają być wizualnie zbalansowane;
+- placeholder glyph/avatar jest dozwolony, jeżeli brak assetu.
+
+## Acceptance
+
+- obie strony walki są widoczne;
+- HP bar pokazuje aktualny albo finalny stan;
+- role i side labels są jasne;
+- nie ma prywatnego wycieku equipmentu;
+- `tsc` i build przechodzą.
+
+**Status:** Accepted/completed on 2026-05-23 as the combatant panel and health-bar pass for `/game/combat`, then superseded by UI-COMBAT-3 on 2026-05-24. The accepted prototype structure with left combatant, center action/Walking Dead card and right combatant is now applied to the real Exploration/Trial live combat surface instead of the sandbox page. `GameBar` HP display remains part of the live combat surface. The accepted follow-up now renders backend-provided participant `baseStatRows` and `combatStatRows` through shared compact `app-stat-card` tiles; base stat value coloring comes only from backend `tone` plus `colorableFinalValue`, while combat stat rows remain neutral unless the backend adds a separate color contract. No generated types, DB/RPC flow, production combat runtime, local stat label maps, stat calculations, `rawJson` / `snapshot_json` parsing or sandbox resolver logic were included in UI-COMBAT-2. Verification passed with `npx tsc --noEmit`, `npm run build` with known bundle/CommonJS warnings and `git diff --check`; the focused combat spec was blocked by unrelated item-generation fixture type errors.
+
+---
+
+# UI-COMBAT-3 — Walking Dead timing panel
+
+## Goal
+
+Zbudować właściwy Walking Dead timing panel dla aktywnej walki.
+
+## Scope
+
+- timing lane / track;
+- hit zone;
+- moving indicator;
+- current actor/next action label;
+- turn/round/action index;
+- hit chance / timing helper, jeśli backend udostępnia;
+- button/interaction submitujący timing;
+- loading/resolving state;
+- completed/no manifest state.
+
+## Out of scope
+
+- lokalny combat timing engine;
+- fake timing dla produkcji;
+- target selection timing;
+- polling architecture, jeśli projekt jej nie wspiera.
+
+## Data rules
+
+- timing manifest pochodzi z `get_combat_live_state(...)` albo source-specific live combat state;
+- timing submit idzie przez `submit_combat_player_action(...)` albo zatwierdzony source-specific player action RPC;
+- Angular wysyła timing input, nie wynik ataku;
+- jeśli manifestu brak, UI nie udaje dostępnej akcji.
+
+## UI rules
+
+- centralny panel ma odpowiadać Combat Minigame Prototype;
+- w trakcie walki gracze klikają timing/Walking Dead action, nie finalny wynik;
+- auto-resolve jest osobną akcją obok, nie zamiennikiem Walking Dead;
+- motion ma być czytelny i możliwy do ograniczenia.
+
+## Acceptance
+
+- Walking Dead pojawia się tylko, gdy backend mówi, że player action jest oczekiwana;
+- submit wysyła tylko timing input;
+- brak lokalnego damage/outcome;
+- loading/resolving state nie pozwala na double submit;
+- `tsc` i build przechodzą.
+
+**Status:** Accepted/completed on 2026-05-24. The temporary sandbox `/game/combat` product surface and sandbox-only combat page/harness/resolver code were removed, with `/game/combat` redirecting to the hero dashboard. The target combat UI now lives on the real Exploration/Trial live combat surface and follows the Combat Minigame Prototype structure: left participant, central Walking Dead action, right opponent, live HP bars, participant base/combat stat cards, completed/no-manifest states and a separate auto-resolve action. Walking Dead keeps the existing live timing flow and submits only timing input through the approved live combat path; Angular does not calculate hit, damage, HP, outcome, reward or report data. The meter visual cleanup uses shared timing SCSS mixins, radius/opacity utilities and reduced-motion handling. Participant stat cards render the live combat read model's `baseStatRows` and `combatStatRows` directly through shared stat-card mapping; Angular does not move/dedupe `Fatum`, infer values, translate stat labels or parse `rawJson` / `snapshot_json`.
+
+---
+
+# UI-COMBAT-4 — Active combat log
+
+## Goal
+
+Pokazać aktywny, player-facing combat log pod trwającą walką, używając backendowych eventów live combat state.
+
+Log ma uzupełniać aktualny combat surface: panele uczestników i Walking Dead zostają na górze, a przebieg walki zaczyna się pod statystykami/panelami przeciwników, na pełnej szerokości combat surface.
+
+## Scope
+
+- combat log na pełną szerokość pod trzema panelami walki;
+- ordered event rows z backendowego live state;
+- grupowanie lub etykiety tury/rundy/akcji, jeśli backend je dostarcza;
+- actor name / side / participant label z backendowego eventu albo live participant lookup;
+- attack source label, jeśli backend dostarcza player-facing label;
+- player-facing event text:
+  - `eventLabel`,
+  - `detailText`,
+  - `displayText`,
+  - `damageDisplay`,
+  - albo ich zatwierdzone odpowiedniki z live combat event/read modelu;
+- wizualne wyróżnienie typów wyniku:
+  - crit/danger/red emphasis;
+  - miss/evade/info-blue emphasis;
+  - normal damage/gold-heading emphasis;
+  - heal/success emphasis, jeśli backend taki event zwraca;
+- empty/no-events state, jeśli walka jeszcze nie ma eventów;
+- completed/live state compatible rendering, jeśli ten sam event list pozostaje widoczny po zakończeniu walki.
+
+## Out of scope
+
+- completed combat report screen;
+- outcome banner;
+- rewards;
+- report handoff;
+- reconstructing timeline from attacks in Angular;
+- generating log text from raw stats;
+- translating raw enum keys in Angular;
+- parsing raw JSON/snapshot JSON;
+- local combat result/damage/crit/evasion calculation;
+- changing combat flow, timing flow, Walking Dead, auto-resolve, or DB/RPC.
+
+## Data rules
+
+- log pochodzi z backendowego live combat state / report-safe event read modelu;
+- backend odpowiada za kolejność eventów i player-facing teksty;
+- Angular może tylko renderować gotowe pola i ewentualnie wybrać bezpieczny fallback;
+- technical/debug eventy nie są player-facing;
+- jeśli event nie ma player-facing text, UI ma fail closed:
+  - pominąć szczegóły techniczne,
+  - albo pokazać krótki bezpieczny fallback typu „Zdarzenie walki”;
+- attack source label pochodzi z backendu/dictionary/read modelu;
+- Angular nie pokazuje defender private equipment, jeśli backend nie wystawia dozwolonego snapshot labela;
+- opponent generated/manual equipment labels nie mogą udawać player inventory.
+
+## UI rules
+
+- log zaczyna się pod całym combat minigame row, nie w środkowej karcie;
+- używać istniejących `mg-card`, `mg-data-row`, badge/tag/text utilities i istniejących list/timeline patterns;
+- nie kopiować lokalnego CSS z prototypu;
+- dopasować wizualnie do prototypu combat report log:
+  - małe grupy/wiersze,
+  - aktor wyraźny,
+  - opis czytelny,
+  - wynik po prawej lub jako mocny value;
+- ważne eventy nie mogą być `muted-text`;
+- normal damage może być gold/heading emphasis;
+- miss/evade powinny mieć info/blue emphasis;
+- crit powinien mieć danger/red emphasis;
+- active combat log może być bardziej kompaktowy niż completed report log.
+
+## Acceptance
+
+- aktywny combat log pokazuje backendowe eventy pod panelami walki;
+- kolejność eventów jest backendowa, bez lokalnej rekonstrukcji;
+- event rows są player-facing i czytelne;
+- attack source labels są pokazane tylko, jeśli backend je bezpiecznie wystawia;
+- brak technicznych manifest/debug/raw JSON tekstów;
+- brak Angular-side enum translation engine;
+- brak zmian w WalkingDead/timing/submit/auto-resolve/RPC/generated types;
+- `tsc` i build przechodzą.
+
+## Verification
+
+- `npx tsc --noEmit`;
+- `npm run build`;
+- `git diff --check`;
+- static grep:
+  - no `rawJson` / `snapshot_json` parsing in combat log UI;
+  - no local damage/crit/evasion calculation;
+  - no technical debug copy in touched templates;
+- user-side smoke:
+  - active combat with no events;
+  - active combat with damage event;
+  - miss/evade event if available;
+  - crit event if available;
+  - completed combat state if active surface remains visible.
+
+## Required Codex report
+
+- combat log data source:
+- event fields rendered:
+- fallback behavior for missing player-facing text:
+- attack source label source:
+- privacy omissions:
+- local SCSS added:
+
+**Status:** Accepted/completed on 2026-05-25 as the UI-COMBAT-4 frontend slice. The active combat log now renders under the combat panels as a player-facing live event log with actor/body/result columns, utility/template-based row structure, miss/evade outcomes kept in the result column with info emphasis, hit/crit/heal result tone paths driven by existing utility classes, and attack source emphasized as a safe text segment. The accepted cleanup leaves no local `combat-log__*` SCSS and did not change generated types, DB/RPC, Walking Dead, Manual/Auto or preview flow in the final UI cleanup. Follow-ups remain outside this accepted slice: user-side visual/manual smoke may tune small preferences later; backend/Migrator owns combat resolver/read-model issues such as successful hit events with `0 obrażeń` and runtime stat discrepancies between dashboard, preview and combat; a future shared combat/report log row pattern may be extracted if this structure repeats.
+
+---
+
+# UI-COMBAT-5 — Completed combat report layout
+
+## Goal
+
+Zbudować completed combat report zgodny konstrukcyjnie z attacker victory / defender victory prototypes.
+
+## Scope
+
+- report header;
+- outcome banner;
+- meta row:
+  - source;
+  - time;
+  - resolution mode;
+  - turn count;
+  - outcome;
+- final combatant panels;
+- final HP bars;
+- combat timeline/log;
+- rewards/losses;
+- actions/report handoff.
+
+## Out of scope
+
+- durable report backend generation;
+- reward grant logic;
+- public share route backend;
+- live recompute completed results.
+
+## Data rules
+
+- completed report używa combat result snapshot/report sections;
+- final HP nie pochodzi z aktualnego hero state;
+- outcome label pochodzi z backendu;
+- viewer-relative outcome color może zależeć od backendowego viewer result field;
+- backend dostarcza player-facing title/outcome/narrative.
+
+## UI rules
+
+- maksymalna szerokość ok. `1180px`;
+- completed report nie pokazuje Walking Dead;
+- report pokazuje zapisany combat log/timeline;
+- outcome banner:
+  - viewer win = green/success;
+  - viewer loss = red/danger;
+  - draw = neutral/warning;
+- layout ma być czytelny, nie rozciągnięty bez kontroli na ultrawide.
+
+## Acceptance
+
+- victory/defeat/draw mają czytelny outcome state;
+- combatants i final HP są widoczne;
+- report timeline jest widoczny;
+- brak lokalnego outcome resolvera;
+- `tsc` i build przechodzą.
+
+**Status:** Accepted/completed on 2026-05-26 as the UI-COMBAT-5 frontend/UI slice. Active and completed combat now use the shared combat stage/surface presentation path, completed participant cards keep visible base/combat stat rows when the backend read model exposes them, and the completed report keeps the accepted actor/body/result combat log structure with source emphasis and no local `combat-log__*` SCSS. Exploration code is now a thin adapter around shared combat presentation, while the exploration result wrapper owns outcome/reward/actions. JSON report text extraction no longer exposes generic combat-report `...keys` APIs and uses the shared `json-display-text` utility; generated types, DB/RPC, specs and status docs were not touched during the final code cleanup before acceptance.
+
+**UI-COMBAT-5-FOLLOW-UP status:** Accepted on 2026-05-26 in the frontend/UI scope. The outcome banner now uses global `mg-card--success`, `mg-card--danger` and `mg-card--warning` surface variants driven by `ExplorationOutcomeReportLayout.titleTone`; combat participant display models are portrait-ready; PvE opponent portrait fallback is limited to real opponent/NPC identity and uses `/images/warrior.png`; active hero portraits use explicit portrait/profile data or the shared origin paperdoll helper through active hero state; generic combat mapping does not guess paperdoll paths; completed reports fail closed instead of reconstructing raw combat stat rows locally. Follow-ups outside this accepted task: Migrator/read-model must expose `baseStatRows` and `combatStatRows` for auto-resolved combat report participants; portrait centering/framing can be polished later if needed; Reports Center should reuse the shared combat/report pattern in its own task.
+
+---
+
+# UI-COMBAT-6 — Combat timeline row renderer
+
+## Goal
+
+Ujednolicić renderowanie timeline rows dla active log i completed report.
+
+## Scope
+
+- shared/composable row renderer dla:
+  - hit;
+  - miss;
+  - evade;
+  - crit;
+  - damage;
+  - heal;
+  - round effect;
+  - start/ready event;
+  - completion event;
+- actor label;
+- source/weapon label;
+- detail text;
+- result badge/value;
+- row presentation kind.
+
+## Out of scope
+
+- budowanie tekstów eventu w Angularze;
+- lokalna klasyfikacja combat eventów na podstawie raw enumów, jeśli backend nie dostarcza presentation kind;
+- debug/admin raw JSON.
+
+## Data rules
+
+- preferować backendowe `presentationKind`, `eventLabel`, `detailText`, `damageDisplay`;
+- attack source label z backendu ma być wyróżnione, np. heading/gold;
+- nazwa broni/itemu ma pochodzić ze snapshotu/report-safe labela;
+- nie otwierać item popoverów dla prywatnego PvP equipmentu, chyba że backend pozwala.
+
+## UI rules
+
+- normal damage: gold/heading result;
+- miss/evade: info/blue result;
+- crit: red/danger row or result emphasis;
+- healing/round effects: distinct but readable;
+- source labels nie mogą być małymi technicznymi kluczami;
+- log ma grupować turę/rundę tam, gdzie backend udostępnia grouping.
+
+## Acceptance
+
+- row renderer nie zawiera local combat logic;
+- renderer obsługuje typowe presentation kinds;
+- brak raw JSON i debug eventów w player-facing UI;
+- `tsc` i build przechodzą.
+
+**Status:** Accepted/completed on 2026-05-26 as the UI-COMBAT-6 frontend/UI slice. `CombatLogRow` is now a narrow presentational renderer for `CombatDisplayLogRow`, while `CombatLogPanel` keeps ownership of combat log groups/rounds and delegates only individual rows. Active and completed combat keep the accepted actor/body/result row structure, source emphasis, utility-driven tones and no local combat-log SCSS. No mapper, DB/RPC, generated types, Walking Dead, participant card or report-flow changes were made for this slice. The unrelated focused spec fixture failure in item-generation specs does not block this accepted task.
+
+---
+
+# UI-COMBAT-7 — Rewards, losses and report actions
+
+## Goal
+
+Pokazać nagrody, straty i akcje raportowe w source-specific sposób.
+
+## Scope
+
+- reward/loss summary dla completed combat report;
+- PvP attack:
+  - attacker win rewards/seized resources, jeśli backend zwraca;
+  - attacker loss costs/losses, jeśli backend zwraca;
+- Trial combat:
+  - używa Trial reward/result flow;
+  - nie miesza Trial reward z PvP reward copy;
+- Exploration encounter combat:
+  - używa exploration reward/report handoff;
+- actions:
+  - open full report;
+  - copy public report link, jeśli token/url istnieje;
+  - return to source context:
+    - Exploration;
+    - Vicinity/PvP;
+    - Reports.
+
+## Out of scope
+
+- reward persistence;
+- fake rewards;
+- local reward grant logic;
+- external share backend.
+
+## Data rules
+
+- reward/loss values pochodzą z backendu;
+- public report link tylko z backendowego tokena/url;
+- jeśli public token nie istnieje, akcja kopiowania jest ukryta;
+- internal `/game/reports/{id}` nie jest public share linkiem.
+
+## UI rules
+
+- nagrody są pod combat timeline, nie przed główną treścią walki;
+- wartości liczbowe wyróżnione kolorem heading/gold;
+- etykiety zasobów normalnym tekstem;
+- item names mogą używać istniejącego item popoveru, jeśli policy pozwala.
+
+## Acceptance
+
+- PvP rewards/losses nie są renderowane lokalnie, tylko z backendu;
+- Trial rewards nie pokazują PvP copy;
+- public copy action pojawia się tylko gdy istnieje public token/url;
+- `tsc` i build przechodzą.
+
+**Status:** Accepted/completed on 2026-05-26 as the UI-COMBAT-7 frontend/UI slice, including the final completed-combat public-link fix. Completed combat reports keep rewards below the shared combat timeline and before report actions, use the existing exploration reward handoff/display path, and do not render local PvP reward/loss data. Report actions keep the internal full-report action separate from the public copy/share action; completed combat now uses the challenge completion `gameReportId` for `Otwórz pełny raport`, loads the private report detail through `GameReports.getActiveHeroReportDetail(reportId)` when needed, and maps `PrivateGameReportDetail.publicToken` to `/report/{publicToken}` for copying. The copy action remains visible, is enabled when a backend public path/token is available, and fails closed as a disabled warning state when no token/path is exposed. The misleading same-route return action was removed because it did not change exploration state. Follow-ups outside this accepted frontend slice: visual polish for the report action section, and backend/read-model completion of missing auto-resolve participant `baseStatRows` / `combatStatRows` if still present.
+
+---
+
+# UI-COMBAT-8 — Exploration combat auto-resolve integration
+
+## Goal
+
+Dodać jawne auto-resolve dla Exploration combat bez ruszania manualnego Walking Dead flow.
+
+## Scope
+
+- użyć:
+  ```ts
+  auto_resolve_exploration_combat_challenge_attempt(p_challenge_attempt_id, p_request_id)
+  ```
+- dodać akcję:
+  - `Rozstrzygnij automatycznie`;
+  - dostępna dla combat encounter / zasadzki;
+  - dostępna dla Trial combat;
+  - niedostępna dla non-combat Trial;
+  - niedostępna dla PvP;
+- request-id/stale guard;
+- loading/disabled state;
+- toast/error handling;
+- refresh existing report/reward/combat result flow po sukcesie.
+
+## Out of scope
+
+- DB/RPC changes;
+- generated types regeneration;
+- manual combat changes;
+- PvP auto-resolve;
+- local combat resolution.
+
+## Data rules
+
+- jeżeli RPC nie istnieje w generated types, Codex czeka na typy od użytkownika;
+- response fields mogą pomóc w report handoff, ale nie służą do lokalnego rozstrzygania;
+- combat report/timeline renderuje backendowe fields.
+
+## Acceptance
+
+- auto-resolve działa dla zasadzki/combat encounter;
+- auto-resolve działa dla Trial combat;
+- non-combat Trial nie pokazuje tej akcji;
+- manual Walking Dead działa bez zmian;
+- completed report pokazuje combat timeline z backendu;
+- `tsc` i build przechodzą.
+
+**Status:** Accepted/completed on 2026-05-27 as the UI-COMBAT-8 visual combat/minigame integration slice. Exploration now routes combat challenges through the generic `MinigameHost` boundary, while the combat-owned `CombatHost` / `CombatHostState` owns preview, manual start, timing submit, auto-resolve, stale guards and Walking Dead timer lifecycle through `CombatSessions` and existing combat mappers. Active combat keeps the accepted `CombatStage` / `CombatSurface` / `CombatLogPanel` / `CombatLogRow` presentation path, the old `CombatDisplayLogRow` actor/body/result contract, hero portrait mapping and backend-structured live event mapping into that old row shape without a new renderer or local combat-log parser. Auto-resolve uses the generic combat session RPC service path and mapped read models; Angular does not calculate hit, damage, crit, evasion, healing, outcome, reward or report data locally. `combat-report-log.mapper.ts` is not the active live combat mapper. Follow-up outside this accepted commit: manual combat completion currently hands off `reportId: null`, so Exploration may show `Raport minigierki nie jest jeszcze dostępny` until the report handoff contract is completed.
+
+---
+
+# UI-COMBAT-9 — Final combat UI polish and closure
+
+## Goal
+
+Domknąć obecny Combat UI po UI-COMBAT-8 jako mały polish pass, bez rozpoczynania PvP, bez refaktoru architektury i bez nowych funkcjonalności.
+
+Combat zasadniczo działa i wygląda poprawnie. Ten task ma poprawić tylko widoczne drobiazgi UI, jeśli realnie występują, oraz usunąć z backlogu błędne wrażenie, że kolejnym krokiem jest PvP auto-resolve.
+
+## Scope
+
+- przejrzeć istniejący active/completed combat UI po UI-COMBAT-8;
+- poprawić wyłącznie drobne widoczne problemy UI/copy/layout, jeśli są oczywiste:
+  - spacing/gap;
+  - mylący label;
+  - widoczny raw/debug tekst;
+  - niewłaściwe `muted-text` na ważnej wartości;
+  - drobny alignment w report/action area;
+- usunąć albo przepisać backlogowe `UI-COMBAT-9–12`, żeby nie wymuszały PvP autoresolve ani refaktoru;
+- dopisać, że PvP auto-resolve/report flow wraca dopiero w osobnym UI-PVP / PvP combat epiku;
+- po akceptacji zsynchronizować status docs/backlog zgodnie ze standardowym workflow.
+
+## Out of scope
+
+- PvP auto-resolve;
+- `auto_resolve_pvp_attack_action(...)`;
+- PvP report flow;
+- PvP spy/attack UI;
+- manual PvP combat;
+- shared UI extraction;
+- przenoszenie typów/interfejsów/helperów;
+- przebudowa mapperów;
+- refaktor `CombatHost`, `CombatSurface`, `CombatLogPanel`, `CombatLogRow`;
+- DB/RPC changes;
+- generated types;
+- nowe specs;
+- lokalny combat resolver, timeline parser albo translation engine.
+
+## Rules
+
+- To jest UI polish, nie refaktor.
+- TS można ruszyć tylko wtedy, gdy jest to minimalny binding konieczny do poprawienia widocznego UI.
+- Nie wolno zmieniać flow manual/auto combat.
+- Nie wolno zmieniać ścieżek RPC/service/state.
+- Nie wolno tworzyć nowych shared komponentów tylko dlatego, że coś można by kiedyś wydzielić.
+- Jeśli nie ma realnych widocznych problemów UI, task może być documentation/status-only.
+
+## Acceptance
+
+- Combat UI nadal działa jak po zaakceptowanym UI-COMBAT-8;
+- brak nowego PvP scope;
+- brak architektonicznego refaktoru;
+- brak generated types edits;
+- brak nowych lokalnych fallbacków;
+- widoczne drobne UI/copy problemy, jeśli występowały, są poprawione;
+- backlog/status jasno mówi, że dalsze PvP prace są poza obecnym Combat UI epikiem;
+- jeśli kod był zmieniany:
+  - `npx tsc --noEmit`;
+  - `npm run build`;
+  - `git diff --check`.
+
+  ---
+
+# 17. UI-REPORTS — Reports and Notifications
+
+Cel: Reports Center, Reports archive, Notifications archive, full report detail, topbar bell/dropdown i toast-to-notification contract. Reports i Notifications są różnymi typami informacji i nie mogą być mieszane w jednej liście.
+
+## UI-REPORTS task index
+
+- UI-REPORTS-1 / formerly UI-45 — Reports Center shell
+- UI-REPORTS-2 / formerly UI-46 — Reports list/archive screen
+- UI-REPORTS-3 / formerly UI-47 — Full report detail route
+- UI-REPORTS-4 / formerly UI-48 — Notifications archive tab
+- UI-REPORTS-5 / formerly UI-49 — Topbar notification bell and recent notifications dropdown
+- UI-REPORTS-6 / formerly UI-50 — Toast-to-notification behavior contract
+
+## UI-REPORTS-1 / formerly UI-45 — Reports Center shell
+
+**Goal:**  
+Zbudować wspólny Reports Center shell dla dwóch osobnych archiwów: Reports i Notifications.
+
+**Scope:**
+- route/page target: existing reports route if present,
+- tabs: Reports and Notifications,
+- shared page header,
+- shared filter/list/detail layout,
+- read/unread visual state,
+- pagination,
+- empty/loading states,
+- topbar bell considered quick access only, not archive replacement.
+
+**Out of scope:**
+- full report detail route,
+- notification settings,
+- public share report route,
+- action queue/timer dashboard,
+- audit/admin logs.
+
+**Data/source rules:**
+- Reports and Notifications should use separate read models/services if backend separates them,
+- read/unread is user/hero scoped according to backend contract,
+- do not mix audit/player-abuse reports with gameplay reports,
+- if Notifications backend/archive missing, report dependency.
+
+**UI/SCSS rules:**
+- use global tabs/list/detail/pagination patterns,
+- no local copied report card CSS,
+- icons from custom registry/placeholders,
+- statuses as badges/pills.
+
+**Dependencies/blockers:**
+- missing reports read model -> blocker for Reports tab,
+- missing notifications read model -> blocker for Notifications tab,
+- missing read state mutation -> open marks read disabled/dependency.
+
+**Acceptance criteria:**
+- Reports and Notifications tabs exist,
+- entries are not mixed,
+- layout supports list + detail panel,
+- topbar bell not treated as archive,
+- build passes.
+
+**Verification/smoke:**
+- route smoke,
+- tab switch smoke,
+- empty/loading state smoke,
+- build/tsc.
+
+**Required Codex report:**
+- reports source:
+- notifications source:
+- shared components reused:
+- local SCSS added:
+- not added intentionally:
+
+## UI-REPORTS-2 / formerly UI-46 — Reports list/archive screen
+
+**Goal:**  
+Zbudować Reports tab jako archiwum pełnych gameplay records, z listą, filtrami i summary/detail panelem.
+
+**Scope:**
+- report list rows/cards,
+- categories: Combat, Trial, Encounter, PvP, Spy/Siege, Trade/Auction,
+- report title, short summary, type, outcome/status, created time, read/unread,
+- filters by type/status/time/search,
+- pagination,
+- detail side panel with participants/source/outcome/rewards/changes summary,
+- actions: Open full report, Share.
+
+**Out of scope:**
+- Mark read button; opening marks read automatically,
+- Share later label,
+- full detail route implementation,
+- public report route,
+- live recomputation of historical reports,
+- audit/player-abuse reports.
+
+**Data/source rules:**
+- reports render from durable report/snapshot data,
+- item references use report item references/snapshots where available,
+- opening report/detail should mark read through canonical read-state path if available,
+- no private defender equipment leak.
+
+**UI/SCSS rules:**
+- use shared list/pagination/detail side panel patterns,
+- type/outcome as badges/icons,
+- report content not muted if meaningful,
+- no local card system.
+
+**Dependencies/blockers:**
+- missing report read model -> dependency,
+- missing mark-read path -> report limitation,
+- missing share token/path -> show Share only if available or report dependency.
+
+**Acceptance criteria:**
+- Reports tab lists full reports,
+- read state visible,
+- clicking/opening marks read where backend supports it,
+- detail summary visible,
+- Open full report and Share actions present only where supported,
+- build passes.
+
+**Verification/smoke:**
+- list render smoke,
+- filter smoke,
+- pagination smoke,
+- open/mark-read smoke if backend available,
+- build/tsc.
+
+**Required Codex report:**
+- report read model:
+- mark-read path:
+- share path:
+- item snapshot handling:
+- local SCSS added:
+
+## UI-REPORTS-3 / formerly UI-47 — Full report detail route
+
+**Goal:**  
+Zbudować osobny full report detail screen dla trwałego gameplay reportu.
+
+**Scope:**
+- route/page target: e.g. `/reports/:reportId` or project route convention,
+- header with report type/outcome/date,
+- participants/source,
+- main result summary,
+- combat timeline/turns/log if combat report,
+- rewards/loot/resource changes,
+- item references with shared item popovers,
+- Share action where allowed,
+- read state update on open.
+
+**Out of scope:**
+- public share route unless separate task,
+- report producer backend,
+- live recomputation from current state,
+- exposing private data not in snapshot.
+
+**Data/source rules:**
+- read durable report snapshot/read model,
+- combat reports read combat result snapshots,
+- trade reports show exact buyer/seller/item/CP summary from transaction-time data,
+- item references use report item reference fallback where source item is missing,
+- mark read through canonical path if available.
+
+**UI/SCSS rules:**
+- use report detail/page header/timeline patterns,
+- item popovers via UI-CORE-6,
+- technical ids secondary,
+- no raw JSON payload as player-facing UI.
+
+**Dependencies/blockers:**
+- missing report detail read model -> blocker,
+- missing timeline/log data -> render summary and report partial dependency,
+- missing share token -> hide/disable Share and report dependency.
+
+**Acceptance criteria:**
+- full report route opens from Reports Center,
+- report content is durable snapshot-based,
+- opening marks read where supported,
+- item references display safely,
+- no privacy leak,
+- build passes.
+
+**Verification/smoke:**
+- route smoke for report detail,
+- combat report smoke if data exists,
+- trade/report item smoke if data exists,
+- missing report/404 smoke,
+- build/tsc.
+
+**Required Codex report:**
+- report detail source:
+- mark-read path:
+- item reference handling:
+- share capability:
+- local SCSS added:
+
+## UI-REPORTS-4 / formerly UI-48 — Notifications archive tab
+
+**Goal:**  
+Zbudować Notifications tab jako pełne archiwum krótkich komunikatów systemowych/gameplayowych.
+
+**Scope:**
+- four summary cards:
+  - Unread,
+  - Needs attention,
+  - Last 24h,
+  - Muted categories,
+- notification list rows,
+- category/severity/status/read state,
+- filters: category/status/severity/search,
+- pagination,
+- detail side panel,
+- linked source/report action,
+- opening notification marks read where supported.
+
+**Out of scope:**
+- full notification settings page,
+- report detail inside notification detail,
+- action queue/timer dashboard,
+- audit logs,
+- raw technical payloads.
+
+**Data/source rules:**
+- notifications from persistent notification read model,
+- online toasts do not replace archive,
+- read/unread user/hero scoped per backend,
+- severity/category from DB/dictionary/read model where available,
+- if backend archive missing, report dependency and do not create permanent local store.
+
+**UI/SCSS rules:**
+- short scannable rows,
+- notification detail remains short-form,
+- severity as badges/status, not only colored text,
+- no localStorage archive UI.
+
+**Dependencies/blockers:**
+- missing notification read model -> blocker,
+- missing mark-read path -> read state limitation,
+- missing muted categories source -> hide/placeholder according to convention.
+
+**Acceptance criteria:**
+- Notifications tab has four summary cards,
+- list is short-form and scannable,
+- detail panel links to source/report where available,
+- opening marks read where supported,
+- no fake local archive,
+- build passes.
+
+**Verification/smoke:**
+- tab smoke,
+- filter/pagination smoke,
+- open/mark-read smoke if backend available,
+- empty state smoke,
+- build/tsc.
+
+**Required Codex report:**
+- notification source:
+- category/severity source:
+- mark-read path:
+- source/report link handling:
+- local SCSS added:
+
+## UI-REPORTS-5 / formerly UI-49 — Topbar notification bell and recent notifications dropdown
+
+**Goal:**  
+Dodać topbar bell/dropdown jako quick access do najnowszych notifications, bez zastępowania pełnego archiwum.
+
+**Scope:**
+- bell icon/button in topbar,
+- unread count badge,
+- dropdown with latest 5–10 notifications,
+- entry title, short subtitle, severity/category icon, time, unread marker,
+- footer/action: View all -> Reports Center > Notifications,
+- zero-count inactive state,
+- close/click outside behavior through existing overlay pattern.
+
+**Out of scope:**
+- full notifications archive,
+- notification settings,
+- reports list in dropdown,
+- custom overlay system if PrimeNG/vendor exists.
+
+**Data/source rules:**
+- same notification read model as archive but limited to latest entries,
+- unread count from backend/read model,
+- clicking item may route to source/report/detail if supported,
+- no local permanent state.
+
+**UI/SCSS rules:**
+- use topbar/bell/overlay/popover vendor patterns,
+- no orphan dropdown nodes in topbar,
+- bell coexists with resource chips without layout breakage.
+
+**Dependencies/blockers:**
+- missing latest notifications source -> hide/dropdown pending and report dependency,
+- missing overlay wrapper -> use PrimeNG overlay/popover or report gap.
+
+**Acceptance criteria:**
+- bell shows unread count,
+- dropdown shows recent notifications only,
+- View all opens Notifications archive,
+- topbar layout stable,
+- build passes.
+
+**Verification/smoke:**
+- open/close dropdown smoke,
+- unread count smoke,
+- View all route smoke,
+- zero notifications smoke,
+- build/tsc.
+
+**Required Codex report:**
+- latest notification source:
+- overlay/wrapper reused:
+- topbar layout changed:
+- local SCSS added:
+
+## UI-REPORTS-6 / formerly UI-50 — Toast-to-notification behavior contract
+
+**Goal:**  
+Opisać i/lub wdrożyć kontrakt między online toastami a persistent notification archive.
+
+**Scope:**
+- online active event can show toast where live event delivery exists,
+- persistent archive remains source for historical items,
+- toast fields: title, summary, severity, optional action/link,
+- archive fields: category, severity, title, message, created time, read state, optional linked source/report,
+- toast click routes to source/detail where supported,
+- if opened from toast, mark read where appropriate.
+
+**Out of scope:**
+- building backend notification system if missing,
+- permanent localStorage notification store,
+- audit/event log substitute,
+- staff/private payloads in player notifications.
+
+**Data/source rules:**
+- backend decides which events persist,
+- frontend displays received live events,
+- backend/read model owns archive and read/unread,
+- no inference of persistence from toast state only.
+
+**UI/SCSS rules:**
+- use PrimeNG/vendor toast wrapper,
+- severities map to Mythsworn notification severity names,
+- toast content short and action-oriented.
+
+**Dependencies/blockers:**
+- missing live event channel -> document dependency and implement archive surfaces only,
+- missing notification archive backend -> no permanent local substitute.
+
+**Acceptance criteria:**
+- contract documented in code/docs/task notes,
+- toasts and archive responsibilities not confused,
+- click routing described/implemented where supported,
+- no local-only permanent store,
+- build passes if code changed.
+
+**Verification/smoke:**
+- toast visual smoke if event/mock available,
+- route/action smoke from toast if implemented,
+- archive still source of truth,
+- build/tsc.
+
+**Required Codex report:**
+- live event source:
+- archive source:
+- toast wrapper reused:
+- persistence not added intentionally:
+
+---
+
+## Additional report/result prototype integration follow-ups
+
+## UI-REPORTS-7 — Trial Result Report Variants
 
 **Goal:**  
 Dopisać brakujące backlog entries dla trial report variants wypracowanych podczas prototypowania.
@@ -6424,7 +8155,7 @@ Dopisać brakujące backlog entries dla trial report variants wypracowanych podc
 
 ---
 
-## UI-REPORTS-ADD-2 — PvP / Combat Report Perspective Variants
+## UI-REPORTS-8 — PvP / Combat Report Perspective Variants
 
 **Goal:**  
 Dopisać backlog entry dla combat/PvP report perspective handling.
@@ -6470,597 +8201,3324 @@ Dopisać backlog entry dla combat/PvP report perspective handling.
 
 ---
 
-# UI-ONBOARDING-PREP — Next prototype/task handoff
+# 18. UI-ESTATE — Estate, buildings and vicinity
 
-## UI-ONBOARDING-PREP-1 — Prototype Hero Creation / Onboarding Flow
+Cel: estate overview, building cards, active building job, build action boundary and future vicinity/list entry. Estate UI musi pokazywać budynki dostępne dla aktualnego district context i nie może oferować cancel/claim, jeśli gameplay decyzje tego nie przewidują.
+
+## UI-ESTATE task index
+
+- UI-ESTATE-1 / formerly UI-23 — Estate overview
+- UI-ESTATE-2 / formerly UI-24 — Building cards and district grouping
+- UI-ESTATE-3 / formerly UI-25 — Active building job panel
+- UI-ESTATE-4 / formerly UI-26 — Build action RPC boundary
+- UI-ESTATE-5 / formerly UI-27 — Estate list / vicinity entry boundary
+
+## UI-ESTATE-1 / formerly UI-23 — Estate overview
 
 **Goal:**  
-Przygotować następny ręczny canvas prototype dla canonical player entry flow before Codex implementation.
+Zbudować Estate overview jako player-facing ekran posiadłości z budynkami dostępnymi w aktualnym district context, active building job i build actions.
 
 **Scope:**
-- Prototype should cover:
-  - server selection,
-  - server full/no free district A address state,
-  - existing hero -> dashboard/game shell path,
-  - no hero -> hero creation path,
-  - sandbox/test multi-hero switcher placeholder,
-  - hero name,
-  - origin selection with DB-backed content placeholder,
-  - origin bonuses/lore presentation,
-  - create hero action,
-  - post-creation route to stat allocation,
-  - stat allocation is not a tutorial lock.
+- route/page target: existing estate route/page if present,
+- page header with estate/address context,
+- available building summary,
+- building cards/grid,
+- current level,
+- current bonus/effect,
+- next level bonus/effect,
+- next level build time,
+- next level cost,
+- build button/action where eligible,
+- active building job shown prominently if one exists,
+- link/entry to estate list/vicinity if present in navigation.
 
 **Out of scope:**
-- Angular implementation.
-- DB/RPC implementation.
-- Direct table write assumptions.
-- Final origin content hardcoding.
+- cancel building job player action,
+- claim/collect completed building job if DB finalizes lazily,
+- building admin/configurator,
+- DB schema changes,
+- fake production values if backend/read model missing.
 
 **Data/source rules:**
-- Prototype must reflect decisions:
-  - player entry starts from server selection,
-  - existing hero enters dashboard/game shell by default,
-  - hero creation is a coherent DB/RPC workflow,
-  - origin content is admin-configurable,
-  - new hero starts with 1000 Character Points,
-  - estate is assigned during creation,
-  - player does not choose/preview exact starting address.
+- estate data from active hero/selected server estate read model,
+- address source should use `district_code + address_number` where current decisions require it,
+- building definitions and current levels from canonical building/estate services,
+- costs/time/requirements from DB/read model/formula preview where available,
+- no direct writes to estate/building tables.
 
 **UI/SCSS rules:**
-- Canvas HTML only for visual exploration.
-- No production CSS copy.
-- Keep Mythsworn player-facing premium RPG direction.
+- use shared page header/card/stat/note patterns,
+- building image/placeholder uses global image/card pattern,
+- no local repeated building-card CSS if global card pattern can cover it,
+- no player-facing technical copy like “one estate per hero”.
+
+**Dependencies/blockers:**
+- if build execution RPC is missing, show read-only/disabled action and report dependency,
+- if active job read model missing, report dependency,
+- if cost/time preview missing, show safe partial and report data gap.
 
 **Acceptance criteria:**
-- Prototype clarifies the onboarding UX before implementation tasks.
-- No fake backend authority is implied.
-- Flow states are visually understandable.
+- estate overview shows available buildings for current context,
+- each building card shows current level, bonus, next build time/cost where data exists,
+- active job visible if present,
+- no Cancel button/copy,
+- no fake claim/collect flow,
+- build passes.
 
 **Verification/smoke:**
-- Canvas visual review only.
+- route smoke for Estate,
+- visual smoke with active job and without active job if data possible,
+- disabled/ineligible build smoke,
+- build/tsc.
 
 **Required Codex report:**
-- not applicable until implementation.
+- reused estate/building services:
+- cost/time source:
+- active job source:
+- checked but not reused:
+- local SCSS added:
 
----
-
-# UI-ONBOARDING — Account Entry Shell And Hero Creation
-
-This section is part of the canonical UI/UX backlog. It records the accepted account/public shell, server/hero entry and Hero Creation origin carousel direction. Stat allocation is the default first in-game location after creation, not a third account-onboarding step.
-
-All tasks below inherit Part I strict execution rules: prototype visual anchors are a contract, production must use DB/RPC/read models, `database.types.ts` is read-only, critical mutations use canonical backend workflows, new/touched forms use Reactive Forms, and Codex must not copy prototype CSS/JS/`mb-*` classes into Angular.
-
----
-
-## UI-ONBOARDING-ADD-1 — Account Entry Shell information architecture
+## UI-ESTATE-2 / formerly UI-24 — Building cards and district grouping
 
 **Goal:**  
-Zdefiniować i wdrożyć account/public shell dla zalogowanego użytkownika przed wejściem w konkretny server+hero game shell.
+Pokazać budynki według district availability, tak aby district B mógł pokazywać budynki z A+B, a wyższe district contexts mogły rozszerzać dostępność.
+
+**Scope:**
+- building grouping/sections by source district or availability band,
+- available buildings count,
+- visual distinction between current district and inherited lower-district buildings,
+- building cards with image/placeholder, current level, next cost/time/effect,
+- desktop-first grid, mobile later as responsive fallback,
+- link to estate list/vicinity where relevant.
+
+**Out of scope:**
+- player-facing copy about internal district logic,
+- building district cap editor,
+- admin building configuration,
+- new DB schema for district grouping.
+
+**Data/source rules:**
+- `buildings.district_code` is minimum district where building is available,
+- building available in that district and higher districts unless current DB says otherwise,
+- level caps/requirements from read model/canonical building services,
+- no hardcoded permanent building list if DB definitions exist.
+
+**UI/SCSS rules:**
+- use section/card/chip patterns,
+- avoid badge copy like “A+B buildings available” if it reads technical/player-hostile,
+- show “Available buildings” or more player-facing label instead of “Buildings on”.
+
+**Dependencies/blockers:**
+- if district availability resolver missing, report dependency,
+- if building images/assets missing, use consistent placeholder and report asset gap.
+
+**Acceptance criteria:**
+- district B example can show A+B building availability,
+- buildings outside available districts are not shown,
+- grouping is understandable without technical jargon,
+- build passes.
+
+**Verification/smoke:**
+- visual smoke for district A and B contexts if data available,
+- empty/no-buildings smoke,
+- build/tsc.
+
+**Required Codex report:**
+- building availability source:
+- grouping logic source:
+- image/asset fallback:
+- local SCSS added:
+
+## UI-ESTATE-3 / formerly UI-25 — Active building job panel
+
+**Goal:**  
+Pokazać aktywną budowę w estate UI bez sugerowania cancel/claim, jeśli te akcje nie są player-facing.
+
+**Scope:**
+- active job card/panel,
+- building name/image/icon,
+- target level,
+- started/remaining/completes at,
+- cost summary if useful,
+- progress bar/timer,
+- link/highlight matching building card,
+- completed state messaging if backend surfaces completed but not finalized.
+
+**Out of scope:**
+- cancel action,
+- claim/collect action,
+- multi-job queue unless backend supports it,
+- action queue dashboard.
+
+**Data/source rules:**
+- active job from canonical estate_building_job read model/service,
+- status labels from DB enum/read model where available,
+- timer is display-only if backend owns completion,
+- no local mutation to mark job completed.
+
+**UI/SCSS rules:**
+- use global progress/timer/status card pattern,
+- active job must be visually clear but not oversized,
+- completed/failed/cancelled internal statuses should be handled safely without player-facing cancel flow.
+
+**Dependencies/blockers:**
+- missing active job read model -> dependency,
+- missing timer/progress global pattern -> link to UI-CORE/shell persistent state.
+
+**Acceptance criteria:**
+- active job visible when present,
+- no cancel UI,
+- progress/remaining time displayed where data exists,
+- state remains safe if no active job,
+- build passes.
+
+**Verification/smoke:**
+- active job smoke,
+- no active job smoke,
+- completed job edge smoke if available,
+- build/tsc.
+
+**Required Codex report:**
+- active job source:
+- timer/progress pattern reused:
+- statuses handled:
+- not added intentionally:
+
+## UI-ESTATE-4 / formerly UI-26 — Build action RPC boundary
+
+**Goal:**  
+Upewnić się, że Build action w Estate przechodzi przez canonical DB/RPC workflow, z właściwymi disabled states i feedbackiem.
+
+**Scope:**
+- build button on eligible building cards,
+- disabled states for missing requirements/resources/active job/max level,
+- cost/requirement display,
+- canonical build RPC/service call where available,
+- success toast / inline error using PrimeNG/vendor wrappers,
+- stale guard if active hero/server changes.
+
+**Out of scope:**
+- direct writes to estate/building/job/resource tables,
+- cancel/claim actions,
+- cost formula redesign,
+- admin build correction.
+
+**Data/source rules:**
+- build action through existing canonical RPC/service only,
+- requirement/cost validation from backend/read model,
+- frontend preview is explanatory and not authority,
+- after success refresh estate/job/resources through existing services.
+
+**UI/SCSS rules:**
+- use shared buttons/messages/toasts/vendor wrappers,
+- blocked reason visible and not muted if action is blocked,
+- no local loading button CSS if shared pattern exists.
+
+**Dependencies/blockers:**
+- if canonical build RPC/service missing, report blocker and do not implement fake mutation,
+- if requirements read model missing, show safe disabled state/dependency.
+
+**Acceptance criteria:**
+- build button only enabled when read model says eligible,
+- action uses canonical workflow,
+- stale success/error cannot update wrong hero/server context,
+- resources/job refresh after success,
+- build passes.
+
+**Verification/smoke:**
+- route smoke,
+- disabled build smoke,
+- build action smoke if backend/test data available,
+- stale/context note if not testable,
+- build/tsc.
+
+**Required Codex report:**
+- build RPC/service used:
+- requirement/cost source:
+- stale guard approach:
+- local SCSS added:
+- not added intentionally:
+
+## UI-ESTATE-5 / formerly UI-27 — Estate list / vicinity entry boundary
+
+**Goal:**  
+Zdefiniować granicę między własnym Estate overview a listą posiadłości/vicinity, która może służyć wejściu do PvP target selection i world browsing.
+
+**Scope:**
+- entry/link from Estate to estate list/vicinity if route exists,
+- short orientation copy,
+- clarify that own estate view is not the full vicinity list,
+- if estate list route exists: show lightweight navigation slot,
+- if route missing: show no fake working link or mark pending by project convention.
+
+**Out of scope:**
+- full estate list implementation,
+- PvP target selection implementation,
+- ranking/vicinity table,
+- siege/spy actions.
+
+**Data/source rules:**
+- estate list/vicinity data comes from server estate read model if implemented,
+- no hardcoded estate list,
+- PvP target actions belong to UI-PVP tasks.
+
+**UI/SCSS rules:**
+- link/card uses global navigation/entry pattern,
+- avoid confusing labels like technical “Buildings on”,
+- no second sidebar/duplicated nav.
+
+**Dependencies/blockers:**
+- if estate list route missing, report future route/UX dependency,
+- if PvP vicinity is the intended route, link only when available and gated.
+
+**Acceptance criteria:**
+- user can see how Estate relates to wider estate list/vicinity,
+- no fake list rendered without data,
+- no PvP actions on Estate overview unless explicitly part of route,
+- build passes if code changed.
+
+**Verification/smoke:**
+- link smoke if route exists,
+- no-link/pending state smoke if route missing,
+- build/tsc.
+
+**Required Codex report:**
+- route/link checked:
+- read model availability:
+- not added intentionally:
+- local SCSS added:
+
+---
+
+# 19. UI-TRADE — Auction House and Direct Trade
+
+Cel: osobne player-facing ekrany Auction House i Direct Trade, zgodne z CP economy, item lock rules, market slot rules i anti-abuse/audit boundaries. Trade UI nie może direct-write item/auction/trade/CP tables.
+
+## UI-TRADE task index
+
+- UI-TRADE-1 / formerly UI-29 — Auction House one-item listing browser
+- UI-TRADE-2 / formerly UI-30 — Auction filters, summary and pagination
+- UI-TRADE-3 / formerly UI-32 — Auction actions through canonical RPC/domain paths
+- UI-TRADE-4 / formerly UI-33 — Direct Trade offer builder
+- UI-TRADE-5 / formerly UI-34 — Direct Trade pending offers with pagination
+- UI-TRADE-6 / formerly UI-35 — Trade market slot summary
+- UI-TRADE-7 / formerly UI-36 — Direct Trade create offer RPC workflow
+- UI-TRADE-8 / formerly UI-37 — Direct Trade target response UI
+- UI-TRADE-9 / formerly UI-38 — Trade item display and popover integration
+
+## UI-TRADE-1 / formerly UI-29 — Auction House one-item listing browser
+
+**Goal:**  
+Zbudować Auction House listing browser jako osobny ekran od Direct Trade. Auction listing pokazuje maksymalnie jeden item i CP-based price/bid actions.
+
+**Scope:**
+- route/page target: existing auction/trade route if present,
+- listing list/table/card pattern per UI-CORE-14 decision,
+- one item per listing,
+- item name with shared item popover,
+- current bid in Character Points,
+- buy now amount in Character Points if available,
+- auction mode: bidding, buy now, bidding with buy now,
+- actions:
+  - bidding listing: Bid, Watch, Buy now if available,
+  - buy-now-only listing: Buy,
+- seller/listing metadata,
+- pagination.
+
+**Out of scope:**
+- Direct Trade builder,
+- bundle/set auctions,
+- drachma pricing for player-to-player trade,
+- create listing flow unless separate task,
+- anti-abuse case UI.
+
+**Data/source rules:**
+- listings from auction read model/service,
+- item display from item snapshot/read model,
+- prices/bids in Character Points only,
+- drachmas may appear only as item inherent/vendor value in popover, not trade price,
+- no direct writes to auction/item/CP tables.
+
+**UI/SCSS rules:**
+- use PrimeNG paginator/table or global list pattern per UI-CORE-14,
+- item hover/focus uses shared popover,
+- actions use shared buttons/action icons,
+- status/requirements as badges/status pills.
+
+**Dependencies/blockers:**
+- if auction read model/service missing, report blocker,
+- if item popover missing, link UI-CORE-6 dependency,
+- if watch action unsupported, omit or mark pending, do not fake.
+
+**Acceptance criteria:**
+- auction and direct trade are visually/route-separated,
+- one item per listing,
+- CP displayed for bid/buy now,
+- no drachma P2P price,
+- actions match auction mode,
+- pagination visible,
+- build passes.
+
+**Verification/smoke:**
+- route smoke,
+- listing render smoke,
+- mode/action smoke for bidding vs buy-now,
+- item popover smoke,
+- build/tsc.
+
+**Required Codex report:**
+- auction read model used:
+- item popover reused:
+- paginator/list pattern:
+- unsupported actions omitted:
+- local SCSS added:
+
+## UI-TRADE-2 / formerly UI-30 — Auction filters, summary and pagination
+
+**Goal:**  
+Dodać wygodne filtrowanie i paginację dla Auction House bez tworzenia niemożliwych filtrów albo fake danych.
+
+**Scope:**
+- filters by item category/slot/kind,
+- equippable / not equippable / requirements warning if read model supports it,
+- auction mode filter,
+- search by item/seller/listing where available,
+- summary cards/chips: available CP, locked CP, active bids, your listings,
+- page controls and current range.
+
+**Out of scope:**
+- advanced market analytics,
+- price history,
+- sorting by hidden item usefulness,
+- local fake counts.
+
+**Data/source rules:**
+- filter options from dictionaries/read models where available,
+- available/locked CP from Character Point read model/locks,
+- active bids/listings from auction service,
+- if read model does not support a filter, do not show it as functional.
+
+**UI/SCSS rules:**
+- filters use PrimeNG/vendor inputs/selects/chips,
+- pagination uses project/PrimeNG paginator pattern if available,
+- no local custom paginator unless justified by UI-CORE-14.
+
+**Dependencies/blockers:**
+- missing pagination in service -> report service dependency,
+- missing CP lock summary -> show only available CP and report gap.
+
+**Acceptance criteria:**
+- filters are functional or clearly omitted,
+- summary values are not hardcoded,
+- pagination shows current range/page,
+- no filter implies unavailable backend behavior,
+- build passes.
+
+**Verification/smoke:**
+- filter change smoke,
+- pagination smoke,
+- empty result smoke,
+- build/tsc.
+
+**Required Codex report:**
+- filters source:
+- CP/lock source:
+- pagination source:
+- filters omitted intentionally:
+
+## UI-TRADE-3 / formerly UI-32 — Auction actions through canonical RPC/domain paths
+
+**Goal:**  
+Podpiąć/wyznaczyć granicę dla Auction House actions przez canonical domain/RPC paths.
+
+**Scope:**
+- bid action,
+- buy now action,
+- watch action only if supported,
+- disabled/blocked states,
+- confirmation where needed,
+- success/error feedback,
+- refresh listing/CP locks after action,
+- stale guard if active hero/server changes.
+
+**Out of scope:**
+- direct table writes,
+- new auction RPCs unless task explicitly includes backend,
+- create listing flow,
+- anti-abuse admin review.
+
+**Data/source rules:**
+- use existing auction mutation service/RPC,
+- CP locks/refunds reflected from backend read model,
+- no direct `items`, `player_auction_*`, `character_point_*` mutations,
+- active hero/server context required.
+
+**UI/SCSS rules:**
+- shared buttons/confirm/toast/messages,
+- error states not muted,
+- no local dialog CSS.
+
+**Dependencies/blockers:**
+- if action RPC missing, report blocker and leave disabled/pending,
+- if watch unsupported, omit.
+
+**Acceptance criteria:**
+- actions call canonical paths,
+- invalid/blocked actions disabled or show backend error cleanly,
+- state refreshes after success,
+- stale responses ignored if context changed,
+- build passes.
+
+**Verification/smoke:**
+- bid smoke if backend/test data available,
+- buy now smoke if available,
+- blocked insufficient CP smoke,
+- build/tsc.
+
+**Required Codex report:**
+- RPC/service used:
+- locks/refunds source:
+- stale guard:
+- unsupported actions:
+
+## UI-TRADE-4 / formerly UI-33 — Direct Trade offer builder
+
+**Goal:**  
+Zbudować Direct Trade offer builder, w którym creator wybiera wyłącznie własne itemy i własne Character Points. Creator nie może żądać konkretnych itemów/CP od targeta.
+
+**Scope:**
+- route/page target: Direct Trade route or Trade route tab,
+- target hero search/select,
+- creator item selection 0–5,
+- creator CP amount,
+- offer note/message,
+- creator side preview,
+- target response placeholder,
+- item popover on selected items,
+- rules/helper panel explaining creator side vs target response,
+- validation: item count, CP amount, target required.
+
+**Out of scope:**
+- target inventory browsing,
+- requested item/CP UI,
+- CP-only-for-CP-only explanation in main UI unless backend error requires it,
+- auction UI,
+- direct writes.
+
+**Data/source rules:**
+- target hero search from server-scoped hero search/read service,
+- creator items from active hero inventory with eligible statuses,
+- creator CP from active hero/CP read model,
+- create action through canonical direct trade RPC/service,
+- no direct write to trade/item/CP tables.
+
+**UI/SCSS rules:**
+- use shared item row/popover,
+- use vendor form inputs/selects,
+- target response panel visibly empty until target answers,
+- no local copied prototype CSS.
+
+**Dependencies/blockers:**
+- missing hero search -> report dependency,
+- missing direct trade create service/RPC -> report blocker,
+- missing item eligibility data -> show safe disabled selection and report gap.
+
+**Acceptance criteria:**
+- no requested item/CP UI exists,
+- target response placeholder is clear,
+- creator can select up to five own eligible items,
+- CP validation prevents overspend,
+- create offer uses canonical workflow,
+- build passes.
+
+**Verification/smoke:**
+- route smoke,
+- target select smoke,
+- item selection count smoke,
+- CP overspend smoke,
+- create smoke if backend data available,
+- build/tsc.
+
+**Required Codex report:**
+- target search source:
+- item eligibility source:
+- CP source:
+- create RPC/service:
+- local SCSS added:
+
+## UI-TRADE-5 / formerly UI-34 — Direct Trade pending offers with pagination
+
+**Goal:**  
+Pokazać pending direct trade offers jako paged list, maksymalnie pięć widocznych na panel/stronę.
+
+**Scope:**
+- pending offers list,
+- total count,
+- page controls,
+- statuses: pending target, pending creator, incoming, expires soon, completed/rejected if included by filter,
+- selected offer detail summary,
+- incoming empty offer state does not block market slot,
+- action entry points where supported: respond, review, cancel own offer if backend supports it.
+
+**Out of scope:**
+- full response builder if handled by UI-TRADE-8,
+- fake cancel if no backend action,
+- auction listings.
+
+**Data/source rules:**
+- offers from direct trade read model/service,
+- market slot blocking from backend/read model if available,
+- incoming empty offers must not be counted as blocking creator’s slot unless backend says otherwise,
+- no local status inference that conflicts with backend.
+
+**UI/SCSS rules:**
+- use shared list/pagination/status patterns,
+- pagination should fit pending panel width,
+- status labels as badges/pills, not muted text.
+
+**Dependencies/blockers:**
+- missing pagination/read model -> report dependency,
+- missing slot impact info -> report limitation.
+
+**Acceptance criteria:**
+- five visible offers per page,
+- total pending count visible,
+- empty incoming offer does not visually block slot,
+- statuses clear,
+- build passes.
+
+**Verification/smoke:**
+- pagination smoke,
+- selected offer smoke,
+- empty incoming offer smoke if data available,
+- build/tsc.
+
+**Required Codex report:**
+- pending offers source:
+- pagination source:
+- slot impact source:
+- local SCSS added:
+
+## UI-TRADE-6 / formerly UI-35 — Trade market slot summary
+
+**Goal:**  
+Pokazać market slot budget i CP lock context w sposób zrozumiały dla gracza.
+
+**Scope:**
+- available CP,
+- locked CP,
+- market slots,
+- remaining slots,
+- helper/tooltip explaining that direct offers, active auction listings and active winning bids share slot budget for now,
+- slot impact in Direct Trade and Auction House screens.
+
+**Out of scope:**
+- building/Trade Routes design changes,
+- changing slot calculation,
+- admin config of slots,
+- fake slot numbers.
+
+**Data/source rules:**
+- slot limit from trade rules/building/runtime read model where available,
+- CP locks from CP lock read model,
+- if slot source missing, report dependency and avoid hardcoded production values.
+
+**UI/SCSS rules:**
+- summary values important, not muted,
+- use shared summary/card/chip patterns,
+- helper copy can be muted/secondary but must be readable.
+
+**Dependencies/blockers:**
+- missing slot read model -> dependency,
+- missing CP lock summary -> partial summary and report gap.
+
+**Acceptance criteria:**
+- summary visible on trade screens,
+- no confusing technical copy in main UI,
+- values sourced or dependency reported,
+- build passes.
+
+**Verification/smoke:**
+- visual smoke,
+- lock/slot values smoke if data available,
+- build/tsc.
+
+**Required Codex report:**
+- market slot source:
+- CP lock source:
+- values hardcoded yes/no:
+- local SCSS added:
+
+## UI-TRADE-7 / formerly UI-36 — Direct Trade create offer RPC workflow
+
+**Goal:**  
+Podpiąć Direct Trade create offer do canonical RPC/service z walidacją, feedbackiem i stale guards.
+
+**Scope:**
+- validate target, items 0–5, CP amount,
+- call direct trade create RPC/service,
+- show success toast and refresh offers/locks/items,
+- show inline/form errors for validation/RPC errors,
+- stale guard for active hero/server/target changes.
+
+**Out of scope:**
+- target response workflow,
+- auction create listing,
+- direct table writes,
+- backend RPC creation unless task explicitly includes backend.
+
+**Data/source rules:**
+- canonical direct trade RPC/service only,
+- item locks/CP locks backend-owned,
+- no direct writes to `items`, trade tables, CP tables,
+- refresh active hero/items/offers after success.
+
+**UI/SCSS rules:**
+- vendor form messages/toasts,
+- no local loading/error CSS if shared pattern exists,
+- important RPC errors not muted.
+
+**Dependencies/blockers:**
+- missing create RPC/service -> blocker,
+- missing lock refresh read model -> report limitation.
+
+**Acceptance criteria:**
+- invalid drafts cannot submit,
+- successful create locks creator assets via backend,
+- stale response guarded,
+- UI refreshes after success,
+- build passes.
+
+**Verification/smoke:**
+- validation smoke,
+- create offer smoke if data available,
+- failure smoke for insufficient CP/ineligible item if available,
+- build/tsc.
+
+**Required Codex report:**
+- create RPC/service:
+- validation rules:
+- refresh paths:
+- stale guard:
+
+## UI-TRADE-8 / formerly UI-37 — Direct Trade target response UI
+
+**Goal:**  
+Zaprojektować/zaimplementować target-side response UI, gdzie target widzi creator side i wybiera własne itemy/CP jako odpowiedź.
+
+**Scope:**
+- show creator committed side from offer snapshot/read model,
+- target selects own eligible items 0–5,
+- target CP amount,
+- accept/respond/reject actions where backend supports them,
+- target response preview,
+- item popovers,
+- validation.
+
+**Out of scope:**
+- target seeing creator private inventory beyond offer,
+- modifying creator side,
+- auction UI,
+- direct table writes.
+
+**Data/source rules:**
+- creator side from direct trade offer snapshot/read model,
+- target items from active hero eligible inventory,
+- response through canonical RPC/service,
+- no access to other hero inventory except committed offer items.
+
+**UI/SCSS rules:**
+- two-side offer layout reusable with builder,
+- item popovers shared,
+- response statuses as badges/pills.
+
+**Dependencies/blockers:**
+- missing response RPC/service -> blocker,
+- missing offer snapshot read model -> dependency.
+
+**Acceptance criteria:**
+- target can understand creator side,
+- target cannot edit creator side,
+- response uses canonical path,
+- no privacy leak,
+- build passes.
+
+**Verification/smoke:**
+- open incoming offer smoke,
+- response validation smoke,
+- accept/reject smoke if backend exists,
+- build/tsc.
+
+**Required Codex report:**
+- offer snapshot source:
+- target item source:
+- response RPC/service:
+- privacy boundaries:
+
+## UI-TRADE-9 / formerly UI-38 — Trade item display and popover integration
+
+**Goal:**  
+Upewnić się, że każdy item w Auction House i Direct Trade korzysta ze shared item display/popover.
+
+**Scope:**
+- Auction listing item,
+- Direct Trade selected/offered item,
+- pending offer item summary,
+- report/trade transaction item if present,
+- requirements/equippable status,
+- drachma value in popover or item row as appropriate.
+
+**Out of scope:**
+- CP item valuation,
+- local tooltip CSS,
+- item generation changes.
+
+**Data/source rules:**
+- item display from item read model/snapshot,
+- historical transaction items use snapshots where available,
+- no live recompute if snapshot exists,
+- no private data leakage.
+
+**UI/SCSS rules:**
+- UI-CORE-6 shared item popover,
+- status/requirements badges,
+- no duplicate per-screen item styling.
+
+**Dependencies/blockers:**
+- missing shared popover -> dependency,
+- missing snapshot data -> report gap and safe fallback.
+
+**Acceptance criteria:**
+- item hover/focus detail consistent across trade screens,
+- requirements, bonuses and drachma value visible,
+- no CP inherent value,
+- build passes.
+
+**Verification/smoke:**
+- item popover smoke in auction and direct trade,
+- not-equippable item smoke if data exists,
+- build/tsc.
+
+**Required Codex report:**
+- item popover reused:
+- item data/snapshot source:
+- local CSS avoided:
+- missing data fields:
+
+---
+
+# 20. UI-PVP — PvP target selection and future combat boundary
+
+Cel: PvP target selection przez Vicinity/Ranking, z jasną granicą względem właściwego combat screen. UI-PVP target selection nie może zawierać Walking Dead, combat preview, result preview ani combat log. Dostępność akcji musi pochodzić z backend/read modelu.
+
+## UI-PVP task index
+
+- UI-PVP-1 / formerly UI-39 — PvP Vicinity target selection screen
+- UI-PVP-2 / formerly UI-40 — Selected target side panel
+- UI-PVP-3 / formerly UI-41 — PvP travel timer / active PvP action state
+- UI-PVP-4 — PvP combat handoff preflight
+- UI-PVP-5 — Existing combat module integration for PvP attacks
+- UI-PVP-6 — PvP combat result/report handoff
+- UI-PVP-7 — PvP spy timer and report handoff
+
+## UI-PVP-1 / formerly UI-39 — PvP Vicinity target selection screen
+
+**Status:**
+Accepted/completed on 2026-05-28 after user-side review and placement cleanup. `/game/vicinity` now renders one cohesive PvP Vicinity target-selection screen with header summary, daily attacks from RPC, own-estate attack/siege protection from `get_hero_estate_runtime_state(...)`, district/search/page controls, 20-address paginated vicinity rows, generated empty slots, visible target overlay RPC data, selected target side panel, `Szpieguj` / `Atak` / disabled `Oblężenie` actions, protected danger/shield state, self success state, `Moja okolica`, and relocation confirmation for empty addresses. The route page remains thin; child components live under `src/app/game/components/vicinity`, Vicinity state/helpers under `src/app/game/features/vicinity`, and estate relocation workflow under `src/app/game/workflows/estate-relocation`. Provisional PvP attack/spy result screens/routes were removed from this scope. Combat/result/report/ranking flow remains outside UI-PVP-1.
+
+**Goal:**  
+Zbudować PvP target selection screen oparty o Vicinity, gdzie gracz wybiera cel ataku/szpiegowania/oblężenia z listy posiadłości w okolicy.
+
+**Scope:**
+- route/page target: existing PvP route/page if present,
+- top tabs/entry points: Vicinity and Ranking,
+- self hero/estate address visible,
+- list/table of nearby estates,
+- fields: address, hero name, level/rank if available, attack travel time, spy travel time, action availability,
+- row states: self, empty plot, protected, guild member, attackable, siege-only/spy-only,
+- compact action icons/buttons: Spy, Attack, Lay siege where available,
+- selected target side panel summary,
+- pagination if many nearby estates.
+
+**Out of scope:**
+- Walking Dead timing,
+- combat preview,
+- result preview,
+- combat log,
+- spy result detail,
+- siege setup form,
+- ranking full implementation unless part of separate task.
+
+**Data/source rules:**
+- target list from backend/read model for vicinity/estate list,
+- eligibility and action availability from backend/read model, not frontend guessing,
+- attack travel time and spy travel time from backend/read model,
+- guild membership/protection/range rules from backend/read model,
+- no direct writes to PvP/combat/report tables,
+- do not assume `hero.id === auth.uid()`.
+
+**UI/SCSS rules:**
+- use shared table/list/pagination patterns per UI-CORE-14,
+- action icons should use custom icon registry where available,
+- disabled/protected/guild states use badges/status pills, not opacity only,
+- no local combat-specific CSS on target selection screen.
+
+**Dependencies/blockers:**
+- missing vicinity read model -> dependency/blocker,
+- missing eligibility flags -> do not infer; report backend dependency,
+- missing PvP action RPCs -> actions disabled/pending and reported.
+
+**Acceptance criteria:**
+- Vicinity and Ranking controls fit in one line where desktop space allows,
+- own estate row clearly marked,
+- empty plots are visible but not attackable,
+- protected target shows Spy/Siege where allowed plus Protected state, no overflowing button text,
+- guild member shows Spy + Guild, no Attack/Siege,
+- target selection does not show combat UI,
+- build passes.
+
+**Verification/smoke:**
+- route smoke,
+- visual smoke for self, empty, protected, guild, attackable rows,
+- pagination smoke if data supports it,
+- build/tsc.
+
+**Required Codex report:**
+- target/vicinity data source:
+- eligibility source:
+- actions implemented/omitted:
+- checked but not reused:
+- local SCSS added:
+
+## UI-PVP-2 / formerly UI-40 — Selected target side panel
+
+**Status:**
+Accepted/completed on 2026-05-28 as part of the accepted UI-PVP-1 implementation and placement cleanup. The selected target side panel now lives in `src/app/game/components/vicinity/selected-target-panel`, consumes the current row view model, renders target/address/attack time/spy time/siege/protection fact rows, shows backend-derived action availability through prepared action view models, supports relocation confirmation for empty addresses, and avoids defender-private equipment/snapshot data. No extra UI/code pass was needed for UI-PVP-2.
+
+**Goal:**  
+Dodać compact selected target side panel pokazujący najważniejsze dane i dostępne akcje dla wybranego celu.
+
+**Scope:**
+- target hero name,
+- address,
+- attack travel time,
+- spy travel time,
+- siege available yes/no,
+- protection/guild/range state if relevant,
+- action buttons/icons: Start attack, Spy, Lay siege when available,
+- short “what happens next” helper copy.
+
+**Out of scope:**
+- Clear button,
+- combat log/preview,
+- detailed enemy equipment,
+- spy result details,
+- siege setup options.
+
+**Data/source rules:**
+- selected target state from current row/read model,
+- action availability from backend flags,
+- do not reveal private defender equipment,
+- if data stale after refresh, selected target should update or clear safely.
+
+**UI/SCSS rules:**
+- use shared detail side panel/card patterns,
+- buttons must fit; prefer icon actions if text buttons overflow,
+- no redundant distance/district if address already carries location context,
+- statuses as badges/status pills.
+
+**Dependencies/blockers:**
+- missing selected target read model fields -> partial display and report dependency,
+- missing action workflow -> disabled action with dependency report.
+
+**Acceptance criteria:**
+- target, address, attack travel time, spy travel time and siege availability visible,
+- actions fit and match row eligibility,
+- no Clear button,
+- no defender private data leak,
+- build passes.
+
+**Verification/smoke:**
+- select row smoke,
+- protected/guild row selected smoke,
+- refresh/stale note if not testable,
+- build/tsc.
+
+**Required Codex report:**
+- selected target data source:
+- action availability source:
+- private data avoided:
+- local SCSS added:
+
+# Aftermath
+
+Status:
+
+* `UI-PVP-1` — accepted/completed: `/game/vicinity` target selection.
+* `UI-PVP-2` — accepted/completed: selected target side panel.
+* `UI-PVP-3` — accepted/completed: active PvP travel/timer panel.
+* `UI-PVP-4` — accepted/completed: PvP combat handoff contract preflight.
+* `UI-PVP-5` — accepted/completed: PvP attack handoff through existing `/game/combat`.
+* Tych tasków nie przepisywać ani nie otwierać ponownie bez konkretnego blockera.
+
+Cel dalszych tasków:
+
+* dopiąć PvP combat result/report handoff bez przywracania osobnych PvP result screens;
+* dopiąć spy report/result flow poza Vicinity i poza combat attack screen;
+* wyrównać duży wrapper Combat stage/surface do zaakceptowanej globalnej półprzezroczystej logiki kart;
+* nie odtwarzać osobnych PvP result screens usuniętych w cleanupie;
+* ranking traktować jako osobny follow-up/epic po domknięciu podstawowego PvP combat flow.
+
+---
+
+## UI-PVP-3 — PvP travel timer / active PvP action state
+
+**Status:**
+Accepted/completed on 2026-05-28. `/game/vicinity` now renders an active PvP travel/timer panel when `get_active_pvp_action_offer(p_hero_id)` returns active/travel/manual-relevant attack or spy state. The panel reuses `PendingTimerOracle` and `pendingTimerDisplay(...)`, shows backend/read-model action, phase, target, address and arrival facts, keeps remaining time in the oracle only, and uses safe handoff copy for attack combat and spy report/result flows outside target selection. No direct `pvp_actions` reads, `metadata_json` parsing, local timer engine, combat log/preview, result screen or spy-result detail was added. Cleanup removed stale PvP result/runtime mapper/service methods and the old `VicinityTargetCandidatesState` facade; active overlay/search/action states now own the production paths. Verification passed with `npx tsc --noEmit`, `npm run build` with known budget/CommonJS warnings and `git diff --check`; user-side smoke remains pending. Attack timer-expiry combat handoff is covered by UI-PVP-5; spy/result/report handling remains separate.
+
+**Goal**
+
+Po rozpoczęciu akcji PvP pokazać graczowi aktywny stan podróży/dojścia dla PvP attack/spy, wykorzystując istniejący wzorzec timerów/runtime state, obecnie używany m.in. przy Exploration.
+
+**Scope**
+
+* podpiąć timer dla aktywnej akcji PvP po kliknięciu `Atak` albo `Szpieguj`;
+* użyć backendowego runtime/read-modelu jako źródła prawdy;
+* pokazać:
+
+  * rodzaj akcji: attack/spy;
+  * cel/adres;
+  * status;
+  * czas dotarcia / remaining time;
+  * co stanie się po dotarciu;
+* blokować niepoprawne powtórne starty akcji, jeśli backend zwraca aktywną blokującą czynność;
+* odświeżać stan Vicinity po starcie/ukończeniu akcji;
+* zachować target selection jako listę celów, nie jako combat screen.
+
+**Out of scope**
+
+* implementacja combat screen;
+* rozstrzygnięcie walki;
+* spy result detail screen;
+* ranking;
+* direct writes do PvP/combat/report tables;
+* lokalne liczenie wyniku albo czasu jako authority.
+
+**Data/source rules**
+
+* timer/status pochodzi z backendowego read modelu/RPC;
+* frontend może formatować czas, ale nie jest źródłem prawdy;
+* jeśli brakuje read modelu dla aktywnej PvP action, zgłosić DB/RPC blocker;
+* nie używać localStorage ani lokalnych fallbacków do utrwalania timera;
+* nie zakładać `hero.id === auth.uid()`.
+
+**Reuse requirements**
+
+* sprawdzić i wykorzystać istniejący timer/runtime pattern z Exploration;
+* sprawdzić istniejące active runtime activity/read-model helpers;
+* nie kopiować lokalnego timera do Vicinity, jeśli istnieje wspólny pattern;
+* jeżeli istniejący timer jest zbyt Exploration-specific, wyciąć najmniejszy reusable helper bez przebudowy całego modułu.
+
+**Acceptance criteria**
+
+* po starcie ataku/szpiegowania gracz widzi aktywny timer;
+* timer znika/zmienia stan po zakończeniu;
+* UI nie pozwala startować akcji sprzecznych z backendowym active state;
+* brak combat UI na ekranie Vicinity;
+* build/tsc przechodzą.
+
+**Verification**
+
+* start attack smoke;
+* start spy smoke;
+* active timer visible smoke;
+* blocked/active action smoke;
+* refresh after completion smoke if backend supports it;
+* `npx tsc --noEmit`;
+* `npm run build`;
+* `git diff --check`.
+
+**Required Codex report**
+
+* timer/read-model source:
+* reused timer/runtime pattern:
+* missing backend blockers:
+* refresh path:
+* local SCSS added:
+* files removed/left untouched:
+
+---
+
+## UI-PVP-4 — PvP combat handoff preflight
+
+**Status:**
+Accepted/completed on 2026-05-28 as a static contract preflight. Generated types expose the PvP/combat bridge used by UI-PVP-5: `get_active_pvp_action_offer(p_hero_id)` returns `pvp_action_id`, combat/session/result references and manual-window state; the existing combat workflow accepts source entity inputs through `get_combat_resolution_preview`, `start_manual_combat_session` and `auto_resolve_combat_session`; generated types also expose `ensure_pvp_combat_session` and `finalize_pvp_combat_session`. The frontend entrypoint is the existing `MinigameHost` / `CombatHost` path with source `{ sourceEntityType: 'pvp_action', sourceEntityId: pvpActionId }`. No local combat engine, direct `pvp_actions` reads or `metadata_json` fallback are needed.
+
+**Goal**
+
+Sprawdzić i przygotować kontrakt między PvP action/travel completion a istniejącym modułem combat. Ten task ma ustalić, czy backend/frontend mają komplet danych do uruchomienia combat screen dla PvP attack.
+
+**Scope**
+
+* sprawdzić, jaki backendowy stan powstaje po dotarciu ataku PvP;
+* sprawdzić, czy istnieje combat session/result/read model dla PvP;
+* sprawdzić, czy combat module może dostać:
+
+  * source kind / source id;
+  * attacker hero;
+  * defender hero;
+  * player perspective;
+  * combat state/session id;
+  * auto/manual availability;
+* sprawdzić, czy istnieją bezpieczne dane dla obu stron combat screen;
+* przygotować mały handoff do UI-COMBAT/PvP integration, jeśli czegoś brakuje.
+
+**Out of scope**
+
+* implementacja nowego combat UI;
+* implementacja ranking;
+* implementacja result/report screens;
+* direct DB writes;
+* lokalny fake combat session.
+
+**Data/source rules**
+
+* backend jest authority dla tego, kto walczy, z kim, kiedy i w jakim stanie;
+* Angular nie konstruuje attacker/defender combatantów lokalnie;
+* nie czytać prywatnych defender equipment/stat danych poza player-safe combat read modelem;
+* auto/manual options muszą pochodzić z backend/RPC/read modelu albo istniejącego combat module contract.
+
+**Acceptance criteria**
+
+* wiadomo, który existing combat module entrypoint ma obsłużyć PvP;
+* wiadomo, które RPC/read modele są gotowe;
+* brakujące kontrakty są opisane jako DB/RPC blocker, a nie obchodzone w Angularze;
+* nie powstaje nowy lokalny combat engine;
+* build/tsc tylko jeśli kod był zmieniany.
+
+**Verification**
+
+* static contract check;
+* grep existing combat module entrypoints;
+* DB/RPC generated types check;
+* no fake local combat construction;
+* `npx tsc --noEmit` if code changed;
+* `npm run build` if code changed;
+* `git diff --check`.
+
+**Required Codex report**
+
+* combat handoff source:
+* existing combat module entrypoint:
+* attacker/defender source:
+* auto/manual source:
+* blockers:
+* no-local-fallback proof:
+
+---
+
+## UI-PVP-5 — Existing combat module integration for PvP attacks
+
+**Status:**
+Accepted/completed on 2026-05-28. PvP attack manual-window handoff now uses `/game/combat?sourceEntityType=pvp_action&sourceEntityId=<pvpActionId>` through the existing `CombatPage` / `MinigameHost` / `CombatHost` / `CombatSessions` path, without a separate PvP combat page or restored `pvp-attack-result-*` screens. `/game/vicinity` keeps only the travel `PendingTimerOracle` and backend refresh from `get_active_pvp_action_offer(p_hero_id)`; when the backend returns `attack + isManualWindow + !isResolved`, Vicinity redirects directly to Combat and does not render an intermediate `Walka gotowa` / `Przejdź do walki` panel. `/game/combat` owns the decision state, shows participants, renders `Walcz ręcznie` and `Rozstrzygnij auto` in one row, and shows a compact full-width `Okno decyzji` deadline from the matched active PvP offer (`manualDeadlineAt ?? expiresAt`). Spy does not redirect to combat, direct `pvp_actions` reads and `metadata_json` parsing are avoided, and DB/generated types/specs/result-report flow were not changed. Follow-up: align the large Combat stage/surface wrapper with the accepted global transparent surface treatment, in a separate pass and without feature-local SCSS.
+
+**Goal**
+
+Podpiąć PvP attack do istniejącego combat module tak, żeby po dotarciu ataku gracz przechodził do właściwego combat screen i dostawał ten sam typ wyboru co w innych walkach: auto-resolve albo manual resolve, jeśli backend to umożliwia.
+
+**Scope**
+
+* rozszerzyć istniejący combat route/service/state o PvP attack source;
+* użyć istniejących combat components/layout/log/result handoff patterns;
+* załadować attacker/defender z backendowego combat read modelu;
+* pokazać auto/manual action options zgodnie z backendowym stanem;
+* obsłużyć loading/error/stale state;
+* po rozstrzygnięciu przejść do istniejącego report/result handoff pattern.
+
+**Out of scope**
+
+* nowy osobny PvP combat screen od zera;
+* nowy combat engine;
+* lokalne liczenie walki;
+* PvP ranking;
+* spy result detail;
+* siege setup;
+* frontendowe generowanie combat logu;
+* direct writes do combat/PvP/report tables.
+
+**Data/source rules**
+
+* combat state/session pochodzi z backend/RPC/read modelu;
+* attacker/defender snapshots pochodzą z backendowego combat contractu;
+* manual/auto availability pochodzi z backendu;
+* auto-resolve/manual-resolve idą przez canonical combat workflow;
+* nie rekonstruować timeline/statów w Angularze;
+* nie zakładać `hero.id === auth.uid()`.
+
+**Reuse requirements**
+
+* użyć istniejącego combat module, nie tworzyć `pvp-combat-page` jako kopii;
+* sprawdzić existing encounter/trial combat integration;
+* użyć istniejących combat mappers/types/services tam, gdzie mają rozszerzalny source kind;
+* usunąć albo odrzucić stare usunięte `pvp-attack-result-*` podejście.
+
+**Acceptance criteria**
+
+* PvP attack po dotarciu otwiera istniejący combat flow;
+* gracz widzi attacker/defender combat context;
+* auto/manual options działają lub są jawnie zablokowane przez backend blocker;
+* brak combat preview/log/result na Vicinity target selection;
+* nie ma osobnego lokalnego PvP combat UI copy-paste;
+* build/tsc przechodzą.
+
+**Verification**
+
+* PvP attack arrived smoke;
+* combat screen route smoke;
+* auto resolve smoke if backend available;
+* manual entry smoke if backend available;
+* stale/missing combat state smoke;
+* no duplicated combat components grep;
+* `npx tsc --noEmit`;
+* `npm run build`;
+* `git diff --check`.
+
+**Required Codex report**
+
+* existing combat module files reused:
+* source kind / route used:
+* auto/manual RPCs used:
+* blockers:
+* removed/avoided duplicate PvP combat UI:
+* local SCSS added:
+
+---
+
+## UI-PVP-6 — PvP combat result/report handoff
+
+**Goal**
+
+Po rozstrzygnięciu PvP combat wynik ma trafiać do istniejącego report/result workflow, bez przywracania osobnych `pvp-attack-result-*` ekranów usuniętych w cleanupie.
+
+**Scope**
+
+* podpiąć zakończenie PvP combat do player-safe report/result reference;
+* po auto/manual resolve pokazać krótki state:
+
+  * resolving;
+  * completed;
+  * report available;
+  * error/missing report;
+* użyć istniejących Reports / Report Detail patterns;
+* upewnić się, że notification/action route prowadzi do dozwolonego istniejącego route;
+* pokazać bezpieczne informacje o wyniku, jeśli combat module/report read model je zwraca.
+
+**Out of scope**
+
+* osobny `pvp-attack-result-page`;
+* osobny `pvp-spy-result-page`;
+* pełne projektowanie raportu PvP od nowa;
+* loot/item transfer UI;
+* frontendowe tworzenie raportów;
+* direct writes do reports/combat/PvP tables.
+
+**Data/source rules**
+
+* report/result reference pochodzi z backendu;
+* frontend nie tworzy raportu;
+* report detail czyta player-safe report read model;
+* nie ujawniać defender-private data;
+* jeżeli report handoff nie istnieje, zgłosić DB/RPC blocker.
+
+**Acceptance criteria**
+
+* po zakończeniu PvP combat gracz ma jasny next step do raportu/wyniku;
+* usunięte PvP result screens nie wracają;
+* routing/notification policy nie prowadzi do martwych tras;
+* build/tsc przechodzą.
+
+**Verification**
+
+* auto/manual completion smoke;
+* report link smoke;
+* notification/action route smoke if relevant;
+* no `pvp-attack-result-page` / `pvp-spy-result-page` revival grep;
+* `npx tsc --noEmit`;
+* `npm run build`;
+* `git diff --check`.
+
+**Required Codex report**
+
+* report/result source:
+* reused report components/routes:
+* notification route policy changes:
+* private data avoided:
+* deleted routes not restored proof:
+
+**Status:** Accepted/completed on 2026-05-29. PvP combat completion now keeps the existing Combat/Minigame flow and finalizes through backend `game_report_id`, then renders an Exploration-style report result handoff on `/game/combat` with `Otwórz raport`, `Kopiuj link publiczny` and compact `Zdobycze`. The reward display uses only safe `get_hero_game_report_detail(...).reward_section_json` / `item_references_json`, shows XP, PvP resource transfers and item references, highlights visible reward values, and keeps Character Points out of player-facing PvP combat rewards. Active return-to-estate state stays separate through `get_active_pvp_action_offer(p_hero_id)`, uses backend return timing fields, and hides normal Vicinity target selection while a blocking PvP action/return is active. Notification report routing uses explicit route predicates/allowlist. No direct `pvp_actions`, combat/report/reward table reads, `metadata_json` / resource-outcome parsing or old `pvp-attack-result-*` / `pvp-spy-result-*` screens were added. Verification passed with `npx tsc --noEmit`, `npm run build` with known budget/CommonJS warnings, `git diff --check` with line-ending warnings and scoped static greps; final manual smoke is user-side.
+
+---
+
+## UI-PVP-7 — PvP spy timer and report handoff
+
+**Goal**
+
+Dopiąć spy flow po stronie UI: `Szpieguj` startuje backendową akcję, pokazuje travel timer/active state, a po zakończeniu prowadzi do istniejącego report/result workflow, bez osobnego usuniętego `pvp-spy-result-page`.
+
+**Scope**
+
+* wykorzystać timer/active PvP action pattern z UI-PVP-3;
+* obsłużyć zakończenie spy action;
+* pokazać report/result available state;
+* podpiąć notification/action route do istniejącego report detail, jeśli backend zwraca report reference;
+* odświeżyć Vicinity action availability po starcie/zakończeniu spy.
+
+**Out of scope**
+
+* osobny spy result screen;
+* frontendowe odsłanianie prywatnych danych defendera;
+* lokalne generowanie spy result;
+* ranking;
+* combat screen.
+
+**Data/source rules**
+
+* spy action start przez canonical PvP workflow;
+* active spy state z backendowego read modelu;
+* spy result/report z backendowego report/result read modelu;
+* frontend nie czyta prywatnych tabel szpiegowania;
+* brak result report reference = DB/RPC blocker albo disabled follow-up state.
+
+**Acceptance criteria**
+
+* `Szpieguj` startuje właściwą akcję;
+* timer pokazuje aktywną spy action;
+* po zakończeniu gracz ma report/result handoff;
+* nie wracają usunięte `pvp-spy-result-*` files/routes;
+* build/tsc przechodzą.
+
+**Verification**
+
+* spy start smoke;
+* spy timer smoke;
+* spy completion/report smoke if backend available;
+* no dead route restore grep;
+* `npx tsc --noEmit`;
+* `npm run build`;
+* `git diff --check`.
+
+**Required Codex report**
+
+* spy action RPC/service:
+* timer source:
+* report source:
+* reused report pattern:
+* blockers:
+* deleted spy result route not restored proof:
+
+**Status:** Accepted/completed on 2026-05-29. PvP spy flow now uses canonical backend state and report handoff: after `Szpieguj`, `/game/vicinity` refreshes `get_active_pvp_action_offer(p_hero_id)` and renders a compact spy progress panel below the PvP header, using backend target/address fields, `phase_ends_at ?? arrives_at`, `remaining_seconds` only as fallback and the shared `GameBar` progress visual instead of `PendingTimerOracle`. When the spy timer elapses, the frontend calls `settle_due_pvp_spy_action` and `create_pvp_spy_game_report` once per action, then redirects to `/game/reports/:reportId` rather than rendering a spy report inline in Vicinity. Private/public report models and renderers support `spy_section_json` for `pvp_spy` reports without requiring combat/trial outcome sections, and noisy combat-missing sections are avoided. The player-facing spy report uses the shared outcome/report frame, EquipmentPreview, compact StatCard display, dashboard-style stat tone classes, vertical resource rows, and building columns grouped by `districtCode` into fixed A-E districts without fake zones. Active spy and spy report detail use `public/images/backgrounds/spy-background.png`; if `get_active_pvp_action_offer` returns `phase === 'returning'` for spy, Vicinity stops with a DB/RPC blocker message instead of rendering return. No old `pvp-spy-result-*` pages/routes, direct PvP/combat/report table reads, `metadata_json` / resource-outcome parsing, attack flow, combat flow, reward flow or Oracle attack behavior were added/changed. Verification passed with `npx tsc --noEmit`, `npm run build` with known budget/CommonJS warnings and `git diff --check`; final manual smoke is user-side.
+
+---
+
+# UI-PVP-RANKING — PvP Ranking follow-up epic
+
+Ranking jest osobnym follow-upem po podstawowym PvP combat flow. Nie mieszać go z timer/combat integration.
+
+## UI-PVP-RANKING-1 — Ranking read-model preflight
+
+**Goal**
+
+Sprawdzić, czy istnieje backend/read model dla PvP ranking listy graczy, zanim powstanie UI rankingu.
+
+**Scope**
+
+* sprawdzić dostępne RPC/read modele;
+* sprawdzić pola:
+
+  * hero display name;
+  * level;
+  * prestige/rank if supported;
+  * address;
+  * guild label/tag;
+  * attack/spy eligibility or target action overlay;
+* sprawdzić paginację;
+* sprawdzić filter `attackable only`, jeśli backend go wspiera.
+
+**Out of scope**
+
+* implementacja UI rankingu;
+* frontendowe sortowanie „po sile”;
+* lokalne liczenie attackable;
+* direct table reads.
+
+**Acceptance criteria**
+
+* wiadomo, czy ranking UI ma backend source;
+* braki zgłoszone jako DB/RPC blocker;
+* nie ma frontendowego fake rankingu.
+
+---
+
+## UI-PVP-RANKING-2 — Ranking list UI
+
+**Goal**
+
+Dodać Ranking jako drugi target source obok Vicinity, z paginowaną listą graczy i akcjami zgodnymi z backendową eligibility.
+
+**Scope**
+
+* Ranking entry/tab/route w PvP area;
+* lista rankingowa:
+
+  * hero;
+  * level;
+  * guild;
+  * address;
+  * rank/prestige if backend gives it;
+  * action availability;
+* paginacja;
+* opcjonalny filter `Tylko możliwi do ataku`, jeśli backend go wspiera;
+* selected target panel może reuse’ować Vicinity target panel pattern, jeśli dane są zgodne.
+
+**Out of scope**
+
+* nowy ranking algorithm;
+* frontend-calculated attack range;
+* combat UI;
+* spy/combat result screens;
+* direct writes.
+
+**Data/source rules**
+
+* ranking from backend/read model;
+* action availability from backend;
+* `attackable only` only if backend supports it;
+* no frontend guessing of eligibility.
+
+**Acceptance criteria**
+
+* ranking nie jest fake/placeholderem, jeśli wygląda na aktywny;
+* filter attackable only działa tylko z backend support;
+* action handling consistent with Vicinity;
+* no duplicate local card/table system;
+* build/tsc pass.
+
+**Verification**
+
+* ranking route smoke;
+* pagination smoke;
+* filter smoke if implemented;
+* action availability smoke;
+* `npx tsc --noEmit`;
+* `npm run build`;
+* `git diff --check`.
+
+**Required Codex report**
+
+* ranking source:
+* pagination source:
+* attackable filter source:
+* reused Vicinity/target patterns:
+* local SCSS added:
+
+
+# 21. UI-ADMIN — Admin IA, governance and admin workspaces
+
+Cel: admin shell, global/admin/operator distinctions, Admin Overview, Admin Area Map, Server Management, Launch New Server and future concrete admin modules. Admin UI ma być uporządkowane według intencji pracy, nie raw table names. Admin overview jest orientation hub, nie fake dashboard.
+
+## UI-ADMIN task index
+
+- UI-ADMIN-1 / formerly UI-51 — Admin Overview shell and global admin variant
+- UI-ADMIN-2 / formerly UI-52 — Admin scope strip and operator/server-scoped variant boundary
+- UI-ADMIN-3 / formerly UI-53 — Admin sidebar information architecture
+- UI-ADMIN-4 / formerly UI-54 — Admin Area Map and Coverage Checklist
+- UI-ADMIN-5 / formerly UI-55 — Admin Context / Explainability panel
+- UI-ADMIN-6 / formerly UI-56 — Server Management admin entry and staff assignment boundary
+- UI-ADMIN-7 / formerly UI-57 — Launch New Server admin entry
+- UI-ADMIN-8 / formerly UI-58 — Admin Overview status cards
+- UI-ADMIN-9 — Concrete admin module shell pattern
+- UI-ADMIN-10 — Admin route coverage matrix
+
+## UI-ADMIN-1 / formerly UI-51 — Admin Overview shell and global admin variant
+
+**Goal:**  
+Zbudować Admin Overview jako global admin orientation hub zgodny z zaakceptowanym Admin Overview V7: czysty, lekki, bez fake live dashboardu i bez Recent Staff Activity.
+
+**Scope:**
+- route/page target: existing `/admin` overview route if present,
+- admin shell/branding with `M` mark,
+- global admin topbar:
+  - edit level,
+  - server focus,
+  - role/scope chips,
+  - search/audit entry if route exists,
+- sidebar groups:
+  - Overview,
+  - Priority Operations,
+  - Content & Balance,
+  - World & Economy,
+  - Gameplay Tools / Sandbox,
+- page header and summary card,
+- global admin scope strip,
+- cautious status cards,
+- Admin Area Map,
+- Coverage Checklist,
+- Context / Explainability panel.
+
+**Out of scope:**
+- concrete admin module implementation,
+- full audit view,
+- fake recent staff activity,
+- fake command board/live queue,
+- DB/admin navigation registry design,
+- staff assignment form,
+- server launch workflow.
+
+**Data/source rules:**
+- current user global role/access from canonical access/read model,
+- server focus list from existing server/admin server switcher/read model where available,
+- counts/cards must come from real read models or be omitted/placeholder per project convention,
+- no hardcoded production counts,
+- do not infer global admin from selected server role.
+
+**UI/SCSS rules:**
+- use admin shell/global surface patterns from UI-CORE,
+- no local copied Admin Overview canvas CSS,
+- scope strip only global admin,
+- technical keys are secondary metadata,
+- no `muted-text` for role/access/status values.
+
+**Dependencies/blockers:**
+- missing global admin route/access resolver -> dependency,
+- missing status card read models -> omit/placeholder and report,
+- missing server focus service -> show current context only and report.
+
+**Acceptance criteria:**
+- Admin Overview renders as global admin variant,
+- user role shows Admin, not Operator,
+- Server focus can be All servers or one server where supported,
+- no fake Recent Staff Activity,
+- Admin Area Map and Coverage Checklist present,
+- `M` mark preserved,
+- build passes.
+
+**Verification/smoke:**
+- admin route smoke,
+- global admin visual smoke,
+- non-admin access smoke if route guard exists,
+- build/tsc.
+
+**Required Codex report:**
+- reused admin shell/access services:
+- server focus source:
+- status card sources:
+- checked but not reused:
+- local SCSS added:
+- not added intentionally:
+
+## UI-ADMIN-2 / formerly UI-52 — Admin scope strip and operator/server-scoped variant boundary
+
+**Goal:**  
+Wprowadzić jasną granicę UI między global adminem a server-scoped operatorem. Scope strip jest widoczny tylko dla global admina.
+
+**Scope:**
+- global admin scope strip:
+  - Global Admin,
+  - Selected Server,
+  - Launch New Server,
+  - Sandbox / Test,
+- operator variant:
+  - no global scope strip,
+  - selected server context,
+  - Role: Operator,
+  - Edit level: Selected server,
+- clear labeling of role vs server focus vs edit level.
+
+**Out of scope:**
+- backend role model redesign,
+- full operator dashboard,
+- staff assignment mutation,
+- RLS/RPC changes.
+
+**Data/source rules:**
+- global admin role and server staff role are separate,
+- do not infer admin from server staff assignment,
+- operator can only see assigned server scope according to backend/access model,
+- CSS visibility is not access control.
+
+**UI/SCSS rules:**
+- scope strip uses shared admin pattern,
+- hidden controls must also be blocked by route/access logic,
+- labels must not conflate Admin with Operator.
+
+**Dependencies/blockers:**
+- if current access model cannot distinguish global admin vs server operator, report blocker,
+- if operator selected server resolution missing, report dependency.
+
+**Acceptance criteria:**
+- scope strip visible only for global admin,
+- operator cannot switch to global/launch modes,
+- global admin can focus All servers or one server,
+- labels clear,
+- build passes.
+
+**Verification/smoke:**
+- global admin smoke,
+- operator/scoped user smoke if test user available,
+- access/visibility smoke,
+- build/tsc.
+
+**Required Codex report:**
+- access model source:
+- role/scope states tested:
+- controls hidden/disabled:
+- local SCSS added:
+
+## UI-ADMIN-3 / formerly UI-53 — Admin sidebar information architecture
+
+**Goal:**  
+Ułożyć admin sidebar według zaakceptowanej intencji pracy, bez dublowania raw table names i bez mieszania global/server/sandbox narzędzi.
+
+**Accepted groups and entries:**
+- Overview:
+  - Overview
+- Priority Operations:
+  - Config Governance
+  - Anti-abuse
+- Content & Balance:
+  - Exploration
+  - Rewards & Loot
+  - Combat Foundation
+  - Formulas
+- World & Economy:
+  - Estate & Buildings
+  - Economy & Trade
+  - Server Management
+  - Launch New Server
+- Gameplay Tools / Sandbox:
+  - Sandbox Helpers
+
+**Scope:**
+- update/admin navigation config if present,
+- keep existing reachable routes,
+- hide/disable missing routes by project convention,
+- indicate route groups/section labels,
+- ensure Config Governance and Anti-abuse are visually prioritized.
+
+**Out of scope:**
+- concrete module screens,
+- DB-backed admin nav registry,
+- route guard redesign unless needed for visibility bug,
+- removing existing routes without replacement.
+
+**Data/source rules:**
+- route visibility from admin/global/server role/access model,
+- server-scoped routes must honor selected server context,
+- sandbox tools visible only to allowed roles/server kinds.
+
+**UI/SCSS rules:**
+- use shared admin sidebar/nav patterns,
+- active state matches style contract,
+- raw technical keys are not primary labels,
+- icon placeholders only where registry key missing.
+
+**Dependencies/blockers:**
+- if route does not exist, mark pending/omit per convention,
+- if coverage unknown, add to UI-ADMIN-10 coverage matrix.
+
+**Acceptance criteria:**
+- sidebar matches accepted grouping,
+- Config Governance and Anti-abuse prioritized,
+- Trials/Encounters grouped under Exploration,
+- Reward profiles and item generation grouped under Rewards & Loot,
+- Combat Opponents under Combat Foundation,
+- Server Management and Launch New Server separate,
+- build passes.
+
+**Verification/smoke:**
+- route smoke for existing admin entries,
+- active nav visual smoke,
+- non-authorized visibility smoke if possible,
+- build/tsc.
+
+**Required Codex report:**
+- navigation config reused:
+- routes checked:
+- missing routes:
+- access visibility source:
+- local SCSS added:
+
+## UI-ADMIN-4 / formerly UI-54 — Admin Area Map and Coverage Checklist
+
+**Goal:**  
+Zastąpić Workspaces/Command Board uczciwym orientation blockiem: Admin Area Map + Coverage Checklist.
+
+**Scope:**
+- central Admin Area Map with major admin areas:
+  - Config Governance,
+  - Anti-abuse,
+  - Exploration,
+  - Rewards & Loot,
+  - Server Management,
+- subarea chips under each area,
+- Coverage Checklist:
+  - Global config — covered,
+  - Server config — covered,
+  - Launch new server — slot,
+  - Staff assignment — covered,
+  - Sandbox tools — separate,
+- note that overview is intentionally light,
+- selected area can feed Context / Explainability panel.
+
+**Out of scope:**
+- fake live queue,
+- recent staff activity,
+- command board,
+- full route coverage audit implementation,
+- DB-backed admin area registry design.
+
+**Data/source rules:**
+- content may start as typed local registry/static config,
+- do not fetch fake live data to fill overview,
+- if counts/statuses appear, they must come from real source.
+
+**UI/SCSS rules:**
+- use admin area map/global card/chip patterns,
+- not a second menu pretending to be dashboard,
+- no local copied card CSS.
+
+**Dependencies/blockers:**
+- if selected-area state should drive explainability, define local state or registry; no DB schema design in this task.
+
+**Acceptance criteria:**
+- Workspaces/Command Board not present,
+- Admin Area Map visible,
+- Coverage Checklist visible and secondary,
+- no Recent Staff Activity,
+- overview feels like orientation hub,
+- build passes.
+
+**Verification/smoke:**
+- route visual smoke,
+- selected area/explainability smoke if interactive,
+- build/tsc.
+
+**Required Codex report:**
+- area registry/source:
+- live data intentionally not used:
+- shared patterns reused:
+- local SCSS added:
+
+## UI-ADMIN-5 / formerly UI-55 — Admin Context / Explainability panel
+
+**Goal:**  
+Dodać reusable admin Context / Explainability panel pokazujący label/description/helper/admin_description dla zaznaczonego obszaru lub konfiguracji.
+
+**Scope:**
+- right panel with:
+  - Label,
+  - Description,
+  - Helper text,
+  - Admin description,
+  - Technical key,
+  - Why this matters,
+- selected Admin Area Map area as initial source,
+- future compatibility with config definitions and dictionary metadata,
+- safe missing metadata state.
+
+**Out of scope:**
+- DB metadata table design,
+- full config definition editor,
+- raw JSON payload viewer,
+- staff-only private data exposure.
+
+**Data/source rules:**
+- prefer DB/read model metadata where available: label, description, helper_text, admin_description, gameplay impact/warning,
+- fallback to typed local registry if no DB metadata,
+- raw key secondary only,
+- missing important metadata should be visible as content debt where appropriate.
+
+**UI/SCSS rules:**
+- use shared detail side panel/note/code chip patterns,
+- important descriptions readable, not over-muted,
+- technical key as small secondary chip.
+
+**Dependencies/blockers:**
+- if metadata read model exists but not wired, report wiring task,
+- if metadata missing, record key/area gap.
+
+**Acceptance criteria:**
+- context panel renders selected area metadata,
+- human-readable text first,
+- technical key secondary,
+- no private data leak,
+- build passes.
+
+**Verification/smoke:**
+- selected area smoke,
+- missing metadata smoke,
+- build/tsc.
+
+**Required Codex report:**
+- metadata source:
+- fallback registry used:
+- missing metadata keys:
+- local SCSS added:
+
+## UI-ADMIN-6 / formerly UI-56 — Server Management admin entry and staff assignment boundary
+
+**Goal:**  
+Ująć Server Management jako pełnoprawny admin area z jasną granicą między global adminem i scoped operatorem.
+
+**Scope:**
+- sidebar entry: Server Management,
+- Admin Area Map coverage:
+  - server list,
+  - server settings,
+  - operator,
+  - moderators,
+  - staff scopes,
+- global admin capabilities described/represented,
+- scoped operator capabilities described/represented,
+- no fake staff assignment form unless real workflow exists.
+
+**Out of scope:**
+- full staff assignment form,
+- server launch flow,
+- DB role model changes,
+- bypassing backend/RPC permission checks,
+- direct write to staff assignment tables.
+
+**Data/source rules:**
+- global admin can manage server list/operator/moderators if backend allows,
+- operator may manage moderators only within assigned server and backend rules,
+- staff assignment must use canonical audited RPC/service where available,
+- reason requirement must be preserved,
+- staff-disqualifying history warnings respected.
+
+**UI/SCSS rules:**
+- labels clearly distinguish Admin, Operator, Moderator, Tester,
+- access/status values not muted,
+- use admin cards/forms/vendor wrappers.
+
+**Dependencies/blockers:**
+- missing server staff read model/RPC -> dependency,
+- missing user search for staff assignment -> dependency,
+- missing disqualifying history warning source -> dependency.
+
+**Acceptance criteria:**
+- Server Management appears in sidebar and Area Map,
+- global admin/operator capabilities not conflated,
+- operator assignment and multiple moderator assignment represented as future/covered subareas,
+- no fake staff mutation,
+- build passes.
+
+**Verification/smoke:**
+- navigation smoke,
+- visibility smoke for admin/operator if available,
+- no mutation smoke unless workflow exists,
+- build/tsc.
+
+**Required Codex report:**
+- server/staff sources:
+- RPCs checked:
+- access boundaries:
+- not added intentionally:
+
+## UI-ADMIN-7 / formerly UI-57 — Launch New Server admin entry
+
+**Goal:**  
+Dodać Launch New Server jako osobny admin area od live Server Management i live server overrides.
+
+**Scope:**
+- sidebar entry: Launch New Server,
+- scope strip includes Launch New Server for global admin,
+- Area Map/Coverage Checklist includes launch templates, snapshots, pre-live checks,
+- topbar/edit level can represent Launch New Server mode if supported,
+- clear pre-live setup labeling.
+
+**Out of scope:**
+- launch flow forms,
+- creating server records,
+- DB schema for launch templates,
+- config snapshot application,
+- direct writes to server/config tables.
+
+**Data/source rules:**
+- launch config should eventually use config governance/server_launch scope,
+- if launch read models/RPCs missing, route entry can be pending/disabled per convention,
+- pre-live checks backend/read-model driven when implemented.
+
+**UI/SCSS rules:**
+- launch entry distinct from Server Management,
+- no fake server creation button if backend missing,
+- use admin status/cards/patterns.
+
+**Dependencies/blockers:**
+- missing launch route/workflow -> dependency,
+- missing launch snapshot source -> dependency.
+
+**Acceptance criteria:**
+- Launch New Server is separate from Server Management,
+- launch mode not available to scoped operator,
+- overview does not imply implemented launch flow if missing,
+- build passes.
+
+**Verification/smoke:**
+- nav/entry smoke,
+- disabled/pending state smoke if route missing,
+- access smoke if possible,
+- build/tsc.
+
+**Required Codex report:**
+- launch route/source checked:
+- scope/access behavior:
+- pending/disabled reason:
+- local SCSS added:
+
+## UI-ADMIN-8 / formerly UI-58 — Admin Overview status cards
+
+**Goal:**  
+Dodać ostrożne, niewymyślone status cards do Admin Overview.
+
+**Accepted cards:**
+- Pending Global Changes,
+- Server Staff Gaps,
+- Open Anti-abuse Cases,
+- Sandbox Tools Ready.
+
+**Scope:**
+- render four status cards when data/source exists,
+- cards adapt by role/scope:
+  - global admin may aggregate across server focus,
+  - operator sees server-scoped cards only,
+- each card links or routes to relevant area if route exists,
+- safe empty/loading states.
+
+**Out of scope:**
+- Balance Warnings without real engine/read model,
+- fake staff gaps,
+- Recent Staff Activity,
+- fake command queue,
+- audit list on overview.
+
+**Data/source rules:**
+- Pending Global Changes from config change set read model,
+- Server Staff Gaps from server/staff coverage read model if exists,
+- Open Anti-abuse Cases from anti-abuse read model, server-scoped where appropriate,
+- Sandbox Tools Ready from access/server kind/tool availability if exists,
+- no hardcoded production counts.
+
+**UI/SCSS rules:**
+- use summary/stat card patterns,
+- counts important, not muted,
+- cards should not visually overpower orientation map.
+
+**Dependencies/blockers:**
+- missing source -> omit/placeholder and report dependency,
+- no balance warning engine -> do not add Balance Warnings.
+
+**Acceptance criteria:**
+- accepted cards appear only with real source or safe placeholder convention,
+- no Balance Warnings card,
+- operator/admin visibility differs correctly,
+- no Recent Staff Activity,
+- build passes.
+
+**Verification/smoke:**
+- card render smoke,
+- missing source smoke,
+- role/scope smoke if possible,
+- build/tsc.
+
+**Required Codex report:**
+- source per card:
+- omitted cards:
+- hardcoded counts yes/no:
+- local SCSS added:
+
+## UI-ADMIN-9 — Concrete admin module shell pattern
+
+**Goal:**  
+Zdefiniować reusable shell/pattern dla konkretnych admin modułów takich jak Config Governance, Exploration, Rewards, Combat Foundation, Server Management.
+
+**Scope:**
+- page header with module label/context,
+- tab/section layout,
+- list/detail/editor split where appropriate,
+- reason-required action block,
+- metadata/explainability panel,
+- read-only vs edit state,
+- scoped server/global context chip,
+- audit/change summary slot.
+
+**Out of scope:**
+- implementing every admin module,
+- DB metadata design,
+- concrete forms for each module,
+- global admin overview.
+
+**Data/source rules:**
+- module metadata from DB/read model where available,
+- reason required for governed mutations,
+- direct table writes forbidden,
+- global vs server scope must be explicit.
+
+**UI/SCSS rules:**
+- use admin global patterns from UI-CORE/UI-ADMIN,
+- no per-module card/form CSS duplication,
+- PrimeNG tabs/table/forms/vendor wrappers first.
+
+**Dependencies/blockers:**
+- if existing admin modules have divergent layout, report migration candidates,
+- if module metadata missing, show safe fallback and report content debt.
+
+**Acceptance criteria:**
+- reusable module shell pattern documented or implemented,
+- supports DB-backed explainability,
+- supports reason-required mutations,
+- future admin modules have consistent structure,
+- build passes if code changed.
+
+**Verification/smoke:**
+- apply pattern to one admin module if in scope,
+- build/tsc,
+- visual smoke for read-only and edit states if implemented.
+
+**Required Codex report:**
+- existing admin modules checked:
+- pattern reused/added:
+- metadata source:
+- local SCSS added:
+
+## UI-ADMIN-10 — Admin route coverage matrix
+
+**Goal:**  
+Przygotować route/configurator → admin area coverage matrix, żeby sidebar/Admin Area Map pokrywały realne istniejące konfiguratory i admin routes.
+
+**Scope:**
+- inventory current admin routes/navigation config,
+- inventory known configurators from backlog/docs/current route files,
+- map each route to:
+  - admin area,
+  - global/server/launch/sandbox scope,
+  - required role/access,
+  - metadata/explainability source,
+  - route status: implemented/pending/deprecated,
+- identify gaps/duplicates.
+
+**Out of scope:**
+- moving routes unless explicitly approved,
+- DB admin nav registry design,
+- implementing missing pages,
+- removing routes without user acceptance.
+
+**Data/source rules:**
+- route coverage based on actual repo route config and docs,
+- access based on current guards/services/RPC semantics where visible,
+- if route source uncertain, mark unknown instead of guessing.
+
+**UI/SCSS rules:**
+- not a visual task unless navigation config changes are included,
+- if navigation updated, use admin sidebar patterns.
+
+**Dependencies/blockers:**
+- repo route files required for accurate matrix,
+- if routes incomplete, report limitations.
+
+**Acceptance criteria:**
+- matrix exists,
+- every known admin route/configurator has a proposed area,
+- duplicates/gaps identified,
+- Admin sidebar IA can be reviewed against real coverage.
+
+**Verification/smoke:**
+- docs-only no build,
+- if nav config changed: route smoke/build.
+
+**Required Codex report:**
+- routes inventoried:
+- unmapped routes:
+- deprecated/pending routes:
+- recommended moves:
+
+---
+
+## Current Admin workspace prototype direction
+
+The older Admin Overview tasks are retained for source/context, but new admin UX work should follow the current workspace-first prototype direction from `admin-ui-ux-prototype-plan.md` and accepted admin canvases. Admin IA should be grouped by operator work intent, not by the old flat route/dashboard-card model.
+
+Current admin workspace implementation targets:
+
+- `UI-ADMIN-11 — Admin Shell + Hub IA production pass`;
+- `UI-ADMIN-12 — Governance & Drafts Landing`;
+- `UI-ADMIN-13 — Active Balance Draft Workspace`;
+- `UI-ADMIN-14 — Config Registry Workspace`;
+- `UI-ADMIN-15 — Formula Library Workspace`;
+- `UI-ADMIN-16 — Item Generation Workspace Overview`;
+- `UI-ADMIN-17 — Bucket Profiles Tab`;
+- `UI-ADMIN-18 — Quality Tiers Tab`;
+- `UI-ADMIN-19 — Item Bases / Catalog Tab`;
+- `UI-ADMIN-20 — Prefixes / Suffixes Tab`;
+- `UI-ADMIN-21 — Bonuses / Requirements Tab`;
+- `UI-ADMIN-22 — Preview / Luck Lab admin workspace`;
+- `UI-ADMIN-23 — Exploration Settings Workspace`;
+- `UI-ADMIN-24 — Moderation & Anti-abuse Workspace`;
+- `UI-ADMIN-25 — Reports / Notifications / Audit Workspace`;
+- `UI-ADMIN-26 — PvP Readiness & Diagnostics grouped workspace`;
+- `UI-ADMIN-27 — Admin route coverage matrix`.
+
+Rules:
+
+- diagnostics/read-only surfaces should remain accessible but de-emphasized;
+- PvP read-only pages should be grouped as readiness/diagnostics, not separate top-level dashboard cards;
+- Scrapped item recovery belongs under Moderation & Anti-abuse;
+- governed balance/config changes should use active balance draft flow when the DB/RPC path exists.
+
+# UI-BACKGROUNDS-1 — Route backgrounds for main game screens
+
+**Status:** Accepted/completed on 2026-05-26. Main game route backgrounds now use the shared app shell/main content mechanism instead of per-page background SCSS. `AppShell` maps `/hero/dashboard`, `/hero/attributes`, `/game/exploration`, `/game/armory`, `/game/mansion` and `/game/vicinity*` to existing assets in `public/images/backgrounds/`, binds the image through `--mg-route-background-image`, and the shared `.mg-game-shell__main--route-background` layer in `base/_game-shell.scss` renders the centered cover background only inside the central main area. Sidebar/topbar remain outside the background target, DB/RPC/generated types were not touched, and no page-local background hacks were added. Follow-up outside this task: later UI polish may add a shared `mg-card`/surface opacity or transparency variant for route-background contexts.
+
+---
+
+# 22. UI-ENTRY — Public Landing, Account Entry and Hero Creation Entry Point
+
+Cel: domknąć pierwszy kontakt gracza z aplikacją Mythsworn: publiczny landing page pod `/`, account/public shell dla zalogowanego użytkownika przed wejściem do gry, spójne tła `Landing background` i `Entry background`, oraz bezpieczne przejście do istniejących flowów wyboru serwera, wyboru/utworzenia bohatera i dashboard/game shell.
+
+Epic 22 nie przepisuje start-flow od zera. Ma wykorzystać istniejące moduły wyboru serwera, account entry, hero creation, origin carousel, selected server → active hero context oraz istniejące layout/shell/shared UI patterns. Jeśli obecny kod już ma część tych elementów, task ma je uporządkować, skonsolidować i domknąć root entry point, a nie tworzyć równoległą architekturę.
+
+## Epic rules
+
+* Root route `/` ma otwierać publiczny landing page Mythsworn.
+* Landing page jest publicznym entry pointem do całej aplikacji, nie ekranem gry.
+* Account/server/hero entry po zalogowaniu działa przed wejściem w konkretny game shell.
+* Account/public shell nie może udawać aktywnego hero contextu, dopóki server+hero nie zostaną wybrane.
+* Wybór serwera, wybór istniejącego hero i tworzenie nowego hero muszą używać istniejących start-flow/read-model/service/state paths.
+* Hero creation musi używać canonical DB/RPC/domain workflow, nie direct table writes.
+* Nie zakładać `hero.id === auth.uid()`.
+* Standardowy gracz ma maksymalnie jednego hero na standard serverze.
+* Sandbox/test servers mogą mieć multi-hero selector dla uprawnionych staff/testerów.
+* Stat Allocation jest pierwszym domyślnym ekranem po utworzeniu hero, ale nie jest account-onboarding wizard step.
+* Later entry z istniejącym hero prowadzi do dashboard/game shell, nie z powrotem do Stat Allocation.
+* `Landing background` dotyczy publicznego landing page.
+* `Entry background` dotyczy account entry / server selection / hero creation przed wejściem do game shell.
+* Nie kopiować prototype CSS, `mb-*`, raw gradientów, raw palette values ani canvas JS.
+* Nie tworzyć lokalnego pseudo-design-systemu dla jednego ekranu.
+* Nie aktualizować status docs ani backlog task statusów bez potwierdzenia użytkownika.
+
+### Route discovery rule
+
+Route names in this epic are examples based on the expected app flow. Before changing routing, Codex must inspect the current Angular route configuration and use the actual existing routes/components/shells.
+
+Do not create duplicate routes just to match task wording.
+
+If the current app uses different paths than `/auth/server-entry`, `/auth/create-character`, or `/hero/dashboard`, Codex must:
+
+* report the actual route/component names found;
+* map each existing route to the intended Epic 22 responsibility;
+* reuse or minimally adjust the existing route structure;
+* only add a new route when no existing route/component owns that responsibility;
+* avoid breaking existing auth guards, selected-server flow, active-hero flow, or post-hero-creation routing.
+
+The acceptance criterion is correct entry flow behavior, not matching the example path names literally.
+
+---
+
+## UI-ENTRY-22-1 — Entry Point / Shell / Background Production Mapping
+
+**Goal:**
+Zmapować istniejące route’y, shelle, backgroundi i start-flow przed implementacją root landing page oraz entry background.
 
 **Scope:**
 
-- Account/public shell ma inne boczne menu niż in-game shell.
-- Minimalne menu account shell:
-  - `Enter the game`;
-  - `Create new hero` / `Join new world`;
-  - account-related options such as account settings, notifications, sign out.
-- Shell pokazuje account identity, ale nie udaje aktywnego hero contextu, dopóki hero/server nie zostaną wybrane.
-- Shell musi jasno odróżniać:
-  - account context;
-  - selected server context;
-  - active hero context;
-  - no active hero yet.
-- Dla większych ekranów użyć istniejącego layout/shell patternu, o ile istnieje, zamiast tworzyć osobny lokalny shell.
+* Sprawdzić aktualny routing dla:
+
+  * `/`;
+  * login/register routes;
+  * `/auth/server-entry`;
+  * `/auth/create-character`;
+  * dashboard/game shell entry;
+  * existing account/public shell route/layout.
+* Sprawdzić istniejące layout/shell komponenty:
+
+  * public/account shell;
+  * game shell;
+  * sidebar/topbar/shared layout components;
+  * existing background/surface utilities;
+  * existing global SCSS/tokens/patterns.
+* Zmapować, które części powinny należeć do:
+
+  * public landing page;
+  * account/public shell;
+  * server entry section;
+  * hero creation section;
+  * game shell.
+* Zdefiniować produkcyjne użycie dwóch backgroundów:
+
+  * `Landing background` for `/`;
+  * `Entry background` for `/auth/server-entry` and `/auth/create-character`.
+* Sprawdzić, czy zaakceptowane background assets istnieją w repo.
+* Jeśli assetów nie ma, zgłosić missing asset/pattern follow-up zamiast dodawać placeholder image albo hardcoded URL.
+* Ustalić, czy root `/` ma zawsze pokazywać landing page, czy istniejący auth guard wymusza redirect; jeśli obecny router ma inną logikę, zgłosić konflikt i zaproponować minimalną zmianę.
 
 **Out of scope:**
 
-- In-game sidebar/dashboard redesign.
-- Hero creation mutation.
-- Stat allocation redesign.
-- Direct DB writes.
-- Status docs update.
+* Angular implementation.
+* Redesign game shell.
+* Rewrite auth/start-flow services.
+* Creating new DB/RPC contracts.
+* Creating or generating image assets.
+* Copying prototype CSS/JS.
 
 **Data/source rules:**
 
-- Account/user identity comes from auth/account context.
-- Server/hero state comes from existing selected/current server + active hero read layers or dedicated start-flow read model.
-- Sandbox/test privileges must come from access/membership/staff read layer.
-- Do not infer sandbox privileges client-side.
+* Account/user identity from existing auth/account context.
+* Server availability from existing start-flow server availability read model/service.
+* Existing hero contexts from existing account entry / active hero context read model/service.
+* Hero creation availability from DB/RPC/read model, not Angular guesses.
+* District A free/capacity must remain DB/read-model-owned.
+* Missing data contract is a blocker/follow-up, not a frontend fallback.
 
 **UI/SCSS rules:**
 
-- Use account/public shell as its own route/layout area, not the in-game shell.
-- Use global page/card/sidebar/nav patterns where available.
-- Do not copy canvas sidebar/topbar CSS.
-- If a missing account-shell pattern is discovered, report it as shared/layout follow-up.
+* README-first UI preflight.
+* Use existing global shell/layout/surface/background utilities first.
+* If a shared background wrapper/pattern is missing, report it as missing production pattern.
+* No local one-off gradients/colors if token/global pattern exists.
+* No copied prototype CSS/classes.
+* Important values/statuses must not be `muted-text`.
+
+**Acceptance criteria:**
+
+* Clear map of current routes and target route ownership exists.
+* Public landing vs account entry vs game shell boundaries are separated.
+* `Landing background` and `Entry background` production strategy is defined.
+* Existing components/services to reuse are listed.
+* Missing assets/patterns/contracts are listed.
+* No production code is changed.
+
+**Verification/smoke:**
+
+* Documentation-only: no build.
+
+**Required Codex report:**
+
+* routes inspected:
+* shell/layout components inspected:
+* existing background/pattern utilities found:
+* reused / checked but not reused / new needed:
+* landing vs entry vs game shell boundary:
+* landing background source:
+* entry background source:
+* missing assets/patterns:
+* DB/RPC/read model blockers:
+* implementation go/no-go for UI-ENTRY-22-2:
+
+---
+
+## UI-ENTRY-22-2 — Public Root Landing Page Implementation
+
+**Status:** Accepted on 2026-05-30 with visual follow-up. `/` now renders the public Mythsworn landing baseline instead of redirecting to `/auth/server-entry`, while `/auth/server-entry` and `/auth/create-character` remain under `AccountEntryLayout`. Landing and entry backgrounds use the existing `AppShell` route-background mechanism with config in `src/app/core/config/route-backgrounds.config.ts` and override service in `src/app/core/services/ui/route-background-override.ts`; the parallel public-entry background SCSS was removed. The `Stwórz bohatera` CTA stays on `/auth/server-entry` so it does not bypass server/start-flow eligibility. No DB/RPC, guards, generated types, start-flow behavior or mobile/responsive work changed. Next pass: `UI-ENTRY-22-2A` desktop visual polish only.
+
+**Goal:**
+Implementować publiczny landing page Mythsworn pod `/` jako pierwszy ekran aplikacji po wpisaniu adresu gry.
+
+**Scope:**
+
+* Dodać lub dostosować route `/`, tak aby renderował publiczny landing page.
+* Landing page powinien zawierać:
+
+  * Mythsworn brand/title;
+  * krótki player-facing pitch gry;
+  * główne CTA do wejścia w account/auth flow;
+  * secondary CTA do logowania/rejestracji, jeśli obecny auth flow rozdziela te akcje;
+  * link/CTA do kontynuowania do account entry, jeśli użytkownik jest już zalogowany;
+  * `Landing background`.
+* Landing page ma używać `src/app/public` route/page ownership, chyba że aktualny router ma już równoważny public area.
+* Route/page ma być cienki; reusable UI pieces mogą trafić do `public/components` albo shared/layout tylko jeśli faktycznie reusable.
+* Nie pokazywać game sidebar/topbar na publicznym landing page.
+* Nie udawać aktywnego hero, server statusu, rankingów, zasobów ani gameplay runtime.
+
+**Out of scope:**
+
+* Full marketing site.
+* Blog/news/lore section.
+* Account settings.
+* Auth service rewrite.
+* Server selection implementation.
+* Hero creation implementation.
+* Game shell redesign.
+* Asset generation.
+* DB/RPC changes.
+* Status docs update.
+
+**Data/source rules:**
+
+* Public landing może być mostly static copy.
+* Jeśli pokazuje jakiekolwiek server availability, online/server status, hero data albo account data, musi pochodzić z istniejącego read modelu; inaczej nie pokazuj.
+* CTA routing must respect existing auth guards and account entry routes.
+* Do not create fake runtime counters.
+
+**UI/SCSS rules:**
+
+* Use `Landing background` from UI-ENTRY-22-1 mapping.
+* Use existing global typography/surface/button/layout utilities first.
+* Local SCSS only for unavoidable landing-specific composition/background overlay after utility lookup.
+* No copied prototype gradients/palette values.
+* No `mb-*`.
+* Landing title, CTA and key claims must not be muted.
+* Reduced motion must be respected if any animated background or decorative effect is used.
 
 **Dependencies/blockers:**
 
-- Missing account/server/hero read model.
-- Missing access layer for sandbox/test privileges.
-- Missing route boundary between account shell and in-game shell.
+* UI-ENTRY-22-1 not done or not accepted.
+* Missing root route decision.
+* Missing accepted landing background asset if the task requires an image asset.
+* Existing router/auth guard conflicts that cannot be safely changed in this slice.
 
 **Acceptance criteria:**
 
-- Account shell does not show in-game navigation as if a hero were active.
-- `Enter the game` and `Create new hero` are distinct flows.
-- User can switch between these account-shell sections without logging out.
-- Existing hero flow leads toward in-game dashboard context.
-- New hero flow leads toward server eligibility / hero creation context.
-- No `Step 1 of 4` or wizard language appears in account shell.
+* Visiting `/` renders the Mythsworn public landing page.
+* Landing page does not render game shell navigation.
+* Primary CTA reaches existing auth/account entry flow.
+* Authenticated user has a clear way to continue to account entry / enter game flow.
+* No fake server/hero/gameplay data is displayed.
+* No direct DB writes.
+* Route/page stays thin and uses existing patterns.
 
 **Verification/smoke:**
 
-- `npx tsc --noEmit`
-- `npm run build`
-- Route smoke for account entry route if implemented.
-- Manual smoke:
-  - authenticated account with existing hero;
-  - authenticated account with no hero on an eligible server;
-  - sandbox/test account with multiple heroes where representative data exists.
+* `npx tsc --noEmit`.
+* `npm run build`.
+* Static greps:
+
+  * no `mb-*`;
+  * no direct table writes from public landing code;
+  * no copied prototype raw CSS markers if applicable.
+* Manual route smoke:
+
+  * `/` unauthenticated;
+  * `/` authenticated if test session exists;
+  * CTA to login/account entry.
+
+**Required Codex report:**
+
+* UI-ENTRY-22-1 accepted: yes/no:
+* route changed:
+* landing background source:
+* reused:
+* checked but not reused:
+* new component/state/helper added:
+* local SCSS added:
+* visual anchors matched/not matched:
+* muted-text audit:
+* copied from prototype: yes/no:
+* verification:
+* manual smoke:
 
 ---
 
-## UI-ONBOARDING-ADD-2 — Enter The Game existing-hero selector
+## UI-ENTRY-22-2A — Public Landing Visual Polish
 
-**Goal:**  
-Utworzyć account-shell section `Enter the game`, która pokazuje tylko istniejące grywalne hero contexty i prowadzi do dashboard/game shell.
+**Goal:**
+Dopolerować publiczny landing page `/` na desktopie, bez zmiany start-flow, router guards, DB/RPC i account entry logic.
 
 **Scope:**
 
-- Show server/hero selector for contexts where the logged-in account already has a playable hero.
-- A combined server+hero select is acceptable.
-- For standard servers, one normal hero per account/server is expected.
-- Sandbox/test servers may show multiple heroes for privileged users.
-- Selected context detail should show:
-  - server name/kind/status;
-  - hero name;
-  - safe hero summary, e.g. level/rank if available;
-  - next route: dashboard/game shell.
-- CTA: `Enter dashboard` / `Enter the game`.
-- On enter, set/refresh selected server and active hero context, then route into the in-game shell.
+* Użyć istniejącego logo Mythsworn z projektu zamiast fallbackowego `M + Mythsworn`, jeżeli asset jest dostępny.
+* Fallback `M` może zostać tylko jako fallback, nie primary landing brand.
+* Dodać subtitle `Throne of Hellas` przy głównym brand/title.
+* Usunąć badge `Publiczny świat Mythsworn`.
+* Lepiej rozplanować top actions `Zaloguj` i `Kontynuuj`, tak żeby nie wyglądały jak przypadkowo doklejone do logo.
+* Zachować obecny ogólny kierunek: lewa hero-copy część bez dużej karty, background jako główna oprawa, prawe krótkie karty informacyjne.
+* Zachować CTA:
+
+  * `Wejdź do gry` → istniejący auth/account entry flow;
+  * `Stwórz bohatera` → `/auth/server-entry`, żeby nie omijać server/start-flow eligibility.
+* Przygotować miejsce pod docelowe copy od użytkownika, ale nie wymyślać rozbudowanego marketingowego tekstu.
+* Można zachować obecne krótkie copy jako placeholder do czasu dostarczenia finalnego tekstu przez użytkownika.
 
 **Out of scope:**
 
-- Hero creation.
-- Origin editing.
-- Stat allocation route for existing heroes.
-- Player profile redesign.
-
-**Data/source rules:**
-
-- Existing hero contexts must come from DB/RPC/read model.
-- Do not assume one global hero per account.
-- Do not assume `hero.id === auth.uid()`.
-- Player-facing payload must not expose account ids, staff-only data or raw internal row ids unless already part of safe route state.
+* Mobile/responsive polish.
+* Full marketing page.
+* Login/auth rewrite.
+* Server selection rewrite.
+* Hero creation rewrite.
+* DB/RPC changes.
+* Generated types.
+* Status docs.
+* New image generation.
+* Initial bundle optimization.
 
 **UI/SCSS rules:**
 
-- Prefer compact select/dropdown plus detail card over a large grid.
-- Use global form/select wrappers and card/summary-row patterns.
-- Do not create permanent local badge/card systems.
+* Use existing global layout/surface/button/text utilities first.
+* No page-local SCSS unless absolutely unavoidable and reported.
+* No new local card/button/badge/logo system.
+* No copied prototype CSS, no `mb-*`, no raw palette/gradient values.
+* Important title/subtitle/CTA text must not be muted.
+* If a logo/brand pattern already exists, reuse it.
+
+**Acceptance criteria:**
+
+* `/` still renders the public landing.
+* Existing background still works through route background config.
+* Landing uses existing Mythsworn logo/brand asset where available.
+* `Throne of Hellas` is visible as subtitle.
+* `Publiczny świat Mythsworn` badge is removed.
+* Top actions are visually intentional.
+* CTA routing remains unchanged and goes through the safe account/start-flow path.
+* No DB/RPC/generated/status-doc changes.
+
+**Verification:**
+
+* `npx tsc --noEmit`.
+* `npm run build`.
+* `git diff --check`.
+* Static greps:
+
+  * no changed-file `mb-*`;
+  * no direct writes;
+  * no page-local background CSS;
+  * no generated types touched.
+* Manual smoke:
+
+  * `/` authenticated;
+  * `Wejdź do gry`;
+  * `Stwórz bohatera`;
+  * login route only if user can safely test it.
+
+**Required Codex report:**
+
+* logo/brand source reused:
+* copy changed:
+* top action layout changed:
+* reused utilities/patterns:
+* checked but not reused:
+* local SCSS added:
+* CTA routing:
+* verification:
+* manual smoke / not run reason:
+
+**Status:** Accepted on 2026-05-30 as the desktop public landing visual polish baseline. `/` keeps the centered Mythsworn banner using `public/images/banner.png` with the shared `mg-brand-banner` mask extracted from the existing game topbar banner treatment, top nav actions were removed from the banner area, and the main content stays top-aligned with left lore copy, primary CTAs and right info cards. Full user-provided homepage copy now lives in `src/app/core/config/home-page-content.config.ts`, with `HomePageLoreBlock` / `HomePageInfoCard` interfaces in `src/app/core/interfaces/home-page-content.interface.ts`, stable `key` tracking in the template and no page-local SCSS. CTA routing remains `Wejdź do gry` -> `/auth/login` and `Stwórz bohatera` -> `/auth/server-entry`; no DB/RPC, guards, generated types, route background config, mobile/responsive behavior or start-flow behavior changed. Manual smoke remains user-side.
+
+---
+
+## UI-ENTRY-22-2B — Global Footer Foundation
+
+Goal: add a reusable Mythsworn footer foundation visible where appropriate across the public/account/game shell experience.
+
+Scope:
+
+* Inspect current `AppShell`, `AccountEntryLayout`, public landing, game shell and route containment.
+* Decide footer ownership: shared shell/footer component, not page-local landing footer.
+* Add a minimal reusable footer component/pattern using existing global utilities and `mg-*` surfaces.
+* Footer should support public landing now and be reusable for the wider app later.
+* Keep content minimal: project name, subtitle, current year/copyright-style line, and placeholder links only if existing routes exist.
+
+Out of scope:
+
+* mobile/responsive polish;
+* legal/privacy pages unless routes already exist;
+* DB/RPC/generated types;
+* auth/start-flow changes;
+* initial bundle optimization beyond avoiding unnecessary eager imports;
+* redesign of landing/game/account shells.
+
+Rules:
+
+* All config/interfaces/types/services go under `src/app/core` in the correct subfolder.
+* Shared footer component must not be placed page-locally under `public/pages/home`.
+* Reuse existing layout/surface/text utilities first.
+* No local SCSS unless a narrow shell/footer structural gap is reported.
+* No fake routes/links.
+
+Verification:
+
+* `npx tsc --noEmit`;
+* `npm run build`;
+* `git diff --check`;
+* static greps: no `mb-*`, no direct writes, no generated types touched, no page-local footer config.
+
+**Status:** Accepted on 2026-05-30 as the reusable footer foundation for public/account entry surfaces. `AppFooter` lives under `src/app/layout/components/app-footer`, reads minimal content/link config from `src/app/core/config/app-footer.config.ts`, and is rendered by `AppShell` only for non-game/non-admin shell routes so accepted game/admin shell containment remains unchanged. Footer content stays minimal with `Mythsworn`, `Throne of Hellas`, current year, and real links only: `/`, `/auth/login`, `/register` and `/auth/server-entry`; `/register` is the existing alias to `/auth/create-character`. Footer nav uses normal global anchor/text utilities, not `tag-badge`, and no page-local footer config or SCSS was added. No DB/RPC, guards, generated types, route behavior, status-flow or mobile/responsive behavior changed. Manual smoke remains user-side.
+
+---
+
+## UI-ENTRY-22-3 — Entry Background Pattern For Account Entry And Hero Creation
+
+**Goal:**
+Dodać spójny `Entry background` dla account entry, server selection i hero creation flow bez przepisywania start-flow i bez lokalnego CSS systemu.
+
+**Scope:**
+
+* Zastosować `Entry background` do istniejącego account/public shell albo wrappera używanego przez:
+
+  * `/auth/server-entry`;
+  * `/auth/create-character`;
+  * create-new-hero / join-new-world sections, jeśli istnieją jako child routes/sections.
+* Background ma być wspólną warstwą account-entry, a nie stylem duplikowanym w każdej stronie.
+* Zachować istniejące account shell menu/topbar/sidebar, jeśli już istnieją.
+* Zachować istniejące server selection, existing-hero selector i hero creation components/services.
+* Upewnić się, że background nie wchodzi do game shell/dashboard.
+* Upewnić się, że content cards, selects, forms i origin carousel pozostają czytelne na backgroundzie.
+
+**Out of scope:**
+
+* Public landing page.
+* Game shell background.
+* Hero creation redesign.
+* Origin carousel redesign.
+* Auth/start-flow service rewrite.
+* New DB/RPC.
+* Asset generation.
+* Full mobile redesign.
+
+**Data/source rules:**
+
+* No data changes.
+* Do not change hero creation mutation path.
+* Do not change server availability semantics.
+* Do not introduce client-side fallback for missing server/full/creation eligibility states.
+
+**UI/SCSS rules:**
+
+* Use shared/global background wrapper if available.
+* If no shared pattern exists, add the smallest reusable account-entry background class/pattern after documenting utility lookup.
+* New class cannot duplicate existing spacing/flex/grid utilities.
+* No raw prototype colors/gradients copied.
+* Use tokens/global variables.
+* Preserve contrast for forms, CTA, server status and blocked/full server messages.
+* Important values/statuses/hero names/server names/origin names are not muted.
 
 **Dependencies/blockers:**
 
-- Missing read model for account-accessible hero contexts.
-- Missing active hero context setter/reloader.
-- Missing dashboard route or route guard behavior.
+* UI-ENTRY-22-1 mapping not done.
+* Missing accepted entry background asset if image asset is required.
+* Account entry routes do not share a common shell/wrapper.
 
 **Acceptance criteria:**
 
-- Existing hero on selected server routes to dashboard/game shell by default.
-- Existing hero does not route back to stat allocation unless the user explicitly chooses that in-game route later.
-- Sandbox/test multi-hero user can select another hero where permissions allow.
-- Selected server and active hero remain explicit.
-- Stale responses from context switch do not overwrite current selection.
+* `/auth/server-entry` and `/auth/create-character` visually share the same `Entry background`.
+* Background lives at shell/wrapper level, not duplicated in each page.
+* Existing account entry and hero creation functionality remains intact.
+* Game shell/dashboard does not receive the entry background.
+* No local per-page visual system is added.
+* No direct DB writes or start-flow rewrites.
 
 **Verification/smoke:**
 
-- `npx tsc --noEmit`
-- focused active-context specs if added
-- `npm run build`
-- Manual smoke:
-  - one existing standard hero;
-  - multiple server contexts;
-  - sandbox/test multi-hero context if data exists.
+* `npx tsc --noEmit`.
+* `npm run build`.
+* Static greps:
+
+  * no `mb-*`;
+  * no direct writes in touched auth/entry files;
+  * no `ngModel` / `FormsModule` introduced;
+  * no important values with `muted-text`.
+* Manual visual smoke:
+
+  * `/auth/server-entry`;
+  * `/auth/create-character`;
+  * one blocked/full server state if data exists;
+  * one origin carousel state if data exists.
+
+**Required Codex report:**
+
+* entry shell/wrapper used:
+* entry background source:
+* reused:
+* checked but not reused:
+* new class/pattern added:
+* local SCSS added:
+* visual anchors matched/not matched:
+* muted-text audit:
+* route smoke:
+* verification:
+
+**Status:** Accepted on 2026-05-30 as the shared entry background and account-entry surface cleanup pass. `/auth/server-entry` and `/auth/create-character` keep the shared `ENTRY_BACKGROUND_IMAGE` route-background mapping through `src/app/core/config/route-backgrounds.config.ts`, remain under `AccountEntryLayout`, and use existing transparent `mg-card`, `mg-data-row`, grid/flex/gap/text utilities over the route background. The local `_account-entry.scss` file and all `mg-account-entry-*` selectors were removed instead of preserving a parallel local card/layout system. Decorative process chips were removed, technical entry copy was cleaned, and only real current status/availability badges remain. No DB/RPC, guards, generated types, route behavior, start-flow or mobile/responsive behavior changed. Manual smoke remains user-side.
 
 ---
 
-## UI-ONBOARDING-ADD-3 — Create New Hero / Join New World server eligibility selector
+## UI-ENTRY-22-4 — Account Entry Shell Consolidation And Navigation Reuse
 
-**Goal:**  
-Utworzyć account-shell section `Create new hero` / `Join new world`, która pozwala wybrać serwer kwalifikujący się do stworzenia postaci i pokazuje creation availability oraz district A capacity.
+**Goal:**
+Upewnić się, że account entry, server selection i hero creation działają w jednym account/public shellu przed wejściem do game shell, z wykorzystaniem istniejącego bocznego menu/górnego paska/shella spoza gry.
 
 **Scope:**
 
-- Use a compact server select/dropdown, not a large server card grid by default.
-- Detail card under select must show:
-  - server name;
-  - server kind, e.g. `standard`, `sandbox/test`;
-  - server status;
-  - hero state for current user;
-  - creation availability;
-  - visible district A starting-estate capacity/free slots for standard servers;
-  - next route.
-- Eligible standard server with no hero and free district A slots routes to Hero Creation.
-- Full standard server can be shown as blocked/unavailable or included as explanatory disabled option.
-- Sandbox/test server can show privileged creation / hero selector behavior where access permits.
-- CTA should be visually prominent near the selected server details, not hidden only in a distant footer if the final layout allows it.
+* Sprawdzić obecne account/public shell components and routes.
+* Jeśli `/auth/server-entry` albo `/auth/create-character` obchodzą shell lub duplikują shell chrome, przenieść je pod istniejący account shell route/layout.
+* Account shell navigation should include, if current product flow supports it:
+
+  * `Enter the game`;
+  * `Create new hero` / `Join new world`;
+  * account-related action such as sign out, if already available.
+* Shell must show account context, selected server context and active hero context distinctly.
+* Shell must not show in-game navigation as if hero were already active.
+* Existing hero entry should route to dashboard/game shell.
+* New hero entry should route to server eligibility / hero creation.
+* Keep route/page components thin; state/read-model logic stays in existing core/service/state layer.
 
 **Out of scope:**
 
-- Hero name form.
-- Origin selection.
-- Estate address preview.
-- Direct creation mutation.
-- Final server marketing/lore page.
+* Public landing page content.
+* Hero creation mutation changes.
+* Origin carousel redesign.
+* Dashboard/game shell redesign.
+* Account settings implementation.
+* Notifications implementation unless already present.
+* DB/RPC changes.
+* Status docs update.
 
 **Data/source rules:**
 
-- Server availability must account for whether the selected standard server can provide a free district A starting address.
-- Capacity/free-slot display comes from DB/RPC/read model.
-- Angular must not guess capacity or assign addresses.
-- Player does not choose or preview exact starting estate address before creation.
+* Account identity from auth/account context.
+* Existing hero contexts from existing account entry / active hero read model.
+* Server availability and creation eligibility from existing start-flow service/read model.
+* Sandbox/test multi-hero privileges from existing access/membership/staff layer.
+* No frontend inference of sandbox privileges.
+* No `hero.id === auth.uid()`.
 
 **UI/SCSS rules:**
 
-- Use PrimeNG/select wrapper or approved form pattern for server selection.
-- Use shared summary rows for server facts.
-- Use status badges/pills for availability.
-- No copied `mb-*` class names from prototype.
+* Use existing account/public shell layout and nav patterns.
+* If a sidebar/topbar/nav item pattern is missing, report missing shared/layout pattern instead of adding a one-screen system.
+* Do not copy game shell nav into account shell if it implies active hero gameplay.
+* No copied prototype CSS/classes.
+* Use semantic badges/status patterns for server state and blocked/full states.
+* Important values not muted.
 
 **Dependencies/blockers:**
 
-- Missing server eligibility read model with district A capacity/free slots.
-- Missing route to Hero Creation.
-- Missing sandbox/test privilege read model.
+* Missing account/public shell route boundary.
+* Missing account/server/hero read model.
+* Missing selected server / active hero context setter/reloader.
+* Existing routes cannot be nested safely without breaking guards.
 
 **Acceptance criteria:**
 
-- Server selector is compact and readable.
-- District A free starting slots are visible for standard server creation state.
-- Full standard server cannot proceed to hero creation.
-- Eligible server proceeds to Hero Creation screen.
-- Existing hero state is not mixed with origin/name form on this screen.
+* Account entry routes render under account/public shell.
+* Game shell nav is not visible before active hero context.
+* `Enter the game` and `Create new hero` / `Join new world` are separate flows.
+* Existing hero flow routes to dashboard/game shell.
+* New hero flow routes to server eligibility / hero creation.
+* Sandbox/test multi-hero selector remains explicit and DB-backed where available.
+* Stale async context switch responses do not overwrite current selection.
 
 **Verification/smoke:**
 
-- `npx tsc --noEmit`
-- `npm run build`
-- Manual smoke:
-  - eligible standard server;
-  - standard server full/no free district A starts;
-  - server with existing hero;
-  - sandbox/test if data exists.
+* `npx tsc --noEmit`.
+* Focused specs if shell routing/state logic changes.
+* `npm run build`.
+* Static greps:
+
+  * no `hero.id === auth.uid()`;
+  * no direct writes;
+  * no `mb-*`;
+  * no `ngModel`/`FormsModule` introduced.
+* Manual smoke:
+
+  * authenticated account with existing standard hero;
+  * account with eligible server and no hero;
+  * sandbox/test multi-hero where data exists;
+  * route change between account sections without stale selected context.
+
+**Required Codex report:**
+
+* routes consolidated:
+* shell components reused:
+* reused:
+* checked but not reused:
+* new component/state/helper added:
+* stale guards:
+* local SCSS added:
+* muted-text audit:
+* DB/RPC blockers:
+* verification:
+* manual smoke:
+
+**Status:** Accepted on 2026-05-30 as the account-entry shell/sidebar reuse cleanup pass. `GameSidebar` and `AccountEntryLayout` now render shared context/nav/sidebar chrome through `src/app/layout/components/shell-sidebar-content`, with project-owned sidebar interfaces in `src/app/core/interfaces/layout/sidebar.interface.ts`. Game navigation uses `SidebarNavGroup` config from `src/app/core/config/menu-config.ts` with Polish labels and no PrimeNG `MenuItem` coupling; account-entry navigation and context row labels live in `src/app/core/config/account-entry-sidebar.config.ts`. Account entry keeps only account/server/hero context data, while game sidebar keeps active-hero/prestige runtime data. Placeholder account actions remain disabled with `wkrótce` badges. No DB/RPC, guards, generated types, route behavior, dashboard counters, status-flow or mobile/responsive behavior changed. Manual smoke remains user-side.
 
 ---
 
-## UI-ONBOARDING-ADD-4 — Hero Creation screen: name + origin carousel
+## UI-ENTRY-22-5 — Hero Creation Entry Polish Without Workflow Rewrite
 
-**Goal:**  
-Wdrożyć Hero Creation screen jako drugi i ostatni account-side creation screen: readonly server context, hero name, origin carousel, creation summary and `Create hero`.
+**Status:** Accepted on 2026-05-30 with pending user smoke; UI-ENTRY-22-5-FOLLOW-UP accepted on 2026-05-30 with DB/RPC follow-up. Hero creation entry keeps the account-entry shell/background and canonical create-hero workflow while polishing the existing server eligibility, hero-name, origin carousel and summary surfaces. The follow-up keeps the selected world summary in the right column above `Pochodzenie bohatera` / `Następny krok`, moves the hero creation flow upward, and constrains the hero-name field with existing utilities. Create-character display/config constants now live in `src/app/core/config/create-character-server-options.config.ts`; reusable summary row contracts live in `src/app/core/interfaces/account-entry-summary-row.interface.ts` and origin summary row key contracts in `src/app/core/interfaces/hero/create-character-origin-summary.interface.ts`. `AccountEntrySummaryRows` uses the shared `AccountEntrySummaryRow` type, and `StepOrigin` maps configured row keys to dynamic values while `CREATE_CHARACTER_STARTING_CHARACTER_POINTS = 1000` drives the displayed `Punkty postaci` row. Blocking async states use shared `LoadingOverlay` for origin options and server availability so empty states do not render before required data loads. Hero-name availability after blur/debounce remains a DB/RPC/Migrator follow-up until a canonical pre-submit name-availability contract exists; Angular must not implement a direct table query or client-only uniqueness check. No DB/RPC, guards, generated types, routes, route backgrounds, Carousel SCSS or mobile/responsive behavior changed. Manual smoke remains user-side.
+
+**Goal:**
+Dopasować istniejący hero creation flow do nowego Entry background/account shell bez zmiany canonical hero creation DB/RPC workflow.
 
 **Scope:**
 
-- Screen opens only after an eligible server has already been selected.
-- Show readonly selected server context, including creation open and district A availability summary.
-- Show hero name field.
-- Show origin selection as a visual carousel, not four static cards only.
-- Canonical prototype origins:
-  - `Spartanin` / Spartan;
-  - `Ateńczyk` / Athenian;
-  - `Kreteńczyk` / Cretan;
-  - `Koryntianin` / Corinthian.
-- Carousel should include:
-  - large central active artwork;
-  - previous/next navigation;
-  - quick origin tabs or dots;
-  - selected origin summary;
-  - bonus/lore display area.
-- Use origin artwork assets through a production asset registry/read model, not hardcoded asset paths in feature code.
-- Origin bonus display must render concrete DB-backed bonus rows when available.
-- Known design note: Koryntianin / Corinthian has `+10 Luck`, but production must still read it from canonical origin bonus data rather than hardcoding Angular constants.
+* Ensure hero creation is entered from account shell / create-new-hero path.
+* Preserve existing flow:
+
+  * server eligibility;
+  * hero name;
+  * origin selection;
+  * origin bonus/lore presentation;
+  * create hero action;
+  * post-create route to stat allocation.
+* Ensure server eligibility state is visible before creation:
+
+  * eligible server;
+  * full/blocked server;
+  * standard server with existing hero;
+  * sandbox/test creation when backend allows.
+* Ensure hero creation components use `Entry background` through shell/wrapper, not local duplicated background.
+* Ensure origin names, bonuses and descriptions come from existing DB/read-model/content path or accepted asset-key convention.
+* Keep forms as Reactive Forms if touched.
 
 **Out of scope:**
 
-- Designing final origin balance values.
-- Direct hero table writes.
-- Editing origin after creation.
-- Stat allocation UI redesign.
-- Implementing image generation or changing assets.
+* New hero creation RPC.
+* Direct hero/origin/estate/resource/CP writes.
+* Origin content seeding.
+* Origin artwork generation.
+* Stat allocation redesign.
+* Game shell/dashboard changes.
+* Public landing implementation.
 
 **Data/source rules:**
 
-- Origin labels, descriptions, lore, helper text, artwork keys and bonuses are DB/admin-configurable content in production.
-- Do not hardcode final origin content as the long-term source of truth.
-- Origin bonuses should flow through canonical bonus model/read model, e.g. `entity_bonuses(entity_type = origin)` / resolved bonus read model where available.
-- If origin content/read model does not include exact bonuses/artwork keys, report a DB/content blocker or implement only a read-only placeholder surface if explicitly scoped.
-- Hero name uniqueness is per server and must be validated by backend/RPC on create; optional frontend precheck is not authoritative.
+* Use existing start-flow integration layer.
+* Hero creation mutation must remain canonical DB/RPC workflow.
+* Do not introduce direct writes to `hero`, `hero_stats`, `estates`, `hero_resources`, `character_point_ledger`, origin or bonus tables.
+* District A capacity/free slots from DB/read model.
+* Player does not choose or preview exact starting estate address.
+* Missing origin content/artwork should be reported as content/admin follow-up, not hardcoded permanently.
 
 **UI/SCSS rules:**
 
-- Prototype carousel motion is visual direction only; do not copy canvas JS/CSS.
-- Production should use Angular component/state with accessible controls.
-- Carousel must support keyboard path and reduced motion.
-- Origin artwork must have alt text or accessible label.
-- Use global cards/summary rows/badges/buttons/select/input wrappers.
-- Local SCSS only for constrained carousel layout if no shared pattern exists; report why.
+* Use account shell + Entry background from UI-ENTRY-22-3.
+* Use existing origin carousel and shared card/badge/button/form patterns.
+* No local badge/card/button system.
+* No copied prototype CSS/classes.
+* Hero name, origin name, server name, blocked reason and CTA are not muted.
+* Blocked/full server status uses semantic status pattern, not muted text.
 
 **Dependencies/blockers:**
 
-- Missing DB/RPC origin read model with lore/bonus/artwork content.
-- Missing canonical hero creation RPC/workflow.
-- Missing asset registry convention for origin artwork.
-- Missing Reactive Forms/form factory pattern for creation form.
+* Missing start-flow integration layer.
+* Missing generated types for required start-flow RPCs.
+* Missing server eligibility read model.
+* Missing origin options read model.
+* Missing shared account shell/background wrapper if UI-ENTRY-22-3 not done.
 
 **Acceptance criteria:**
 
-- Hero Creation contains only selected server context, hero name, origin carousel and create actions.
-- It does not show server list as a new choice.
-- It does not present stat allocation as account-onboarding step.
-- Selecting origins updates main artwork, details, bonuses and summary.
-- `Create hero` remains disabled/invalid when hero name is empty.
-- Exact origin bonus values are not hardcoded in Angular.
-- Koryntianin `+10 Luck`, if displayed, comes from the DB/read model or is clearly marked as prototype-only placeholder in non-production scope.
-- Create action uses canonical backend workflow when implemented.
+* Create-new-hero path visually belongs to account entry, not game shell.
+* Existing server eligibility/blocked states remain correct.
+* Hero creation uses canonical RPC/domain workflow.
+* Existing origin carousel/content path is reused.
+* Post-create route remains Stat Allocation.
+* Later existing-hero entry still routes to dashboard/game shell.
+* No new fallback hero creation path is added.
 
 **Verification/smoke:**
 
-- `npx tsc --noEmit`
-- focused form/state/component specs if added
-- `npm run build`
-- Manual smoke:
-  - type hero name;
-  - cycle carousel left/right;
-  - select each origin through quick tab/dot;
-  - view DB-backed bonuses;
-  - submit with valid name/origin;
-  - submit with duplicate name shows backend error;
-  - full server cannot reach this screen except as blocked route guard case.
+* `npx tsc --noEmit`.
+* Focused specs if touched.
+* `npm run build`.
+* Static greps:
+
+  * no direct writes to hero/estate/CP/onboarding workflow tables;
+  * no `hero.id === auth.uid()`;
+  * no hardcoded origin bonus runtime source;
+  * no `ngModel`/`FormsModule`;
+  * no `mb-*`.
+* Manual smoke:
+
+  * eligible standard server create hero path;
+  * full/blocked server state if data exists;
+  * existing hero on standard server blocked from duplicate create;
+  * sandbox/test create-new-hero if data exists;
+  * post-create route to Stat Allocation if real creation smoke is available.
+
+**Required Codex report:**
+
+* start-flow services/read models used:
+* routes touched:
+* reused:
+* checked but not reused:
+* new component/state/helper added:
+* DB/RPC blockers:
+* direct-write grep:
+* forms check:
+* muted-text audit:
+* verification:
+* manual smoke / data-blocked reason:
 
 ---
 
-## UI-ONBOARDING-ADD-5 — Hero Creation canonical workflow and post-create handoff
+## UI-ENTRY-22-6 — Root-To-Account Entry CTA And Auth-Aware Navigation
 
-**Goal:**  
-Ensure the UI handoff from Hero Creation to gameplay matches Epic X: one backend workflow creates the hero and routes into in-game stat allocation as the default first location.
+Status: accepted 2026-05-30 — pending user smoke.
+
+**Goal:**
+Uspójnić przejście z publicznego landing page do istniejącego auth/account entry flow bez tworzenia równoległych ścieżek logowania albo wyboru bohatera.
 
 **Scope:**
 
-- Use canonical DB/RPC/domain workflow for hero creation.
-- Payload should include only approved input:
-  - selected server id;
-  - hero name;
-  - selected origin id/key as required by RPC.
-- Backend workflow owns:
-  - hero row creation;
-  - origin assignment;
-  - 1000 Character Points;
-  - random free district A estate assignment;
-  - any resource/audit/onboarding side effects;
-  - duplicate-name and server-full validation.
-- After success:
-  - refresh selected/current server if needed;
-  - refresh active hero context;
-  - enter in-game shell;
-  - default route to stat allocation.
-- Later entries with existing hero route to dashboard, not stat allocation.
+* Landing CTA behavior:
+
+  * unauthenticated user goes to existing login/register/auth route;
+  * authenticated user can continue to account entry / server-entry;
+  * if current auth guard already redirects differently, align minimally and report.
+* Ensure public landing does not eagerly select server or hero.
+* Ensure account entry performs selected server → active hero resolution, not landing.
+* Ensure logout/sign-in/sign-up links use existing auth paths.
+* If existing login route returns to `/` after login, redirect/continue behavior should be clear and not loop.
 
 **Out of scope:**
 
-- DB migration or RPC creation in a pure UI task.
-- Angular fallback creation through direct `.insert()` / `.update()` / `.upsert()`.
-- Changing stat allocation save behavior.
-- Forcing player to spend all 1000 CP immediately.
+* Auth provider rewrite.
+* Account settings.
+* New session persistence logic.
+* Server selection redesign.
+* Hero creation redesign.
+* DB/RPC changes.
+* Game shell changes.
 
 **Data/source rules:**
 
-- If canonical creation RPC is missing from generated types/schema, stop and report DB/RPC blocker.
-- Do not patch generated `database.types.ts`.
-- Do not create temporary manual interfaces hiding missing generated RPC contract unless explicitly approved as a spike.
-- All durable effects are backend-owned.
+* Landing may inspect auth state only enough to choose CTA label/target.
+* Landing must not load hero-owned data.
+* Account entry remains responsible for server/hero context.
+* No direct DB writes.
 
 **UI/SCSS rules:**
 
-- Submit/loading/success/error states must be explicit.
-- Backend validation errors must be readable, especially duplicate name and full server.
-- Stale guard required if selected server/origin/name changes during async submit.
+* CTA labels describe real action:
+
+  * `Enter the game` / `Wejdź do gry`;
+  * `Create hero` / `Stwórz bohatera`;
+  * `Log in` / `Zaloguj`;
+  * `Create account` / `Załóż konto`.
+* Do not label account entry as a mandatory onboarding wizard.
+* Important CTA text not muted.
+* Use existing button/link patterns.
 
 **Dependencies/blockers:**
 
-- Missing canonical creation RPC/domain service.
-- Missing active hero reload path after creation.
-- Missing stat allocation route.
-- Missing error mapping for duplicate name/full server.
+* Existing auth route names unclear.
+* Existing guards cause redirect loop.
+* Missing account entry route.
 
 **Acceptance criteria:**
 
-- No direct table writes to `hero`, origin assignment, `hero_stats`, Character Points, estate/resources/audit/onboarding tables.
-- Successful creation refreshes active hero and routes to in-game stat allocation.
-- Existing hero refresh/re-entry routes to dashboard.
-- Duplicate name and full server errors are surfaced without corrupting UI state.
-- Player can leave stat allocation later.
+* `/` primary CTA works for unauthenticated users.
+* Authenticated user can continue from `/` to account entry without losing session.
+* Landing does not create or select active hero.
+* No duplicate auth workflow is added.
+* No redirect loop is introduced.
 
 **Verification/smoke:**
 
-- `npx tsc --noEmit`
-- focused submit/routing/state specs if added
-- `npm run build`
-- static grep:
-  - no `.insert(` / `.update(` / `.upsert(` in hero creation feature path for durable workflow tables;
-  - no `ngModel` in new/touched form;
-  - no hardcoded origin bonus constants as production source.
-- Manual smoke:
-  - successful new hero;
-  - duplicate name;
-  - server full between selection and submit;
-  - refresh after creation routes to dashboard on later entry;
-  - stat allocation can be left.
+* `npx tsc --noEmit`.
+* `npm run build`.
+* Route smoke:
+
+  * `/` unauthenticated → CTA to login/register;
+  * `/` authenticated → CTA to account entry;
+  * login success returns to a valid entry/account/game path according to existing app behavior.
+* Static grep:
+
+  * no hero-owned service calls from public landing;
+  * no direct writes.
+
+**Required Codex report:**
+
+* auth routes checked:
+* CTA routing:
+* guard behavior:
+* reused:
+* checked but not reused:
+* new logic added:
+* stale/redirect guard:
+* verification:
+* manual smoke:
 
 ---
 
-## UI-ONBOARDING-ADD-6 — Origin content and artwork registry/read-model follow-up
+## UI-ENTRY-22-7 — Entry Flow Responsive And Accessibility Smoke
 
-**Goal:**  
-Define the content/read-model requirements for production origin carousel implementation so Codex does not hardcode origin lore, artwork paths or bonuses.
+Status: accepted 2026-05-30 — pending user smoke.
+
+**Goal:**
+Sprawdzić minimalną czytelność, responsywność i dostępność dla root landing, account entry, server selection i hero creation after Epic 22 implementation.
 
 **Scope:**
 
-- Audit current DB/read models for origin content:
-  - origin label/name;
-  - description/lore/helper text;
-  - artwork key/path/registry reference;
-  - resolved bonuses from canonical bonus system;
-  - active/sort order.
-- Decide whether artwork keys live in DB content metadata, asset registry, or a small app-side mapping keyed by DB-owned origin key.
-- Ensure canonical origins are represented:
-  - Spartan / Spartanin;
-  - Athenian / Ateńczyk;
-  - Cretan / Kreteńczyk;
-  - Corinthian / Koryntianin.
-- Confirm exact origin bonuses are visible from a read model before production carousel uses them.
-- Produce a blocker list for missing content/data, not a frontend-hardcoded substitute.
+* Smoke/check states:
+
+  * public landing `/`;
+  * account entry shell;
+  * server selection / existing hero entry;
+  * create-new-hero server eligibility;
+  * hero creation origin carousel.
+* Check desktop/tablet/mobile basic layout.
+* Check keyboard focus visibility for CTA, nav, selects, carousel controls and create action.
+* Check reduced motion if landing/entry backgrounds include animation.
+* Check contrast/readability over Landing background and Entry background.
+* Check that blocked/full server reasons and validation errors are visible.
+* Check that important values are not muted.
 
 **Out of scope:**
 
-- Creating/changing DB schema unless the user explicitly asks for DB/migrator work.
-- Final balance design.
-- Asset generation.
-- Updating generated database types.
+* Full mobile redesign.
+* Lighthouse/performance optimization.
+* Screen reader copy rewrite.
+* New specs unless a real accessibility bug requires code.
+* DB/RPC changes.
 
 **Data/source rules:**
 
-- Prefer current schema/dump and `database-current.md` over legacy concept docs.
-- Origin bonuses should use canonical bonus model, not legacy hardcoded presentation.
-- If DB contains legacy `origin_bonuses` but app target is `entity_bonuses`, report transitional status clearly.
+* Use representative real states if available.
+* If data is unavailable, mark smoke `data-blocked`; do not seed fake data in Angular.
+* Do not claim full manual smoke without real session/data.
 
 **UI/SCSS rules:**
 
-- This task may be documentation/audit-only if content contracts are missing.
-- No prototype CSS changes required.
-
-**Dependencies/blockers:**
-
-- Missing origin artwork content source.
-- Missing resolved bonus read model.
-- Missing admin/content route to edit origin lore/bonus presentation.
+* No strobe/rapid flashing.
+* Motion decorative effects must degrade under reduced motion.
+* Important CTA/status/value text must pass practical readability.
+* Semantic statuses should use existing badges/chips/patterns.
 
 **Acceptance criteria:**
 
-- Report identifies the current source of origin names, descriptions, artwork and bonuses.
-- Report states whether Hero Creation carousel can be implemented without hardcoding permanent content.
-- Missing content is listed as DB/content/admin blocker.
-- If implementation proceeds, it consumes DB/read-model content and safe asset keys.
+* Landing and entry pages remain usable on desktop and narrow viewport.
+* Keyboard path reaches primary actions.
+* Backgrounds do not make content unreadable.
+* No obvious focus trap or route dead-end.
+* Manual smoke report clearly distinguishes checked vs data-blocked states.
 
 **Verification/smoke:**
 
-- No build required if audit-only.
-- If code changes are made: `npx tsc --noEmit`, `npm run build`.
+* `npx tsc --noEmit` if code changed.
+* `npm run build` if code changed.
+* Manual smoke checklist with viewport notes.
+* Static greps if code changed:
+
+  * no `mb-*`;
+  * no `ngModel`/`FormsModule`;
+  * no direct writes;
+  * no important values muted.
+
+**Required Codex report:**
+
+* states smoked:
+* viewport checks:
+* keyboard/focus checks:
+* reduced-motion notes:
+* contrast/readability notes:
+* data-blocked states:
+* issues found:
+* verification:
 
 ---
 
-## UI-ONBOARDING-ADD-7 — Archive accepted onboarding prototypes and production mapping
+## UI-ENTRY-22-8 — Login Panel Polish / Account Login Flow
 
-**Goal:**  
-Add the accepted account entry and hero creation carousel prototypes to the UI/UX prototype archive/mapping so future Codex work uses them as visual reference only.
+**Status:** Accepted on 2026-05-30 with follow-up. `/auth/login` now renders inside the existing `AccountEntryLayout` and shared entry background, uses the existing `Auth.login` / `AuthState` / `authEntryGuard` flow, and redirects successful login to `/auth/server-entry`. The login surface is a compact centered account-entry card using existing utilities and `LoginForm` / `FormFields` / `LOGIN_FIELDS`, with Polish labels, visible login error, disabled submitting state and no page-local SCSS. The page includes `Wróć na start` and `Nie masz konta? Załóż konto`, with registration routed through the existing `/register` alias to `/auth/create-character`. Guest account-entry sidebar no longer renders logout. No DB/RPC, generated types, route-background config, route semantics beyond moving login under account layout, mobile/responsive scope or status-flow code changed. Manual smoke remains user-side for `/auth/login`, invalid login, valid login and registration link.
+
+**Goal:**
+Doprowadzić panel logowania do konta do spójnego, działającego i czytelnego stanu w ramach account/entry shell.
 
 **Scope:**
 
-- Archive accepted prototypes, using final names agreed by user:
-  - Account Entry Shell / server+hero context selector prototype;
-  - Hero Creation Origin Carousel prototype.
-- Add mapping entries to prototype-to-production mapping:
-  - account/public shell;
-  - enter game existing-hero selector;
-  - create new hero server eligibility selector;
-  - hero creation origin carousel;
-  - origin artwork/content read model;
-  - post-create route into stat allocation.
-- Each mapping entry must state:
-  - production pattern target;
-  - missing shared/global pattern if any;
-  - local layout-only exception if any;
-  - DB/RPC/read-model blocker if any.
+* Sprawdzić aktualne `authRoutes`, istniejący `/auth/login`, serwisy auth/session oraz account-entry layout.
+* Użyć istniejącego `AccountEntryLayout` i wspólnego `Entry background`.
+* Uporządkować ekran logowania:
+
+  * brand/header zgodny z account entry;
+  * formularz email/login + password;
+  * primary action `Zaloguj`;
+  * link do `Załóż konto`, jeśli realna route rejestracji istnieje po UI-ENTRY-22-9;
+  * link powrotu do `/` albo `Start`, jeśli pasuje do istniejących route’ów.
+* Logowanie ma używać istniejącego auth/service patternu.
+* Komponent strony ma zostać cienki; state/form handling ma używać istniejących auth/core/shared wzorców.
+* Po udanym logowaniu użytkownik powinien trafić do bezpiecznej ścieżki entry, domyślnie `/auth/server-entry`, chyba że obecny auth flow ma już canonical return URL.
+* Jeśli użytkownik jest już zalogowany, ekran logowania nie powinien udawać, że nadal trzeba się logować; powinien umożliwić przejście do account/server entry.
 
 **Out of scope:**
 
-- Angular implementation.
-- Copying prototype CSS/JS.
-- Marking task complete in status docs.
+* Rejestracja konta.
+* Reset hasła, jeśli nie ma istniejącego flow.
+* Server selection rewrite.
+* Hero creation rewrite.
+* DB/RPC gameplay changes.
+* Generated types.
+* Mobile/responsive polish.
+* Status docs.
 
-**Data/source rules:**
+**Rules:**
 
-- Archive entries must not claim DB/RPC exists if it does not.
-- Prototype is visual reference only.
-- Use current decisions for flow semantics.
-
-**UI/SCSS rules:**
-
-- Include standard `VISUAL REFERENCE ONLY` header in archived prototype HTML.
-- Do not archive placeholder screens invented without user acceptance.
+* Nie używać `ngModel`.
+* Nie dodawać direct DB writes.
+* Nie tworzyć fake auth backendu ani mock loginu.
+* Nie mieszać logowania z tworzeniem bohatera.
+* Configi, interfejsy, typy, serwisy, utils, validators i inne shared/structural artefakty mają iść do właściwych katalogów `src/app/core/...`.
+* Jeśli potrzebny typ/interfejs/config/helper już istnieje, reuse przed dodaniem nowego.
+* Jeśli istniejący auth service jest niewystarczający, zgłosić konkretny blocker albo dodać minimalny core service zgodnie z istniejącą konwencją.
 
 **Acceptance criteria:**
 
-- UI/UX backlog points to the accepted prototypes.
-- Prototype-production mapping prevents copying canvas classes/CSS.
-- Future Codex task can identify which prototype to consult and which production patterns to use.
+* `/auth/login` renderuje spójny panel logowania w account/entry shell.
+* Formularz logowania działa przez istniejący/canonical auth service.
+* Błędy logowania są widoczne i zrozumiałe.
+* Loading/submitting state nie pozwala na podwójne wysłanie.
+* Udane logowanie prowadzi do `/auth/server-entry` albo istniejącego canonical return URL.
+* Brak direct DB writes.
+* Brak zmian DB/RPC/generated/status docs.
+* Brak mobile/responsive scope.
 
-**Verification/smoke:**
+**Verification:**
 
-- Docs-only review.
-- Confirm filenames/paths with user before status docs update.
+* `npx tsc --noEmit`.
+* `npm run build`.
+* `git diff --check`.
+* Static greps:
+
+  * no `ngModel`;
+  * no changed-file `mb-*`;
+  * no direct writes;
+  * no generated types touched.
+* Manual smoke:
+
+  * `/auth/login`;
+  * błędne dane logowania;
+  * poprawne dane logowania, jeśli user może bezpiecznie testować;
+  * już-zalogowany user na `/auth/login`.
+
+**Required Codex report:**
+
+* auth routes checked:
+* auth service/state reused:
+* form pattern reused:
+* core folders checked:
+* new core artifacts added:
+* checked but not reused:
+* login success route:
+* verification:
+* manual smoke / not run reason:
 
 ---
 
-## UI-ONBOARDING-ADD-8 — Mobile/responsive check for account entry and hero creation carousel
+## UI-ENTRY-22-9 — Account Registration Panel / Create Account Flow
 
-**Goal:**  
-Zapisać i później sprawdzić minimalne mobile/tablet constraints dla account entry i Hero Creation carousel, bez pełnego mobile redesignu.
+Status: accepted 2026-05-30 — pending user smoke.
+
+**Goal:**
+Dodać albo uporządkować prawdziwy panel zakładania konta, osobny od tworzenia bohatera.
 
 **Scope:**
 
-- Account Entry Shell:
-  - sidebar may stack above content on narrow screens;
-  - select/dropdown remains reachable;
-  - CTA remains visible without horizontal scroll.
-- Hero Creation carousel:
-  - origin artwork and details stack on mobile;
-  - carousel arrows/tabs are large enough for touch;
-  - no hover-only critical information;
-  - reduced motion supported;
-  - page can scroll vertically, but the create action remains reachable.
-- Stat allocation handoff:
-  - after creation, mobile user should not be trapped in a confusing route state.
+* Sprawdzić aktualne `authRoutes`, `/register` alias, `/auth/create-character` i istniejące auth/account services.
+* Rozdzielić semantykę:
+
+  * `Załóż konto` = utworzenie konta użytkownika;
+  * `Stwórz bohatera` = start-flow po zalogowaniu, wybór serwera/origin/hero creation.
+* Jeśli nie istnieje realny route rejestracji, dodać route `/auth/register` zgodnie z istniejącym auth module pattern.
+* Zaktualizować `/register`, aby prowadził do realnego panelu rejestracji, nie do `/auth/create-character`, jeśli realny panel rejestracji zostanie dodany.
+* Panel rejestracji powinien zawierać minimum:
+
+  * email;
+  * password;
+  * confirm password, jeśli zgodne z istniejącym form pattern;
+  * primary action `Załóż konto`;
+  * link `Masz konto? Zaloguj`;
+  * jasny komunikat po sukcesie.
+* Rejestracja ma używać istniejącego auth/service patternu.
+* Po sukcesie:
+
+  * jeśli auth wymaga email confirmation, pokazać komunikat i bezpieczną ścieżkę do loginu;
+  * jeśli user zostaje zalogowany automatycznie, przejść do `/auth/server-entry`.
+* Footer link `Załóż konto` ma prowadzić do realnej rejestracji po wykonaniu taska.
+* Landing CTA `Stwórz bohatera` nadal nie powinno omijać server/start-flow eligibility.
 
 **Out of scope:**
 
-- Full mobile redesign.
-- Rewriting in-game shell navigation.
-- Native app gestures.
+* Hero creation workflow.
+* Origin carousel changes.
+* Server entry rewrite.
+* Password reset.
+* Email confirmation backend setup.
+* DB/RPC gameplay changes.
+* Generated types.
+* Mobile/responsive polish.
+* Status docs.
 
-**Data/source rules:**
+**Rules:**
 
-- No DB changes.
-
-**UI/SCSS rules:**
-
-- Use responsive global utilities/patterns where available.
-- Feature-local responsive CSS only for carousel geometry if no shared pattern exists.
-- Report any unavoidable local SCSS.
+* Nie traktować `/auth/create-character` jako rejestracji konta.
+* Nie direct-write’ować `hero`, `hero_stats`, `estates`, `character_point_ledger` ani żadnych gameplay/onboarding tables.
+* Nie tworzyć mock registration.
+* Nie dodawać fake links do nieistniejących route’ów.
+* Configi, interfejsy, typy, serwisy, validators i helpers mają iść do właściwych katalogów `src/app/core/...`.
+* Reuse istniejących auth/core/shared/form patterns przed dodaniem nowych.
 
 **Acceptance criteria:**
 
-- No horizontal scroll for primary controls at mobile width.
-- Keyboard and touch paths exist for origin selection.
-- Reduced motion does not break selection.
-- CTA remains reachable.
+* Istnieje jasna route/panel zakładania konta.
+* `/register` nie udaje już hero creation, jeśli realna rejestracja została dodana.
+* `Załóż konto` w footerze prowadzi do realnego account registration.
+* Login/register mają wzajemne linki.
+* Account registration nie tworzy bohatera.
+* Po założeniu konta user ma jasny następny krok.
+* Brak direct DB writes do gameplay/onboarding tables.
+* Brak zmian generated types/status docs.
 
-**Verification/smoke:**
+**Verification:**
 
-- Browser responsive smoke at desktop/tablet/mobile widths.
-- Keyboard smoke for carousel controls.
-- Reduced-motion smoke where practical.
+* `npx tsc --noEmit`.
+* `npm run build`.
+* `git diff --check`.
+* Static greps:
+
+  * no `ngModel`;
+  * no changed-file `mb-*`;
+  * no direct gameplay table writes;
+  * no generated types touched.
+* Manual smoke:
+
+  * `/auth/register`;
+  * `/register`;
+  * validation errors;
+  * account creation only if user can safely test;
+  * link to login;
+  * successful post-register route/message.
+
+**Required Codex report:**
+
+* auth routes checked:
+* `/register` before/after:
+* auth service/state reused:
+* form pattern reused:
+* core folders checked:
+* new core artifacts added:
+* checked but not reused:
+* post-register behavior:
+* direct-write grep:
+* verification:
+* manual smoke / not run reason:
+
+---
+
+## UI-ENTRY-22-10 — Auth Entry Route Semantics And Link Audit
+
+**Status:** Accepted on 2026-05-30 with pending user smoke. Public/account/auth entry routes and links now keep clear semantics: `/login` redirects to `/auth/login`, `/register` redirects to `/auth/register`, footer and landing registration links point to real account registration, and `Stwórz bohatera` remains routed through `/auth/server-entry` so server/start-flow eligibility is not bypassed. Shared `ShellSidebarContent` supports `activeRoute`, allowing the account-entry sidebar to click `Stwórz bohatera` through `/auth/server-entry` while highlighting it only on `/auth/create-character`; `Wejdź do gry` highlights on `/auth/server-entry`. Public report return links point to `/` instead of `/public`. No DB/RPC, guards, generated types, status-flow, route eligibility semantics or notification icon changes were made. Manual smoke remains user-side.
+
+**No-server follow-up:** Accepted on 2026-05-30 with pending user smoke. `/auth/server-entry` and `/auth/create-character` now treat no visible/available servers as a normal empty state: the existing account-entry selector surfaces render disabled selects with `Brak dostępnych serwerów` and clear player-facing messages. Server-entry loading uses the shared `LoadingOverlay`, touched legacy utilities were replaced with current `m-0`, `color-heading` and `color-muted`, and create-character submit is blocked by `canSubmitHeroCreation()` before `CreateHero.createHero()` when no selected/creatable server exists. Auth active-hero bootstrap resolves no selected server as normal `null` state instead of exception-driven string handling. No direct table reads, RLS grants, DB/RPC changes, generated type changes or route redirects were added.
+
+**Auth-entry active-hero follow-up:** Accepted on 2026-05-30 with pending user smoke. Explicit `/auth/server-entry` hero entry uses canonical `select_account_entry_active_hero_context(p_server_id, p_hero_id)` and maps the returned active-hero/account-entry context into `ActiveHeroState`, so the explicit `Wejdź do gry` path no longer returns to `ActiveHero.selectHero()`, `loadHeroRows()` or direct `TABLES.hero` reads. `Auth.initializeAuthState()`, `login()` and the auth listener now set/clear only auth/session state and do not hydrate active hero. Protected-route refresh/restore remains a separate DB/RPC follow-up requiring a player-safe active-hero restore/read model; do not restore that path with direct `public.hero` reads.
+
+**Start-flow create eligibility follow-up:** Accepted on 2026-05-30 with pending user smoke. Existing-account `/auth/create-character` now uses the exact `serverId` from `selectedServerAvailability()` / `get_start_flow_server_availability()` when calling `create_hero_start_flow(...)`; `CreateHero.createHero(characterName, originId, serverId)` no longer resolves server state locally or calls `ActiveHero.selectHero()` after creation. The post-create handoff applies active hero state from the RPC result through `ActiveHero.applyStartFlowHeroCreationResult(...)`, avoiding direct `hero` table reads in the submit-to-attributes route. Creation eligibility is driven by DB `canCreateHero`; when false, player-facing blockers come from DB `blockReason` / `eligibilityJson.createBlockReason` rather than frontend-inferred rules. No DB/RPC, generated types, RLS/grants, direct table reads or local eligibility workarounds were added.
+
+**Warning-cleanup follow-up:** Accepted on 2026-05-30 with pending user smoke. Root `@defer` was removed to avoid `NG0751` in dev/HMR, and `GlobalToast` is hosted explicitly in both `AppShell` and `GameShell` so public/auth and game/admin shells keep global toast coverage. Account-entry select disabled states now use reactive `FormControl.disable/enable` instead of `[disabled]` on `formControlName` controls, and the create-character account step wraps shared password fields in a real `<form>`. The only accepted remaining auth-entry/create-character console warning is the banner image `NG0913`, deferred to a later asset/storage follow-up. No DB/RPC, generated types, route semantics, RLS/grants or direct table reads changed.
+
+**Storage asset follow-up:** Accepted on 2026-05-30 with pending browser smoke. Large route backgrounds, origin artwork, paperdolls and district-A building images now resolve through centralized Supabase Storage helpers in `src/app/core/config/storage-assets.config.ts`, deriving public/transformed URLs from `environment.supabaseUrl` and the public `assets` bucket. Small critical local assets such as banner/logo/favicon/icons remain local. Origin carousel images use `NgOptimizedImage` fill mode inside the layout-defined `.carousel-image__slot` with `object-fit: contain`; central image dimension metadata remains only for non-fill paperdoll and building preview/card images. No DB/RPC, generated types, route semantics, auth flow or bucket policy changes were added.
+
+**Goal:**
+Upewnić się, że wszystkie public/account/auth linki znaczą to, co mówią, i nie mieszają logowania, rejestracji, server entry oraz hero creation.
+
+**Scope:**
+
+* Sprawdzić linki i redirecty w:
+
+  * `/`;
+  * footer;
+  * `AccountEntryLayout`;
+  * `/auth/login`;
+  * `/auth/register`;
+  * `/register`;
+  * `/auth/server-entry`;
+  * `/auth/create-character`;
+  * ewentualne `/login`.
+* Uporządkować etykiety i route’y:
+
+  * `Start` → `/`;
+  * `Zaloguj` → `/auth/login`;
+  * `Załóż konto` → real registration route;
+  * `Wejdź do gry` → account/server entry flow albo login, zgodnie z istniejącą auth guard/flow decyzją;
+  * `Stwórz bohatera` → `/auth/server-entry`, nie bezpośrednio omijać server eligibility.
+* Sprawdzić, czy `/register` i `/login` aliasy są spójne i nie prowadzą do mylących ekranów.
+* Sprawdzić, czy zalogowany użytkownik na login/register ma jasny dalszy krok.
+* Sprawdzić, czy niezalogowany użytkownik na server-entry/create-character nie trafia w martwy stan.
+
+**Out of scope:**
+
+* Visual redesign.
+* Mobile/responsive.
+* DB/RPC gameplay changes.
+* Generated types.
+* Password reset.
+* Hero creation internals.
+* Status docs, chyba że user osobno każe po akceptacji.
+
+**Rules:**
+
+* Nie tworzyć nowych route’ów, jeśli istniejące da się poprawnie zmapować.
+* Nie tworzyć fake links.
+* Nie zmieniać start-flow semantics.
+* Nie zmieniać hero creation RPC/path.
+* Nie direct-write’ować gameplay tables.
+* Configi/interfejsy/typy/helpers/guards/services w `core`.
+
+**Acceptance criteria:**
+
+* Public/footer/auth/account links mają jasną semantykę.
+* `Załóż konto` nie prowadzi do create-character.
+* `Stwórz bohatera` nadal przechodzi przez server/start-flow eligibility.
+* Brak redirect loop.
+* Brak dead-end dla logged-in / logged-out podstawowych ścieżek.
+* Brak niepowiązanych refactorów.
+
+**Verification:**
+
+* `npx tsc --noEmit`.
+* `npm run build`.
+* `git diff --check`.
+* Static greps for touched files:
+
+  * no `mb-*`;
+  * no direct writes;
+  * no generated types touched.
+* Manual smoke:
+
+  * `/`;
+  * `/login`;
+  * `/register`;
+  * `/auth/login`;
+  * `/auth/register`;
+  * `/auth/server-entry`;
+  * `/auth/create-character`;
+  * logged-in and logged-out where user can safely test.
+
+**Required Codex report:**
+
+* routes checked:
+* link map before/after:
+* redirects changed:
+* existing guards respected:
+* route semantics:
+* dead-end/loop check:
+* verification:
+* manual smoke / not run reason:
+
+---
+
+## UI-PERF-ENTRY-1 — Root Landing And Initial Bundle Optimization Pass
+
+**Status:** Accepted on 2026-05-30 with pending user smoke. Initial browser bundle dropped from 1.09 MB / 231.99 kB estimated transfer to 706.85 kB / 139.50 kB, reducing the budget overage from +541.68 kB to +156.84 kB. The pass split the lightweight public/auth `AppShell` from the lazy game/admin `GameShell`, lazy-loaded route modules and guard implementations, deferred Angular animations and the global toast host, and removed the root Auth/Supabase app initializer so `/` renders without loading Supabase. Auth initialization now stays in auth-required guards/routes/services; `/` falls back to guest CTAs until auth is initialized. Remaining initial pressure is `src/scss/main.scss`, Angular core/router, and the full Aura `MgPrimePreset` / `providePrimeNG` path. No DB/RPC, generated types, gameplay workflow or route eligibility semantics changed. Manual smoke remains user-side.
+
+**Goal:**
+Zmniejszyć koszt startowy aplikacji i upewnić się, że publiczny landing `/` nie ładuje niepotrzebnie game/admin shelli, topbara, sidebara, gameplay notices ani ciężkich PrimeNG modułów.
+
+**Scope:**
+
+* Uruchomić build i spisać aktualne initial chunk / budget warnings.
+* Sprawdzić lazy boundaries:
+
+  * `main.ts`;
+  * root `app.routes`;
+  * `AppShell`;
+  * public routes;
+  * auth/account entry routes;
+  * hero/game/admin route shells.
+* Sprawdzić, co realnie ładuje się dla `/`:
+
+  * `AppShell`;
+  * `PublicHomePage`;
+  * game sidebar/topbar;
+  * notifications/staff bell;
+  * admin/game route modules;
+  * PrimeNG modules.
+* Upewnić się, że root `App` / root route shell pozostaje cienki.
+* Route/layout-heavy UI ma zostać za lazy route boundaries.
+* Public landing ma ładować tylko minimalne UI potrzebne do landingu.
+* Jeżeli `AppShell` eager-importuje game-only chrome, rozdzielić boundary tak, aby public/auth entry nie ładowały game-only topbar/sidebar.
+* Jeżeli landing używa ciężkiego PrimeNG modułu tylko dla prostego CTA, ocenić i zastosować najlżejszą zgodną z projektem opcję.
+* Przenieść route-background mapping do configu, jeśli nie zostało to zrobione w UI-ENTRY-22-2.
+* Nie zmieniać DB/RPC, start-flow semantics ani hero creation workflow.
+
+**Out of scope:**
+
+* Visual redesign landingu.
+* Game shell redesign.
+* Admin IA redesign.
+* Hero creation rewrite.
+* DB/RPC changes.
+* Generated types.
+* Replacing PrimeNG globally.
+* Broad refactor unrelated to initial bundle.
+
+**Rules:**
+
+* Start from `AGENTS.md`, `ui-ux-notes.md`, UI-CORE docs and current route files.
+* Do not introduce duplicate shells.
+* Do not hide game shell with CSS while still eagerly importing it for `/`.
+* Do not move gameplay logic into public landing.
+* Do not break auth guards, selected-server flow, active-hero flow or post-hero-creation routing.
+* Prefer deleting eager imports and splitting lazy boundaries over adding wrappers.
+* If an optimization is too risky, document it as follow-up instead of doing a broad refactor.
+
+**Acceptance criteria:**
+
+* Build output before/after is reported.
+* `/` landing does not eagerly load game/admin route-heavy UI unless there is a documented unavoidable reason.
+* Public/auth entry and game shell boundaries are explicit.
+* No public landing regression.
+* No auth/server-entry/hero-entry regression.
+* Initial bundle is reduced or the remaining blockers are listed with exact files/imports.
+* Route background config is centralized if touched.
+* No status docs update unless user explicitly asks.
+
+**Verification:**
+
+* `npx tsc --noEmit`.
+* `npm run build`.
+* Build/budget output included in report.
+* Static import review for root/AppShell/public landing.
+* Manual smoke:
+
+  * `/` unauthenticated;
+  * `/` authenticated;
+  * `/auth/login`;
+  * `/auth/server-entry`;
+  * existing hero entry to dashboard;
+  * create hero route still guarded by start-flow eligibility.
+
+**Required Codex report:**
+
+* build before:
+* build after:
+* initial bundle/budget change:
+* root imports checked:
+* AppShell imports checked:
+* route lazy boundaries checked:
+* heavy modules removed/deferred:
+* reused:
+* checked but not reused:
+* risky optimizations deferred:
+* verification:
+* manual smoke:
+
+---
+
+# 23. UI-OPEN — Open questions
+
+- Exact Game Icons mapping.
+- Mobile layout strategy for dense tables and admin screens.
+- Full PvP combat UX.
+- Full Exploration result UX.
+- Full Siege setup/result UX.
+- Full Spy result UX.
+- Public report share page.
+- Notification settings page.
+- Admin route coverage matrix and possible DB/registry source.
+- Full concrete admin modules after overview IA.
 
 ---
 

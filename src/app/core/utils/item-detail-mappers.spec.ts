@@ -6,6 +6,7 @@ describe('mapArmoryItemDetail', () => {
     const detail = mapArmoryItemDetail(demonicDaggerRow());
 
     expect(detail.itemStats).toEqual([{
+      statKey: 'damage',
       label: 'Damage',
       displayValue: '2-9',
     }]);
@@ -56,6 +57,7 @@ describe('mapArmoryItemDetail', () => {
     }));
 
     expect(detail.itemStats).toEqual([{
+      statKey: 'damage',
       label: 'Damage',
       displayValue: '2-9',
     }]);
@@ -101,6 +103,7 @@ describe('mapArmoryItemDetail', () => {
     }));
 
     expect(detail.itemStats).toEqual([{
+      statKey: 'damage',
       label: 'Damage',
       displayValue: '2-9',
     }]);
@@ -113,6 +116,209 @@ describe('mapArmoryItemDetail', () => {
     ]);
     expect(JSON.stringify(detail.bonuses)).not.toContain('Critical damage');
   });
+
+  it('uses only weapon damage for weapon item stats', () => {
+    const detail = mapArmoryItemDetail(demonicDaggerRow({
+      bonuses_json: {
+        itemStats: {
+          rows: [{
+            key: 'legacy_damage',
+            label: 'Legacy damage',
+            displayValue: '1-1',
+          }],
+        },
+        finalStats: {
+          damage: {
+            statKey: 'damage',
+            displayValue: '4-14',
+          },
+          totals: [{
+            statKey: 'defense',
+            label: 'Defense',
+            displayValue: '+8',
+          }, {
+            statKey: 'critical_chance',
+            label: 'Critical chance',
+            displayValue: '+2%',
+          }, {
+            statKey: 'luck',
+            label: 'Luck',
+            displayValue: '+3',
+          }],
+        },
+        modifierRows: [],
+      },
+    }));
+
+    expect(detail.itemStats).toEqual([
+      { statKey: 'damage', label: 'Damage', displayValue: '4-14' },
+    ]);
+    expect(JSON.stringify(detail.itemStats)).not.toContain('Legacy damage');
+    expect(JSON.stringify(detail.itemStats)).not.toContain('Defense');
+    expect(JSON.stringify(detail.itemStats)).not.toContain('Critical chance');
+    expect(JSON.stringify(detail.itemStats)).not.toContain('Luck');
+  });
+
+  it('uses only defense for armor item stats', () => {
+    const detail = mapArmoryItemDetail(demonicDaggerRow({
+      base_name: 'Reinforced Armor',
+      base_type_key: 'armor',
+      bonuses_json: {
+        finalStats: {
+          damage: {
+            statKey: 'damage',
+            displayValue: '4-14',
+          },
+          totals: [{
+            statKey: 'defense',
+            label: 'Defense',
+            displayValue: '+8',
+          }, {
+            statKey: 'luck',
+            label: 'Luck',
+            displayValue: '+3',
+          }],
+        },
+        modifierRows: [],
+      },
+    }));
+
+    expect(detail.itemStats).toEqual([
+      { statKey: 'defense', label: 'Defense', displayValue: '+8' },
+    ]);
+    expect(JSON.stringify(detail.itemStats)).not.toContain('Damage');
+    expect(JSON.stringify(detail.itemStats)).not.toContain('Luck');
+  });
+
+  it('does not render item stats for jewelry even when final stats include damage or defense', () => {
+    const detail = mapArmoryItemDetail(demonicDaggerRow({
+      base_name: 'Ring',
+      base_type_key: 'ring',
+      bonuses_json: {
+        finalStats: {
+          damage: {
+            statKey: 'damage',
+            displayValue: '4-14',
+          },
+          totals: [{
+            statKey: 'defense',
+            label: 'Defense',
+            displayValue: '+8',
+          }, {
+            statKey: 'luck',
+            label: 'Luck',
+            displayValue: '+3',
+          }, {
+            statKey: 'critical_chance',
+            label: 'Critical chance',
+            displayValue: '+2%',
+          }],
+        },
+        modifierRows: [{
+          targetKey: 'luck',
+          effectiveValue: 3,
+        }],
+      },
+    }));
+
+    expect(detail.itemStats).toEqual([]);
+    expect(detail.bonuses.map((bonus) => bonus.label)).toEqual(['Luck']);
+  });
+
+  it('renders modifierRows with structured effectiveValue when displayValue is absent', () => {
+    const detail = mapArmoryItemDetail(demonicDaggerRow({
+      bonuses_json: {
+        itemStats: {
+          rows: [{
+            key: 'damage',
+            label: 'Damage',
+            displayValue: '2-9',
+          }],
+        },
+        sourceRows: [
+          row('Minimum damage', '2', 'native_stat', 'item_stats', 2, 10),
+        ],
+        modifierRows: [{
+          label: 'Critical Chance Flat',
+          typeKey: 'critical_chance_flat',
+          targetKey: 'critical_chance',
+          rawValue: 2,
+          effectiveValue: 2,
+          sourceLabel: 'Demonic',
+          sourceLayer: 'prefix',
+        }, {
+          label: 'Max Damage Flat',
+          typeKey: 'max_damage_flat',
+          targetKey: 'max_damage',
+          rawValue: 4,
+          effectiveValue: 4,
+          sourceLabel: 'Demonic',
+          sourceLayer: 'prefix',
+        }],
+      },
+    }));
+
+    expect(detail.bonuses.map((bonus) => ({
+      label: bonus.label,
+      value: bonus.displayValue,
+      source: bonus.sourceLabel,
+    }))).toEqual([
+      { label: 'Critical chance', value: '+2', source: 'Demonic' },
+      { label: 'Maximum damage', value: '+4', source: 'Demonic' },
+    ]);
+  });
+
+  it('labels generic flat modifiers by their target stat', () => {
+    const detail = mapArmoryItemDetail(demonicDaggerRow({
+      bonuses_json: {
+        modifierRows: [{
+          label: 'Flat',
+          typeKey: 'critical_chance_flat',
+          targetKey: 'critical_chance',
+          rawValue: 2,
+          effectiveValue: 2,
+        }, {
+          label: 'Flat',
+          typeKey: 'max_damage_flat',
+          targetKey: 'max_damage',
+          rawValue: 4,
+          effectiveValue: 4,
+        }],
+      },
+    }));
+
+    expect(detail.bonuses.map((bonus) => ({
+      label: bonus.label,
+      value: bonus.displayValue,
+    }))).toEqual([
+      { label: 'Critical chance', value: '+2' },
+      { label: 'Maximum damage', value: '+4' },
+    ]);
+    expect(JSON.stringify(detail.bonuses)).not.toContain('Flat');
+  });
+
+  it('normalizes bonus target from type key when target key is absent', () => {
+    const detail = mapArmoryItemDetail(demonicDaggerRow({
+      bonuses_json: {
+        modifierRows: [{
+          label: 'Flat',
+          typeKey: 'max_damage_flat',
+          rawValue: 4,
+          effectiveValue: 4,
+        }],
+      },
+    }));
+
+    expect(detail.bonuses).toEqual([
+      jasmine.objectContaining({
+        label: 'Maximum damage',
+        targetKey: 'max_damage',
+        displayValue: '+4',
+        numericValue: 4,
+      }),
+    ]);
+  });
+
 });
 
 function demonicDaggerRow(

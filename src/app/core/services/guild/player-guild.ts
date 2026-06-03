@@ -26,6 +26,7 @@ import {
   mapGuildSearchResult,
   toCreateGuildRpcArgs,
 } from '../../utils/guild-mappers';
+import { firstRpcRow } from '../../utils/rpc-result';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
 
@@ -75,7 +76,7 @@ export class PlayerGuild {
     return this.backend
       .rpc<GetHeroGuildStateRpcRow[]>(RPC.get_hero_guild_state, { p_hero_id: heroId })
       .pipe(
-        map((rows) => mapCurrentHeroGuildState(firstRow(rows, RPC.get_hero_guild_state))),
+        map((rows) => mapCurrentHeroGuildState(firstRpcRow(rows, RPC.get_hero_guild_state))),
       );
   }
 
@@ -83,7 +84,7 @@ export class PlayerGuild {
     return this.backend
       .rpc<GetHeroGuildDashboardRpcRow[]>(RPC.get_hero_guild_dashboard, { p_hero_id: heroId })
       .pipe(
-        map((rows) => mapGuildDetail(firstRow(rows, RPC.get_hero_guild_dashboard))),
+        map((rows) => mapGuildDetail(firstRpcRow(rows, RPC.get_hero_guild_dashboard))),
       );
   }
 
@@ -111,7 +112,7 @@ export class PlayerGuild {
         RPC.create_guild,
         toCreateGuildRpcArgs(heroId, withRequestId(input, 'guild-create')),
       )
-      .pipe(map((rows) => mapGuildCreateResult(firstRow(rows, RPC.create_guild))));
+      .pipe(map((rows) => mapGuildCreateResult(firstRpcRow(rows, RPC.create_guild))));
   }
 
   searchGuildsForActiveHero(
@@ -156,7 +157,7 @@ export class PlayerGuild {
     return this.backend
       .rpc<GetGuildConfigSummaryRpcRow[]>(RPC.get_guild_config_summary, {})
       .pipe(
-        map((rows) => mapGuildConfigSummary(firstRow(rows, RPC.get_guild_config_summary))),
+        map((rows) => mapGuildConfigSummary(firstRpcRow(rows, RPC.get_guild_config_summary))),
       );
   }
 }
@@ -176,14 +177,4 @@ function createRequestId(prefix: string): string {
     ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
   return `${prefix}:${randomId}`;
-}
-
-function firstRow<T>(rows: readonly T[], rpcName: string): T {
-  const row = rows[0];
-
-  if (!row) {
-    throw new Error(`${rpcName} returned no guild row.`);
-  }
-
-  return row;
 }

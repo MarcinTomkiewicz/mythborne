@@ -1,78 +1,107 @@
-@if (isVisible()) {
-  <section
-    class="flex-row-between-center flex-col-lg gap-md w-100"
-    aria-label="Hero status and resources"
-  >
-    <div class="flex-row-start-center flex-wrap gap-sm flex-1">
-      <div class="tag-badge tag-badge--muted gap-sm">
-        <i class="pi pi-heart" aria-hidden="true"></i>
-        <span>Health</span>
-        <strong class="heading-color">{{ healthValue() }}</strong>
-      </div>
-
-      <div class="tag-badge tag-badge--muted gap-sm min-w-250 w-100-xs">
-        <i class="pi pi-sun-eclipse" aria-hidden="true"></i>
-        <div class="flex-col gap-xs flex-1">
-          <div class="flex-row-between-center gap-sm">
-            <span>Level {{ hero()?.level ?? 1 }}</span>
-            <strong class="heading-color">
-              XP {{ experienceValue() }}
-              @if (experienceToNextLevel() > 0) {
-                / {{ experienceToNextLevel() }}
-              }
+@if (shouldRenderTopbarContent()) {
+  @if (hasHeroContent()) {
+    <section
+      class="mg-grid grid-cols-3 grid-cols-1-lg grid-items-end gap-md w-100"
+      aria-label="Hero status and resources"
+    >
+      <div class="flex-row-start-end flex-wrap gap-sm">
+        @if (dashboardContext()) {
+          <div class="mg-chip mg-chip--health flex-row-center-center gap-sm">
+            <i class="pi pi-heart mg-chip__icon" aria-hidden="true"></i>
+            <span class="mg-chip__label small-caps">Zdrowie</span>
+            <strong class="mg-chip__value">
+              {{ currentHealthValue() }} / {{ maxHealthValue() }}
             </strong>
           </div>
-
-          @if (experienceToNextLevel() > 0) {
-            <app-game-bar
-              [value]="experienceValue()"
-              [max]="experienceToNextLevel()"
-              type="xp"
-              [segments]="10"
-              [compact]="true"
-              [showLabel]="false"
-              [showValue]="false"
-            />
+          <div
+            class="mg-chip mg-chip--progress mg-chip--xp flex-col gap-xs min-w-250 w-100-xs"
+          >
+            <div class="flex-row-between-center gap-sm w-100">
+              <span class="mg-chip__label small-caps">
+                Poziom {{ heroLevelValue() }}
+              </span>
+              <strong class="mg-chip__value small-caps">
+                Doświadczenie {{ experienceValue() }}
+                / {{ experienceToNextLevel() }}
+              </strong>
+            </div>
+            @if (hasExperienceContext() && experienceBarMax() > 0) {
+              <app-game-bar
+                [value]="experienceBarValue()"
+                [max]="experienceBarMax()"
+                type="xp"
+                [compact]="true"
+                [showLabel]="false"
+                [showValue]="false"
+              />
+            }
+          </div>
+        }
+      </div>
+      <div
+        class="flex-row-center-center min-w-200"
+        aria-label="Mythsworn"
+      >
+        <img
+          src="/images/banner.png"
+          alt="Mythsworn"
+          class="mg-brand-banner"
+        />
+      </div>
+      <div
+        class="flex-row-end-center flex-row-start-center-lg flex-wrap gap-sm"
+      >
+        <div class="flex-row-start-center gap-xs" aria-label="Topbar alerts">
+          <app-notification-bell />
+          <app-staff-notification-bell />
+        </div>
+        <div class="flex-row-end-center gap-sm small-caps" aria-label="Resources">
+          @if (isResourceContextComplete()) {
+            @for (resource of resourceDisplay(); track resource.type) {
+              <span class="mg-resource-summary flex-row-center-center gap-sm">
+                @switch (resource.type) {
+                  @case ("drachma") {
+                    <i
+                      class="pi pi-cash mg-resource-summary__icon"
+                      aria-hidden="true"
+                    ></i>
+                  }
+                  @case ("materials") {
+                    <i
+                      class="pi pi-marble mg-resource-summary__icon"
+                      aria-hidden="true"
+                    ></i>
+                  }
+                  @case ("workforce") {
+                    <i
+                      class="pi pi-workforce mg-resource-summary__icon"
+                      aria-hidden="true"
+                    ></i>
+                  }
+                }
+                <span class="mg-resource-summary__content flex-col-center-start">
+                  <span class="mg-resource-summary__label font-sm">{{
+                    resource.label
+                  }}</span>
+                  <strong class="mg-resource-summary__value font-md font-black">{{
+                    resource.amount
+                  }}</strong>
+                  <small class="mg-resource-summary__rate font-xs font-light">
+                    +{{ resource.perHour }}/h</small
+                  >
+                </span>
+              </span>
+            }
           }
         </div>
       </div>
-    </div>
-
-    <div class="flex-row-center-center gap-sm flex-none min-w-200 text-left" aria-label="Mythsworn">
-      <span class="mg-brand-mark-fallback" aria-hidden="true">M</span>
-      <div class="flex-col gap-xs">
-        <h1 class="mg-section__title mg-section__title--sm mg-section__title--no-margin">
-          Mythsworn
-        </h1>
-        <p class="muted-text mb-0">{{ currentAddress() ?? 'Address unavailable' }}</p>
-      </div>
-    </div>
-
-    <div class="flex-row-end-center flex-row-start-center-lg flex-wrap gap-sm flex-1">
-      <app-notification-bell />
+    </section>
+  } @else {
+    <section
+      class="flex-row-end-center gap-md w-100"
+      aria-label="Staff notifications"
+    >
       <app-staff-notification-bell />
-
-      @for (resource of resourceDisplay(); track resource.type) {
-        <div class="tag-badge tag-badge--muted gap-sm">
-          @switch (resource.type) {
-            @case ('drachma') {
-              <i class="pi pi-cash" aria-hidden="true"></i>
-            }
-            @case ('materials') {
-              <i class="pi pi-marble" aria-hidden="true"></i>
-            }
-            @case ('workforce') {
-              <i class="pi pi-workforce" aria-hidden="true"></i>
-            }
-          }
-
-          <span class="flex-col gap-xs">
-            <span>{{ resource.label }}</span>
-            <strong class="heading-color">{{ resource.amount }}</strong>
-            <span class="muted-text">+{{ resource.perHour }}/h</span>
-          </span>
-        </div>
-      }
-    </div>
-  </section>
+    </section>
+  }
 }

@@ -19,6 +19,19 @@ export function integerValidator(): ValidatorFn {
   };
 }
 
+export function matchingControlsValidator(
+  sourceControlName: string,
+  targetControlName: string,
+  errorKey = 'controlsMismatch',
+): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const sourceValue = control.get(sourceControlName)?.value;
+    const targetValue = control.get(targetControlName)?.value;
+
+    return sourceValue === targetValue ? null : { [errorKey]: true };
+  };
+}
+
 export function publicChangelogValidator(
   visibilityControlName: string,
   titleControlName: string,

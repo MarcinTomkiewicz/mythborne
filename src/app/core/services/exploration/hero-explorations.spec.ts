@@ -3,7 +3,11 @@ import { firstValueFrom, of } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import { TABLES } from '../../constants/tables.const';
 import { Row } from '../../types/supabase.types';
-import { mapResolveHeroExplorationStepResult } from '../../utils/exploration-runtime-rpc';
+import {
+  mapResolveHeroExplorationStepResult,
+  toStartOrGetHeroExplorationAndStartInitialStepRpcArgs,
+  toStartHeroExplorationStepRpcArgs,
+} from '../../utils/exploration-runtime-rpc';
 import { Backend } from '../backend/backend';
 import { HeroExplorations } from './hero-explorations';
 
@@ -24,14 +28,36 @@ describe('HeroExplorations', () => {
       switch (functionName) {
         case RPC.get_hero_exploration_state:
           return of(playerStateJson());
+        case RPC.get_hero_pending_combat_effect_state:
+          return of([pendingCombatEffectRow()]);
         case RPC.start_or_get_hero_exploration:
           return of([startRow()]);
+        case RPC.start_or_get_hero_exploration_and_start_initial_step:
+          return of(playerStateJson({
+            hasExploration: true,
+            exploration: {
+              id: 'exploration-1',
+              difficultyKey: 'easy',
+              status: 'active',
+              currentNodeId: 'node-1',
+              trialDryStepCount: 0,
+            },
+            activeStep: {
+              id: 'step-1',
+              stepKind: 'movement',
+              status: 'pending',
+              startedAt: '2026-05-01T10:00:00.000Z',
+              resolvesAt: '2026-05-01T10:05:00.000Z',
+            },
+          }));
         case RPC.start_hero_exploration_step:
           return of([startStepRow()]);
         case RPC.resolve_hero_exploration_step:
           return of([resolveStepRow()]);
         case RPC.complete_hero_exploration_challenge_attempt:
           return of([completeChallengeRow()]);
+        case RPC.auto_resolve_combat_session:
+          return of([autoResolveCombatChallengeRow()]);
         case RPC.auto_resolve_hero_exploration_challenge_attempt:
           return of([autoResolveChallengeRow()]);
         case RPC.preview_trial_opportunity_curve:
@@ -79,6 +105,49 @@ describe('HeroExplorations', () => {
     });
   });
 
+  it('reads active combat effect state without requiring exploration difficulty', async () => {
+    const result = await firstValueFrom(
+      service.getHeroPendingCombatEffectState('hero-1'),
+    );
+
+    expect(result[0]).toEqual(jasmine.objectContaining({
+      effectId: 'effect-1',
+      effectKind: 'buff',
+      playerSummary: 'Blessing: +10% defense',
+    }));
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.get_hero_pending_combat_effect_state,
+      { p_hero_id: 'hero-1' },
+    );
+  });
+
+  it('reads latest trial counter from daily action counters without exploration difficulty', async () => {
+    backend.getAll.and.returnValue(of([dailyActionCounterRow()]));
+
+    const result = await firstValueFrom(
+      service.getHeroTrialCounter({
+        heroId: 'hero-1',
+        serverId: 'server-1',
+      }),
+    );
+
+    expect(result?.remainingCount).toBe(3);
+    expect(backend.getAll).toHaveBeenCalledWith(jasmine.objectContaining({
+      table: TABLES.hero_daily_action_counters,
+      filters: jasmine.objectContaining({
+        heroId: jasmine.objectContaining({ value: 'hero-1' }),
+        serverId: jasmine.objectContaining({ value: 'server-1' }),
+        actionKind: jasmine.objectContaining({ value: 'trial' }),
+      }),
+      orderBy: [
+        { column: 'actionDate', ascending: false },
+        { column: 'updatedAt', ascending: false },
+      ],
+      range: { from: 0, to: 0 },
+      camelCase: false,
+    }));
+  });
+
   it('starts exploration through RPC before refreshing the canonical state', async () => {
     await firstValueFrom(
       service.startOrGetHeroExploration({
@@ -107,12 +176,14 @@ describe('HeroExplorations', () => {
         difficultyKey: 'easy',
         explorationId: 'exploration-1',
         edgeId: 'edge-1',
+        stepKind: 'edge',
       }),
     );
 
     expect(backend.rpc).toHaveBeenCalledWith(RPC.start_hero_exploration_step, {
       p_exploration_id: 'exploration-1',
       p_edge_id: 'edge-1',
+      p_step_kind: 'edge',
     });
     expect(backend.rpc).toHaveBeenCalledWith(RPC.get_hero_exploration_state, {
       p_hero_id: 'hero-1',
@@ -149,6 +220,90 @@ describe('HeroExplorations', () => {
     expect(backend.create).not.toHaveBeenCalled();
     expect(backend.update).not.toHaveBeenCalled();
     expect(backend.delete).not.toHaveBeenCalled();
+  });
+
+  it('starts or gets exploration and initial step through the canonical initial workflow RPC', async () => {
+    const result = await firstValueFrom(
+      service.startOrGetHeroExplorationAndStartInitialStep({
+        heroId: 'hero-1',
+        difficultyKey: 'easy',
+        requestId: 'request-1',
+      }),
+    );
+
+    expect(result.activeStep?.id).toBe('step-1');
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.start_or_get_hero_exploration_and_start_initial_step,
+      {
+        p_hero_id: 'hero-1',
+        p_difficulty_key: 'easy',
+        p_request_id: 'request-1',
+      },
+    );
+    expect(backend.rpc).not.toHaveBeenCalledWith(
+      RPC.start_hero_exploration_step,
+      jasmine.anything(),
+    );
+    expect(backend.create).not.toHaveBeenCalled();
+    expect(backend.update).not.toHaveBeenCalled();
+    expect(backend.delete).not.toHaveBeenCalled();
+  });
+
+  it('starts backtrack steps through RPC before refreshing the canonical state', async () => {
+    await firstValueFrom(
+      service.startHeroExplorationStep({
+        heroId: 'hero-1',
+        difficultyKey: 'easy',
+        explorationId: 'exploration-1',
+        edgeId: null,
+        stepKind: 'backtrack',
+      }),
+    );
+
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.start_hero_exploration_step, {
+      p_exploration_id: 'exploration-1',
+      p_edge_id: null,
+      p_step_kind: 'backtrack',
+    });
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.get_hero_exploration_state, {
+      p_hero_id: 'hero-1',
+      p_difficulty_key: 'easy',
+    });
+    expect(backend.create).not.toHaveBeenCalled();
+    expect(backend.update).not.toHaveBeenCalled();
+    expect(backend.delete).not.toHaveBeenCalled();
+  });
+
+  it('requires step kind when building directed movement step RPC args', () => {
+    expect(() =>
+      toStartHeroExplorationStepRpcArgs({
+        explorationId: 'exploration-1',
+        edgeId: 'edge-1',
+        stepKind: '',
+      }),
+    ).toThrowError(/stepKind/);
+  });
+
+  it('requires request id when building initial start workflow RPC args', () => {
+    expect(() =>
+      toStartOrGetHeroExplorationAndStartInitialStepRpcArgs({
+        heroId: 'hero-1',
+        difficultyKey: 'easy',
+        requestId: '',
+      }),
+    ).toThrowError(/requestId/);
+  });
+
+  it('builds the initial start workflow RPC args without direction payload', () => {
+    expect(toStartOrGetHeroExplorationAndStartInitialStepRpcArgs({
+      heroId: 'hero-1',
+      difficultyKey: 'easy',
+      requestId: 'request-1',
+    })).toEqual({
+      p_hero_id: 'hero-1',
+      p_difficulty_key: 'easy',
+      p_request_id: 'request-1',
+    });
   });
 
   it('maps step resolution to canonical outcomes and preserves selection diagnostics', () => {
@@ -257,6 +412,42 @@ describe('HeroExplorations', () => {
     expect(backend.delete).not.toHaveBeenCalled();
   });
 
+  it('auto-resolves combat challenge attempts through the generic combat RPC before refreshing state', async () => {
+    const workflow = await firstValueFrom(
+      service.autoResolveExplorationCombatChallengeAttempt({
+        heroId: 'hero-1',
+        difficultyKey: 'easy',
+        challengeAttemptId: 'challenge-1',
+        requestId: 'request-1',
+      }),
+    );
+
+    expect(workflow.result).toEqual(
+      jasmine.objectContaining({
+        challengeAttemptId: 'challenge-1',
+        completionMode: 'auto_resolve',
+        combatResultId: 'combat-result-1',
+        combatSessionId: 'combat-session-1',
+        gameReportId: 'report-1',
+      }),
+    );
+    expect(backend.rpc).toHaveBeenCalledWith(
+      RPC.auto_resolve_combat_session,
+      {
+        p_source_entity_type: 'exploration_challenge_attempt',
+        p_source_entity_id: 'challenge-1',
+        p_request_id: 'request-1',
+      },
+    );
+    expect(backend.rpc).toHaveBeenCalledWith(RPC.get_hero_exploration_state, {
+      p_hero_id: 'hero-1',
+      p_difficulty_key: 'easy',
+    });
+    expect(backend.create).not.toHaveBeenCalled();
+    expect(backend.update).not.toHaveBeenCalled();
+    expect(backend.delete).not.toHaveBeenCalled();
+  });
+
   it('loads trial opportunity curve as read-only preview data', async () => {
     const result = await firstValueFrom(
       service.previewTrialOpportunityCurve({
@@ -292,13 +483,14 @@ function difficultyRow(): Row<'exploration_difficulty_tiers'> {
   };
 }
 
-function playerStateJson() {
+function playerStateJson(patch: Record<string, unknown> = {}) {
   return {
     hasExploration: false,
     heroId: 'hero-1',
     difficultyKey: 'easy',
     explorationDate: '2026-05-01',
     remainingTrials: 2,
+    ...patch,
   };
 }
 
@@ -383,5 +575,75 @@ function trialOpportunityPreviewRow() {
     trial_opportunity_step_cap: 3,
     is_guaranteed_by_step_cap: false,
     explanation: 'Preview only.',
+  };
+}
+
+function autoResolveCombatChallengeRow() {
+  return {
+    attacks_created: 3,
+    combat_result_id: 'combat-result-1',
+    combat_session_id: 'combat-session-1',
+    completion_mode: 'auto_resolve',
+    exploration_status: 'active',
+    final_event_count: 5,
+    game_report_id: 'report-1',
+    outcome: 'initiator_victory',
+    participant_stats_created: 2,
+    participants_created: 2,
+    remaining_trials: 1,
+    report_attacks_count: 3,
+    reward_grant_id: 'reward-1',
+    runtime_activity_id: 'runtime-1',
+    source_entity_id: 'challenge-1',
+    source_entity_type: 'exploration_challenge_attempt',
+    source_result_id: 'challenge-1',
+    source_result_kind: 'challenge_attempt',
+    source_type: 'trial',
+    status: 'completed',
+    success: true,
+  };
+}
+
+function pendingCombatEffectRow() {
+  return {
+    applied_at: '2026-05-13T10:00:00.000Z',
+    bonus_template_key: 'defense_percent',
+    bonus_template_label: 'Defense percent',
+    consumed_at: null,
+    consumed_by_id: null,
+    consumed_by_kind: null,
+    effect_definition_id: 'effect-definition-1',
+    effect_description: 'Defensive blessing.',
+    effect_helper_text: 'Improves defense in combat.',
+    effect_id: 'effect-1',
+    effect_key: 'blessing',
+    effect_kind: 'buff',
+    effect_kind_label: 'Buff',
+    effect_label: 'Blessing',
+    effect_target_key: 'defense',
+    effect_target_label: 'Defense',
+    exploration_id: 'exploration-1',
+    hero_id: 'hero-1',
+    is_active: true,
+    metadata_json: {},
+    player_summary: 'Blessing: +10% defense',
+    runtime_included: true,
+    server_id: 'server-1',
+    status: 'pending',
+    value_display: '+10%',
+  };
+}
+
+function dailyActionCounterRow(): Row<'hero_daily_action_counters'> {
+  return {
+    id: 'counter-1',
+    server_id: 'server-1',
+    hero_id: 'hero-1',
+    action_kind: 'trial',
+    action_date: '2026-05-13',
+    remaining_count: 3,
+    metadata_json: {},
+    created_at: '2026-05-13T00:00:00.000Z',
+    updated_at: '2026-05-13T10:00:00.000Z',
   };
 }

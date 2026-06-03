@@ -1,0 +1,398 @@
+@use "sass:map";
+@use "../abstracts/mixins" as m;
+@use "../abstracts/variables" as v;
+
+$compact-slot-min-width: 11rem;
+$compact-figure-min-width: 8rem;
+$compact-icon-slot-size: 3rem;
+$compact-icon-figure-min-width: 8rem;
+$compact-gap: map.get(v.$spacings, "sm");
+$compact-icon-neck-offset: map.get(v.$spacings, "xl");
+$compact-icon-torso-offset: map.get(v.$spacings, "xxl");
+$compact-icon-ring-offset:
+  calc(#{map.get(v.$spacings, "xxl")} + #{map.get(v.$spacings, "md")});
+$compact-icon-hand-offset:
+  calc(#{map.get(v.$spacings, "xxl")} + #{map.get(v.$spacings, "lg")});
+$compact-overlay-min-width:
+  calc((#{$compact-slot-min-width} * 2) + #{$compact-figure-min-width} + (#{$compact-gap} * 2));
+$compact-icon-overlay-min-width:
+  calc((#{$compact-icon-slot-size} * 2) + #{$compact-icon-figure-min-width} + (#{$compact-gap} * 2));
+$slot-card-width: 185px;
+$slot-card-height: 70px;
+
+.equipment-preview {
+  container-type: inline-size;
+  min-inline-size: 0;
+}
+
+.equipment-preview__board {
+  display: grid;
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  grid-template-columns: minmax(10rem, 0.9fr) minmax(14rem, 1.1fr) minmax(10rem, 0.9fr);
+  grid-template-rows: repeat(14, minmax(0, 1fr));
+  grid-template-areas:
+    "head figure emptyTop"
+    "head figure neck"
+    "emptyLeftTop figure neck"
+    "torso figure emptyRightTop"
+    "torso figure emptyRightMid"
+    "emptyLeftMid figure emptyRightMid2"
+    "ring1 figure ring2"
+    "ring1 figure ring2"
+    "mainHand figure offHand"
+    "mainHand figure offHand"
+    "emptyLeftBottom figure emptyRightBottom"
+    "emptyLeftBottom2 figure legs"
+    "feet figure legs"
+    "feet figure emptyBottomLower";
+  align-items: stretch;
+  min-height: 38rem;
+
+  @include m.down("md") {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+    grid-template-areas:
+      "figure"
+      "head"
+      "neck"
+      "torso"
+      "ring1"
+      "ring2"
+      "mainHand"
+      "offHand"
+      "feet"
+      "legs";
+  }
+}
+
+.equipment-preview__zone--head { grid-area: head; }
+.equipment-preview__zone--neck { grid-area: neck; }
+.equipment-preview__zone--torso { grid-area: torso; }
+.equipment-preview__zone--ring1 { grid-area: ring1; }
+.equipment-preview__zone--ring2 { grid-area: ring2; }
+.equipment-preview__zone--main-hand { grid-area: mainHand; }
+.equipment-preview__zone--off-hand { grid-area: offHand; }
+.equipment-preview__zone--legs { grid-area: legs; }
+.equipment-preview__zone--feet { grid-area: feet; }
+
+.equipment-preview__zone--head,
+.equipment-preview__zone--torso,
+.equipment-preview__zone--ring1,
+.equipment-preview__zone--main-hand,
+.equipment-preview__zone--feet {
+  justify-self: end;
+}
+
+.equipment-preview__zone--neck,
+.equipment-preview__zone--ring2,
+.equipment-preview__zone--off-hand,
+.equipment-preview__zone--legs {
+  justify-self: start;
+}
+
+.equipment-preview__figure {
+  grid-area: figure;
+  min-height: 34rem;
+}
+
+@media (min-width: 1024px) {
+  .equipment-preview__board {
+    min-height: 0;
+    height: 570px;
+    max-height: 570px;
+  }
+
+  .equipment-preview__figure {
+    min-height: 0;
+    max-height: 570px;
+  }
+
+  .equipment-preview__board--compact {
+    min-height: 0;
+    max-height: 570px;
+  }
+}
+
+.equipment-preview__board--compact {
+  position: relative;
+  overflow: visible;
+  grid-template-columns:
+    minmax($compact-slot-min-width, 0.95fr)
+    minmax($compact-figure-min-width, 1fr)
+    minmax($compact-slot-min-width, 0.95fr);
+  grid-template-rows: auto auto auto auto 1fr auto auto auto auto;
+  grid-template-areas:
+    "head emptyTop emptyTop"
+    "head emptyMid neck"
+    "torso emptyMid neck"
+    "torso emptyMid emptyRightTop"
+    "emptyLeft emptyMid emptyRightMid"
+    "ring1 emptyMid ring2"
+    "mainHand emptyMid offHand"
+    "emptyLeft emptyMid legs"
+    "feet emptyBottom legs";
+  gap: $compact-gap;
+  min-height: 28rem;
+
+  .equipment-preview__figure {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    min-height: 0;
+  }
+
+  .equipment-preview__figure-image {
+    width: min(58%, 32rem);
+    height: 100%;
+    margin: 0 auto;
+    opacity: 0.9;
+    object-fit: contain;
+    transform: scale(1.08);
+    -webkit-mask-image:
+      linear-gradient(90deg, transparent 0%, #000 14%, #000 86%, transparent 100%),
+      linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+    mask-image:
+      linear-gradient(90deg, transparent 0%, #000 14%, #000 86%, transparent 100%),
+      linear-gradient(180deg, transparent 0%, #000 12%, #000 88%, transparent 100%);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+  }
+
+  .equipment-preview__zone--head,
+  .equipment-preview__zone--neck,
+  .equipment-preview__zone--torso,
+  .equipment-preview__zone--ring1,
+  .equipment-preview__zone--ring2,
+  .equipment-preview__zone--main-hand,
+  .equipment-preview__zone--off-hand,
+  .equipment-preview__zone--legs,
+  .equipment-preview__zone--feet {
+    z-index: 1;
+  }
+
+  .equipment-preview__slot-card {
+    box-sizing: border-box;
+    min-height: 4.375rem;
+  }
+
+  .equipment-preview__slot-card > .flex-col,
+  .equipment-preview__slot-card > span:last-child {
+    min-width: 0;
+  }
+
+  .equipment-preview__item-name {
+    font-size: 0.875rem;
+    line-height: 1.2;
+    display: -webkit-box;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  @container (max-width: #{$compact-overlay-min-width}) {
+    grid-template-columns:
+      minmax(0, 0.95fr)
+      minmax($compact-icon-figure-min-width, 1.3fr)
+      minmax(0, 0.95fr);
+    min-height: 26rem;
+
+    .equipment-preview__zone--head,
+    .equipment-preview__zone--neck,
+    .equipment-preview__zone--torso,
+    .equipment-preview__zone--ring1,
+    .equipment-preview__zone--ring2,
+    .equipment-preview__zone--main-hand,
+    .equipment-preview__zone--off-hand,
+    .equipment-preview__zone--legs,
+    .equipment-preview__zone--feet {
+      align-items: center;
+      min-width: 0;
+    }
+
+    .equipment-preview__zone--head,
+    .equipment-preview__zone--torso,
+    .equipment-preview__zone--ring1,
+    .equipment-preview__zone--main-hand,
+    .equipment-preview__zone--feet {
+      justify-self: center;
+    }
+
+    .equipment-preview__zone--neck,
+    .equipment-preview__zone--ring2,
+    .equipment-preview__zone--off-hand,
+    .equipment-preview__zone--legs {
+      justify-self: center;
+    }
+
+    .equipment-preview__zone--neck {
+      transform: translateY($compact-icon-neck-offset);
+    }
+
+    .equipment-preview__zone--torso {
+      transform: translateY($compact-icon-torso-offset);
+    }
+
+    .equipment-preview__zone--ring1,
+    .equipment-preview__zone--ring2 {
+      transform: translateY(calc(-1 * #{$compact-icon-ring-offset}));
+    }
+
+    .equipment-preview__zone--main-hand,
+    .equipment-preview__zone--off-hand {
+      transform: translateY(calc(-1 * #{$compact-icon-hand-offset}));
+    }
+
+    .equipment-preview__figure {
+      grid-column: 1 / -1;
+      grid-row: 1 / -1;
+    }
+
+    .equipment-preview__figure-image {
+      width: min(96%, 34rem);
+      height: 100%;
+      transform: scale(1.12);
+    }
+
+    .equipment-preview__slot-card {
+      align-items: center;
+      justify-content: center;
+      inline-size: $compact-icon-slot-size !important;
+      block-size: $compact-icon-slot-size !important;
+      min-inline-size: $compact-icon-slot-size;
+      max-inline-size: $compact-icon-slot-size;
+      min-block-size: $compact-icon-slot-size !important;
+      max-block-size: $compact-icon-slot-size;
+      flex: 0 0 $compact-icon-slot-size;
+      width: $compact-icon-slot-size !important;
+      min-width: 0;
+      height: $compact-icon-slot-size;
+      min-height: 0;
+      aspect-ratio: 1 / 1;
+      padding: 0 !important;
+    }
+
+    .equipment-preview__slot-icon {
+      width: 100%;
+      min-height: 100%;
+      aspect-ratio: 1 / 1;
+      opacity: 1;
+    }
+
+    .equipment-preview__slot-card.bg-transparent .equipment-preview__slot-icon {
+      opacity: 0.3;
+    }
+
+    .equipment-preview__slot-card > span:last-child {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
+
+  @container (max-width: #{$compact-icon-overlay-min-width}) {
+    grid-template-columns: repeat(auto-fit, minmax($compact-icon-slot-size, max-content));
+    grid-template-rows: auto;
+    grid-template-areas: none;
+    justify-content: center;
+    min-height: 0;
+
+    .equipment-preview__zone--head,
+    .equipment-preview__zone--neck,
+    .equipment-preview__zone--torso,
+    .equipment-preview__zone--ring1,
+    .equipment-preview__zone--ring2,
+    .equipment-preview__zone--main-hand,
+    .equipment-preview__zone--off-hand,
+    .equipment-preview__zone--legs,
+    .equipment-preview__zone--feet {
+      grid-area: auto;
+    }
+
+    .equipment-preview__figure {
+      position: relative;
+      order: -1;
+      grid-area: auto;
+      grid-column: 1 / -1;
+      grid-row: auto;
+      min-height: 20rem;
+      max-height: 26rem;
+      z-index: 1;
+    }
+
+    .equipment-preview__figure-image {
+      width: 100%;
+      transform: none;
+    }
+  }
+}
+
+.equipment-preview__figure-image {
+  display: block;
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.equipment-preview__slot-card {
+  box-sizing: border-box;
+  inline-size: $slot-card-width;
+  block-size: $slot-card-height;
+  min-inline-size: $slot-card-width;
+  max-inline-size: $slot-card-width;
+  min-block-size: $slot-card-height;
+  max-block-size: $slot-card-height;
+}
+
+.equipment-preview__slot-icon {
+  align-self: stretch;
+  width: 3rem;
+  min-height: 3rem;
+  border: 1px solid v.$color-border;
+  border-radius: v.$radius-sm;
+  background: v.$color-bg-surface;
+}
+
+.equipment-preview__slot-card--selected {
+  border-color: v.$color-secondary;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, #{v.$color-secondary} 18%, transparent),
+      color-mix(in srgb, #{v.$color-secondary} 6%, transparent)
+    ),
+    v.$color-bg-surface;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, #{v.$color-secondary} 46%, transparent),
+    0 0 1rem color-mix(in srgb, #{v.$color-secondary} 28%, transparent),
+    v.$shadow-soft;
+}
+
+.equipment-preview__slot-card--selected .equipment-preview__slot-icon-host {
+  border-color: v.$color-primary;
+  background: color-mix(in srgb, #{v.$color-primary} 24%, #{v.$color-bg-surface});
+  color: v.$heading-color;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, #{v.$color-primary} 42%, transparent),
+    0 0 0.85rem color-mix(in srgb, #{v.$color-primary} 30%, transparent);
+}

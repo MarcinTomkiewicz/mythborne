@@ -24,6 +24,12 @@ Rules:
 - Translate approved patterns into global SCSS, vendor wrappers, shared components, PrimeNG wrappers or documented utilities.
 - Keep prototype files under `docs/ui-ux/prototypes/` if copied into the repository.
 
+Known archive name mismatches:
+- `prototype-production-mapping.md` still contains older accepted-name aliases for a few families.
+- README below lists the currently present files in `docs/ui-ux/prototypes/`.
+- Current known mismatches to resolve later: `game-shell-v1.html` -> `dashboard-v3.html` / `mythborne_ui_shell_prototype.html`, `exploration-flow-v2.html` -> `exploration-flow-v3.html` / `mythborne_exploration_flow_v_2.html`, `armory-v2.html` -> `armory-v3.html` / `mythborne_armory_v_1.html`, `estate-v3.html` -> `estate-v2.html` / `mythborne_estate_v_1.html`.
+- `mythsworn_server_select.html` and `mythsworn_origin_screen.html` are the accepted onboarding archive names and match the ADD-7 mapping.
+
 Included:
 - dashboard-v3.html
 - exploration-flow-v3.html
@@ -36,3 +42,5 @@ Included:
 - reports-center-v2.html
 - notifications-center-v1.html
 - admin-overview-v7.html
+- mythsworn_server_select.html
+- mythsworn_origin_screen.html

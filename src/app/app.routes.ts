@@ -1,64 +1,73 @@
-import { inject } from '@angular/core';
-import { Routes } from '@angular/router';
-import { adminRoutes } from './admin/admin.routes';
-import { authRoutes } from './auth/auth.routes';
-import { requireAdminAccessGuard } from './core/guards/admin-access.guard';
-import { requireOnboardedHeroGuard } from './core/guards/hero-onboarding.guard';
-import { AuthState } from './core/services/auth/auth-state';
-import { gameRoutes } from './game/game.routes';
-import { heroRoutes } from './hero/hero.routes';
-import { publicRoutes } from './public/public.routes';
+import { EnvironmentInjector, inject, runInInjectionContext } from '@angular/core';
+import {
+  CanActivateChildFn,
+  CanActivateFn,
+  GuardResult,
+  MaybeAsync,
+  Routes,
+} from '@angular/router';
+import { from, isObservable, Observable, switchMap } from 'rxjs';
 
-const appShellRoutes: Routes = [
+const publicEntryGuard: CanActivateFn = (route, state) => {
+  const injector = inject(EnvironmentInjector);
+
+  return from(import('./core/guards/hero-onboarding.guard')).pipe(
+    switchMap((m) =>
+      toGuardResult(
+        runInInjectionContext(injector, () => m.publicEntryGuard(route, state)),
+      ),
+    ),
+  );
+};
+
+const requireOnboardedHeroGuard: CanActivateChildFn = (route, state) => {
+  const injector = inject(EnvironmentInjector);
+
+  return from(import('./core/guards/hero-onboarding.guard')).pipe(
+    switchMap((m) =>
+      toGuardResult(
+        runInInjectionContext(injector, () =>
+          m.requireOnboardedHeroGuard(route, state),
+        ),
+      ),
+    ),
+  );
+};
+
+const requireAdminAccessGuard: CanActivateChildFn = (route, state) => {
+  const injector = inject(EnvironmentInjector);
+
+  return from(import('./core/guards/admin-access.guard')).pipe(
+    switchMap((m) =>
+      toGuardResult(
+        runInInjectionContext(injector, () =>
+          m.requireAdminAccessGuard(route, state),
+        ),
+      ),
+    ),
+  );
+};
+
+function toGuardResult(result: MaybeAsync<GuardResult>): Observable<GuardResult> {
+  return isObservable(result) ? result : from(Promise.resolve(result));
+}
+
+const entryShellRoutes: Routes = [
   {
     path: '',
-    redirectTo: () => {
-      const authState = inject(AuthState);
-
-      if (authState.hero()) {
-        return '/hero/dashboard';
-      }
-
-      if (authState.user()) {
-        return '/auth/create-character';
-      }
-
-      return '/public';
-    },
-    pathMatch: 'full'
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./public/pages/home/home').then((m) => m.PublicHomePage),
   },
   {
     path: 'public',
-    children: publicRoutes
-  },
-  {
-    path: 'hero',
-    canActivateChild: [requireOnboardedHeroGuard],
-    children: heroRoutes
-  },
-  {
-    path: 'game',
-    canActivateChild: [requireOnboardedHeroGuard],
-    children: gameRoutes
-  },
-  {
-    path: 'admin',
-    canActivateChild: [requireAdminAccessGuard],
-    children: adminRoutes
-  },
-  {
-    path: 'game/dashboard',
-    redirectTo: 'hero/dashboard',
-    pathMatch: 'full'
-  },
-  {
-    path: 'game/attributes',
-    redirectTo: 'hero/attributes',
-    pathMatch: 'full'
+    canActivate: [publicEntryGuard],
+    loadChildren: () =>
+      import('./public/public.routes').then((m) => m.publicRoutes),
   },
   {
     path: 'register',
-    redirectTo: 'auth/create-character',
+    redirectTo: 'auth/register',
     pathMatch: 'full'
   },
   {
@@ -68,7 +77,8 @@ const appShellRoutes: Routes = [
   },
   {
     path: 'auth',
-    children: authRoutes
+    loadChildren: () =>
+      import('./auth/auth.routes').then((m) => m.authRoutes),
   },
   {
     path: '**',
@@ -83,9 +93,48 @@ export const routes: Routes = [
       import('./public/pages/report/public-report-page').then((m) => m.PublicReportPage),
   },
   {
+    path: 'hero',
+    canActivateChild: [requireOnboardedHeroGuard],
+    loadComponent: () =>
+      import('./layout/components/game-shell/game-shell').then((m) => m.GameShell),
+    loadChildren: () =>
+      import('./hero/hero.routes').then((m) => m.heroRoutes),
+  },
+  {
+    path: 'game',
+    canActivateChild: [requireOnboardedHeroGuard],
+    loadComponent: () =>
+      import('./layout/components/game-shell/game-shell').then((m) => m.GameShell),
+    children: [
+      {
+        path: 'dashboard',
+        redirectTo: '/hero/dashboard',
+        pathMatch: 'full',
+      },
+      {
+        path: 'attributes',
+        redirectTo: '/hero/attributes',
+        pathMatch: 'full',
+      },
+      {
+        path: '',
+        loadChildren: () =>
+          import('./game/game.routes').then((m) => m.gameRoutes),
+      },
+    ],
+  },
+  {
+    path: 'admin',
+    canActivateChild: [requireAdminAccessGuard],
+    loadComponent: () =>
+      import('./layout/components/game-shell/game-shell').then((m) => m.GameShell),
+    loadChildren: () =>
+      import('./admin/admin.routes').then((m) => m.adminRoutes),
+  },
+  {
     path: '',
     loadComponent: () =>
       import('./layout/components/app-shell/app-shell').then((m) => m.AppShell),
-    children: appShellRoutes,
+    children: entryShellRoutes,
   },
 ];

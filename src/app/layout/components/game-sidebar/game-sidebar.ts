@@ -1,10 +1,13 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { RouterLink, RouterLinkActive } from '@angular/router';
-import { catchError, combineLatest, map, of, Subscription, switchMap } from 'rxjs';
-import { MENU_LOGGED_IN } from '../../../core/config/menu-config';
+import { Component, computed, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { catchError, combineLatest, map, of, switchMap } from 'rxjs';
+import { MENU_LOGGED_IN_GROUPS } from '../../../core/config/menu-config';
 import { RPC } from '../../../core/constants/rpc.const';
+import {
+  SidebarContextAction,
+  SidebarContextRow,
+  SidebarNavGroup,
+} from '../../../core/interfaces/layout/sidebar.interface';
 import {
   GetHeroPrestigePublicSummaryRpcArgs,
   GetHeroPrestigePublicSummaryRpcRow,
@@ -14,64 +17,96 @@ import { Backend } from '../../../core/services/backend/backend';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ActiveServer } from '../../../core/services/server/active-server';
 import { resolveStaffAccessPolicy } from '../../../core/utils/staff-access-policy';
+import { ShellSidebarContent } from '../shell-sidebar-content/shell-sidebar-content';
 
 @Component({
   selector: 'app-game-sidebar',
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [ShellSidebarContent],
   templateUrl: './game-sidebar.html',
-  styleUrl: './game-sidebar.scss',
 })
-export class GameSidebar implements OnInit, OnDestroy {
+export class GameSidebar implements OnInit {
   private readonly authState = inject(AuthState);
   private readonly backend = inject(Backend);
   private readonly activeHero = inject(ActiveHero);
   private readonly activeServer = inject(ActiveServer);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly activeHeroState$ = toObservable(this.activeHero.state);
   private readonly selectedServer$ = toObservable(this.activeServer.selectedServer);
-  private prestigeSubscription?: Subscription;
 
-  readonly user = this.authState.user;
   readonly hero = this.authState.hero;
   readonly selectedServer = this.activeServer.selectedServer;
   readonly prestigeSummary = signal<GetHeroPrestigePublicSummaryRpcRow | null>(null);
-  readonly isLoggedIn = computed(() => !!this.user());
   readonly serverStatusLabel = computed(() =>
-    humanizeKey(this.selectedServer()?.status ?? 'server_unavailable'),
+    this.selectedServer()?.status === 'live' ? 'Aktywny' : 'Niedostępny',
   );
-  readonly serverStatusClass = computed(() =>
-    this.selectedServer()?.status === 'live'
-      ? 'tag-badge tag-badge--success'
-      : 'tag-badge tag-badge--muted',
-  );
+  readonly contextRows = computed<SidebarContextRow[]>(() => {
+    const hero = this.hero();
+    const server = this.selectedServer();
+    const prestige = this.prestigeSummary();
+
+    return [
+      {
+        label: 'Bohater',
+        value: hero?.name ?? 'Brak aktywnego bohatera',
+        badgeLabel: hero ? `Poziom ${hero.level || 1}` : 'Brak bohatera',
+        badgeTone: hero ? 'golden' : 'warn',
+      },
+      {
+        label: 'Wybrany serwer',
+        value: server?.name ?? 'Nie wybrano serwera',
+        badgeLabel: this.serverStatusLabel(),
+        badgeTone: server?.status === 'live' ? 'success' : 'warn',
+      },
+      {
+        label: 'Prestiż',
+        value: prestige?.player_label ?? 'Prestiż niedostępny',
+        badgeLabel: prestige?.rank_number ? `Ranga ${prestige.rank_number}` : null,
+        badgeTone: 'golden',
+      },
+    ];
+  });
+  readonly contextActions: readonly SidebarContextAction[] = [
+    {
+      label: 'Zmień serwer / postać',
+      route: '/auth/server-entry',
+    },
+  ];
   readonly staffAccessPolicy = computed(() =>
     resolveStaffAccessPolicy({
       access: this.activeServer.access(),
       selectedServer: this.activeServer.selectedServer(),
     }),
   );
-  readonly menuItems = computed(() => {
+  readonly menuGroups = computed<SidebarNavGroup[]>(() => {
     const policy = this.staffAccessPolicy();
 
-    return MENU_LOGGED_IN.filter((item) => {
-      if (isAdminMenuUrl(item.url)) {
-        return policy.canAccessAdminShell;
-      }
+    return MENU_LOGGED_IN_GROUPS
+      .map((group) => ({
+        title: group.title,
+        items: group.items.filter((item) => {
+          if (isAdminMenuUrl(item.route)) {
+            return policy.canAccessAdminShell;
+          }
 
-      if (policy.isStaffGameplayBlocked && isGameplayMenuUrl(item.url)) {
-        return false;
-      }
+          if (policy.isStaffGameplayBlocked && isGameplayMenuUrl(item.route)) {
+            return false;
+          }
 
-      return true;
-    });
+          return true;
+        }),
+      }))
+      .filter((group) => group.items.length > 0);
   });
 
   ngOnInit(): void {
-    this.prestigeSubscription = combineLatest([
+    combineLatest([
       this.activeHeroState$,
       this.selectedServer$,
     ])
       .pipe(
         switchMap(([activeHeroState, server]) => {
+          this.prestigeSummary.set(null);
+
           if (!activeHeroState?.heroId || !server?.id) {
             return of(null);
           }
@@ -101,17 +136,17 @@ export class GameSidebar implements OnInit, OnDestroy {
                   return null;
                 }
 
-                return rows[0] ?? null;
+                return rows.find((row) =>
+                  row.hero_id === requestContext.heroId
+                  && row.server_id === requestContext.serverId
+                ) ?? null;
               }),
               catchError(() => of(null)),
             );
         }),
+        takeUntilDestroyed(this.destroyRef),
       )
       .subscribe((summary) => this.prestigeSummary.set(summary));
-  }
-
-  ngOnDestroy(): void {
-    this.prestigeSubscription?.unsubscribe();
   }
 }
 
@@ -121,12 +156,4 @@ function isGameplayMenuUrl(url: unknown): boolean {
 
 function isAdminMenuUrl(url: unknown): boolean {
   return typeof url === 'string' && url.startsWith('/admin');
-}
-
-function humanizeKey(value: string): string {
-  return value
-    .split(/[_\s-]+/)
-    .filter(Boolean)
-    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
-    .join(' ') || 'Status';
 }

@@ -4,9 +4,9 @@ Purpose: this backlog translates current project decisions into small, promptabl
 
 Use this as a practical task queue. Concept documents remain informational; this file is for execution.
 
-## Latest accepted W11 follow-up
+## Latest accepted W follow-up
 
-**Implementation note:** W11 accepted on 2026-05-11. The `/game/exploration` reward path no longer uses stale latest-challenge fallback behavior: challenge rewards read only exact `getChallengeReward({ challengeAttemptId })`, direct Resource Encounter rewards read exact `getStepReward({ stepId })`, and the old `hero_exploration_challenge_attempts` fallback scan was removed. Trial manifestation failure is distinct from ordinary Nothing, empty/null canonical reward read models show explicit DB-read-model unavailability, resource reward labels no longer duplicate resource type text, and sandbox backend-shape diagnostics remain gated. Private/public report detail consumes the regenerated contextual report sections from canonical report RPCs. Verification passed with focused reward/report/exploration specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for removed latest-challenge fallback terms. Representative live-loop smoke moves to W12/W13.
+**Implementation note:** W13 accepted on 2026-05-11. `/game/exploration` now keeps stale challenge/reward/combat results out of the next step/result context, preserves exact reward reads through `getStepReward(stepId)` and `getChallengeReward(challengeAttemptId)`, and uses Polish blocker/error/feedback copy for the touched challenge and movement loop states. Active effect label/summary still comes from DB-returned `state.activeEffect.metadataJson`; Angular does not seed content, infer rewards from Armory/latest challenge/selection diagnostics, edit generated types, or add fallback reward resolution. Verification passed with focused exploration specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps. Manual full-loop smoke remains pending on real data/session.
 
 Canonical source order:
 
@@ -6559,7 +6559,7 @@ PvP Foundation is not:
 - Spy result is readable and player-safe.
 - Target hero does not get implied access or notification.
 
-**Implementation note:** R14 accepted on 2026-05-07. Added `/game/vicinity/spy-results/:spyResultId` as a guarded player-facing spy result detail page, with the private dynamic route configured as SSR `RenderMode.Server` instead of prerender. The page consumes `PvpSpyResultState` / `PlayerPvp.getMySpyResult(...)` only, uses route-param stale guards, shows player-facing unavailable/access-denied copy, and displays target summary plus safe base stats, resources, equipment, estate and buildings through `pvpSpyResultDisplay(...)`. It does not render raw snapshot JSON, active exploration/PvP runtime state, staff/admin internals, anti-abuse internals, target notification/write flow, direct PvP table access/write or Angular gameplay authority. Follow-up before broader snapshot display: prefer DB-backed display rows or explicit per-section allowlist contracts over the current conservative denylist for generic primitive rows; remove unused `ButtonModule` at next touch; consider invalid-date fallback and shared label helper reuse if needed.
+**Implementation note:** R14 was accepted on 2026-05-07, then superseded/removed on 2026-05-28 by the accepted UI-PVP-1 cleanup. The provisional `/game/vicinity/spy-results/:spyResultId` screen/state/display helpers, route and orphaned specs were removed because PvP result/report flow is outside the accepted Vicinity target-selection scope. Future spy result display must return as a separate Reports/PvP/combat task with fresh route, privacy, snapshot-display and smoke scope.
 
 ---
 
@@ -6611,7 +6611,7 @@ PvP Foundation is not:
 - PvP attack result is understandable after the fact.
 - Display matches DB result context.
 
-**Implementation note:** R16 accepted on 2026-05-07. Added `/game/vicinity/attack-results/:attackResultId` under the guarded game shell and SSR `RenderMode.Server`. The page reads through `PvpAttackResultState`, displays only mapped outcome, role, resource, XP and future-prestige rows, avoids raw JSON and notification context display, keeps access-denied copy player-facing, and leaves report linking/integration for R17.
+**Implementation note:** R16 was accepted on 2026-05-07, then superseded/removed on 2026-05-28 by the accepted UI-PVP-1 cleanup. The provisional `/game/vicinity/attack-results/:attackResultId` screen/state/display helpers, route and orphaned specs were removed because PvP result/report flow is outside the accepted Vicinity target-selection scope. Future attack result display must return as a separate Reports/PvP/combat task with fresh route, privacy, report-linking and smoke scope.
 
 ---
 
@@ -6656,7 +6656,7 @@ PvP Foundation is not:
 - No incoming attack notification behavior is introduced.
 - No target spy notification behavior is introduced.
 
-**Implementation note:** R18 accepted on 2026-05-07. Player notification action route policy now allows `/game/vicinity/attack-results/:id` only for `pvp.attack_result.attacker` / `pvp.attack_result.defender` with matching `sourceEntity: pvp_attack_result/:id`, and `/game/vicinity/spy-results/:id` only for `pvp.spy_result.ready` with matching `sourceEntity: pvp_spy_result/:id`. Static menu routes remain unchanged; no incoming attack/target spy behavior, direct notification writes or direct PvP reads were added.
+**Implementation note:** R18 was accepted on 2026-05-07, then superseded/removed on 2026-05-28 by the accepted UI-PVP-1 cleanup. Notification deep links to the provisional `/game/vicinity/attack-results/:id` and `/game/vicinity/spy-results/:id` routes were removed with those screens. PvP notification actions for combat/result/report flow must return only when the result/report routes are reintroduced under a separate accepted Reports/PvP/combat task.
 
 ---
 
@@ -10180,7 +10180,7 @@ Ensure admin/tester surfaces clearly show whether the minimum exploration smoke 
   - one complete Buff Encounter;
   - one complete Debuff Encounter;
   - Trial reward with item generation;
-  - Combat Trial/Encounter XP/CP reward path;
+  - Combat Encounter XP reward path;
   - Resource Encounter resource reward path;
   - Buff Encounter active buff effect path;
   - Debuff Encounter active debuff effect path.
@@ -10221,6 +10221,8 @@ Ensure admin/tester surfaces clearly show whether the minimum exploration smoke 
   - no frontend content seeding;
   - no direct inserts/updates;
   - no Armory reward inference.
+
+**Status:** Accepted on 2026-05-11. W12 added the global smoke readiness matrix to `/admin/exploration-debug`, backed by existing Trial/Encounter admin read models rather than a new direct table aggregation. It surfaces complete Combat Trial, Combat Encounter, Resource Encounter, Buff Encounter, Debuff Encounter, Trial item-generation reward, Combat Encounter XP reward, Resource Encounter resource reward, Buff active effect and Debuff active effect readiness. Screenshot smoke confirmed the 10 readiness rows render as ready with definitions, rewards and effects; missing/incomplete live states remain covered by focused mapper specs only. Focused specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps passed.
 
 ---
 
@@ -10329,6 +10331,8 @@ Tie the completed runtime pieces into one stable player/sandbox exploration loop
   - Buff Encounter;
   - Debuff Encounter;
   - continue after each resolved outcome.
+
+**Status:** Accepted on 2026-05-11. W13 tightened the `/game/exploration` player/sandbox loop without adding new services/helpers/components: stale challenge completion results are hidden while a next movement step is active and after later non-challenge step resolution, previous challenge rewards and completed combat results remain cleared by the exact current context, and canonical reward reads stay limited to exact `getStepReward(stepId)` / `getChallengeReward(challengeAttemptId)`. The touched challenge/movement blocker, error and success feedback copy is Polish-facing, immediate non-combat Encounter active states explicitly say they should resolve through the step result/reward/effect flow, and missing reward/effect read-model details remain explicit. Active effect label/summary is read from DB-returned `state.activeEffect.metadataJson`, not a local Angular resolver. No DB/schema/generated type edits, direct exploration writes, content seeding, Armory/latest-challenge inference, reports rewrite or status-independent fallback layer were introduced. Focused `/game/exploration` specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps passed. Manual full-loop smoke remains pending on a real session/data set for Nothing, Trial manifestation failure, Combat Trial, Combat Encounter, Resource Encounter, Buff Encounter, Debuff Encounter and continue-after-result.
   
 ---
 
@@ -10350,6 +10354,8 @@ Tie the completed runtime pieces into one stable player/sandbox exploration loop
 - Report clearly states whether exploration core is ready for user smoke.
 - Remaining blockers are concrete and actionable.
 - Report separates core runtime issues from future minigames/UI redesign.
+
+**Status:** Deferred on 2026-05-11 after W13 acceptance. W14 is kept as a later Exploration Core completion/handoff report after representative real-session `/game/exploration` smoke, while implementation focus moves to Epic X.
 
 ---
 
@@ -10450,6 +10456,8 @@ Podłączyć frontendowy start flow do zatwierdzonego DB/RPC kontraktu dla serve
 - DB/RPC blocker, jeśli wystąpił;
 - manual smoke checklist, jeśli flow jest już możliwy do kliknięcia.
 
+**Status:** Accepted on 2026-05-11. X1 added the generated-type-backed start-flow integration layer over `get_start_flow_server_availability`, `get_start_flow_origin_options` and `create_hero_start_flow`, replaced the old `CreateHero` direct-write bootstrap with the atomic DB/RPC workflow, reloads `ActiveHero` through the selected server -> active hero path after creation, and blocks unsupported DB `route_next_action` values instead of silently routing to dashboard. The existing origin carousel consumes DB `bonus_summary_text`; origin artwork still follows the existing static asset convention derived from `origin_key` and is not DB-backed artwork. No direct writes to hero/bootstrap/estate/CP tables, HeroFactory/assignFreeEstate fallback path, migrations, seeding, generated-type patching or status-independent fallback were added. Verification passed with focused start-flow/create-hero/create-character/origin specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps. Manual/browser smoke remains pending until the user has a clear login/logout and sandbox multi-hero creation path.
+
 ---
 
 ## Task X2 — Server picker and entry routing
@@ -10511,6 +10519,8 @@ Zbudować player entry routing od wyboru serwera do właściwego ekranu: hero cr
 - Standard server full → czytelny blocker.
 - Staff/tester na sandboxie z wieloma hero → default najwcześniej utworzony + możliwość przełączenia.
 - Zmiana servera nie wymaga relogowania.
+
+**Status:** Accepted on 2026-05-11. X2 added the `/auth/server-entry` route and server entry state over the X1 start-flow availability read model, routing logged-in entry through selected server -> active hero decisions instead of directly guessing create-character/dashboard. Standard servers route to hero creation, dashboard or a visible DB blocker according to `next_action`, `can_enter_game`, `can_create_hero` and `block_reason`; sandbox multi-hero selection is available only when the DB read model allows hero selection/entry, and selected hero ids must exist in the DB-returned hero options. Active hero load failures block entry instead of being masked, dashboard routing requires an active hero context, and the sidebar exposes server switching without relogging. Verification passed with focused start-flow entry/active-hero/mapper specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for no direct start-flow/create-hero writes, no auth uid as hero id and exact start-flow RPC path unchanged. Manual/browser smoke remains pending.
 
 ---
 
@@ -10579,6 +10589,8 @@ Zaimplementować hero creation UI, które pozwala wybrać nazwę i origin, a nas
 - Próba stworzenia na full serverze pokazuje błąd.
 - Udane stworzenie hero odświeża active hero i przechodzi dalej do stat allocation.
 
+**Status:** Accepted with follow-up on 2026-05-11. X3 updated the account-side hero creation surface so hero name + origin are the only player inputs and creation continues through the canonical `create_hero_start_flow` path from X1. The origin step consumes DB-backed start-flow origin options, shows DB-returned description/bonus summary and explicit one-time-origin copy, while origin artwork remains the existing static carousel asset convention derived from `origin_key`, not DB-backed artwork. Creation feedback now surfaces Polish player-facing blockers for duplicate name, district/server full, invalid origin, permission/membership and unknown failures; `toHeroCreationErrorMessage(...)` reuses `getErrorMessage(...)` for raw extraction and stays private/feature-local for this single start-flow creation surface. No direct hero/bootstrap writes, local 1000 CP/district/resources/stats/origin bonus fallback, generated-type edit, migration, seeding or extra refactor follow-up was added. Verification passed with focused create-character/start-flow/origin specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for exact RPC path/no direct writes/no local bootstrap fallbacks. Manual/browser smoke remains pending.
+
 ---
 
 ## Task X4 — Post-creation routing and stat allocation entry
@@ -10626,6 +10638,8 @@ Po stworzeniu hero wejść do gry i domyślnie otworzyć stat allocation, ale ni
 - Mogę wyjść ze stat allocation.
 - Refresh / ponowne wejście z tym samym hero prowadzi na dashboard.
 - Zapis statów nadal działa przez istniejący canonical flow.
+
+**Status:** Accepted on 2026-05-11. X4 confirmed the post-creation handoff uses DB `route_next_action = stat_allocation` to route freshly created heroes to `/hero/attributes`, while returning existing heroes with DB dashboard entry route to `/hero/dashboard` through the start-flow entry state. `/hero/attributes` now exposes a normal dashboard exit link, so stat allocation is an ordinary in-game screen rather than a locked tutorial/wizard. The canonical `create_hero_start_flow` and `save_stat_allocation(...)` paths were unchanged; no auth uid as hero id, direct hero/start-flow/stat-allocation writes, generated-type edits, migrations or pre-acceptance status docs changes were added. Verification passed with focused routing/start-flow/stat-allocation specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps. Manual/browser smoke remains pending.
 
 ---
 
@@ -10680,6 +10694,8 @@ Dodać albo domknąć sandbox/test multi-hero selection/switching dla staff/test
 - Default wskazuje najwcześniej utworzonego hero.
 - Przełączenie hero zmienia aktywny kontekst i dane.
 - Normalny gracz na standard serverze nie dostaje sandbox switchera.
+
+**Status:** Accepted on 2026-05-11. X5 completed the sandbox/test multi-hero switcher over the existing start-flow availability read model. Sandbox hero selection now uses DB-returned hero options in a compact `p-select` + `Przełącz` control, shows DB default/current context, validates selected hero ids before switching, keeps selected-server stale guards and routes through `ActiveHero.selectHero(...)` to refresh the active hero context before returning to dashboard. The create-another sandbox hero affordance is a normal `Nowa postać` button shown only when selected DB availability returns `canCreateHero` without a blocker, and `createCharacterEntryGuard` checks the same selected server availability before allowing `/auth/create-character` for users who already have an active hero. After `create_hero_start_flow`, `CreateHero` selects the returned `result.heroId` so new sandbox heroes become the active context before DB route handoff. Standard server one-hero behavior remains protected by DB availability and redirects blocked creation back to `/auth/server-entry`. Duplicate state-level hero sorting was removed in favor of the start-flow mapper's sorted `heroes` invariant, while DB `defaultHeroId` remains the only default-hero authority. Verification passed with focused guard/server-entry/start-flow/mapper/create-hero specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for no direct writes, no auth uid as hero id, no global one-hero assumption and exact start-flow RPC path unchanged. Manual/browser smoke remains pending with real sandbox account/data.
 
 ---
 
@@ -10751,6 +10767,8 @@ Domknąć end-to-end start flow i usunąć niespójności między server picker,
 - Duplicate name → czytelny błąd.
 - Refresh po creation nie wraca do hero creation.
 - Zmiana servera nie wymaga relogowania.
+
+**Status:** Accepted on 2026-05-11. X6 hardened the end-to-end start-flow integration around server picker, hero creation, sandbox switching and active hero routing without changing the canonical RPC path. `CreateCharacterPageFacade` now blocks submit when selected server availability is missing for an existing account, when availability loading failed, or when DB availability returns a blocker even with `canCreateHero = true`; direct user-context changes clear stale availability immediately and in-flight availability loads remain token-guarded so stale responses cannot re-enable creation. Fresh creation still routes from DB `route_next_action = stat_allocation` to `/hero/attributes`, returning heroes continue through dashboard entry, sandbox multi-hero switching remains on DB-returned hero options, and full/district/permission/duplicate-origin/RPC failures stay visible through the existing player-facing error paths. No direct hero/bootstrap writes, auth uid as hero id, generated-type edit, migration or pre-acceptance status docs change was added. Verification passed with focused create-character/guard/server-entry/start-flow/mapper specs, `npx tsc --noEmit`, `npm run build` with known warnings and static greps for no direct writes, no auth uid as hero id, no local CP/estate/origin authority and exact start-flow RPC path unchanged. Manual/browser smoke remains pending with real start-flow/session data.
 
 ---
 

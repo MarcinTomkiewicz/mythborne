@@ -1,40 +1,13 @@
-import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Subject } from 'rxjs';
-import {
-  ArmoryItemDetailReadModel,
-  ArmoryItemSummary,
-} from '../../../core/domain/item/item-equipment.model';
-import { ActiveHero } from '../../../core/services/hero/active-hero';
-import { PlayerArmory } from '../../../core/services/items/player-armory';
+import { ArmoryItemSummary } from '../../../core/domain/item/item-equipment.model';
 import { ArmoryItemDetailPopover } from './armory-item-detail-popover';
 
 describe('ArmoryItemDetailPopover', () => {
   let fixture: ComponentFixture<ArmoryItemDetailPopover>;
-  let armory: jasmine.SpyObj<PlayerArmory>;
-  let detail$: Subject<ArmoryItemDetailReadModel>;
 
   beforeEach(async () => {
-    detail$ = new Subject<ArmoryItemDetailReadModel>();
-    armory = jasmine.createSpyObj<PlayerArmory>('PlayerArmory', [
-      'getArmoryItemDetail',
-    ]);
-    armory.getArmoryItemDetail.and.returnValue(detail$);
-
     await TestBed.configureTestingModule({
       imports: [ArmoryItemDetailPopover],
-      providers: [
-        { provide: PlayerArmory, useValue: armory },
-        {
-          provide: ActiveHero,
-          useValue: {
-            state: signal({
-              heroId: 'hero-1',
-              serverId: 'server-1',
-            }),
-          },
-        },
-      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ArmoryItemDetailPopover);
@@ -42,50 +15,15 @@ describe('ArmoryItemDetailPopover', () => {
     fixture.detectChanges();
   });
 
-  it('loads canonical detail and exposes hardened player-facing values', () => {
-    fixture.componentInstance.open(
-      new MouseEvent('click'),
-      { toggle: jasmine.createSpy('toggle') } as never,
-    );
-    detail$.next(demonicDaggerDetail());
-    fixture.detectChanges();
+  it('passes armory item identity into the shared item detail popover', () => {
+    const popover = (fixture.nativeElement as HTMLElement)
+      .querySelector('app-item-detail-popover');
 
-    expect(armory.getArmoryItemDetail).toHaveBeenCalledWith('item-1');
-    expect(fixture.componentInstance.currentDetail()).toEqual(jasmine.objectContaining({
-      drachmaValue: 300,
-      itemStats: [{ label: 'Damage', displayValue: '2-9' }],
-      bonuses: [
-        jasmine.objectContaining({ label: 'Critical chance', displayValue: '+2%' }),
-      ],
-    }));
-    expect(fixture.componentInstance.effectiveRequirements().map((requirement) => ({
-      label: requirement.displayLabel,
-      value: requirement.displayValue,
-    }))).toEqual([
-      { label: 'Hero level', value: 'Level 5' },
-      { label: 'Strength', value: '12' },
-    ]);
-    expect(fixture.componentInstance.drachmaValue()).toBe(300);
-    expect(JSON.stringify(fixture.componentInstance.currentDetail())).not.toContain('Flat');
+    expect(popover).not.toBeNull();
+    expect(fixture.componentInstance.itemName()).toBe('Demonic Dagger');
   });
 
-  it('ignores stale detail responses after the item changes', () => {
-    fixture.componentInstance.open(
-      new MouseEvent('click'),
-      { toggle: jasmine.createSpy('toggle') } as never,
-    );
-    fixture.componentRef.setInput('item', armoryItem({
-      itemId: 'item-2',
-      name: 'Other item',
-    }));
-    detail$.next(demonicDaggerDetail({ itemId: 'item-1' }));
-    fixture.detectChanges();
-
-    expect(fixture.componentInstance.itemName()).toBe('Other item');
-    expect(fixture.componentInstance.currentDetail()).toBeNull();
-  });
-
-  it('accepts DB-owned guild armory context for item detail display', () => {
+  it('keeps DB-owned guild armory context for shared detail display', () => {
     fixture.componentRef.setInput('guildContextLabel', 'Deposited in guild armory');
     fixture.componentRef.setInput(
       'guildContextDetail',
@@ -93,9 +31,7 @@ describe('ArmoryItemDetailPopover', () => {
     );
     fixture.detectChanges();
 
-    expect(fixture.componentInstance.guildContextLabel())
-      .toBe('Deposited in guild armory');
-    expect(fixture.componentInstance.guildContextDetail())
+    expect(fixture.componentInstance.contextSourceLabel())
       .toBe('Withdraw from guild armory before equipping privately.');
   });
 });
@@ -117,96 +53,6 @@ function armoryItem(overrides: Partial<ArmoryItemSummary> = {}): ArmoryItemSumma
     shelfPosition: 1,
     shelfName: 'Vlad\'s items',
     requirementPreview: null,
-    ...overrides,
-  };
-}
-
-function demonicDaggerDetail(
-  overrides: Partial<ArmoryItemDetailReadModel> = {},
-): ArmoryItemDetailReadModel {
-  return {
-    itemId: 'item-1',
-    heroId: 'hero-1',
-    serverId: 'server-1',
-    name: 'Demonic Dagger',
-    lifecycleStatus: 'active',
-    qualityLabel: 'Normal',
-    baseLabel: 'Dagger',
-    baseTypeKey: 'one_handed_weapon',
-    prefixLabel: 'Demonic',
-    suffixLabel: null,
-    shelfName: 'Vlad\'s items',
-    shelfPosition: 1,
-    drachmaValue: 300,
-    itemStats: [{ label: 'Damage', displayValue: '2-9' }],
-    requirementPreview: {
-      itemId: 'item-1',
-      heroId: 'hero-1',
-      meetsRequirements: false,
-      effectiveRequirements: [{
-        requirementDefinitionKey: 'hero_level',
-        valueType: null,
-        displayLabel: 'Hero level',
-        displayValue: 'Level 5',
-        requiredKey: null,
-        requiredStatKey: null,
-        requiredValue: 5,
-        finalDecimalValue: 5,
-        highestComponentValue: 5,
-        additionalComponentValue: 0,
-        additionalRequirementFraction: 0,
-        preQualityValue: 5,
-        qualityRequirementMultiplier: 1,
-        roundingMode: 'ceil',
-        componentCount: 1,
-      }, {
-        requirementDefinitionKey: 'hero_stat',
-        valueType: null,
-        displayLabel: 'Strength',
-        displayValue: '12',
-        requiredKey: 'strength',
-        requiredStatKey: 'strength',
-        requiredValue: 12,
-        finalDecimalValue: 12,
-        highestComponentValue: 10,
-        additionalComponentValue: 2,
-        additionalRequirementFraction: 0.25,
-        preQualityValue: 12,
-        qualityRequirementMultiplier: 1,
-        roundingMode: 'ceil',
-        componentCount: 2,
-      }],
-      components: [{
-        requirementId: 'base-level',
-        requirementDefinitionKey: 'hero_level',
-        valueType: null,
-        displayLabel: 'Hero level',
-        displayValue: 'Level 5',
-        requiredKey: null,
-        requiredValue: 5,
-        requiredStatKey: null,
-        rawRequiredValue: 5,
-        appliesFromLevel: 1,
-        sourceEntityType: 'item_generation_base',
-        sourceEntityId: 'base-1',
-        sourceLayer: 'base',
-        sourceLayerLabel: 'Base',
-        sourceKey: 'dagger',
-        sourceLabel: 'Dagger',
-        sourceSortOrder: 10,
-        requirementSortOrder: 10,
-      }],
-    },
-    bonuses: [{
-      label: 'Critical chance',
-      displayValue: '+2%',
-      numericValue: 2,
-      rowKind: 'modifier_bonus',
-      displaySection: 'bonuses',
-      sourceKey: 'demonic',
-      sourceLabel: 'Demonic',
-      sortOrder: 20,
-    }],
     ...overrides,
   };
 }

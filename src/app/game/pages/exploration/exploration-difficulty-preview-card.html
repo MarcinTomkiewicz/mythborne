@@ -1,0 +1,78 @@
+@let preview = difficulty();
+@let selected = isSelected();
+@let selectable = canSelectCard();
+
+<article
+  class="mg-card p-md w-100 h-100"
+  [class.mg-card--selected]="selected"
+  [class.cursor-pointer]="selectable"
+  [attr.role]="selectable ? 'button' : null"
+  [attr.tabindex]="selectable ? '0' : null"
+  [attr.aria-label]="selectable ? 'Wybierz poziom trudności: ' + preview.difficultyLabel : null"
+  (click)="selectCard()"
+  (keydown.enter)="selectCardFromKeyboard($event)"
+  (keydown.space)="selectCardFromKeyboard($event)"
+>
+  <div class="flex-col gap-sm w-100 h-100">
+    <div class="flex-row-between-start gap-sm">
+      <div class="flex-col gap-xs w-100">
+        <strong>{{ preview.difficultyLabel }}</strong>
+        <span class="muted-text">{{ preview.difficultyDescription }}</span>
+      </div>
+    </div>
+
+    @if (preview.difficultyHelperText) {
+      <p class="muted-text mb-0">{{ preview.difficultyHelperText }}</p>
+    }
+
+    <div class="flex-col gap-sm w-100">
+      <div class="flex-row-between-center gap-sm w-100">
+        <span class="color-muted small-caps text-xs">Czas kroku</span>
+        <strong class="color-heading">{{ preview.stepDurationDisplay }}</strong>
+      </div>
+
+      <app-exploration-chance-metric-row
+        label="Szansa próby"
+        [display]="preview.trialOpportunityDisplay"
+        [value]="preview.trialOpportunityChance"
+      />
+      <app-exploration-chance-metric-row
+        label="Szac. manifestacja"
+        [display]="preview.manifestationDisplay"
+        [value]="preview.manifestationChance"
+      />
+      <app-exploration-chance-metric-row
+        label="Szac. wynik auto"
+        [display]="preview.autoResultDisplay"
+        [value]="preview.autoResultSuccessChance"
+      />
+
+      <div class="flex-row-between-center gap-sm w-100">
+        <span class="color-muted small-caps text-xs">Przedmioty z nagrody</span>
+        <strong class="color-heading">{{ preview.rewardItemCountDisplay }}</strong>
+      </div>
+    </div>
+
+    @if (preview.trialOpportunityIsGuaranteedByStepCap) {
+      <div class="flex-row-start-center flex-wrap gap-xs">
+        <span class="tag-badge tag-badge--success">Gwarantowane limitem</span>
+      </div>
+    }
+
+    <div class="flex-1"></div>
+
+    <div class="flex-row-start-center min-h-lines-3">
+      @if (selected) {
+        <p-button
+          type="button"
+          [label]="actionLabel()"
+          severity="secondary"
+          [loading]="isStarting()"
+          [disabled]="actionDisabled()"
+          (click)="$event.stopPropagation()"
+          (onClick)="handleSelectedDifficultyAction()"
+        />
+      }
+    </div>
+  </div>
+</article>

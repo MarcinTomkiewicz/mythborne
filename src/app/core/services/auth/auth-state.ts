@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
-import { User } from '@supabase/supabase-js';
-import { IHero } from '../../domain/hero/hero.model';
+import type { User } from '@supabase/supabase-js';
+import type { IHero } from '../../domain/hero/hero.model';
 
 @Injectable({ providedIn: 'root' })
 export class AuthState {

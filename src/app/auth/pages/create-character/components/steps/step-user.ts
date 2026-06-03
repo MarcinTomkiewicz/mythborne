@@ -14,7 +14,7 @@ import { FormFields } from '../../../../../shared/form-fields/form-fields';
   imports: [ReactiveFormsModule, ButtonModule, FormFields],
   template: `
     <div [formGroup]="form()" class="mg-form flex-col gap-md">
-      <h2 class="mg-section__title mg-section__title--xs mb-sm">Tell us about yourself</h2>
+      <h2 class="mg-section__title mg-section__title--xs m-0">Opowiedz o sobie</h2>
 
       <app-form-fields [form]="form()" [fields]="mainFields" />
 
@@ -23,10 +23,10 @@ import { FormFields } from '../../../../../shared/form-fields/form-fields';
       </div>
 
       <div class="flex-row-end-center gap-sm mt-xl">
-        <p-button type="button" label="Back" (click)="back.emit()" severity="secondary" />
+        <p-button type="button" label="Wstecz" (click)="back.emit()" severity="secondary" />
         <p-button
           type="submit"
-          [label]="submitting() ? 'Creating...' : 'Create character'"
+          [label]="submitting() ? 'Tworzenie...' : 'Stwórz bohatera'"
           [disabled]="submitting()"
           (click)="submit.emit()"
           severity="success"

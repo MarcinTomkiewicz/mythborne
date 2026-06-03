@@ -1,217 +1,257 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { finalize } from 'rxjs';
-import {
-  CharacterPointHistoryReadModel,
-  IHeroDerived,
-} from '../../types/hero.types';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Origin } from '../../domain/origin/origin.model';
-import { IStat } from '../../interfaces/i-stats/i-stats';
-import { Hero } from './hero';
-import { Origins } from '../origins/origins';
-import { StatsService } from '../stats/stats';
-import { getErrorMessage } from '../../utils/error-message';
-import { CharacterPointHistory } from './character-point-history';
 import {
-  HeroDashboardRuntimeStats,
   HeroDashboardRuntimeStatsReadModel,
-  HeroRuntimeDamageRow,
-} from './hero-dashboard-runtime-stats';
-
-interface DerivedStatRow {
-  key: string;
-  label: string;
-  value: number | string;
-  damageRows: HeroRuntimeDamageRow[];
-}
+} from '../../domain/hero/hero-dashboard-runtime-stats.model';
+import { ActiveServer } from '../server/active-server';
+import { ActiveHero } from './active-hero';
+import { RequestToken } from '../../utils/request-token';
+import {
+  DashboardDerivedStatRow,
+  mapDashboardBaseStatRows,
+  mapDashboardDerivedStatRows,
+  mapDashboardHealthDisplay,
+} from './dashboard-page.mappers';
+import type { StatCardRow } from '../../types/stat-card.types';
+import { EquipmentPreviewSlotRow } from '../../domain/equipment/equipment-preview.model';
+import { DashboardPersistentStateRow } from './dashboard-persistent-state.model';
+import { getErrorMessage } from '../../utils/error-message';
+import { PlayerPageContext } from './player-page-context';
+import { PlayerDashboardShellState } from './player-dashboard-shell-state';
 
 @Injectable()
 export class DashboardPageFacade {
-  private readonly heroService = inject(Hero);
-  private readonly runtimeStatsService = inject(HeroDashboardRuntimeStats);
-  private readonly characterPointHistory = inject(CharacterPointHistory);
-  private readonly statsService = inject(StatsService);
-  private readonly originsService = inject(Origins);
+  private readonly activeServer = inject(ActiveServer);
+  private readonly activeHeroState = inject(ActiveHero);
+  private readonly playerPageContext = inject(PlayerPageContext);
+  private readonly shellState = inject(PlayerDashboardShellState);
+  readonly selectedServer = this.activeServer.selectedServer;
 
-  heroName = signal('');
-  level = signal(1);
-  characterPoints = signal(0);
-  totalCharacterPointsEarned = signal(0);
-  readonly heroLevel = signal(1);
-  experience = signal(0);
-  totalExperienceEarned = signal(0);
-  experienceToNextLevel = signal<number | null>(null);
-  remainingExperience = signal<number | null>(null);
-  experiencePercent = signal(0);
-  isExperienceLoading = signal(false);
-  experienceError = signal<string | null>(null);
+  private readonly dashboardLoadToken = new RequestToken();
+  private readonly hasLoadedDashboard = signal(false);
+  private readonly loadedContextKey = signal<string | null>(null);
+  readonly isPageLoading = signal(false);
+  readonly pageError = signal<string | null>(null);
+  readonly isPageReady = signal(false);
 
-  origin = signal<Origin | null>(null);
+  private readonly reloadOnContextChange = effect(() => {
+    const context = this.currentDashboardContext();
+    const contextKey = context ? dashboardContextKey(context) : null;
 
-  statsList = signal<IStat[]>([]);
-  runtimeStats = signal<HeroDashboardRuntimeStatsReadModel | null>(null);
-  runtimeStatsError = signal<string | null>(null);
-  characterPointHistoryEntries = signal<CharacterPointHistoryReadModel[]>([]);
-  characterPointHistoryError = signal<string | null>(null);
+    if (!this.hasLoadedDashboard()) {
+      return;
+    }
 
-  statsDisplay = computed(() =>
-    this.runtimeStats()?.stats ?? {}
-  );
+    untracked(() => {
+      if (!context) {
+        this.clearDashboardState();
+        this.loadedContextKey.set(null);
+        return;
+      }
 
-  derivedDisplay = computed(() =>
-    toDerivedDisplay(this.runtimeStats())
-  );
-
-  derivedStatRows = computed<DerivedStatRow[]>(() => {
-    const runtime = this.runtimeStats();
-
-    return [
-      {
-        key: 'damage',
-        label: 'Damage',
-        value: runtime?.damageRows.length ? '' : 'No attack sources returned',
-        damageRows: runtime?.damageRows ?? [],
-      },
-      row('defense', 'Defense', runtime?.defense ?? 0),
-      row('luck', 'Luck', runtime?.luck ?? 0),
-      row(
-        'critical_chance',
-        'Critical chance',
-        percentValue(runtime?.criticalChanceBonus ?? 0),
-      ),
-      row(
-        'critical_damage',
-        'Critical damage',
-        percentValue(runtime?.criticalDamage ?? 0),
-      ),
-      row(
-        'evasion',
-        'Evasion',
-        percentValue(runtime?.evasionChanceBonus ?? 0),
-      ),
-      row('attack_count', 'Attack count', runtime?.attackCount ?? 0),
-    ];
-  });
-
-  equipment = [
-    { slot: 'Helmet', name: null, bonus: null },
-    { slot: 'Weapon', name: null, bonus: null },
-    { slot: 'Armor', name: null, bonus: null },
-    { slot: 'Shield', name: null, bonus: null },
-  ];
-
-  loadData() {
-    this.statsService.getStats().subscribe(this.statsList.set);
-
-    this.heroService.getHeroData().subscribe((hero) => {
-      this.heroName.set(hero.name);
-      this.level.set(hero.level ?? 1);
-      this.characterPoints.set(hero.character_points ?? 0);
-      this.totalCharacterPointsEarned.set(hero.total_character_points_earned ?? 0);
-      this.heroLevel.set(hero.level ?? 1);
-      this.experience.set(hero.experience ?? 0);
-      this.totalExperienceEarned.set(hero.total_experience_earned ?? 0);
-
-      if (hero.origin_id) {
-        this.originsService
-          .getOriginWithBonuses(hero.origin_id)
-          .subscribe(({ origin }) => {
-            this.origin.set(origin);
-          });
+      if (this.loadedContextKey() !== contextKey) {
+        this.loadData();
       }
     });
+  });
 
-    this.loadRuntimeStats();
-    this.loadCharacterPointHistory();
-    this.loadExperienceProgress();
-  }
+  heroName = signal('');
+  private readonly heroLevelFallback = signal(1);
+  readonly level = computed(() => this.heroLevelFallback());
+  characterPoints = signal(0);
+  private readonly estateAddressLabel = signal<string | null>(null);
+  readonly estateAddress = computed(() => this.estateAddressLabel());
+  isEstateAddressLoaded = signal(false);
+  estateAddressError = signal<string | null>(null);
+  readonly heroLevel = this.level;
+  readonly experience = signal(0);
+  readonly totalExperienceEarned = signal(0);
+  readonly experienceToNextLevel = signal<number | null>(null);
+  readonly isExperienceLoading = signal(false);
+  readonly experienceError = signal<string | null>(null);
 
-  private loadExperienceProgress(): void {
+  origin = signal<Origin | null>(null);
+  runtimeStats = signal<HeroDashboardRuntimeStatsReadModel | null>(null);
+  runtimeStatsError = signal<string | null>(null);
+  equipmentPreviewRows = signal<EquipmentPreviewSlotRow[]>([]);
+  isEquipmentLoading = signal(false);
+  equipmentStatus = signal<'idle' | 'loaded' | 'empty' | 'error'>('idle');
+  equipmentError = signal<string | null>(null);
+  persistentStateRows = signal<DashboardPersistentStateRow[]>([]);
+  persistentStateErrors = signal<string[]>([]);
+  isPersistentStateLoading = signal(false);
+  isPersistentStateLoaded = signal(false);
+  readonly worldStateErrors = computed(() => [
+    ...this.persistentStateErrors(),
+    this.estateAddressError(),
+  ].filter((error): error is string => error !== null));
+
+  baseStatRows = computed<StatCardRow[]>(() =>
+    mapDashboardBaseStatRows(this.runtimeStats())
+  );
+
+  healthDisplay = computed(() =>
+    mapDashboardHealthDisplay(this.runtimeStats())
+  );
+
+  derivedStatRows = computed<DashboardDerivedStatRow[]>(() =>
+    mapDashboardDerivedStatRows(this.runtimeStats())
+  );
+
+  loadData(): void {
+    const context = this.currentDashboardContext();
+    const token = this.dashboardLoadToken.next();
+
+    this.hasLoadedDashboard.set(true);
+    this.loadedContextKey.set(context ? dashboardContextKey(context) : null);
+    this.clearDashboardState();
+
+    if (!context) {
+      this.pageError.set('Brak aktywnego bohatera dla panelu.');
+      return;
+    }
+
+    this.isPageLoading.set(true);
+    this.pageError.set(null);
     this.isExperienceLoading.set(true);
-    this.experienceError.set(null);
+    this.isEquipmentLoading.set(true);
+    this.isPersistentStateLoading.set(true);
 
-    this.heroService
-      .getHeroExperienceProgress()
-      .pipe(finalize(() => this.isExperienceLoading.set(false)))
-      .subscribe({
-        next: (progress) => {
-          this.level.set(progress.level);
-          this.heroLevel.set(progress.level);
-          this.experience.set(progress.currentExperience);
-          this.totalExperienceEarned.set(progress.totalExperienceEarned);
-          this.experienceToNextLevel.set(progress.experienceToNextLevel);
-          this.remainingExperience.set(progress.remainingExperience);
-          this.experiencePercent.set(progress.experiencePercent);
-        },
-        error: (error: unknown) => {
-          this.experienceToNextLevel.set(null);
-          this.remainingExperience.set(null);
-          this.experiencePercent.set(0);
-          this.experienceError.set(
-            getErrorMessage(error, 'Experience threshold could not be calculated.'),
-          );
-        },
-      });
-  }
+    this.playerPageContext.getDashboardPageContext(context.heroId).subscribe({
+      next: (pageContext) => {
+        if (
+          !this.acceptsDashboardResponse(token, context)
+          || pageContext.heroId !== context.heroId
+          || pageContext.serverId !== context.serverId
+        ) {
+          return;
+        }
 
-  private loadCharacterPointHistory(): void {
-    this.characterPointHistoryError.set(null);
-
-    this.characterPointHistory
-      .getActiveHeroHistory({ limit: 5 })
-      .subscribe({
-        next: (entries) => this.characterPointHistoryEntries.set(entries),
-        error: (error: unknown) => {
-          this.characterPointHistoryEntries.set([]);
-          this.characterPointHistoryError.set(
-            getErrorMessage(error, 'Character Points history could not be loaded.'),
-          );
-        },
-      });
-  }
-
-  private loadRuntimeStats(): void {
-    this.runtimeStatsError.set(null);
-
-    this.runtimeStatsService.getActiveHeroRuntimeStats().subscribe({
-      next: (stats) => this.runtimeStats.set(stats),
-      error: (error: unknown) => {
-        this.runtimeStats.set(null);
-        this.runtimeStatsError.set(
-          getErrorMessage(error, 'Dashboard runtime stats could not be loaded.'),
+        this.heroName.set(pageContext.heroName);
+        this.heroLevelFallback.set(pageContext.heroLevel);
+        this.characterPoints.set(pageContext.characterPoints);
+        this.estateAddressLabel.set(pageContext.estateAddress);
+        this.isEstateAddressLoaded.set(true);
+        this.origin.set(pageContext.origin);
+        this.runtimeStats.set(pageContext.runtimeStats);
+        this.shellState.applyDashboardContext(pageContext);
+        this.equipmentPreviewRows.set(pageContext.equipmentPreviewRows);
+        this.equipmentStatus.set(
+          pageContext.equipmentPreviewRows.length > 0 ? 'loaded' : 'empty',
         );
+        this.persistentStateRows.set(pageContext.persistentStateRows);
+        this.isPersistentStateLoaded.set(true);
+        this.experience.set(pageContext.experience.currentExperience);
+        this.totalExperienceEarned.set(pageContext.experience.totalExperienceEarned);
+        this.experienceToNextLevel.set(pageContext.experience.experienceToNextLevel);
+        this.isPageReady.set(true);
+        this.isPageLoading.set(false);
+        this.isExperienceLoading.set(false);
+        this.isEquipmentLoading.set(false);
+        this.isPersistentStateLoading.set(false);
+      },
+      error: (error: unknown) => {
+        if (!this.acceptsDashboardResponse(token, context)) {
+          return;
+        }
+
+        const technicalMessage = getErrorMessage(error, 'Dashboard context could not be loaded.');
+        const message = 'Nie udało się przygotować panelu bohatera. Spróbuj ponownie później.';
+        this.pageError.set(message);
+        this.isPageReady.set(false);
+        this.runtimeStatsError.set(technicalMessage);
+        this.experienceError.set(technicalMessage);
+        this.equipmentError.set(technicalMessage);
+        this.equipmentStatus.set('error');
+        this.persistentStateErrors.set([technicalMessage]);
+        this.isPageLoading.set(false);
+        this.isExperienceLoading.set(false);
+        this.isEquipmentLoading.set(false);
+        this.isPersistentStateLoading.set(false);
       },
     });
   }
+
+  private clearDashboardState(): void {
+    this.heroName.set('');
+    this.isPageReady.set(false);
+    this.pageError.set(null);
+    this.isPageLoading.set(false);
+    this.heroLevelFallback.set(1);
+    this.characterPoints.set(0);
+    this.estateAddressLabel.set(null);
+    this.isEstateAddressLoaded.set(false);
+    this.estateAddressError.set(null);
+    this.experience.set(0);
+    this.totalExperienceEarned.set(0);
+    this.experienceToNextLevel.set(null);
+    this.isExperienceLoading.set(false);
+    this.experienceError.set(null);
+    this.origin.set(null);
+    this.runtimeStats.set(null);
+    this.runtimeStatsError.set(null);
+    this.shellState.clear();
+    this.equipmentPreviewRows.set([]);
+    this.isEquipmentLoading.set(false);
+    this.equipmentStatus.set('idle');
+    this.equipmentError.set(null);
+    this.persistentStateRows.set([]);
+    this.persistentStateErrors.set([]);
+    this.isPersistentStateLoaded.set(false);
+    this.isPersistentStateLoading.set(false);
+  }
+
+  private isCurrentActiveHeroContext(
+    heroId: string | null | undefined,
+    serverId: string | null | undefined,
+  ): boolean {
+    const activeHero = this.activeHeroState.state();
+
+    return !!heroId
+      && !!serverId
+      && activeHero?.heroId === heroId
+      && activeHero.serverId === serverId;
+  }
+
+  private currentDashboardContext(): DashboardContext | null {
+    const activeHero = this.activeHeroState.state();
+    const selectedServer = this.selectedServer();
+
+    if (
+      !activeHero?.heroId
+      || !activeHero.serverId
+      || !selectedServer
+      || selectedServer.id !== activeHero.serverId
+    ) {
+      return null;
+    }
+
+    return {
+      heroId: activeHero.heroId,
+      serverId: activeHero.serverId,
+    };
+  }
+
+  private acceptsDashboardResponse(
+    token: number,
+    context: DashboardContext,
+  ): boolean {
+    return this.dashboardLoadToken.isCurrent(token)
+      && this.loadedContextKey() === dashboardContextKey(context)
+      && this.isCurrentDashboardContext(context);
+  }
+
+  private isCurrentDashboardContext(context: DashboardContext): boolean {
+    return this.isCurrentActiveHeroContext(context.heroId, context.serverId)
+      && this.selectedServer()?.id === context.serverId;
+  }
 }
 
-function row(
-  key: string,
-  label: string,
-  value: number | string,
-): DerivedStatRow {
-  return {
-    key,
-    label,
-    value,
-    damageRows: [],
-  };
+interface DashboardContext {
+  heroId: string;
+  serverId: string;
 }
 
-function percentValue(value: number): string {
-  return `${value}%`;
-}
-
-function toDerivedDisplay(
-  runtime: HeroDashboardRuntimeStatsReadModel | null,
-): IHeroDerived {
-  return {
-    health: runtime?.maxHealth ?? 0,
-    def: runtime?.defense ?? 0,
-    minDmg: 0,
-    maxDmg: 0,
-    luck: runtime?.luck ?? 0,
-    critical: runtime?.criticalChanceBonus ?? 0,
-    criticalDamage: runtime?.criticalDamage ?? 0,
-    evasion: runtime?.evasionChanceBonus ?? 0,
-  };
+function dashboardContextKey(context: DashboardContext): string {
+  return `${context.serverId}:${context.heroId}`;
 }

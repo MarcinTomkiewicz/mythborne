@@ -4,33 +4,28 @@ import { Component, computed, input } from '@angular/core';
   selector: 'app-game-bar',
   imports: [],
   templateUrl: './game-bar.html',
+  styleUrl: './game-bar.scss',
 })
 export class GameBar {
   label = input('XP');
   value = input(0);
   max = input(100);
-  type = input<'hp' | 'xp'>('hp');
-  segments = input(10);
+  type = input<'hp' | 'xp' | 'chance'>('hp');
   compact = input(false);
   showLabel = input(true);
   showValue = input(true);
 
   readonly safeMax = computed(() => Math.max(this.max(), 0));
-  readonly safeSegments = computed(() => Math.max(this.segments(), 1));
-  readonly steps = computed(() => Array.from({ length: this.safeSegments() }));
   readonly percent = computed(() =>
     this.safeMax() <= 0 ? 0 : Math.min(Math.max(this.value() / this.safeMax(), 0), 1)
   );
-  readonly fillColor = computed(() =>
-    this.type() === 'hp' ? 'var(--mg-color-success)' : 'var(--mg-color-info)'
+  readonly percentValue = computed(() => this.percent() * 100);
+  readonly isHp = computed(() => this.type() === 'hp');
+  readonly isXp = computed(() => this.type() === 'xp');
+  readonly isChance = computed(() => this.type() === 'chance');
+  readonly displayValue = computed(() =>
+    this.isChance()
+      ? `${this.value()}%`
+      : `${this.value()} / ${this.max()}`,
   );
-
-  getStepFill(index: number): number {
-    const progress = this.percent() * this.safeSegments();
-    return Math.max(0, Math.min(progress - index, 1)) * 100;
-  }
-
-  getStepHeight(): string {
-    return this.compact() ? '10px' : '12px';
-  }
 }

@@ -1,56 +1,88 @@
-:where(.mg-form, form, .mg-card form, div) {
-  .p-select {
-    background: var(--mg-form-bg);
-    color: var(--mg-form-text);
-    border: 1px solid var(--mg-form-border);
-  }
+@use "../abstracts/variables" as v;
 
-  .p-select:not(.p-disabled):hover {
-    background: var(--mg-form-bg-hover);
-    border-color: var(--mg-form-border-hover);
-  }
+.p-select {
+  min-height: 2.95rem;
+  border: 1px solid color-mix(in srgb, v.$color-secondary 24%, v.$color-form-border);
+  border-radius: v.$radius-lg;
+  background: color-mix(in srgb, v.$color-bg 54%, v.$color-form-bg);
+  color: v.$color-form-text;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.035);
+  transition:
+    background-color v.$transition-fast,
+    border-color v.$transition-fast,
+    box-shadow v.$transition-fast;
+}
 
-  .p-select.p-focus {
-    outline: none;
-    background: var(--mg-form-bg-hover);
-    border-color: var(--mg-form-border-focus);
-    box-shadow: 0 0 0 3px var(--mg-form-ring);
-  }
+.p-select:not(.p-disabled):hover {
+  background: v.$color-form-bg-hover;
+  border-color: color-mix(in srgb, v.$color-secondary 54%, v.$color-form-border-hover);
+}
 
-  .p-select .p-select-label {
-    color: var(--mg-form-text);
-  }
+.p-select.p-focus,
+.p-select:not(.p-disabled).p-focus {
+  outline: none;
+  background: v.$color-form-bg-focus;
+  border-color: color-mix(in srgb, v.$color-secondary 72%, v.$color-form-border-focus);
+  box-shadow: 0 0 0 3px color-mix(in srgb, v.$color-secondary 16%, transparent);
+}
 
-  .p-select .p-select-dropdown {
-    color: var(--mg-form-label);
-  }
+.p-select .p-select-label {
+  display: flex;
+  align-items: center;
+  color: v.$color-form-text;
+  font-weight: 650;
+}
 
-  .p-select.p-invalid,
-  .p-select.ng-invalid.ng-dirty,
-  .p-select.ng-invalid.ng-touched {
-    border-color: var(--mg-form-error);
-  }
+.p-select .p-select-label.p-placeholder {
+  color: v.$color-form-placeholder;
+  font-weight: 500;
+}
 
-  .p-select.p-invalid.p-focus {
-    box-shadow: 0 0 0 3px var(--mg-form-error-ring);
-  }
+.p-select .p-select-dropdown {
+  width: 2.75rem;
+  color: v.$color-form-label;
+}
 
-  .p-select.p-disabled {
-    background: var(--mg-form-disabled-bg);
-    color: var(--mg-form-disabled-text);
-    border-color: var(--mg-form-border);
-  }
+.p-select .p-select-dropdown-icon {
+  color: currentColor;
+}
+
+.p-select.p-invalid,
+.p-select.ng-invalid.ng-dirty,
+.p-select.ng-invalid.ng-touched {
+  border-color: v.$color-form-error;
+}
+
+.p-select.p-invalid.p-focus {
+  box-shadow: 0 0 0 3px var(--mg-form-error-ring);
+}
+
+.p-select.p-disabled {
+  background: v.$color-form-disabled-bg;
+  color: v.$color-form-disabled-text;
+  border-color: v.$color-form-border;
 }
 
 .p-select-overlay,
 .p-select-panel {
-  background: var(--mg-form-bg);
-  color: var(--mg-form-text);
-  border: 1px solid var(--mg-form-border);
+  overflow: hidden;
+  border: 1px solid v.$color-form-border;
+  border-radius: v.$radius-md;
+  background: v.$color-form-bg;
+  color: v.$color-form-text;
+  box-shadow: v.$shadow-elevated;
+}
+
+.p-select-list {
+  padding: 0.35rem;
 }
 
 .p-select-option {
-  color: var(--mg-form-text);
+  border-radius: v.$radius-sm;
+  color: v.$color-form-text;
+  transition:
+    background-color v.$transition-fast,
+    color v.$transition-fast;
 
   &::before {
     content: "";
@@ -71,16 +103,15 @@
   }
 }
 
-.p-select-option:hover {
-  background: var(--mg-form-border-hover);
-}
-
-.p-select-option.p-select-option-selected {
-  background: var(--mg-form-border-hover);
-  color: var(--mg-form-text);
-}
-
+.p-select-option:hover,
 .p-select-option:not(.p-select-option-selected):not(.p-disabled).p-focus {
-  background: var(--mg-form-border-hover);
-  color: var(--mg-form-text);
+  background: color-mix(in srgb, v.$color-form-bg-hover 82%, v.$color-secondary);
+  color: v.$color-form-text;
+}
+
+.p-select-option.p-select-option-selected,
+.p-select-option[aria-selected="true"] {
+  background: color-mix(in srgb, v.$color-form-bg-focus 72%, v.$color-secondary);
+  color: v.$color-form-text;
+  box-shadow: inset 3px 0 0 v.$color-secondary;
 }

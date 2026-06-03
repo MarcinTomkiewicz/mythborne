@@ -1,6 +1,177 @@
-@use "../abstracts/variables" as v;
+@use "sass:map";
+@use "abstracts/variables" as v;
+
+.mg-game-shell {
+  min-height: 100dvh;
+  background-color: v.$color-shell-bg;
+  background-image: v.$bg-gradient;
+  background-position: top center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+}
+
+.mg-game-shell__topbar {
+  border-bottom: 1px solid v.$color-shell-border;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, v.$color-shell-surface-elevated 92%, v.$color-bg),
+      color-mix(in srgb, v.$color-shell-surface 86%, v.$color-bg)
+    );
+  box-shadow: v.$shadow-shell;
+}
+
+.mg-game-shell__sidebar {
+  border-right: 1px solid v.$color-shell-border;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, v.$color-shell-surface-elevated 40%, transparent),
+      color-mix(in srgb, v.$color-shell-surface 94%, transparent)
+    ),
+    v.$color-shell-surface;
+}
+
+.mg-game-shell__main {
+  background: inherit;
+}
+
+.mg-game-shell__main--route-background {
+  min-height: 100dvh;
+  background-color: v.$color-shell-bg;
+  background-image:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, v.$color-shell-bg 30%, transparent),
+      color-mix(in srgb, v.$color-shell-bg 30%, transparent)
+    ),
+    var(--mg-route-background-image),
+    v.$bg-gradient;
+  background-attachment: fixed, fixed, scroll;
+  background-position: center, center, top center;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-size: cover, cover, 100% 100%;
+}
+
+.mg-game-shell__main > .mg-container {
+  max-width: v.$shell-container-max-width;
+}
+
+.mg-shell-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: map.get(v.$spacings, "sm");
+  box-sizing: border-box;
+  width: 100%;
+  padding: map.get(v.$spacings, "sm");
+  border: 1px solid transparent;
+  border-radius: v.$radius-lg;
+  background: transparent;
+  color: v.$color-text-muted;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  transition: v.$transition-fast;
+
+  &:not(:disabled) {
+    cursor: pointer;
+  }
+
+  &:hover,
+  &:focus-visible,
+  &.is-active {
+    border-color: color-mix(in srgb, v.$color-secondary 16%, transparent);
+    background:
+      linear-gradient(
+        90deg,
+        color-mix(in srgb, v.$color-secondary 13%, transparent),
+        color-mix(in srgb, v.$color-info 12%, transparent)
+    );
+    color: v.$heading-color;
+    text-decoration: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color-mix(in srgb, v.$color-info 72%, transparent);
+    outline-offset: 2px;
+  }
+
+  &.is-active {
+    box-shadow: inset 3px 0 0 v.$color-secondary;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+  }
+
+  &:disabled:hover {
+    border-color: transparent;
+    background: transparent;
+    color: v.$color-text-muted;
+  }
+}
+
+.mg-shell-nav-item__icon {
+  display: inline-grid;
+  place-items: center;
+  width: map.get(v.$spacings, "lg");
+  height: map.get(v.$spacings, "lg");
+  border: 1px solid color-mix(in srgb, v.$color-secondary 8%, transparent);
+  border-radius: v.$radius-sm;
+  background: color-mix(in srgb, v.$color-secondary 8%, transparent);
+  color: v.$color-secondary;
+  font-size: map.get(v.$font-sizes, "sm");
+}
+
+.mg-shell-nav-item__label {
+  min-width: 0;
+  font-weight: 700;
+}
+
+.mg-shell-topbar-control {
+  width: 2.1rem;
+  height: 2.1rem;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, v.$color-secondary 20%, transparent);
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, v.$color-shell-surface-elevated 76%, transparent),
+      color-mix(in srgb, v.$color-shell-surface 82%, transparent)
+    );
+  color: v.$heading-color;
+  line-height: 1;
+  transition:
+    background v.$transition-fast,
+    border-color v.$transition-fast,
+    color v.$transition-fast,
+    box-shadow v.$transition-fast;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    border-color: color-mix(in srgb, v.$color-secondary 54%, transparent);
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, v.$color-secondary 16%, v.$color-shell-surface-elevated),
+        color-mix(in srgb, v.$color-info 12%, v.$color-shell-surface)
+    );
+    color: v.$color-secondary;
+    text-decoration: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid color-mix(in srgb, v.$color-info 70%, transparent);
+    outline-offset: 2px;
+  }
+}
 
 .mg-brand-mark-fallback {
+  flex: 0 0 auto;
   display: inline-grid;
   place-items: center;
   width: 2.35rem;
@@ -15,9 +186,35 @@
       v.$color-bg 100%
     );
   color: v.$color-bg;
-  box-shadow: inset 0 0 0 3px color-mix(in srgb, v.$color-bg 58%, transparent);
+  box-shadow: v.$shadow-brand-mark;
   font-family: v.$font-family-display;
+  font-size: map.get(v.$font-sizes, "lg");
   font-weight: 800;
   line-height: 1;
 }
 
+.mg-resource-summary {
+  min-width: 4.5rem;
+}
+
+.mg-resource-summary__icon {
+  color: v.$color-secondary;
+  font-size: map.get(v.$font-sizes, "lg");
+}
+
+.mg-resource-summary__content {
+  text-align: right;
+  line-height: 1.05;
+}
+
+.mg-resource-summary__label {
+  color: v.$color-text;
+}
+
+.mg-resource-summary__value {
+  color: v.$heading-color;
+}
+
+.mg-resource-summary__rate {
+  color: v.$color-success;
+}

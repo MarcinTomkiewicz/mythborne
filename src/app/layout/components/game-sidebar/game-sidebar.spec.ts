@@ -11,6 +11,7 @@ import {
   SelectedGameServer,
   ServerAccessState,
 } from '../../../core/interfaces/server/active-server.interface';
+import { Auth } from '../../../core/services/auth/auth';
 import { AuthState } from '../../../core/services/auth/auth-state';
 import { Backend } from '../../../core/services/backend/backend';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
@@ -27,19 +28,7 @@ describe('GameSidebar', () => {
 
   beforeEach(() => {
     backend = jasmine.createSpyObj<Backend>('Backend', ['rpc']);
-    backend.rpc.and.returnValue(of([
-      {
-        district_code: 'A',
-        helper_text: 'Current prestige rank.',
-        hero_id: 'hero-1',
-        player_label: 'Zeugitai',
-        rank_name: 'Zeugitai',
-        rank_number: 2,
-        rank_uuid: 'rank-2',
-        server_id: 'server-1',
-        updated_at: '2026-05-08T00:00:00.000Z',
-      },
-    ]));
+    backend.rpc.and.returnValue(of([prestigeRow()]));
     activeHeroState = signal({
       userId: 'user-1',
       serverId: 'server-1',
@@ -69,6 +58,12 @@ describe('GameSidebar', () => {
           },
         },
         { provide: Backend, useValue: backend },
+        {
+          provide: Auth,
+          useValue: jasmine.createSpyObj<Auth>('Auth', {
+            logout: of(void 0),
+          }),
+        },
       ],
     });
 
@@ -86,10 +81,9 @@ describe('GameSidebar', () => {
   });
 
   it('shows gameplay links for normal logged-in players', () => {
-    const urls = component.menuItems().map((item) => item.url);
+    const urls = navItems(component).map((item) => item.route);
 
     expect(urls).toContain('/hero/dashboard');
-    expect(urls).toContain('/game/combat');
     expect(urls).toContain('/game/guild');
     expect(urls).toContain('/game/auction');
   });
@@ -98,7 +92,7 @@ describe('GameSidebar', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Athens');
-    expect(text).toContain('Live');
+    expect(text).toContain('Aktywny');
     expect(text).toContain('Zeugitai');
     expect(backend.rpc).toHaveBeenCalledWith(
       'get_hero_prestige_public_summary',
@@ -106,27 +100,70 @@ describe('GameSidebar', () => {
     );
   });
 
+  it('clears prestige summary when selected server context is missing', async () => {
+    component.prestigeSummary.set(prestigeRow());
+
+    selectedServer.set(null);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const text = textContent(fixture);
+
+    expect(component.prestigeSummary()).toBeNull();
+    expect(text).toContain('Prestiż niedostępny');
+    expect(text).not.toContain('Zeugitai');
+  });
+
+  it('ignores prestige rows returned for a stale server context', async () => {
+    backend.rpc.and.returnValue(of([prestigeRow({ server_id: 'server-1' })]));
+
+    selectedServer.set(createServer({ id: 'server-2', name: 'Sparta' }));
+    activeHeroState.set({
+      userId: 'user-1',
+      serverId: 'server-2',
+      heroId: 'hero-1',
+      server: createServer({ id: 'server-2', name: 'Sparta' }),
+      hero: { id: 'hero-1', name: 'Hero', level: 1 },
+      heroRow: { id: 'hero-1', name: 'Hero', level: 1 },
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const text = textContent(fixture);
+
+    expect(component.prestigeSummary()).toBeNull();
+    expect(text).toContain('Sparta');
+    expect(text).toContain('Prestiż niedostępny');
+    expect(text).not.toContain('Zeugitai');
+  });
+
+  it('renders a visible logout action in the authenticated shell', () => {
+    expect(textContent(fixture)).toContain('Wyloguj');
+  });
+
   it('shows the vicinity navigation entry without introducing neighborhood labels', () => {
-    const items = component.menuItems();
+    const items = navItems(component);
 
     expect(items).toEqual(jasmine.arrayContaining([
       jasmine.objectContaining({
-        title: 'Vicinity',
-        url: '/game/vicinity',
+        label: 'Okolica',
+        route: '/game/vicinity',
       }),
     ]));
     expect(items).toEqual(jasmine.arrayContaining([
       jasmine.objectContaining({
-        title: 'Mansion',
-        url: '/game/mansion',
+        label: 'Posiadłość',
+        route: '/game/mansion',
       }),
     ]));
-    expect(items.some((item) => item.title === 'Neighborhood')).toBeFalse();
-    expect(items.some((item) => item.url === '/game/neighborhood')).toBeFalse();
+    expect(items.some((item) => item.label === 'Neighborhood')).toBeFalse();
+    expect(items.some((item) => item.route === '/game/neighborhood')).toBeFalse();
   });
 
   it('hides the admin link for normal logged-in players', () => {
-    const urls = component.menuItems().map((item) => item.url);
+    const urls = navItems(component).map((item) => item.route);
 
     expect(urls).not.toContain('/admin');
   });
@@ -139,7 +176,7 @@ describe('GameSidebar', () => {
       }),
     );
 
-    const urls = component.menuItems().map((item) => item.url);
+    const urls = navItems(component).map((item) => item.route);
 
     expect(urls).toContain('/admin');
   });
@@ -153,10 +190,9 @@ describe('GameSidebar', () => {
     );
     selectedServer.set(createServer({ staffRole: ServerStaffRole.Moderator }));
 
-    const urls = component.menuItems().map((item) => item.url);
+    const urls = navItems(component).map((item) => item.route);
 
     expect(urls).not.toContain('/hero/dashboard');
-    expect(urls).not.toContain('/game/combat');
     expect(urls).not.toContain('/game/guild');
     expect(urls).not.toContain('/game/vicinity');
     expect(urls).not.toContain('/game/auction');
@@ -166,6 +202,10 @@ describe('GameSidebar', () => {
 
 function textContent(fixture: ComponentFixture<GameSidebar>): string {
   return (fixture.nativeElement as HTMLElement).textContent ?? '';
+}
+
+function navItems(component: GameSidebar) {
+  return component.menuGroups().flatMap((group) => group.items);
 }
 
 function createAccess(
@@ -209,6 +249,21 @@ function createServer(
     staffRole: null,
     canManage: false,
     canUseAsSandbox: false,
+    ...overrides,
+  };
+}
+
+function prestigeRow(overrides: Record<string, unknown> = {}) {
+  return {
+    district_code: 'A',
+    helper_text: 'Current prestige rank.',
+    hero_id: 'hero-1',
+    player_label: 'Zeugitai',
+    rank_name: 'Zeugitai',
+    rank_number: 2,
+    rank_uuid: 'rank-2',
+    server_id: 'server-1',
+    updated_at: '2026-05-08T00:00:00.000Z',
     ...overrides,
   };
 }

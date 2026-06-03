@@ -34,6 +34,11 @@ export type GetHeroArmoryItemDetailRpcArgs =
 export type GetHeroArmoryItemDetailRpcRow =
   Database['public']['Functions']['get_hero_armory_item_detail']['Returns'][number];
 
+export type GetHeroItemRequirementStatusRpcArgs =
+  Database['public']['Functions']['get_hero_item_requirement_status']['Args'];
+export type GetHeroItemRequirementStatusRpcRow =
+  Database['public']['Functions']['get_hero_item_requirement_status']['Returns'][number];
+
 export type RenameHeroArmoryShelfRpcArgs =
   Database['public']['Functions']['rename_hero_armory_shelf']['Args'];
 export type RenameHeroArmoryShelfRpcRow =
@@ -44,6 +49,11 @@ export type MoveHeroArmoryItemToShelfRpcArgs =
 export type MoveHeroArmoryItemToShelfRpcRow =
   Database['public']['Functions']['move_hero_armory_item_to_shelf']['Returns'][number];
 
+export type BulkMoveHeroArmoryItemsToShelfRpcArgs =
+  Database['public']['Functions']['bulk_move_hero_armory_items_to_shelf']['Args'];
+export type BulkMoveHeroArmoryItemsToShelfRpcRow =
+  Database['public']['Functions']['bulk_move_hero_armory_items_to_shelf']['Returns'][number];
+
 export type EquipHeroItemRpcArgs =
   Database['public']['Functions']['equip_hero_item']['Args'];
 export type EquipHeroItemRpcRow =
@@ -53,6 +63,11 @@ export type UnequipHeroItemRpcArgs =
   Database['public']['Functions']['unequip_hero_item']['Args'];
 export type UnequipHeroItemRpcRow =
   Database['public']['Functions']['unequip_hero_item']['Returns'][number];
+
+export type BulkUnequipHeroItemsRpcArgs =
+  Database['public']['Functions']['bulk_unequip_hero_items']['Args'];
+export type BulkUnequipHeroItemsRpcRow =
+  Database['public']['Functions']['bulk_unequip_hero_items']['Returns'][number];
 
 export type BulkEquipHeroItemsRpcArgs =
   Database['public']['Functions']['bulk_equip_hero_items']['Args'];
@@ -107,5 +122,6 @@ export type CheckHeroMeetsItemRequirementsRpcRow =
 export type EquipmentOperationRpcRow =
   | EquipHeroItemRpcRow
   | UnequipHeroItemRpcRow
+  | BulkUnequipHeroItemsRpcRow
   | BulkEquipHeroItemsRpcRow
   | ApplyHeroLoadoutPresetRpcRow;

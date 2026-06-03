@@ -1,0 +1,80 @@
+@let row = participant();
+
+<article class="mg-card p-md flex-col gap-md w-100">
+  <div class="flex-row-between-start gap-md">
+    <div class="flex-col gap-xs min-w-0">
+      <p class="small-caps color-muted text-xs mb-0">{{ row.kindLabel }}</p>
+      <h3 class="color-heading text-xl mb-0">{{ row.displayName }}</h3>
+      @if (row.metaLabel) {
+        <span
+          class="text-sm"
+          [class.color-muted]="row.avatarTone !== 'danger'"
+          [class.error-text]="row.avatarTone === 'danger'"
+          [class.success-text]="row.avatarTone === 'success'"
+        >
+          {{ row.metaLabel }}
+        </span>
+      }
+    </div>
+
+    @if (row.badgeLabel) {
+      <span
+        class="tag-badge"
+        [class.tag-badge--success]="row.badgeTone === 'success'"
+        [class.tag-badge--danger]="row.badgeTone === 'danger'"
+        [class.tag-badge--warn]="row.badgeTone === 'warn'"
+        [class.tag-badge--golden]="row.badgeTone === 'golden'"
+        [class.tag-badge--muted]="row.badgeTone === 'muted'"
+      >
+        {{ row.badgeLabel }}
+      </span>
+    }
+  </div>
+
+  <div
+    class="h-px-200 flex-row-center-center radius-md overflow-hidden"
+    [class.color-heading]="row.avatarTone === 'heading'"
+    [class.error-text]="row.avatarTone === 'danger'"
+    [class.success-text]="row.avatarTone === 'success'"
+  >
+    @if (row.portrait; as portrait) {
+      <img
+        class="w-100 h-100 object-fit-cover"
+        [src]="portrait.src"
+        [alt]="portrait.alt"
+        loading="lazy"
+        draggable="false"
+      />
+    } @else {
+      <span class="text-xxl font-display">
+        {{ initials(row.displayName) }}
+      </span>
+    }
+  </div>
+
+  <div class="flex-col gap-md">
+    @if (row.hpCurrent !== null && row.hpMax !== null) {
+      <app-game-bar
+        label="Zdrowie"
+        type="hp"
+        [value]="row.hpCurrent"
+        [max]="row.hpMax"
+      />
+    }
+
+    @if (row.baseStatRows.length) {
+      <app-stat-card title="Cechy" [rows]="row.baseStatRows" [compact]="true" />
+    }
+
+    @if (row.combatStatRows.length) {
+      <app-stat-card class="stat-card--derived" title="Statystyki walki" [rows]="row.combatStatRows" [compact]="true" />
+    }
+
+    @if (!row.baseStatRows.length && !row.combatStatRows.length && row.emptyStatsMessage) {
+      <div class="mg-card flex-col gap-xs text-center radius-md p-md">
+        <strong class="color-heading">Brak statystyk uczestnika</strong>
+        <span class="color-text text-sm">{{ row.emptyStatsMessage }}</span>
+      </div>
+    }
+  </div>
+</article>

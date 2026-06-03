@@ -1,13 +1,18 @@
 import { CombatTimingInput } from '../domain/combat/combat-live.model';
 import {
-  EnsureExplorationCombatSessionRpcArgs,
-  EnsureExplorationCombatSessionRpcRow,
+  GetCombatResolutionPreviewRpcArgs,
+  GetCombatResolutionPreviewRpcRow,
   GetCombatLiveStateRpcArgs,
   GetCombatLiveStateRpcRow,
   GetCombatResultDetailRpcArgs,
   GetCombatResultDetailRpcRow,
+  StartManualCombatSessionRpcArgs,
   SubmitCombatPlayerActionRpcArgs,
-  SubmitCombatPlayerActionRpcRow,
+  AutoResolveCombatSessionRpcArgs,
+  AutoResolveCombatSessionRpcRow,
+  FinalizeCombatSourceResultRpcArgs,
+  FinalizeCombatSourceResultRpcRow,
+  LiveStateRpcRow,
 } from '../types/combat-live-rpc.types';
 import {
   requiredTrimmedText,
@@ -18,21 +23,22 @@ import {
   optionalNonNegativeInteger,
 } from './number';
 
-export type LiveStateRpcRow =
-  | EnsureExplorationCombatSessionRpcRow
-  | GetCombatLiveStateRpcRow
-  | SubmitCombatPlayerActionRpcRow;
-
 const LIVE_COMBAT_WORKFLOW_CONTEXT = 'live combat workflow';
 
-export function toEnsureExplorationCombatSessionRpcArgs(input: {
-  challengeAttemptId: string | null | undefined;
+export function toStartManualCombatSessionRpcArgs(input: {
+  sourceEntityType: string | null | undefined;
+  sourceEntityId: string | null | undefined;
   requestId?: string | null;
-}): EnsureExplorationCombatSessionRpcArgs {
-  const args: EnsureExplorationCombatSessionRpcArgs = {
-    p_challenge_attempt_id: requiredTrimmedText(
-      input.challengeAttemptId,
-      'challengeAttemptId',
+}): StartManualCombatSessionRpcArgs {
+  const args: StartManualCombatSessionRpcArgs = {
+    p_source_entity_type: requiredTrimmedText(
+      input.sourceEntityType,
+      'sourceEntityType',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+    p_source_entity_id: requiredTrimmedText(
+      input.sourceEntityId,
+      'sourceEntityId',
       LIVE_COMBAT_WORKFLOW_CONTEXT,
     ),
   };
@@ -40,6 +46,32 @@ export function toEnsureExplorationCombatSessionRpcArgs(input: {
 
   if (requestId) {
     args.p_request_id = requestId;
+  }
+
+  return args;
+}
+
+export function toGetCombatResolutionPreviewRpcArgs(input: {
+  sourceEntityType: string | null | undefined;
+  sourceEntityId: string | null | undefined;
+  localeKey?: string | null;
+}): GetCombatResolutionPreviewRpcArgs {
+  const args: GetCombatResolutionPreviewRpcArgs = {
+    p_source_entity_type: requiredTrimmedText(
+      input.sourceEntityType,
+      'sourceEntityType',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+    p_source_entity_id: requiredTrimmedText(
+      input.sourceEntityId,
+      'sourceEntityId',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+  };
+  const localeKey = trimToNull(input.localeKey);
+
+  if (localeKey) {
+    args.p_locale_key = localeKey;
   }
 
   return args;
@@ -87,6 +119,56 @@ export function toSubmitCombatPlayerActionRpcArgs(input: {
   };
 }
 
+export function toAutoResolveCombatSessionRpcArgs(input: {
+  sourceEntityType: string | null | undefined;
+  sourceEntityId: string | null | undefined;
+  requestId: string | null | undefined;
+}): AutoResolveCombatSessionRpcArgs {
+  return {
+    p_source_entity_type: requiredTrimmedText(
+      input.sourceEntityType,
+      'sourceEntityType',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+    p_source_entity_id: requiredTrimmedText(
+      input.sourceEntityId,
+      'sourceEntityId',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+    p_request_id: requiredTrimmedText(
+      input.requestId,
+      'requestId',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+  };
+}
+
+export function toFinalizeCombatSourceResultRpcArgs(input: {
+  sessionId: string | null | undefined;
+  requestId: string | null | undefined;
+  resolutionMode?: string | null | undefined;
+}): FinalizeCombatSourceResultRpcArgs {
+  const args: FinalizeCombatSourceResultRpcArgs = {
+    p_session_id: requiredTrimmedText(
+      input.sessionId,
+      'sessionId',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+    p_request_id: requiredTrimmedText(
+      input.requestId,
+      'requestId',
+      LIVE_COMBAT_WORKFLOW_CONTEXT,
+    ),
+  };
+  const resolutionMode = trimToNull(input.resolutionMode);
+
+  if (resolutionMode) {
+    args.p_resolution_mode = resolutionMode;
+  }
+
+  return args;
+}
+
 export function toGetCombatResultDetailRpcArgs(input: {
   combatResultId: string | null | undefined;
 }): GetCombatResultDetailRpcArgs {
@@ -118,6 +200,42 @@ export function firstCombatResultDetailRow(
 
   if (!row) {
     throw new Error('DB nie zwróciła szczegółów wyniku walki.');
+  }
+
+  return row;
+}
+
+export function firstAutoResolveCombatSessionRow(
+  rows: readonly AutoResolveCombatSessionRpcRow[],
+): AutoResolveCombatSessionRpcRow {
+  const row = rows[0];
+
+  if (!row) {
+    throw new Error('DB nie zwróciła automatycznego wyniku walki.');
+  }
+
+  return row;
+}
+
+export function firstFinalizeCombatSourceResultRow(
+  rows: readonly FinalizeCombatSourceResultRpcRow[],
+): FinalizeCombatSourceResultRpcRow {
+  const row = rows[0];
+
+  if (!row) {
+    throw new Error('DB nie zwróciła finalnego wyniku walki.');
+  }
+
+  return row;
+}
+
+export function firstCombatResolutionPreviewRow(
+  rows: readonly GetCombatResolutionPreviewRpcRow[],
+): GetCombatResolutionPreviewRpcRow {
+  const row = rows[0];
+
+  if (!row) {
+    throw new Error('DB nie zwróciła podglądu walki.');
   }
 
   return row;

@@ -1,54 +1,32 @@
-<section class="mg-card flex-col gap-md p-lg w-100">
-  <div class="flex-row-between-center flex-col-sm gap-md">
-    <div class="flex-col gap-xs">
-      <p class="card-legend mb-0">Walking Dead</p>
-      <h3 class="mg-section__title mg-section__title--xs mb-0">Timing strike</h3>
-      <p class="muted-text mb-0">
-        Kliknij bezpośrednio w pole walki, gdy wskaźnik przechodzi przez zieloną strefę.
-        DB rozstrzyga trafienie, unik, obrażenia, HP i dalszy przebieg po odpowiedzi RPC.
-      </p>
-    </div>
-
-    <div class="flex-row-start-center flex-wrap gap-sm">
-      <span class="tag-badge tag-badge--muted">Zone {{ zoneWidth() | number:'1.0-2' }}%</span>
-      <span class="tag-badge tag-badge--muted">Speed {{ speed() | number:'1.2-2' }}</span>
-      @if (statusLabel(); as status) {
-        <span class="tag-badge tag-badge--warn">{{ status }}</span>
-      }
-      @if (streak() !== null) {
-        <span class="tag-badge tag-badge--muted">Streak {{ streak() }}</span>
-      }
-    </div>
+<section class="walking-dead-meter flex-col gap-sm w-100 p-sm radius-lg" aria-label="Walking Dead timing">
+  <div class="flex-row-between-center flex-col-sm gap-sm">
+    <strong class="color-heading font-display">Walking Dead timing</strong>
+    <span class="color-muted text-sm">Zatrzymaj wskaźnik w strefie trafienia</span>
   </div>
 
   <button
     type="button"
     class="walking-dead-meter__field w-100 p-0 cursor-pointer border-0 bg-transparent"
+    [class.opacity-70]="disabled()"
     [disabled]="disabled()"
     (click)="onFieldClick()"
   >
-    <svg
-      [attr.viewBox]="'0 0 ' + viewWidth + ' ' + viewHeight"
-      class="walking-dead-meter__svg d-block w-100"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      <rect class="walking-dead-meter__track" x="0" y="6" [attr.width]="viewWidth" height="44" rx="20"></rect>
-      <rect
+    <span class="walking-dead-meter__lane d-block w-100 radius-sm" aria-hidden="true">
+      <span
         class="walking-dead-meter__zone"
-        [attr.x]="zoneX()"
-        y="6"
-        [attr.width]="zoneSvgWidth()"
-        height="44"
-        rx="20"
-      ></rect>
-      <line
+        [style.left.%]="zoneStart()"
+        [style.width.%]="zoneEnd() - zoneStart()"
+      ></span>
+      <span
         class="walking-dead-meter__indicator"
-        [attr.x1]="indicatorX()"
-        [attr.x2]="indicatorX()"
-        y1="2"
-        y2="54"
-      ></line>
-    </svg>
+        [style.left.%]="position()"
+      ></span>
+    </span>
   </button>
+
+  <div class="flex-row-between-center gap-md w-100 color-muted text-xs">
+    <span>Za wcześnie</span>
+    <strong class="success-text">Strefa trafienia</strong>
+    <span>Za późno</span>
+  </div>
 </section>

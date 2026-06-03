@@ -1,0 +1,76 @@
+<aside class="flex-col gap-md min-h-full w-100 py-md px-sm">
+  <section class="mg-context-card w-100" [attr.aria-label]="contextAriaLabel()">
+    @for (row of contextRows(); track row.label) {
+      <div
+        class="mg-context-card__section"
+        [class.mg-context-card__section--separated]="!$first"
+      >
+        <span class="mg-context-card__label">{{ row.label }}</span>
+        <div class="mg-context-card__value-row">
+          <strong class="mg-context-card__value">{{ row.value }}</strong>
+          @if (row.badgeLabel) {
+            <span [class]="badgeToneClass(row.badgeTone)">
+              {{ row.badgeLabel }}
+            </span>
+          }
+        </div>
+      </div>
+    }
+
+    @for (action of contextActions(); track action.route) {
+      <a [class]="badgeToneClass(action.actionVariant)" [routerLink]="action.route">
+        {{ action.label }}
+      </a>
+    }
+  </section>
+
+  @if (showLogoutBeforeNav()) {
+    <app-session-logout-button />
+  }
+
+  <nav class="flex-col gap-md w-100" [attr.aria-label]="navAriaLabel()">
+    @for (group of navGroups(); track group.title) {
+      <section class="flex-col gap-xs w-100" [attr.aria-label]="group.title">
+        <span class="muted-text text-xs font-bold">{{ group.title }}</span>
+
+        @for (item of group.items; track item.label ?? item.kind) {
+          @if (item.kind === 'link') {
+            <a
+              class="mg-shell-nav-item"
+              [routerLink]="item.route"
+              [class.is-active]="isNavItemActive(item)"
+            >
+              @if (item.iconClass) {
+                <i [class]="item.iconClass + ' mg-shell-nav-item__icon'" aria-hidden="true"></i>
+              } @else if (item.iconText) {
+                <span class="mg-shell-nav-item__icon" aria-hidden="true">{{ item.iconText }}</span>
+              }
+              <span class="mg-shell-nav-item__label">{{ item.label }}</span>
+              @if (item.badgeLabel) {
+                <span [class]="badgeToneClass(item.badgeTone)">
+                  {{ item.badgeLabel }}
+                </span>
+              }
+            </a>
+          } @else if (item.kind === 'button') {
+            <button type="button" class="mg-shell-nav-item" [disabled]="item.disabled ?? false">
+              @if (item.iconClass) {
+                <i [class]="item.iconClass + ' mg-shell-nav-item__icon'" aria-hidden="true"></i>
+              } @else if (item.iconText) {
+                <span class="mg-shell-nav-item__icon" aria-hidden="true">{{ item.iconText }}</span>
+              }
+              <span class="mg-shell-nav-item__label">{{ item.label }}</span>
+              @if (item.badgeLabel) {
+                <span [class]="badgeToneClass(item.badgeTone)">
+                  {{ item.badgeLabel }}
+                </span>
+              }
+            </button>
+          } @else {
+            <app-session-logout-button />
+          }
+        }
+      </section>
+    }
+  </nav>
+</aside>

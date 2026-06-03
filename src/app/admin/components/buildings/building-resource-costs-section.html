@@ -1,4 +1,4 @@
-<div class="mg-surface-card flex-col gap-md p-md">
+<div class="mg-card flex-col gap-md p-md">
   <div class="flex-row-between-center flex-col-sm gap-md">
     <div class="flex-col gap-xs">
       <p class="card-legend mb-0">
@@ -14,7 +14,7 @@
 
   <div class="flex-col gap-md">
     @for (costGroup of page().costEditor.controls; track $index) {
-      <div class="mg-surface-card flex-col gap-md p-md" [formGroup]="costGroup">
+      <div class="mg-card flex-col gap-md p-md" [formGroup]="costGroup">
         <div class="mg-grid grid-cols-4 grid-cols-1-sm gap-md w-100 align-items-center">
           <div class="flex-col gap-sm">
             <span class="muted-text">{{ page().uiMetadata.adminFieldLabel('cost_resource_type') }}</span>

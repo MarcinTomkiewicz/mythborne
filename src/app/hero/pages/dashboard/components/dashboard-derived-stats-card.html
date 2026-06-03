@@ -1,0 +1,22 @@
+<section class="mg-card p-lg w-100 h-100">
+  <div class="flex-col gap-xs mb-md">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">
+      Statystyki pochodne
+    </h3>
+  </div>
+
+  <div class="flex-col gap-sm mt-md">
+    @for (row of page().derivedStatRows(); track row.key) {
+      <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+        <span class="color-muted small-caps uppercase text-xs">{{ row.label }}</span>
+        @if (row.value !== null && row.value !== "") {
+          <strong [class]="row.valueClass">
+            @for (part of row.parts; track $index) {
+              <span [class]="part.className">{{ part.text }}</span>
+            }
+          </strong>
+        }
+      </div>
+    }
+  </div>
+</section>

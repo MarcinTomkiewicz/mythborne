@@ -1,0 +1,25 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-col gap-xs mb-md">
+    <h3 class="mg-section__title mg-section__title--xs mb-0">
+      Stan świata
+    </h3>
+  </div>
+
+  <div class="flex-col gap-sm">
+    @for (row of page().persistentStateRows(); track row.key) {
+      <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+        <span class="color-muted small-caps uppercase text-xs">
+          {{ row.label }}
+        </span>
+
+        @if (actionRoute(row.actionKey); as route) {
+          <a [routerLink]="route">
+            <strong class="text-md">{{ row.displayValue }}</strong>
+          </a>
+        } @else {
+          <strong class="color-heading text-md">{{ row.displayValue }}</strong>
+        }
+      </div>
+    }
+  </div>
+</section>

@@ -1,0 +1,33 @@
+<div class="flex-row-start-center flex-col-sm flex-wrap gap-sm mb-md w-100">
+  <input
+    pInputText
+    class="flex-1 min-w-250 w-100-sm"
+    type="search"
+    [formControl]="searchControl()"
+    [placeholder]="searchCopy().placeholder"
+    [attr.aria-label]="searchCopy().placeholder"
+  />
+
+  @for (select of selectConfigs(); track select.key) {
+    <p-select
+      class="min-w-200 w-100-sm"
+      [formControl]="select.control"
+      [options]="select.options"
+      optionLabel="label"
+      optionValue="value"
+      [placeholder]="select.placeholder"
+      [ariaLabel]="select.ariaLabel"
+    />
+  }
+
+  @if (hasFilters()) {
+    <p-button
+      type="button"
+      severity="secondary"
+      size="small"
+      icon="pi pi-times"
+      [label]="inventoryCopy().clearFiltersLabel"
+      (onClick)="clearFilters.emit()"
+    />
+  }
+</div>

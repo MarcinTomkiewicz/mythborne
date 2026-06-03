@@ -1,23 +1,28 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import { EMPTY, Observable, switchMap, tap } from 'rxjs';
+import { EMPTY, map, Observable, switchMap, tap } from 'rxjs';
+import {
+  BulkVendorScrapHeroItemsResult,
+  VendorScrapHeroItemResult,
+} from '../../domain/item/item-lifecycle.model';
+import { BulkMoveArmoryItemsToShelfResult } from '../../domain/item/armory-actions.model';
 import { HeroArmoryReadModel } from '../../domain/item/item-equipment.model';
 import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
+import {
+  BulkMoveArmoryItemsToShelfInput,
+  MoveArmoryItemToShelfInput,
+  RenameArmoryShelfInput,
+} from '../../interfaces/item/armory-actions.interface';
+import {
+  ArmoryBulkLifecycleMutationInput,
+  ArmoryLifecycleMutationInput,
+  ArmoryMutationOptions,
+} from '../../interfaces/item/armory-shelf-mutation.interface';
+import { ArmoryShelfReadStatus } from '../../types/armory-shelf.types';
 import { getErrorMessage } from '../../utils/error-message';
 import { ActiveHero } from '../hero/active-hero';
 import { ItemLifecycleService } from './item-lifecycle';
 import { ArmoryShelfMutationRunner } from './armory-shelf-mutation-runner';
-import {
-  MoveArmoryItemToShelfInput,
-  PlayerArmory,
-  RenameArmoryShelfInput,
-} from './player-armory';
-
-export type ArmoryShelfReadStatus =
-  | 'idle'
-  | 'loading'
-  | 'loaded'
-  | 'empty'
-  | 'error';
+import { PlayerArmory } from './player-armory';
 
 @Injectable()
 export class ArmoryShelfState {
@@ -102,11 +107,38 @@ export class ArmoryShelfState {
   moveItemToShelf(input: MoveArmoryItemToShelfInput): void {
     this.runMutation({
       operation: () => this.armory.moveItemToShelf(input),
+      successMessage: 'Item moved.',
       failureMessage: 'Armory shelf action failed.',
     });
   }
 
-  vendorScrapItem(itemId: string, afterResponse?: () => void): void {
+  bulkMoveItemsToShelf(
+    input: BulkMoveArmoryItemsToShelfInput,
+    afterResponse?: (result: BulkMoveArmoryItemsToShelfResult) => void,
+  ): void {
+    let bulkMoveSucceeded = false;
+    this.runMutation({
+      failureMessage: 'Armory shelf action failed.',
+      committedRefreshFailureMessage:
+        'Armory refresh failed after moving selected items.',
+      hasCommitted: () => bulkMoveSucceeded,
+      operation: (_requestId, _requestContextKey, acceptsCurrentContext) =>
+        this.armory.bulkMoveItemsToShelf(input).pipe(
+          tap(({ result }) => {
+            bulkMoveSucceeded = result.movedCount > 0 || result.skippedCount > 0;
+            if (acceptsCurrentContext()) {
+              afterResponse?.(result);
+            }
+          }),
+          map(({ readModel }) => readModel),
+        ),
+    });
+  }
+
+  vendorScrapItem(
+    itemId: string,
+    afterResponse?: (result: VendorScrapHeroItemResult) => void,
+  ): void {
     this.runLifecycleMutation({
       itemId,
       afterResponse,
@@ -116,6 +148,23 @@ export class ArmoryShelfState {
           actorHeroId,
           itemId: normalizedItemId,
           reason: 'Player vendor scrap',
+        }),
+    });
+  }
+
+  bulkVendorScrapItems(
+    itemIds: readonly string[],
+    afterResponse?: (result: BulkVendorScrapHeroItemsResult) => void,
+  ): void {
+    this.runBulkLifecycleMutation({
+      itemIds,
+      afterResponse,
+      successMessage: 'Selected items sold to vendor.',
+      operation: (actorHeroId, normalizedItemIds) =>
+        this.lifecycle.bulkVendorScrapHeroItems({
+          actorHeroId,
+          items: normalizedItemIds.map((itemId) => ({ itemId })),
+          reason: 'Player bulk vendor scrap',
         }),
     });
   }
@@ -155,7 +204,6 @@ export class ArmoryShelfState {
   private runLifecycleMutation<T>(input: ArmoryLifecycleMutationInput<T>): void {
     let lifecycleSucceeded = false;
     this.runMutation({
-      afterResponse: input.afterResponse,
       successMessage: input.successMessage,
       failureMessage: 'Item lifecycle action failed.',
       committedRefreshFailureMessage:
@@ -166,14 +214,50 @@ export class ArmoryShelfState {
         const itemId = requiredItemId(input.itemId);
 
         return input.operation(actorHeroId, itemId).pipe(
-          tap(() => {
+          tap((result) => {
             lifecycleSucceeded = true;
             if (!acceptsCurrentContext()) {
               return;
             }
 
             this.actionMessage.set(input.successMessage);
-            input.afterResponse?.();
+            input.afterResponse?.(result);
+          }),
+          switchMap(() => {
+            if (!acceptsCurrentContext()) {
+              return EMPTY;
+            }
+
+            return this.armory.getArmory();
+          }),
+        );
+      },
+    });
+  }
+
+  private runBulkLifecycleMutation<T>(
+    input: ArmoryBulkLifecycleMutationInput<T>,
+  ): void {
+    let lifecycleSucceeded = false;
+    this.runMutation({
+      successMessage: input.successMessage,
+      failureMessage: 'Item lifecycle action failed.',
+      committedRefreshFailureMessage:
+        'Armory refresh failed after item lifecycle action.',
+      hasCommitted: () => lifecycleSucceeded,
+      operation: (_requestId, _requestContextKey, acceptsCurrentContext) => {
+        const actorHeroId = requiredActorHeroId(this.activeHero.state());
+        const itemIds = requiredItemIds(input.itemIds);
+
+        return input.operation(actorHeroId, itemIds).pipe(
+          tap((result) => {
+            lifecycleSucceeded = true;
+            if (!acceptsCurrentContext()) {
+              return;
+            }
+
+            this.actionMessage.set(input.successMessage);
+            input.afterResponse?.(result);
           }),
           switchMap(() => {
             if (!acceptsCurrentContext()) {
@@ -205,26 +289,6 @@ export class ArmoryShelfState {
   }
 }
 
-interface ArmoryMutationOptions {
-  operation: (
-    requestId: number,
-    requestContextKey: string,
-    acceptsCurrentContext: () => boolean,
-  ) => Observable<HeroArmoryReadModel>;
-  afterResponse?: () => void;
-  successMessage?: string;
-  failureMessage: string;
-  committedRefreshFailureMessage?: string;
-  hasCommitted?: () => boolean;
-}
-
-interface ArmoryLifecycleMutationInput<T> {
-  itemId: string;
-  operation: (actorHeroId: string, itemId: string) => Observable<T>;
-  afterResponse?: () => void;
-  successMessage: string;
-}
-
 function requiredItemId(itemId: string): string {
   const normalizedItemId = itemId.trim();
 
@@ -233,6 +297,18 @@ function requiredItemId(itemId: string): string {
   }
 
   return normalizedItemId;
+}
+
+function requiredItemIds(itemIds: readonly string[]): string[] {
+  const normalizedItemIds = itemIds
+    .map(requiredItemId)
+    .filter((itemId, index, ids) => ids.indexOf(itemId) === index);
+
+  if (!normalizedItemIds.length) {
+    throw new Error('itemIds are required for item lifecycle action.');
+  }
+
+  return normalizedItemIds;
 }
 
 function requiredActorHeroId(state: Pick<ActiveHeroState, 'heroId'> | null): string {

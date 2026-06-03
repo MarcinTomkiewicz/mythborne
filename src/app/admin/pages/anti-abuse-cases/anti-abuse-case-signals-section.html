@@ -3,7 +3,7 @@
   <div class="flex-col gap-md">
     @for (signal of signals(); track signal.id) {
       @let type = signalType(signal);
-      <article class="mg-surface-card p-md flex-col gap-md">
+      <article class="mg-card p-md flex-col gap-md">
         <div class="flex-row-between-center flex-col-sm gap-sm">
           <div class="flex-col gap-xs min-w-0">
             <p class="card-legend mb-0">{{ signal.createdAt }}</p>

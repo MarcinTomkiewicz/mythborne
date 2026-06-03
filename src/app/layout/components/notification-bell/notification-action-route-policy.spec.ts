@@ -9,86 +9,18 @@ describe('NotificationActionRoutePolicy', () => {
       .toBe('/game/mansion?tab=buildings');
   });
 
-  it('allows PvP result notification routes and preserves query strings', () => {
-    expect(policy.actionRoute(notification(
-      '/game/vicinity/attack-results/attack-result-1?from=bell',
-      'pvp.attack_result.attacker',
-      'pvp_attack_result',
-      'attack-result-1',
-    ))).toBe('/game/vicinity/attack-results/attack-result-1?from=bell');
-    expect(policy.actionRoute(notification(
-      '/game/vicinity/attack-results/attack-result-2',
-      'pvp.attack_result.defender',
-      'pvp_attack_result',
-      'attack-result-2',
-    ))).toBe('/game/vicinity/attack-results/attack-result-2');
-    expect(policy.actionRoute(notification(
-      '/game/vicinity/spy-results/spy-result-1',
-      'pvp.spy_result.ready',
-      'pvp_spy_result',
-      'spy-result-1',
-    ))).toBe('/game/vicinity/spy-results/spy-result-1');
+  it('allows private report detail action routes for report notifications', () => {
+    expect(policy.actionRoute(notification('/game/reports/report-1?from=notification')))
+      .toBe('/game/reports/report-1?from=notification');
   });
 
-  it('blocks non-result notifications from PvP result routes', () => {
-    expect(policy.actionRoute(notification(
-      '/game/vicinity/attack-results/attack-result-1',
-      'estate.building_job.completed',
-    ))).toBeNull();
-    expect(policy.actionRoute(notification(
-      '/game/vicinity/attack-results/attack-result-1',
-      'pvp.attack.incoming',
-    ))).toBeNull();
-    expect(policy.actionRoute(notification(
-      '/game/vicinity/spy-results/spy-result-1',
-      'pvp.spy.incoming',
-    ))).toBeNull();
-    expect(policy.actionRoute(notification(
-      '/game/vicinity/spy-results/spy-result-1',
-      'pvp.spy.target',
-    ))).toBeNull();
-  });
-
-  it('blocks PvP result routes when source entity is missing', () => {
-    expect(policy.actionRoute(notification(
-      '/game/vicinity/attack-results/attack-result-1',
-      'pvp.attack_result.attacker',
-    ))).toBeNull();
-    expect(policy.actionRoute(notification(
-      '/game/vicinity/spy-results/spy-result-1',
-      'pvp.spy_result.ready',
-    ))).toBeNull();
-  });
-
-  it('blocks PvP result routes when source entity type or id does not match', () => {
-    expect(policy.actionRoute(notification(
-      '/game/vicinity/attack-results/attack-result-1',
-      'pvp.attack_result.attacker',
-      'pvp_spy_result',
-      'attack-result-1',
-    ))).toBeNull();
-    expect(policy.actionRoute(notification(
-      '/game/vicinity/attack-results/attack-result-1',
-      'pvp.attack_result.attacker',
-      'pvp_attack_result',
-      'attack-result-2',
-    ))).toBeNull();
-    expect(policy.actionRoute(notification(
-      '/game/vicinity/spy-results/spy-result-1',
-      'pvp.spy_result.ready',
-      'pvp_spy_result',
-      'spy-result-2',
-    ))).toBeNull();
-  });
-
-  it('blocks non-player, reports and unknown action routes', () => {
+  it('blocks non-player, report list and unknown action routes', () => {
     expect(policy.actionRoute(notification('ViewState'))).toBeNull();
     expect(policy.actionRoute(notification('/admin/users'))).toBeNull();
     expect(policy.actionRoute(notification('/report/public-token'))).toBeNull();
     expect(policy.actionRoute(notification('/game/reports'))).toBeNull();
     expect(policy.actionRoute(notification('/game/missing'))).toBeNull();
-    expect(policy.actionRoute(notification('/game/vicinity/attack-results'))).toBeNull();
-    expect(policy.actionRoute(notification('/game/vicinity/spy-results'))).toBeNull();
+    expect(policy.actionRoute(notification('https://example.com/game/reports/report-1'))).toBeNull();
   });
 });
 

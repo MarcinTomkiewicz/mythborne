@@ -7,14 +7,18 @@ import {
 import {
   AutoResolveHeroExplorationChallengeAttemptRpcArgs,
   AutoResolveHeroExplorationChallengeAttemptRpcRow,
+  AutoResolveCombatSessionRpcArgs,
+  AutoResolveCombatSessionRpcRow,
   CompleteHeroExplorationChallengeAttemptRpcArgs,
   CompleteHeroExplorationChallengeAttemptRpcRow,
+  GetHeroExplorationDifficultyCardPreviewsRpcArgs,
   GetHeroExplorationStateRpcArgs,
   PreviewTrialOpportunityCurveRpcArgs,
   ResolveHeroExplorationStepRpcArgs,
   ResolveHeroExplorationStepRpcRow,
   StartHeroExplorationStepRpcArgs,
   StartHeroExplorationStepRpcRow,
+  StartOrGetHeroExplorationAndStartInitialStepRpcArgs,
   StartOrGetHeroExplorationRpcArgs,
   StartOrGetHeroExplorationRpcRow,
 } from '../types/exploration-runtime-rpc.types';
@@ -22,6 +26,11 @@ import { Json } from '../types/database.types';
 import { jsonRecord, read } from './json-read';
 import { mapExplorationStepSelectionDiagnosticJson } from './exploration-readiness-mappers';
 import { trimText, trimToNull } from './normalize-text';
+
+type StartHeroExplorationStepRpcArgsWithNullableEdge =
+  Omit<StartHeroExplorationStepRpcArgs, 'p_edge_id'> & {
+    p_edge_id?: string | null;
+  };
 
 export function toGetHeroExplorationStateRpcArgs(input: {
   heroId: string | null | undefined;
@@ -31,6 +40,22 @@ export function toGetHeroExplorationStateRpcArgs(input: {
     p_hero_id: requiredText(input.heroId, 'heroId'),
     p_difficulty_key: requiredText(input.difficultyKey, 'difficultyKey'),
   };
+}
+
+export function toGetHeroExplorationDifficultyCardPreviewsRpcArgs(input: {
+  heroId: string | null | undefined;
+  stepsToPreview?: number | null;
+}): GetHeroExplorationDifficultyCardPreviewsRpcArgs {
+  const args: GetHeroExplorationDifficultyCardPreviewsRpcArgs = {
+    p_hero_id: requiredText(input.heroId, 'heroId'),
+  };
+  const stepsToPreview = optionalPositiveInteger(input.stepsToPreview);
+
+  if (stepsToPreview !== null) {
+    args.p_steps_to_preview = stepsToPreview;
+  }
+
+  return args;
 }
 
 export function toStartOrGetHeroExplorationRpcArgs(input: {
@@ -43,19 +68,33 @@ export function toStartOrGetHeroExplorationRpcArgs(input: {
   };
 }
 
+export function toStartOrGetHeroExplorationAndStartInitialStepRpcArgs(input: {
+  heroId: string | null | undefined;
+  difficultyKey: string | null | undefined;
+  requestId: string | null | undefined;
+}): StartOrGetHeroExplorationAndStartInitialStepRpcArgs {
+  return {
+    p_hero_id: requiredText(input.heroId, 'heroId'),
+    p_difficulty_key: requiredText(input.difficultyKey, 'difficultyKey'),
+    p_request_id: requiredText(input.requestId, 'requestId'),
+  };
+}
+
 export function toStartHeroExplorationStepRpcArgs(input: {
   explorationId: string | null | undefined;
   edgeId: string | null | undefined;
-  stepKind?: string | null;
-}): StartHeroExplorationStepRpcArgs {
-  const args: StartHeroExplorationStepRpcArgs = {
+  stepKind: string | null | undefined;
+}): StartHeroExplorationStepRpcArgsWithNullableEdge {
+  const args: StartHeroExplorationStepRpcArgsWithNullableEdge = {
     p_exploration_id: requiredText(input.explorationId, 'explorationId'),
-    p_edge_id: requiredText(input.edgeId, 'edgeId'),
+    p_step_kind: requiredText(input.stepKind, 'stepKind'),
   };
-  const stepKind = trimText(input.stepKind);
+  const edgeId = trimToNull(input.edgeId);
 
-  if (stepKind) {
-    args.p_step_kind = stepKind;
+  if (input.edgeId === null) {
+    args.p_edge_id = null;
+  } else if (edgeId) {
+    args.p_edge_id = edgeId;
   }
 
   return args;
@@ -126,6 +165,18 @@ export function toAutoResolveHeroExplorationChallengeAttemptRpcArgs(input: {
   }
 
   return args;
+}
+
+export function toAutoResolveCombatSessionRpcArgs(input: {
+  sourceEntityType: string | null | undefined;
+  sourceEntityId: string | null | undefined;
+  requestId: string | null | undefined;
+}): AutoResolveCombatSessionRpcArgs {
+  return {
+    p_source_entity_type: requiredText(input.sourceEntityType, 'sourceEntityType'),
+    p_source_entity_id: requiredText(input.sourceEntityId, 'sourceEntityId'),
+    p_request_id: requiredText(input.requestId, 'requestId'),
+  };
 }
 
 export function toPreviewTrialOpportunityCurveRpcArgs(input: {
@@ -214,6 +265,20 @@ export function firstAutoResolveHeroExplorationChallengeAttemptRow(
   return row;
 }
 
+export function firstAutoResolveCombatSessionRow(
+  rows: readonly AutoResolveCombatSessionRpcRow[],
+): AutoResolveCombatSessionRpcRow {
+  const row = rows[0];
+
+  if (!row) {
+    throw new Error(
+      'auto_resolve_combat_session returned no result row.',
+    );
+  }
+
+  return row;
+}
+
 export function mapResolveHeroExplorationStepResult(
   row: ResolveHeroExplorationStepRpcRow,
 ): HeroExplorationStepResolutionReadModel {
@@ -270,6 +335,30 @@ export function mapAutoResolveHeroExplorationChallengeResult(
     explorationStatus: null,
     autoResolveChance: row.auto_resolve_chance,
     autoResolveRoll: row.auto_resolve_roll,
+  };
+}
+
+export function mapAutoResolveCombatSessionChallengeResult(
+  row: AutoResolveCombatSessionRpcRow,
+): HeroExplorationChallengeCompletionReadModel {
+  return {
+    challengeAttemptId: row.source_entity_id,
+    status: row.status,
+    success: row.success,
+    completionMode: row.completion_mode,
+    rewardGrantId: row.reward_grant_id,
+    remainingTrials: row.remaining_trials,
+    explorationStatus: row.exploration_status,
+    autoResolveChance: null,
+    autoResolveRoll: null,
+    combatResultId: row.combat_result_id,
+    combatSessionId: row.combat_session_id,
+    combatOutcome: row.outcome,
+    gameReportId: row.game_report_id,
+    participantsCreated: row.participants_created,
+    participantStatsCreated: row.participant_stats_created,
+    attacksCreated: row.attacks_created,
+    finalEventCount: row.final_event_count,
   };
 }
 

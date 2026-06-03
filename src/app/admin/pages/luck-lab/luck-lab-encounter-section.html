@@ -22,15 +22,15 @@
   <app-luck-lab-explanation-list [rows]="explanationRows()" />
 
   <div class="grid-3 gap-md">
-    <div class="mg-surface-card p-md flex-col gap-xs">
+    <div class="mg-card p-md flex-col gap-xs">
       <span class="card-legend">Difficulty context</span>
       <strong>Difficulty override: {{ page.lab.input().difficultyKey ?? 'DB default' }}</strong>
     </div>
-    <div class="mg-surface-card p-md flex-col gap-xs">
+    <div class="mg-card p-md flex-col gap-xs">
       <span class="card-legend">District context</span>
       <strong>District override: {{ page.lab.input().districtCode ?? 'DB default' }}</strong>
     </div>
-    <div class="mg-surface-card p-md flex-col gap-xs">
+    <div class="mg-card p-md flex-col gap-xs">
       <span class="card-legend">Resource events</span>
       <strong>Encounter subtype</strong>
       <span>No separate resource RNG model is exposed here.</span>
@@ -38,7 +38,7 @@
   </div>
 
   <div class="grid-2 gap-md">
-    <article class="mg-surface-card p-md flex-col gap-sm">
+    <article class="mg-card p-md flex-col gap-sm">
       <span class="card-legend">Final encounter chance</span>
       @if (page.encounterPreview(); as encounter) {
         <strong>
@@ -60,7 +60,7 @@
       }
     </article>
 
-    <article class="mg-surface-card p-md flex-col gap-sm">
+    <article class="mg-card p-md flex-col gap-sm">
       <span class="card-legend">DB chance breakdown</span>
       <span>
         Base chance:

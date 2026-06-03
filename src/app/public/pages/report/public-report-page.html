@@ -3,10 +3,10 @@
     <h1 class="mg-section__title mg-section__title--sm mg-section__title--no-margin">
       Mythsworn
     </h1>
-    <a routerLink="/public" class="tag-badge tag-badge--muted">Home</a>
+    <a routerLink="/" class="tag-badge tag-badge--muted">Start</a>
   </header>
 
-  <main class="mg-container py-lg w-100">
+  <main class="py-lg w-100" [class.mg-container]="!page.isSpyReport()">
     <app-loading-overlay
       [visible]="page.isLoading() && !page.isNotFound()"
       label="Loading report..."
@@ -15,22 +15,37 @@
 
     @if (page.isNotFound()) {
       <section class="mg-card flex-col gap-sm p-lg w-100">
-        <p class="card-legend mb-0">
+        <p class="card-legend m-0">
           {{ page.uiMetadata.sectionTitle(page.uiMetadata.section.notFound) }}
         </p>
-        <p class="mb-0 muted-text">
+        <p class="m-0 muted-text">
           {{ page.uiMetadata.sectionText(page.uiMetadata.section.notFound) }}
         </p>
       </section>
     } @else if (page.report(); as report) {
       <div class="flex-col gap-xl w-100">
+        @if (page.isSpyReport()) {
+          <app-pvp-spy-report [report]="report" />
+
+          <section class="mg-card p-lg flex-col gap-md w-100">
+            <p class="small-caps color-muted text-xs m-0">Akcje raportu</p>
+            <div class="flex-row-start-center flex-wrap gap-sm">
+              <p-button
+                label="Start"
+                icon="pi pi-home"
+                severity="secondary"
+                routerLink="/"
+              />
+            </div>
+          </section>
+        } @else {
         <section class="mg-card p-lg w-100">
           <div class="flex-row-between-center flex-col-sm gap-md">
             <div class="flex-col gap-xs">
-              <p class="card-legend mb-0">{{ report.reportTypeLabel }}</p>
-              <h2 class="mg-section__title mg-section__title--sm mb-0">{{ report.title }}</h2>
+              <p class="card-legend m-0">{{ report.reportTypeLabel }}</p>
+              <h2 class="mg-section__title mg-section__title--sm m-0">{{ report.title }}</h2>
               @if (report.summary) {
-                <p class="muted-text mb-0">{{ report.summary }}</p>
+                <p class="muted-text m-0">{{ report.summary }}</p>
               }
               @if (report.sourceLabel) {
                 <span class="tag-badge tag-badge--muted">{{ report.sourceLabel }}</span>
@@ -47,10 +62,10 @@
         </section>
 
         <section class="mg-card flex-col gap-md p-lg w-100">
-          <p class="card-legend mb-0">
+          <p class="card-legend m-0">
             {{ page.uiMetadata.sectionTitle(page.uiMetadata.section.pageHeader) }}
           </p>
-          <p class="muted-text mb-0">
+          <p class="muted-text m-0">
             {{ page.uiMetadata.sectionText(page.uiMetadata.section.pageHeader) }}
           </p>
         </section>
@@ -64,6 +79,7 @@
           [combatSectionTitle]="page.uiMetadata.sectionTitle(page.uiMetadata.section.combatSection)"
           [combatSectionText]="page.uiMetadata.sectionText(page.uiMetadata.section.combatSection)"
         />
+        }
       </div>
     }
   </main>

@@ -27,14 +27,14 @@
 
     <section class="mg-card p-lg w-100">
       <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="muted-text">Action types</span>
           <strong class="mg-section__title mg-section__title--xs mb-0">
             {{ data().actionTypes.length }}
           </strong>
         </div>
 
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="muted-text">Entity types</span>
           <strong class="mg-section__title mg-section__title--xs mb-0">
             {{ data().entityTypes.length }}
@@ -51,7 +51,7 @@
 
       <div class="flex-col gap-md">
         @for (actionType of data().actionTypes; track actionType.id) {
-          <article class="mg-surface-card p-md flex-col gap-sm">
+          <article class="mg-card p-md flex-col gap-sm">
             <div class="flex-row-between-center flex-col-sm gap-sm">
               <div class="flex-col gap-xs">
                 <p class="card-legend mb-0">{{ actionType.key }}</p>
@@ -95,7 +95,7 @@
 
       <div class="flex-col gap-md">
         @for (entityType of data().entityTypes; track entityType.id) {
-          <article class="mg-surface-card p-md flex-col gap-sm">
+          <article class="mg-card p-md flex-col gap-sm">
             <div class="flex-row-between-center flex-col-sm gap-sm">
               <div class="flex-col gap-xs">
                 <p class="card-legend mb-0">{{ entityType.key }}</p>

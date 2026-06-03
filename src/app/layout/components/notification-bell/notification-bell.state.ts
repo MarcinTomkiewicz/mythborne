@@ -12,9 +12,11 @@ import {
 } from './notification-bell-action-runner';
 import { NotificationBellDisplayFormatter } from './notification-bell-display-formatter';
 import { NotificationFreshToastPresenter } from './notification-fresh-toast-presenter';
+import { TopbarDropdownCoordinator } from '../topbar-dropdown/topbar-dropdown-coordinator';
 
 const DROPDOWN_NOTIFICATION_LIMIT = 6;
 const NOTIFICATION_TOAST_POLL_INTERVAL_MS = 60_000;
+const PLAYER_NOTIFICATION_DROPDOWN_ID = 'player-notifications';
 
 interface NotificationBellPayload {
   notifications: PlayerNotificationListItem[];
@@ -36,12 +38,19 @@ export class NotificationBellState implements OnDestroy {
   private readonly actionRunner = inject(NotificationBellActionRunner);
   private readonly displayFormatter = inject(NotificationBellDisplayFormatter);
   private readonly freshToastPresenter = inject(NotificationFreshToastPresenter);
+  private readonly dropdownCoordinator = inject(TopbarDropdownCoordinator, {
+    optional: true,
+  });
   private readonly activeHeroState$ = toObservable(this.activeHero.state);
   private subscription?: Subscription;
   private contextKey = signal<string | null>(null);
   private seededContextKey: string | null = null;
+  private readonly fallbackIsOpen = signal(false);
 
-  readonly isOpen = signal(false);
+  readonly isOpen = computed(() =>
+    this.dropdownCoordinator?.isOpen(PLAYER_NOTIFICATION_DROPDOWN_ID) ??
+    this.fallbackIsOpen(),
+  );
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly notifications = signal<PlayerNotificationListItem[]>([]);
@@ -104,11 +113,21 @@ export class NotificationBellState implements OnDestroy {
   }
 
   toggleDropdown(): void {
-    this.isOpen.update((value) => !value);
+    if (this.dropdownCoordinator) {
+      this.dropdownCoordinator.toggle(PLAYER_NOTIFICATION_DROPDOWN_ID);
+      return;
+    }
+
+    this.fallbackIsOpen.update((value) => !value);
   }
 
   closeDropdown(): void {
-    this.isOpen.set(false);
+    if (this.dropdownCoordinator) {
+      this.dropdownCoordinator.close(PLAYER_NOTIFICATION_DROPDOWN_ID);
+      return;
+    }
+
+    this.fallbackIsOpen.set(false);
   }
 
   severityBadgeClass(notification: PlayerNotificationListItem): string {
@@ -199,7 +218,7 @@ export class NotificationBellState implements OnDestroy {
     this.unreadCount.set(0);
     this.error.set(null);
     this.isLoading.set(false);
-    this.isOpen.set(false);
+    this.closeDropdown();
   }
 
   private failLoad(): void {

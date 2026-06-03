@@ -1,4 +1,52 @@
-<section class="mg-card mg-card--legend max-w-500">
-  <p class="card-legend">Access</p>
-  <app-login-form (login)="handleLogin($event)" />
+<section class="flex-col-center-center min-h-full w-100 py-xl" aria-label="Logowanie do konta">
+  <div class="flex-col gap-lg w-100 max-w-500">
+    <header class="flex-col-center-center gap-xs w-100 text-center">
+      <p class="color-secondary text-xs font-extrabold uppercase m-0">Konto Mythsworn</p>
+      <h1 class="mg-section__title m-0">Zaloguj się</h1>
+    </header>
+
+    @if (page.isLoggedIn()) {
+      <section class="mg-card flex-col gap-md w-100">
+        <div class="flex-col gap-xs">
+          <h2 class="color-heading text-lg m-0">Jesteś już zalogowany</h2>
+          <p class="m-0 color-muted">
+            Przejdź do wejścia do gry, aby wybrać dostępny świat i bohatera.
+          </p>
+        </div>
+
+        <div class="flex-row-center-center flex-wrap gap-sm">
+          <p-button
+            label="Przejdź do wejścia"
+            icon="pi pi-teleport"
+            routerLink="/auth/server-entry"
+          />
+          <p-button
+            label="Start"
+            icon="pi pi-home"
+            severity="secondary"
+            routerLink="/"
+          />
+        </div>
+      </section>
+    } @else {
+      <section class="mg-card flex-col-center-center gap-md w-100">
+        <div class="flex-col gap-md w-100 max-w-350">
+          <app-login-form
+            [submitting]="page.isSubmitting()"
+            [errorMessage]="page.errorMessage()"
+            (login)="handleLogin($event)"
+          />
+
+          <div class="flex-row-center-center flex-wrap gap-sm">
+            <a routerLink="/" class="text-sm font-bold">Wróć na start</a>
+          </div>
+
+          <div class="flex-row-center-center flex-wrap gap-xs">
+            <span class="color-muted text-sm">Nie masz konta?</span>
+            <a routerLink="/auth/register" class="text-sm font-bold">Załóż konto</a>
+          </div>
+        </div>
+      </section>
+    }
+  </div>
 </section>

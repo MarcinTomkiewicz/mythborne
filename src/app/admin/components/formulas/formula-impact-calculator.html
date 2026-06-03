@@ -36,7 +36,7 @@
       </div>
 
       @if (selectedRow(); as row) {
-        <div class="mg-surface-card p-md flex-col gap-sm">
+        <div class="mg-card p-md flex-col gap-sm">
           <div class="flex-row-between-center flex-col-sm gap-sm">
             <div class="flex-col gap-xs">
               <span class="muted-text">Assigned formula</span>
@@ -71,7 +71,7 @@
           </div>
 
           @if (editableVariableViews().length > 0) {
-            <div class="mg-surface-card p-md flex-col gap-md">
+            <div class="mg-card p-md flex-col gap-md">
               <p class="card-legend mb-0">Input variables</p>
               @if (derivedTargetLevel() !== null) {
                 <div class="flex-row-between-center gap-md muted-text">
@@ -104,13 +104,13 @@
           }
 
           @if (buildingTargetLevelWarning(); as warning) {
-            <div class="mg-surface-card p-md flex-col gap-xs">
+            <div class="mg-card p-md flex-col gap-xs">
               <strong class="heading-color">Building preview warning</strong>
               <span class="muted-text">{{ warning }}</span>
             </div>
           }
 
-          <div class="mg-surface-card p-md flex-col gap-sm">
+          <div class="mg-card p-md flex-col gap-sm">
             <span class="muted-text">Expression</span>
             <pre class="mb-0 text-break"><code>{{ selectedRow()?.formula?.expression ?? '-' }}</code></pre>
           </div>
@@ -125,12 +125,12 @@
       </div>
 
       @if (previewError(); as error) {
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <strong class="heading-color">Preview needs attention</strong>
           <span class="muted-text">{{ error }}</span>
         </div>
       } @else {
-        <div class="mg-surface-card p-md flex-col gap-md">
+        <div class="mg-card p-md flex-col gap-md">
           <div class="flex-row-between-center flex-col-sm gap-sm">
             <div class="flex-col gap-xs">
               <p class="card-legend mb-0">Output table</p>

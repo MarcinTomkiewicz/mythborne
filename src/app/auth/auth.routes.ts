@@ -1,6 +1,7 @@
 import {
   authEntryGuard,
   createCharacterEntryGuard,
+  serverEntryGuard,
 } from '../core/guards/hero-onboarding.guard';
 import { Routes } from '@angular/router';
 
@@ -11,17 +12,38 @@ export const authRoutes: Routes = [
     pathMatch: 'full',
   },
   {
-    path: 'login',
-    canActivate: [authEntryGuard],
+    path: '',
     loadComponent: () =>
-      import('./pages/login/login-page').then((m) => m.LoginPage)
-  },
-  {
-    path: 'create-character',
-    canActivate: [createCharacterEntryGuard],
-    loadComponent: () =>
-      import('./pages/create-character/create-character-page').then(
-        (m) => m.CreateCharacterPage
-      )
+      import('./layout/account-entry-layout').then((m) => m.AccountEntryLayout),
+    children: [
+      {
+        path: 'login',
+        canActivate: [authEntryGuard],
+        loadComponent: () =>
+          import('./pages/login/login-page').then((m) => m.LoginPage),
+      },
+      {
+        path: 'register',
+        canActivate: [authEntryGuard],
+        loadComponent: () =>
+          import('./pages/register/register-page').then((m) => m.RegisterPage),
+      },
+      {
+        path: 'server-entry',
+        canActivate: [serverEntryGuard],
+        loadComponent: () =>
+          import('./pages/server-entry/server-entry-page').then(
+            (m) => m.ServerEntryPage,
+          ),
+      },
+      {
+        path: 'create-character',
+        canActivate: [createCharacterEntryGuard],
+        loadComponent: () =>
+          import('./pages/create-character/create-character-page').then(
+            (m) => m.CreateCharacterPage
+          )
+      },
+    ],
   }
 ];

@@ -5,6 +5,8 @@ import {
   ArmoryItemDetailReadModel,
   HeroArmoryReadModel,
 } from '../../domain/item/item-equipment.model';
+import { PlayerArmoryPageContextReadModel } from '../../domain/item/player-armory-page-context.model';
+import { BulkMoveArmoryItemsToShelfResult } from '../../domain/item/armory-actions.model';
 import {
   GetHeroArmoryItemDetailRpcArgs,
   GetHeroArmoryItemDetailRpcRow,
@@ -12,44 +14,42 @@ import {
   GetHeroArmoryItemsRpcRow,
   GetHeroArmoryVisibilityStateRpcArgs,
   GetHeroArmoryVisibilityStateRpcRow,
-  CheckHeroMeetsItemRequirementsRpcArgs,
-  CheckHeroMeetsItemRequirementsRpcRow,
-  GetItemEffectiveRequirementsRpcArgs,
-  GetItemEffectiveRequirementsRpcRow,
-  GetItemRequirementComponentRowsRpcArgs,
-  GetItemRequirementComponentRowsRpcRow,
+  GetHeroItemRequirementStatusRpcArgs,
+  GetHeroItemRequirementStatusRpcRow,
   MoveHeroArmoryItemToShelfRpcArgs,
   MoveHeroArmoryItemToShelfRpcRow,
+  BulkMoveHeroArmoryItemsToShelfRpcArgs,
+  BulkMoveHeroArmoryItemsToShelfRpcRow,
   RenameHeroArmoryShelfRpcArgs,
   RenameHeroArmoryShelfRpcRow,
 } from '../../types/item-equipment-rpc.types';
+import {
+  BulkMoveArmoryItemsToShelfInput,
+  MoveArmoryItemToShelfInput,
+  RenameArmoryShelfInput,
+} from '../../interfaces/item/armory-actions.interface';
+import { Database, Json } from '../../types/database.types';
+import {
+  movableArmoryShelfPosition,
+  playerArmoryShelfPosition,
+} from '../../utils/armory-shelf-position';
 import { mapHeroArmoryReadModel } from '../../utils/item-equipment-mappers';
 import { mapArmoryItemDetail } from '../../utils/item-detail-mappers';
 import { mapItemRequirementPreview } from '../../utils/item-requirement-mappers';
-import { trimText } from '../../utils/normalize-text';
+import { mapBulkMoveArmoryItemsToShelfResult } from '../../utils/armory-actions-mappers';
+import { mapPlayerArmoryPageContext } from '../../utils/player-armory-page-context.mapper';
+import { requiredTrimmedText, trimToNull } from '../../utils/normalize-text';
+import {
+  assertSuccessfulRpcRow,
+  firstRpcRow,
+} from '../../utils/rpc-result';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
-import { StatsService } from '../stats/stats';
-
-export interface RenameArmoryShelfInput {
-  shelfPosition: number;
-  newName: string;
-  // Reserved for a future RPC contract; current generated Args do not expose p_request_id.
-  requestId?: string | null;
-}
-
-export interface MoveArmoryItemToShelfInput {
-  itemId: string;
-  targetShelfPosition: number;
-  // Reserved for a future RPC contract; current generated Args do not expose p_request_id.
-  requestId?: string | null;
-}
 
 @Injectable({ providedIn: 'root' })
 export class PlayerArmory {
   private readonly activeHero = inject(ActiveHero);
   private readonly backend = inject(Backend);
-  private readonly stats = inject(StatsService);
 
   getArmory(): Observable<HeroArmoryReadModel> {
     return this.activeHero.requireActiveHero().pipe(
@@ -57,8 +57,25 @@ export class PlayerArmory {
     );
   }
 
+  getArmoryPageContext(): Observable<PlayerArmoryPageContextReadModel> {
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) => {
+        const args: Database['public']['Functions']['get_player_armory_page_context']['Args'] = {
+          p_hero_id: context.heroId,
+        };
+
+        return this.backend.rpc<
+          Database['public']['Functions']['get_player_armory_page_context']['Returns']
+        >(
+          RPC.get_player_armory_page_context,
+          args,
+        ).pipe(map(mapPlayerArmoryPageContext));
+      }),
+    );
+  }
+
   getArmoryItemDetail(itemId: string): Observable<ArmoryItemDetailReadModel> {
-    const normalizedItemId = requiredText(itemId, 'itemId');
+    const normalizedItemId = requiredArmoryText(itemId, 'itemId');
 
     return this.activeHero.requireActiveHero().pipe(
       switchMap((context) => {
@@ -72,7 +89,7 @@ export class PlayerArmory {
           args,
         ).pipe(
           switchMap((rows) => {
-            const detail = firstRow(rows, RPC.get_hero_armory_item_detail);
+            const detail = firstRpcRow(rows, RPC.get_hero_armory_item_detail);
 
             return forkJoin({
               detail: of(detail),
@@ -92,8 +109,8 @@ export class PlayerArmory {
   }
 
   renameShelf(input: RenameArmoryShelfInput): Observable<HeroArmoryReadModel> {
-    const shelfPosition = playerShelfPosition(input.shelfPosition);
-    const newName = requiredText(input.newName, 'newName');
+    const shelfPosition = playerArmoryShelfPosition(input.shelfPosition);
+    const newName = requiredArmoryText(input.newName, 'newName');
 
     return this.activeHero.requireActiveHero().pipe(
       switchMap((context) => {
@@ -109,7 +126,7 @@ export class PlayerArmory {
             args,
           )
           .pipe(
-            map((rows) => assertMutationSucceeded(
+            map((rows) => assertSuccessfulRpcRow(
               rows,
               RPC.rename_hero_armory_shelf,
             )),
@@ -122,8 +139,8 @@ export class PlayerArmory {
   moveItemToShelf(
     input: MoveArmoryItemToShelfInput,
   ): Observable<HeroArmoryReadModel> {
-    const itemId = requiredText(input.itemId, 'itemId');
-    const targetShelfPosition = armoryShelfPosition(input.targetShelfPosition);
+    const itemId = requiredArmoryText(input.itemId, 'itemId');
+    const targetShelfPosition = movableArmoryShelfPosition(input.targetShelfPosition);
 
     return this.activeHero.requireActiveHero().pipe(
       switchMap((context) => {
@@ -139,11 +156,60 @@ export class PlayerArmory {
             args,
           )
           .pipe(
-            map((rows) => assertMutationSucceeded(
+            map((rows) => assertSuccessfulRpcRow(
               rows,
               RPC.move_hero_armory_item_to_shelf,
             )),
             switchMap(() => this.getArmoryForHero(context.heroId)),
+          );
+      }),
+    );
+  }
+
+  bulkMoveItemsToShelf(
+    input: BulkMoveArmoryItemsToShelfInput,
+  ): Observable<{
+    result: BulkMoveArmoryItemsToShelfResult;
+    readModel: HeroArmoryReadModel;
+  }> {
+    const items = input.items.map((item, index) => ({
+      itemId: requiredArmoryText(item.itemId, `items[${index}].itemId`),
+    }));
+    const targetShelfPosition =
+      movableArmoryShelfPosition(input.targetShelfPosition);
+    const requestId = nullableArmoryText(input.requestId);
+
+    if (!items.length) {
+      throw new Error('items are required for bulk armory shelf move.');
+    }
+
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) => {
+        const args: BulkMoveHeroArmoryItemsToShelfRpcArgs = {
+          p_hero_id: context.heroId,
+          p_items_json: items as unknown as Json,
+          p_target_shelf_position: targetShelfPosition,
+        };
+        if (requestId) {
+          args.p_request_id = requestId;
+        }
+
+        return this.backend
+          .rpc<BulkMoveHeroArmoryItemsToShelfRpcRow[]>(
+            RPC.bulk_move_hero_armory_items_to_shelf,
+            args,
+          )
+          .pipe(
+            switchMap((rows) => {
+              const result = mapBulkMoveArmoryItemsToShelfResult(
+                firstRpcRow(rows, RPC.bulk_move_hero_armory_items_to_shelf),
+              );
+
+              return forkJoin({
+                result: of(result),
+                readModel: this.getArmoryForHero(context.heroId),
+              });
+            }),
           );
       }),
     );
@@ -157,7 +223,7 @@ export class PlayerArmory {
       map((data) =>
         mapHeroArmoryReadModel(
           heroId,
-          firstRow(data.visibility, RPC.get_hero_armory_visibility_state),
+          firstRpcRow(data.visibility, RPC.get_hero_armory_visibility_state),
           data.items,
         ),
       ),
@@ -192,99 +258,26 @@ export class PlayerArmory {
     heroId: string,
     itemId: string,
   ): Observable<ArmoryItemDetailReadModel['requirementPreview']> {
-    const effectiveArgs: GetItemEffectiveRequirementsRpcArgs = {
-      p_item_id: itemId,
-    };
-    const componentArgs: GetItemRequirementComponentRowsRpcArgs = {
-      p_item_id: itemId,
-    };
-    const checkArgs: CheckHeroMeetsItemRequirementsRpcArgs = {
+    const args: GetHeroItemRequirementStatusRpcArgs = {
       p_hero_id: heroId,
       p_item_id: itemId,
     };
 
-    return forkJoin({
-      effectiveRows: this.backend.rpc<GetItemEffectiveRequirementsRpcRow[]>(
-        RPC.get_item_effective_requirements,
-        effectiveArgs,
-      ),
-      componentRows: this.backend.rpc<GetItemRequirementComponentRowsRpcRow[]>(
-        RPC.get_item_requirement_component_rows,
-        componentArgs,
-      ),
-      checkRows: this.backend.rpc<CheckHeroMeetsItemRequirementsRpcRow[]>(
-        RPC.check_hero_meets_item_requirements,
-        checkArgs,
-      ),
-      stats: this.stats.getStats(),
-    }).pipe(
-      map((data) =>
-        mapItemRequirementPreview({
-          heroId,
-          itemId,
-          ...data,
-        }),
-      ),
+    return this.backend.rpc<GetHeroItemRequirementStatusRpcRow[]>(
+      RPC.get_hero_item_requirement_status,
+      args,
+    ).pipe(
+      map((rows) => mapItemRequirementPreview({
+        row: firstRpcRow(rows, RPC.get_hero_item_requirement_status),
+      })),
     );
   }
 }
 
-function firstRow<T>(rows: readonly T[], rpcName: string): T {
-  const row = rows[0];
-
-  if (!row) {
-    throw new Error(`${rpcName} returned no row.`);
-  }
-
-  return row;
+function requiredArmoryText(value: string | null | undefined, field: string): string {
+  return requiredTrimmedText(value, field, 'armory RPC');
 }
 
-function assertMutationSucceeded<T>(rows: readonly T[], rpcName: string): T {
-  const row = firstRow(rows, rpcName);
-  const record = row as Record<string, unknown>;
-
-  if (record['success'] === false) {
-    const message = stringField(record, 'message')
-      ?? stringField(record, 'reason')
-      ?? `${rpcName} returned an unsuccessful armory operation.`;
-
-    throw new Error(message);
-  }
-
-  return row;
-}
-
-function stringField(
-  record: Record<string, unknown>,
-  key: string,
-): string | null {
-  const value = record[key];
-
-  return typeof value === 'string' && value.trim() ? value : null;
-}
-
-function requiredText(value: string | null | undefined, field: string): string {
-  const normalized = trimText(value);
-
-  if (!normalized) {
-    throw new Error(`${field} is required for armory RPC.`);
-  }
-
-  return normalized;
-}
-
-function playerShelfPosition(value: number): number {
-  if (!Number.isInteger(value) || value < 1 || value > 10) {
-    throw new Error('shelfPosition must be an integer from 1 to 10.');
-  }
-
-  return value;
-}
-
-function armoryShelfPosition(value: number): number {
-  if (!Number.isInteger(value) || value < 0 || value > 10) {
-    throw new Error('targetShelfPosition must be an integer from 0 to 10.');
-  }
-
-  return value;
+function nullableArmoryText(value: string | null | undefined): string | null {
+  return trimToNull(value);
 }

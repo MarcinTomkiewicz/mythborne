@@ -1,0 +1,140 @@
+@use "abstracts/variables" as v;
+
+$dir-board-width: 800px;
+$dir-board-height: 500px;
+$dir-outer-frame-width: 720px;
+$dir-outer-frame-height: 480px;
+$dir-inner-frame-width: 528px;
+$dir-inner-frame-height: 330px;
+$dir-core-width: 320px;
+$dir-core-height: 192px;
+$dir-gate-slot-width: 220px;
+$dir-gate-slot-height: 132px;
+
+$dir-ray-width: 2px;
+$dir-ray-length-vertical: 250px;
+$dir-ray-length-horizontal: 400px;
+$dir-ray-length-diagonal: 348px;
+
+$dir-gold-soft: color-mix(
+  in srgb,
+  v.$color-progress-gold-end 8%,
+  transparent
+);
+$dir-gold-line: color-mix(
+  in srgb,
+  v.$color-progress-gold-end 16%,
+  transparent
+);
+$dir-gold-ray: color-mix(
+  in srgb,
+  v.$color-progress-gold-end 22%,
+  transparent
+);
+$dir-info-soft: color-mix(in srgb, v.$color-info 24%, transparent);
+$dir-info-ray: color-mix(in srgb, v.$color-info 26%, transparent);
+
+.exploration-direction-frame {
+  border: 1px solid $dir-gold-line;
+}
+
+.exploration-direction-stage,
+.exploration-direction-core,
+.exploration-direction-core__mark {
+  border-color: $dir-gold-line;
+}
+
+.exploration-direction-oracle-board {
+  width: $dir-board-width;
+  height: $dir-board-height;
+  isolation: isolate;
+}
+
+.exploration-direction-frame--outer {
+  width: $dir-outer-frame-width;
+  height: $dir-outer-frame-height;
+  background:
+    radial-gradient(circle at center, $dir-gold-soft, transparent 270px),
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, v.$color-shell-surface 88%, v.$color-shell-bg),
+      color-mix(in srgb, v.$color-shell-surface-elevated 34%, v.$color-shell-surface)
+    );
+  opacity: 0.86;
+}
+
+.exploration-direction-frame--inner {
+  width: $dir-inner-frame-width;
+  height: $dir-inner-frame-height;
+  background: radial-gradient(
+    circle at center,
+    transparent,
+    color-mix(in srgb, v.$color-shell-surface 62%, transparent) 230px
+  );
+}
+
+.exploration-direction-oracle-line {
+  left: 50%;
+  top: 50%;
+  width: $dir-ray-width;
+  height: $dir-ray-length-vertical;
+  transform-origin: center top;
+  background: linear-gradient(180deg, $dir-gold-ray, transparent);
+}
+
+.exploration-direction-oracle-line--forward {
+  transform: rotate(0deg);
+}
+
+.exploration-direction-oracle-line--left {
+  height: $dir-ray-length-diagonal;
+  transform: rotate(-45deg);
+}
+
+.exploration-direction-oracle-line--right {
+  height: $dir-ray-length-diagonal;
+  opacity: 0.56;
+  transform: rotate(45deg);
+}
+
+.exploration-direction-oracle-line--horizontal-left {
+  height: $dir-ray-length-horizontal;
+  opacity: 0.72;
+  transform: rotate(-90deg);
+}
+
+.exploration-direction-oracle-line--horizontal-right {
+  height: $dir-ray-length-horizontal;
+  opacity: 0.72;
+  transform: rotate(90deg);
+}
+
+.exploration-direction-oracle-line--back {
+  height: $dir-ray-length-vertical;
+  transform: rotate(180deg);
+  background: linear-gradient(180deg, $dir-info-ray, transparent);
+}
+
+.exploration-direction-core {
+  width: $dir-core-width;
+  height: $dir-core-height;
+  background:
+    radial-gradient(circle at 50% 0, $dir-gold-line, transparent 128px),
+    v.$color-shell-surface-elevated;
+  box-shadow:
+    0 0 2.6rem $dir-gold-soft,
+    v.$shadow-premium;
+}
+
+.exploration-direction-gate-slot {
+  width: $dir-gate-slot-width;
+  height: $dir-gate-slot-height;
+}
+
+.exploration-direction-gate-placeholder {
+  border-color: $dir-info-soft;
+}
+
+.exploration-direction-gate-placeholder__icon {
+  border-color: $dir-info-soft;
+}

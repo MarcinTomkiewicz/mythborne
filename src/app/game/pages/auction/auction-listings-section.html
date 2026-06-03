@@ -46,12 +46,11 @@
                   [showButtons]="true"
                 ></p-inputnumber>
               </label>
-              <button
-                pButton
+              <p-button
                 type="submit"
                 label="Place bid"
                 [disabled]="actions.isSaving()"
-              ></button>
+              />
             }
 
             @if (actions.canBuyNow(listing)) {
@@ -59,13 +58,12 @@
                 <span>Note</span>
                 <input pInputText type="text" formControlName="description" />
               </label>
-              <button
-                pButton
+              <p-button
                 type="button"
                 label="Buy now"
                 [disabled]="actions.isSaving()"
-                (click)="actions.buyNow(listing)"
-              ></button>
+                (onClick)="actions.buyNow(listing)"
+              />
             }
           </form>
         }
@@ -73,26 +71,29 @@
         @if (actions.canCancel(listing) || actions.canClose(listing)) {
           <div class="flex-row-start-center flex-wrap gap-sm mt-md">
             @if (actions.canCancel(listing)) {
-              <button
-                pButton
+              <p-button
                 type="button"
                 label="Cancel"
                 severity="secondary"
                 [disabled]="actions.isSaving()"
-                (click)="actions.cancelListing(listing)"
-              ></button>
+                (onClick)="actions.cancelListing(listing)"
+              />
             }
             @if (actions.canClose(listing)) {
-              <button
-                pButton
+              <p-button
                 type="button"
                 label="Close"
                 [disabled]="actions.isSaving()"
-                (click)="actions.closeListing(listing)"
-              ></button>
+                (onClick)="actions.closeListing(listing)"
+              />
             }
           </div>
         }
+        <div class="mt-sm">
+          <span class="tag-badge tag-badge--muted">
+            {{ listing.item.itemName ?? listing.item.itemId }}
+          </span>
+        </div>
       </article>
     } @empty {
       <p class="muted-text mb-0">No auction listings.</p>
@@ -122,13 +123,15 @@
         @if (transaction.items.length) {
           <div class="flex-row-start-center flex-wrap gap-xs mt-sm">
             @for (item of transaction.items; track item.id) {
-              <span class="tag-badge tag-badge--muted">
-                {{ item.generationQualityLabel ?? item.generationQualityKey ?? 'Item' }}
-                {{ item.generationBaseName ?? item.generationBaseKey ?? item.itemName ?? item.itemId }}
-                @if (item.valueBucket !== null) {
-                  - bucket {{ item.valueBucket }}
-                }
-              </span>
+              <div class="flex-row-start-center gap-xs">
+                <span class="tag-badge tag-badge--muted">
+                  {{ item.generationQualityLabel ?? item.generationQualityKey ?? 'Item' }}
+                  {{ item.generationBaseName ?? item.generationBaseKey ?? item.itemName ?? item.itemId }}
+                  @if (item.valueBucket !== null) {
+                    - bucket {{ item.valueBucket }}
+                  }
+                </span>
+              </div>
             }
           </div>
         }

@@ -1,70 +1,114 @@
 import {
   ExplorationChallengeRewardReadModel,
+  ExplorationGeneratedRewardItemReadModel,
   RewardGrantEntryReadModel,
 } from '../../../core/domain/exploration/exploration-reward.model';
-import { ItemReadModel } from '../../../core/domain/item/item.model';
 import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
-import { humanizeKey } from '../../../core/utils/normalize-text';
 import { resourceAmountLabel } from '../../../core/utils/resource-display';
-
-export type RewardItemKind = 'item' | 'generated_item' | 'item_generation';
-
-export interface RewardDisplay {
-  title: string;
-  summary: string;
-  badge: string;
-  facts: Array<{ label: string; value: string }>;
-  items: ItemReadModel[];
-  entries: RewardGrantEntryReadModel[];
-  hiddenMessages: string[];
-  emptyMessage: string;
-}
 
 export function rewardDisplay(
   reward: ExplorationChallengeRewardReadModel | null,
-): RewardDisplay | null {
+) {
   if (!reward) {
     return null;
   }
 
-  const items = reward.items;
-  const entries = reward.entries.filter((entry) => !isItemEntry(entry));
-  const hiddenMessages = reward.entries
-    .filter((entry) => isItemEntry(entry) && !entry.itemId)
-    .map(() => 'Wpis losowania przedmiotu nie utworzył itemu.');
-
   return {
-    title: rewardTitle(reward),
-    summary: rewardSummary(reward, entries.length, items.length),
-    badge: rewardBadge(reward),
-    facts: rewardFacts(reward),
-    items,
-    entries,
-    hiddenMessages,
+    items: reward.items,
+    entries: reward.entries.filter((entry) => !isItemEntry(entry) && !isHiddenReportEntry(entry)),
     emptyMessage: emptyRewardMessage(reward),
   };
 }
 
 export function rewardEntryLabel(entry: RewardGrantEntryReadModel): string {
+  const backendDisplay = rewardEntryDisplayValue(entry);
+
+  if (backendDisplay) {
+    return backendDisplay;
+  }
+
   switch (entry.entryKind) {
     case 'experience':
     case 'exp':
-      return `${entry.amount ?? 0} EXP`;
-    case 'character_points':
-    case 'hero_points':
-      return `${entry.amount ?? 0} Punktów Postaci`;
+      return `${entry.amount ?? 0} ${experienceLabel(entry.amount ?? 0)}`;
     case 'resource':
       return resourceAmountLabel(entry.resourceType, entry.amount);
     case 'effect':
       return 'Nagroda efektu';
     default:
-      return `${humanizeKey(entry.entryKind, 'Reward')}${entry.amount === null ? '' : `: ${entry.amount}`}`;
+      return `Wpis nagrody${entry.amount === null ? '' : `: ${entry.amount}`}`;
   }
+}
+
+export function rewardEntryAmount(entry: RewardGrantEntryReadModel): number | null {
+  return entry.amount;
+}
+
+export function rewardEntryName(entry: RewardGrantEntryReadModel): string {
+  const backendDisplay = rewardEntryDisplayValue(entry);
+
+  if (backendDisplay) {
+    return stripEntryAmount(backendDisplay, entry.amount);
+  }
+
+  switch (entry.entryKind) {
+    case 'experience':
+    case 'exp':
+      return experienceLabel(entry.amount ?? 0);
+    case 'resource':
+      return entry.resourceType?.trim() || 'zasobu';
+    case 'effect':
+      return 'efekt';
+    default:
+      return 'nagrody';
+  }
+}
+
+function rewardEntryDisplayValue(entry: RewardGrantEntryReadModel): string | null {
+  const metadata = jsonRecord(entry.metadataJson);
+
+  return optionalText(read(
+    metadata,
+    'displayValue',
+    'display_value',
+    'playerSummary',
+    'player_summary',
+    'summary',
+    'label',
+  ))?.trim() || null;
+}
+
+function stripEntryAmount(value: string, amount: number | null): string {
+  if (amount === null) {
+    return value;
+  }
+
+  const amountPrefix = `${amount}`;
+
+  return value.startsWith(amountPrefix)
+    ? value.slice(amountPrefix.length).trim()
+    : value;
+}
+
+function experienceLabel(amount: number): string {
+  const absolute = Math.abs(amount);
+  const lastTwo = absolute % 100;
+  const last = absolute % 10;
+
+  if (absolute === 1) {
+    return 'punkt doświadczenia';
+  }
+
+  if (last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14)) {
+    return 'punkty doświadczenia';
+  }
+
+  return 'punktów doświadczenia';
 }
 
 export function rewardEntryDetails(entry: RewardGrantEntryReadModel): string | null {
   if (entry.effectDefinitionId) {
-    return 'Effect details unavailable from DB read model.';
+    return 'Szczegóły efektu nie są dostępne w tym podsumowaniu.';
   }
 
   if (entry.resourceType) {
@@ -80,24 +124,30 @@ export function rewardEntryDetails(entry: RewardGrantEntryReadModel): string | n
   return null;
 }
 
-export function rewardItemLabel(item: ItemReadModel): string {
-  return `Przedmiot: ${item.name} (${item.id})`;
+export function rewardItemLabel(item: ExplorationGeneratedRewardItemReadModel): string {
+  return item.displayCore.itemName;
 }
 
-export function rewardItemDetails(item: ItemReadModel): string {
-  const metadata = jsonRecord(item.metadataJson);
-  const quality = optionalText(read(metadata, 'qualityLabel')) ?? item.generationQualityKey ?? 'N/D';
-  const base = optionalText(read(metadata, 'baseName')) ?? item.generationBaseId ?? 'N/D';
-  const prefix = optionalText(read(metadata, 'prefixName')) ?? item.prefixAffixId ?? 'N/D';
-  const suffix = optionalText(read(metadata, 'suffixName')) ?? item.suffixAffixId ?? 'N/D';
+export function rewardItemDetails(
+  item: ExplorationGeneratedRewardItemReadModel,
+): string[] {
+  const displayCore = item.displayCore;
 
   return [
-    `Wartość ${item.drachmaValue ?? 'N/D'}`,
-    `Jakość ${quality}`,
-    `Baza ${base}`,
-    `Prefix ${prefix}`,
-    `Suffix ${suffix}`,
-  ].join(' - ');
+    displayCore.valueDisplay
+      ? `${displayCore.valueDisplay.displayLabel}: ${displayCore.valueDisplay.displayValue}`
+      : null,
+    displayCore.qualityLabel,
+    displayCore.baseTypeLabel,
+    displayCore.allowedSlotLabel,
+    displayCore.lifecycleStatusLabel,
+  ].filter((line): line is string => Boolean(line?.trim()));
+}
+
+export function rewardItemIconClass(
+  item: ExplorationGeneratedRewardItemReadModel,
+): string {
+  return `pi pi-${item.displayCore.displayIconKey || 'box'}`;
 }
 
 export function isItemEntry(entry: RewardGrantEntryReadModel): boolean {
@@ -108,73 +158,22 @@ export function isItemEntry(entry: RewardGrantEntryReadModel): boolean {
   );
 }
 
-function rewardTitle(reward: ExplorationChallengeRewardReadModel): string {
-  if (reward.rewardSourceKind !== 'challenge_attempt' && reward.stepId) {
-    return reward.rewardSourceLabel?.trim().toLowerCase() === 'resource encounter reward'
-      ? 'Nagroda za Resource Encounter'
-      : 'Nagroda za wynik eksploracji';
-  }
-
-  return 'Nagroda za challenge';
-}
-
-function rewardBadge(reward: ExplorationChallengeRewardReadModel): string {
-  if (reward.rewardGrantId && reward.rewardGrant?.status !== 'failed') {
-    return 'Nagroda przyznana';
-  }
-
-  return reward.rewardStatusKey === 'not_granted' ? 'Brak nagrody' : 'Nagroda nieprzyznana';
-}
-
-function rewardFacts(reward: ExplorationChallengeRewardReadModel): Array<{ label: string; value: string }> {
-  const facts = [{ label: 'Status nagrody', value: rewardBadge(reward) }];
-
-  if (reward.rewardSourceKind === 'challenge_attempt' && reward.success !== null) {
-    facts.unshift({ label: 'Wynik', value: reward.success ? 'Sukces' : 'Porażka' });
-  }
-
-  if (reward.completedAt) {
-    facts.push({ label: reward.stepId && reward.rewardSourceKind !== 'challenge_attempt' ? 'Rozwiązano' : 'Ukończono', value: reward.completedAt });
-  }
-
-  return facts;
-}
-
-function rewardSummary(
-  reward: ExplorationChallengeRewardReadModel,
-  entryCount: number,
-  itemCount: number,
-): string {
-  if (!hasGrantedReward(reward)) {
-    return reward.rewardSourceKind === 'challenge_attempt'
-      ? 'Ostatni ukończony challenge nie przyznał nagrody.'
-      : 'Ten wynik eksploracji nie przyznał nagrody.';
-  }
-
-  if (!entryCount && !itemCount) {
-    return emptyRewardMessage(reward);
-  }
-
-  const parts = [
-    entryCount ? `${entryCount} wpis${entryCount === 1 ? '' : 'y'} nagrody` : null,
-    itemCount ? `${itemCount} przedmiot${itemCount === 1 ? '' : 'y'}` : null,
-  ].filter(Boolean);
-
-  return `Przyznano ${parts.join(' i ')}.`;
+function isHiddenReportEntry(entry: RewardGrantEntryReadModel): boolean {
+  return entry.entryKind === 'character_points' || entry.entryKind === 'hero_points';
 }
 
 function emptyRewardMessage(reward: ExplorationChallengeRewardReadModel): string {
-  if (reward.noRewardReasonKey === 'no_reward_profile') {
-    return 'Brak skonfigurowanej nagrody dla tego wyniku.';
+  if (reward.noRewardReasonHelperText?.trim()) {
+    return reward.noRewardReasonHelperText.trim();
   }
 
-  if (hasGrantedReward(reward)) {
-    return 'Nagroda została przyznana, ale szczegóły nagrody nie są dostępne.';
+  if (reward.noRewardReasonLabel?.trim()) {
+    return reward.noRewardReasonLabel.trim();
   }
 
-  return reward.rewardSourceKind === 'challenge_attempt'
-    ? 'Ten challenge nie przyznał nagrody.'
-    : 'Ten wynik eksploracji nie przyznał nagrody.';
+  return hasGrantedReward(reward)
+    ? 'Szczegóły nagrody nie są dostępne w tym podsumowaniu.'
+    : 'Brak nagrody do pokazania.';
 }
 
 function hasGrantedReward(reward: ExplorationChallengeRewardReadModel): boolean {

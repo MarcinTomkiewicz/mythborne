@@ -49,7 +49,7 @@ export function mapCreatedCombatGameReport(
     serverId: requiredText(row.server_id, 'serverId'),
     participantsCreated: row.participants_created,
     accessRowsCreated: row.access_rows_created,
-    auditLogId: requiredText(row.audit_log_id, 'auditLogId'),
+    auditLogId: trimText(row.audit_log_id) || null,
   };
 }
 

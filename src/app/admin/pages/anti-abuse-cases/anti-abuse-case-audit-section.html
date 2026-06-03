@@ -2,7 +2,7 @@
   <h3 class="mg-section__title mg-section__title--xs mb-lg">Audit logs</h3>
   <div class="flex-col gap-md">
     @for (log of auditLogs(); track log.id) {
-      <article class="mg-surface-card p-md flex-col gap-md">
+      <article class="mg-card p-md flex-col gap-md">
         <div class="flex-row-between-center flex-col-sm gap-sm">
           <div class="flex-col gap-xs min-w-0">
             <p class="card-legend mb-0">{{ log.createdAt }}</p>

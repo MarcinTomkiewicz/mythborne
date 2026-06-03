@@ -1,50 +1,8 @@
-<aside class="flex-col gap-md min-h-full w-100 p-md">
-  <div class="mg-card flex-row-start-center gap-md">
-    <span class="tag-badge tag-badge--golden" aria-hidden="true">M</span>
-
-    <div class="flex-col gap-xs">
-      <p class="heading-color mb-0">
-        <strong>{{ hero()?.name || user()?.email || 'Account' }}</strong>
-      </p>
-      <p class="muted-text mb-0">
-        {{ hero() ? 'Level ' + (hero()?.level || 1) : 'Active hero required' }}
-      </p>
-    </div>
-  </div>
-
-  <section class="mg-card mg-card--legend flex-col gap-sm" aria-label="Selected world context">
-    <p class="card-legend mb-sm">World</p>
-    <div class="flex-row-between-center gap-sm">
-      <span class="muted-text">Server</span>
-      <strong class="heading-color">{{ selectedServer()?.name ?? 'No server selected' }}</strong>
-    </div>
-    <div class="flex-row-between-center gap-sm">
-      <span class="muted-text">Status</span>
-      <span [class]="serverStatusClass()">{{ serverStatusLabel() }}</span>
-    </div>
-    <div class="flex-row-between-center gap-sm">
-      <span class="muted-text">Prestige</span>
-      <strong class="heading-color">
-        {{ prestigeSummary()?.player_label ?? 'Prestige unavailable' }}
-      </strong>
-    </div>
-  </section>
-
-  <nav class="flex-col gap-xs">
-    <p class="card-legend mb-sm">Game Menu</p>
-
-    <div class="mg-game-sidebar__nav-list flex-col gap-xs">
-      @for (item of menuItems(); track item.title) {
-        <a
-          class="mg-card position-relative flex-row-start-center gap-sm p-sm"
-          [routerLink]="item.url"
-          routerLinkActive="is-active heading-color"
-          [routerLinkActiveOptions]="{ exact: true }"
-        >
-          <img [src]="item.icon" [alt]="item.title" class="w-px-20 h-px-20" />
-          <span>{{ item.title }}</span>
-        </a>
-      }
-    </div>
-  </nav>
-</aside>
+<app-shell-sidebar-content
+  contextAriaLabel="Kontekst świata"
+  navAriaLabel="Nawigacja gry"
+  [contextRows]="contextRows()"
+  [contextActions]="contextActions"
+  [navGroups]="menuGroups()"
+  [showLogoutBeforeNav]="true"
+/>

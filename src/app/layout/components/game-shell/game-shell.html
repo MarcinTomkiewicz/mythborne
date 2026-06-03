@@ -1,0 +1,31 @@
+<div class="mg-game-shell flex-col">
+  <header class="mg-game-shell__topbar position-sticky top-0 z-10 backdrop-blur-xl flex-row-between-center gap-md py-sm px-lg w-100 shadow-shell">
+    <app-game-topbar [showHeroContent]="shouldShowHeroTopbarContent()" class="w-100" />
+  </header>
+
+  <div class="flex-row-start-stretch flex-1 w-100">
+    <aside class="mg-game-shell__sidebar flex-none w-px-250">
+      <app-game-sidebar />
+    </aside>
+
+    <main
+      class="mg-game-shell__main flex-1 min-w-0 w-100"
+      [class.mg-game-shell__main--route-background]="routeBackgroundImage() !== null"
+      [style.--mg-route-background-image]="routeBackgroundImage()"
+    >
+      <div
+        class="p-md w-100"
+        [class.max-w-none]="isWideContent()"
+      >
+        @if (isGameplayBlocked()) {
+          <app-membership-blocked-notice />
+        } @else if (isStaffGameplayBlocked()) {
+          <app-staff-gameplay-blocked-notice />
+        } @else {
+          <router-outlet />
+        }
+      </div>
+    </main>
+  </div>
+</div>
+<app-global-toast />

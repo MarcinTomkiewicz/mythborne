@@ -2,33 +2,43 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable, switchMap } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
-  HeroActiveRuntimeActivity,
+  ActivePvpActionOffer,
+  HeroPvpDailyAttackState,
   PvpActionStartResult,
-  PvpAttackResult,
-  PvpSpyResult,
+  PvpSpyGameReportResult,
+  PvpSpySettlementResult,
   PvpTargetCandidate,
 } from '../../domain/pvp/pvp.model';
 import {
-  GetMyPvpAttackResultRpcArgs,
-  GetMyPvpAttackResultRpcRow,
-  GetMyPvpSpyResultRpcArgs,
-  GetMyPvpSpyResultRpcRow,
-  GetHeroActiveRuntimeActivityRpcArgs,
-  GetHeroActiveRuntimeActivityRpcRow,
+  CreatePvpSpyGameReportRpcArgs,
+  CreatePvpSpyGameReportRpcRow,
+  GetActivePvpActionOfferRpcArgs,
+  GetActivePvpActionOfferRpcRow,
+  GetHeroPvpDailyAttackStateRpcArgs,
+  GetHeroPvpDailyAttackStateRpcRow,
   GetPvpTargetCandidatesRpcArgs,
   GetPvpTargetCandidatesRpcRow,
+  GetPvpVisibleAddressTargetOverlayRpcArgs,
+  GetPvpVisibleAddressTargetOverlayRpcRow,
   PvpActionKindKey,
+  SettleDuePvpSpyActionRpcArgs,
+  SettleDuePvpSpyActionRpcRow,
   StartPvpActionRpcArgs,
   StartPvpActionRpcRow,
 } from '../../types/pvp-rpc.types';
-import { trimText } from '../../utils/normalize-text';
+import { PvpVisibleAddressTargetOverlayInput } from '../../types/vicinity.types';
+import { positiveInteger } from '../../utils/number';
+import { requiredTrimmedText, trimToNull } from '../../utils/normalize-text';
 import {
+  mapActivePvpActionOffer,
   mapPvpActionStartResult,
-  mapPvpAttackResult,
-  mapPvpSpyResult,
+  mapHeroPvpDailyAttackState,
+  mapPvpSpyGameReportResult,
+  mapPvpSpySettlementResult,
   mapPvpTargetCandidate,
+  mapPvpVisibleAddressTargetOverlay,
 } from '../../utils/pvp-mappers';
-import { mapHeroActiveRuntimeActivity } from '../../utils/runtime-activity-mappers';
+import { firstRpcRow } from '../../utils/rpc-result';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
 
@@ -48,6 +58,16 @@ export interface StartPvpActionInput {
   requestId?: string | null;
 }
 
+export interface SettleDuePvpSpyActionInput {
+  pvpActionId: string;
+  requestId?: string | null;
+}
+
+export interface CreatePvpSpyGameReportInput {
+  pvpSpyResultId: string;
+  requestId?: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PlayerPvp {
   private readonly activeHero = inject(ActiveHero);
@@ -60,10 +80,10 @@ export class PlayerPvp {
       switchMap((context) => {
         const args: GetPvpTargetCandidatesRpcArgs = {
           p_attacker_hero_id: context.heroId,
-          p_district_code: nullableArgument(filters.districtCode),
+          p_district_code: trimToNull(filters.districtCode) ?? undefined,
           p_limit: filters.limit ?? DEFAULT_PVP_TARGET_LIMIT,
           p_offset: filters.offset ?? 0,
-          p_search: nullableArgument(filters.search),
+          p_search: trimToNull(filters.search) ?? undefined,
         };
 
         return this.backend.rpc<GetPvpTargetCandidatesRpcRow[]>(
@@ -75,11 +95,60 @@ export class PlayerPvp {
     );
   }
 
+  getDailyAttackState(): Observable<HeroPvpDailyAttackState> {
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) => {
+        const args: GetHeroPvpDailyAttackStateRpcArgs = {
+          p_hero_id: context.heroId,
+        };
+
+        return this.backend.rpc<GetHeroPvpDailyAttackStateRpcRow[]>(
+          RPC.get_hero_pvp_daily_attack_state,
+          args,
+        );
+      }),
+      map((rows) =>
+        mapHeroPvpDailyAttackState(
+          firstRpcRow(rows, 'get_hero_pvp_daily_attack_state'),
+        ),
+      ),
+    );
+  }
+
+  getVisibleAddressTargetOverlay(
+    input: PvpVisibleAddressTargetOverlayInput,
+  ): Observable<PvpTargetCandidate[]> {
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) => {
+        const args: GetPvpVisibleAddressTargetOverlayRpcArgs = {
+          p_attacker_hero_id: context.heroId,
+          p_district_code: requiredTrimmedText(
+            input.districtCode,
+            'districtCode',
+            'PvP RPC',
+          ),
+          p_from_address_number: positiveInteger(
+            input.fromAddressNumber,
+          ),
+          p_to_address_number: positiveInteger(
+            input.toAddressNumber,
+          ),
+        };
+
+        return this.backend.rpc<GetPvpVisibleAddressTargetOverlayRpcRow[]>(
+          RPC.get_pvp_visible_address_target_overlay,
+          args,
+        );
+      }),
+      map((rows) => rows.map(mapPvpVisibleAddressTargetOverlay)),
+    );
+  }
+
   startAction(input: StartPvpActionInput): Observable<PvpActionStartResult> {
-    const actionKind = requiredText(input.actionKind, 'actionKind');
-    const targetHeroId = requiredText(input.targetHeroId, 'targetHeroId');
-    const reason = nullableArgument(input.reason);
-    const requestId = nullableArgument(input.requestId);
+    const actionKind = requiredTrimmedText(input.actionKind, 'actionKind', 'PvP RPC');
+    const targetHeroId = requiredTrimmedText(input.targetHeroId, 'targetHeroId', 'PvP RPC');
+    const reason = trimToNull(input.reason) ?? undefined;
+    const requestId = trimToNull(input.requestId) ?? undefined;
 
     return this.activeHero.requireActiveHero().pipe(
       switchMap((context) => {
@@ -97,90 +166,68 @@ export class PlayerPvp {
         );
       }),
       map((rows) =>
-        mapPvpActionStartResult(requiredSingleRow(rows, 'start_pvp_action')),
+        mapPvpActionStartResult(firstRpcRow(rows, 'start_pvp_action')),
       ),
     );
   }
 
-  getActiveRuntimeActivity(): Observable<HeroActiveRuntimeActivity | null> {
-    return this.activeHero.requireActiveHero().pipe(
-      switchMap((context) => {
-        const args: GetHeroActiveRuntimeActivityRpcArgs = {
-          p_hero_id: context.heroId,
-        };
-
-        return this.backend.rpc<GetHeroActiveRuntimeActivityRpcRow[]>(
-          RPC.get_hero_active_runtime_activity,
-          args,
-        );
-      }),
-      map((rows) => rows[0] ? mapHeroActiveRuntimeActivity(rows[0]) : null),
-    );
-  }
-
-  getMySpyResult(spyResultId: string): Observable<PvpSpyResult> {
-    const normalizedSpyResultId = requiredText(spyResultId, 'spyResultId');
+  settleDueSpyAction(input: SettleDuePvpSpyActionInput): Observable<PvpSpySettlementResult> {
+    const pvpActionId = requiredTrimmedText(input.pvpActionId, 'pvpActionId', 'PvP RPC');
+    const requestId = trimToNull(input.requestId) ?? undefined;
 
     return this.activeHero.requireActiveHero().pipe(
-      switchMap((context) => {
-        const args: GetMyPvpSpyResultRpcArgs = {
-          p_hero_id: context.heroId,
-          p_spy_result_id: normalizedSpyResultId,
+      switchMap(() => {
+        const args: SettleDuePvpSpyActionRpcArgs = {
+          p_pvp_action_id: pvpActionId,
+          p_request_id: requestId,
         };
 
-        return this.backend.rpc<GetMyPvpSpyResultRpcRow[]>(
-          RPC.get_my_pvp_spy_result,
+        return this.backend.rpc<SettleDuePvpSpyActionRpcRow[]>(
+          RPC.settle_due_pvp_spy_action,
           args,
         );
       }),
       map((rows) =>
-        mapPvpSpyResult(requiredSingleRow(rows, 'get_my_pvp_spy_result')),
+        mapPvpSpySettlementResult(firstRpcRow(rows, 'settle_due_pvp_spy_action')),
       ),
     );
   }
 
-  getMyAttackResult(attackResultId: string): Observable<PvpAttackResult> {
-    const normalizedAttackResultId = requiredText(attackResultId, 'attackResultId');
+  createSpyGameReport(input: CreatePvpSpyGameReportInput): Observable<PvpSpyGameReportResult> {
+    const pvpSpyResultId = requiredTrimmedText(input.pvpSpyResultId, 'pvpSpyResultId', 'PvP RPC');
+    const requestId = trimToNull(input.requestId) ?? undefined;
 
     return this.activeHero.requireActiveHero().pipe(
-      switchMap((context) => {
-        const args: GetMyPvpAttackResultRpcArgs = {
-          p_attack_result_id: normalizedAttackResultId,
-          p_hero_id: context.heroId,
+      switchMap(() => {
+        const args: CreatePvpSpyGameReportRpcArgs = {
+          p_pvp_spy_result_id: pvpSpyResultId,
+          p_request_id: requestId,
         };
 
-        return this.backend.rpc<GetMyPvpAttackResultRpcRow[]>(
-          RPC.get_my_pvp_attack_result,
+        return this.backend.rpc<CreatePvpSpyGameReportRpcRow[]>(
+          RPC.create_pvp_spy_game_report,
           args,
         );
       }),
       map((rows) =>
-        mapPvpAttackResult(requiredSingleRow(rows, 'get_my_pvp_attack_result')),
+        mapPvpSpyGameReportResult(firstRpcRow(rows, 'create_pvp_spy_game_report')),
       ),
     );
   }
-}
 
-function requiredSingleRow<T>(rows: readonly T[], rpcName: string): T {
-  const row = rows[0];
+  getActivePvpActionOffer(): Observable<ActivePvpActionOffer | null> {
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) => {
+        const args: GetActivePvpActionOfferRpcArgs = {
+          p_hero_id: context.heroId,
+        };
 
-  if (!row) {
-    throw new Error(`${rpcName} returned no PvP row.`);
+        return this.backend.rpc<GetActivePvpActionOfferRpcRow[]>(
+          RPC.get_active_pvp_action_offer,
+          args,
+        );
+      }),
+      map((rows) => rows[0] ? mapActivePvpActionOffer(rows[0]) : null),
+    );
   }
-
-  return row;
-}
-
-function requiredText(value: string | null | undefined, field: string): string {
-  const normalized = trimText(value);
-
-  if (!normalized) {
-    throw new Error(`${field} is required for PvP RPC.`);
-  }
-
-  return normalized;
-}
-
-function nullableArgument(value: string | null | undefined): string | undefined {
-  return trimText(value) || undefined;
 }

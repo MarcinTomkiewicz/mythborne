@@ -11,7 +11,12 @@ import { AuctionOverviewState } from './auction-overview.state';
 @Component({
   selector: 'app-auction-listings-section',
   standalone: true,
-  imports: [ReactiveFormsModule, ButtonModule, InputNumberModule, InputTextModule],
+  imports: [
+    ReactiveFormsModule,
+    ButtonModule,
+    InputNumberModule,
+    InputTextModule,
+  ],
   templateUrl: './auction-listings-section.html',
 })
 export class AuctionListingsSection {
@@ -26,4 +31,5 @@ export class AuctionListingsSection {
       transaction.buyer.heroName ?? transaction.buyer.heroId ?? 'Buyer'
     }`;
   }
+
 }

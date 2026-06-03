@@ -7,15 +7,15 @@
   />
 
   <div class="mg-grid grid-cols-5 grid-cols-1-md gap-md w-100 mt-md">
-    <div class="mg-surface-card p-md flex-col gap-xs"><span class="muted-text">Families</span><strong>{{ page.data()?.families?.length ?? 0 }}</strong></div>
-    <div class="mg-surface-card p-md flex-col gap-xs"><span class="muted-text">Opponents</span><strong>{{ page.data()?.opponents?.length ?? 0 }}</strong></div>
-    <div class="mg-surface-card p-md flex-col gap-xs"><span class="muted-text">Stat baselines</span><strong>{{ page.data()?.statValues?.length ?? 0 }}</strong></div>
-    <div class="mg-surface-card p-md flex-col gap-xs"><span class="muted-text">Natural attacks</span><strong>{{ page.data()?.attackSources?.length ?? 0 }}</strong></div>
-    <div class="mg-surface-card p-md flex-col gap-xs"><span class="muted-text">Equipment entries</span><strong>{{ page.data()?.equipmentEntries?.length ?? 0 }}</strong></div>
+    <div class="mg-card p-md flex-col gap-xs"><span class="muted-text">Families</span><strong>{{ page.data()?.families?.length ?? 0 }}</strong></div>
+    <div class="mg-card p-md flex-col gap-xs"><span class="muted-text">Opponents</span><strong>{{ page.data()?.opponents?.length ?? 0 }}</strong></div>
+    <div class="mg-card p-md flex-col gap-xs"><span class="muted-text">Stat baselines</span><strong>{{ page.data()?.statValues?.length ?? 0 }}</strong></div>
+    <div class="mg-card p-md flex-col gap-xs"><span class="muted-text">Natural attacks</span><strong>{{ page.data()?.attackSources?.length ?? 0 }}</strong></div>
+    <div class="mg-card p-md flex-col gap-xs"><span class="muted-text">Equipment entries</span><strong>{{ page.data()?.equipmentEntries?.length ?? 0 }}</strong></div>
   </div>
 
   @if (page.data()?.emptyState) {
-    <div class="mg-surface-card p-md mt-md">
+    <div class="mg-card p-md mt-md">
       <p class="mb-0 muted-text">{{ page.uiMetadata.sectionText(page.uiMetadata.section.emptyState) }}</p>
     </div>
   }

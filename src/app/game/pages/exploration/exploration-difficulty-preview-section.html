@@ -1,0 +1,31 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-md mb-md">
+    <div class="flex-col gap-xs">
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Poziom trudności</h3>
+      <p class="muted-text mb-0">Wybierz wariant wyprawy dla aktywnego bohatera.</p>
+    </div>
+    @if (isLoading()) {
+      <span class="tag-badge tag-badge--muted">Ładowanie</span>
+    }
+  </div>
+
+  <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+    @for (difficulty of difficulties(); track difficulty.difficultyKey) {
+      <app-exploration-difficulty-preview-card
+        [difficulty]="difficulty"
+        [isSelected]="selectedDifficultyKey() === difficulty.difficultyKey"
+        [isBusy]="isBusy()"
+        [isStarting]="isStarting()"
+        [explorationState]="explorationState()"
+        (selectDifficulty)="selectDifficulty.emit($event)"
+        (selectedDifficultyAction)="selectedDifficultyAction.emit()"
+      />
+    } @empty {
+      <p class="muted-text mb-0">Brak dostępnych podglądów trudności.</p>
+    }
+  </div>
+
+  @if (selectedDifficulty(); as selectedDifficulty) {
+    <app-exploration-trial-detail-section [difficulty]="selectedDifficulty" />
+  }
+</section>

@@ -7,11 +7,14 @@ import { GetHeroArmoryItemDetailRpcRow } from '../types/item-equipment-rpc.types
 import {
   jsonRecord,
   JsonRecord,
-  mapJsonArray,
   optionalNumber,
   optionalText,
   read,
+  requiredArray,
+  requiredRecord,
+  requiredText,
 } from './json-read';
+import { mapPlayerItemDisplayCore } from './player-item-display-core.mapper';
 
 export function mapArmoryItemDetail(
   row: GetHeroArmoryItemDetailRpcRow,
@@ -22,6 +25,10 @@ export function mapArmoryItemDetail(
     itemId: row.item_id,
     heroId: row.hero_id,
     serverId: row.server_id,
+    displayCore: mapPlayerItemDisplayCore(
+      read(bonuses, 'displayMeta'),
+      'bonuses_json.displayMeta',
+    ),
     name: row.item_name,
     lifecycleStatus: row.item_status,
     qualityLabel: row.generation_quality_key,
@@ -39,48 +46,81 @@ export function mapArmoryItemDetail(
 }
 
 function itemStats(bonuses: JsonRecord | null): ArmoryItemDetailStat[] {
-  const itemStatsRecord = jsonRecord(read(bonuses, 'itemStats', 'item_stats'));
+  const itemStatsRecord = requiredRecord(
+    read(bonuses, 'itemStats'),
+    'bonuses_json.itemStats',
+  );
 
-  return mapJsonArray(read(itemStatsRecord, 'rows'), statRow);
+  return requiredArray(
+    read(itemStatsRecord, 'rows'),
+    'bonuses_json.itemStats.rows',
+  ).map(statRow);
 }
 
 function statRow(row: JsonRecord): ArmoryItemDetailStat {
   return {
-    label: playerLabel(
-      optionalText(read(row, 'displayLabel', 'display_label', 'label')) ?? 'Stat',
-      optionalText(read(row, 'key', 'targetKey', 'target_key')),
+    statKey: optionalText(read(row, 'statKey')),
+    label: requiredText(
+      read(row, 'displayLabel'),
+      'bonuses_json.itemStats.rows[].displayLabel',
     ),
-    displayValue: optionalText(read(row, 'displayValue', 'display_value')) ?? '',
+    displayValue: requiredText(
+      read(row, 'displayValue'),
+      'bonuses_json.itemStats.rows[].displayValue',
+    ),
+    ...statNumericValue(row),
   };
 }
 
+function statNumericValue(
+  row: JsonRecord | null,
+  fallback: number | null = null,
+): Pick<ArmoryItemDetailStat, 'numericValue'> | Record<string, never> {
+  const numericValue = row
+    ? optionalNumber(
+      read(row, 'effectiveValue', 'effective_value', 'numericValue', 'numeric_value', 'value'),
+    ) ?? fallback
+    : fallback;
+
+  return numericValue === null ? {} : { numericValue };
+}
+
 function bonusRows(bonuses: JsonRecord | null): ArmoryItemDetailBonus[] {
-  return mapJsonArray(read(bonuses, 'modifierRows', 'modifier_rows'), modifierBonus)
-    .filter((bonus): bonus is ArmoryItemDetailBonus => bonus !== null)
-    .filter(visibleBonus)
+  return requiredArray(
+    read(bonuses, 'modifierRows'),
+    'bonuses_json.modifierRows',
+  )
+    .map(modifierBonus)
     .sort((left, right) => left.sortOrder - right.sortOrder);
 }
 
-function modifierBonus(row: JsonRecord): ArmoryItemDetailBonus | null {
-  const displayValue = optionalText(read(row, 'displayValue', 'display_value'));
-  if (!displayValue?.trim()) {
-    return null;
-  }
-
+function modifierBonus(row: JsonRecord): ArmoryItemDetailBonus {
+  const numericValue = optionalNumber(
+    read(
+      row,
+      'effectiveValue',
+      'effective_value',
+      'numericValue',
+      'numeric_value',
+      'value',
+      'rawValue',
+      'raw_value',
+    ),
+  );
   const sourceLabel = optionalText(read(row, 'sourceLabel', 'source_label'));
   const sourceKey = optionalText(read(row, 'sourceKey', 'source_key'));
-  const numericValue = optionalNumber(
-    read(row, 'value', 'numericValue', 'numeric_value'),
-  );
+  const targetKey = optionalText(read(row, 'targetKey'));
 
   return {
-    label: playerLabel(
-      optionalText(read(row, 'displayLabel', 'display_label', 'label'))
-        ?? optionalText(read(row, 'statKey', 'stat_key', 'targetKey', 'target_key'))
-        ?? 'Bonus',
-      optionalText(read(row, 'statKey', 'stat_key', 'targetKey', 'target_key')),
+    label: requiredText(
+      read(row, 'displayLabel'),
+      'bonuses_json.modifierRows[].displayLabel',
     ),
-    displayValue,
+    displayValue: requiredText(
+      read(row, 'displayValue'),
+      'bonuses_json.modifierRows[].displayValue',
+    ),
+    targetKey,
     numericValue,
     rowKind: 'modifier_bonus',
     displaySection: 'bonuses',
@@ -88,30 +128,4 @@ function modifierBonus(row: JsonRecord): ArmoryItemDetailBonus | null {
     sourceLabel,
     sortOrder: optionalNumber(read(row, 'sortOrder', 'sort_order')) ?? 0,
   };
-}
-
-function visibleBonus(bonus: ArmoryItemDetailBonus): boolean {
-  const value = bonus.displayValue.trim();
-
-  return bonus.numericValue !== 0
-    && value !== '0'
-    && value !== '+0'
-    && value !== '0%';
-}
-
-function playerLabel(label: string, key: string | null): string {
-  const base = key?.trim()
-    ? key.replace(/_flat$/i, '')
-    : label.replace(/\s+flat$/i, '');
-  const normalized = base
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase()
-    .replace(/^max\b/, 'maximum')
-    .replace(/^min\b/, 'minimum');
-
-  return normalized
-    ? `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`
-    : label;
 }

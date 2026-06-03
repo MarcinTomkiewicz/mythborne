@@ -7,6 +7,7 @@ import { ExplorationDebugScopeState } from './exploration-debug-scope.state';
 import { ExplorationDebugFeedbackState } from './exploration-debug-feedback.state';
 import { ExplorationDebugRuntimeState } from './exploration-debug-runtime.state';
 import { ExplorationTimerConfigState } from './exploration-timer-config.state';
+import { ExplorationSmokeReadinessState } from './exploration-smoke-readiness.state';
 
 @Injectable()
 export class ExplorationDebugPageState {
@@ -16,6 +17,7 @@ export class ExplorationDebugPageState {
   readonly actions = inject(ExplorationDebugActionsState);
   readonly feedback = inject(ExplorationDebugFeedbackState);
   readonly timerConfig = inject(ExplorationTimerConfigState);
+  readonly smokeReadiness = inject(ExplorationSmokeReadinessState);
 
   readonly scopeForm = this.scope.scopeForm;
   readonly selectedServer = this.scope.selectedServer;
@@ -29,6 +31,7 @@ export class ExplorationDebugPageState {
     () =>
       this.scope.isServerLoading() ||
       this.definitions.isLoadingDefinitions() ||
+      this.smokeReadiness.isLoading() ||
       this.timerConfig.isLoading() ||
       this.runtime.isLoadingState() ||
       this.actions.isRunningAction(),
@@ -37,6 +40,7 @@ export class ExplorationDebugPageState {
   loadInitialData(): void {
     this.scope.loadInitialData();
     this.definitions.loadDefinitions();
+    this.smokeReadiness.load();
   }
 
   loadDebugState(): void {

@@ -7,11 +7,23 @@ export type GetHeroExplorationStateRpcArgs =
   Rpc<'get_hero_exploration_state'>['Args'];
 export type GetHeroExplorationStateRpcResult =
   Rpc<'get_hero_exploration_state'>['Returns'];
+export type GetHeroPendingCombatEffectStateRpcArgs =
+  Rpc<'get_hero_pending_combat_effect_state'>['Args'];
+export type GetHeroPendingCombatEffectStateRpcRow =
+  Rpc<'get_hero_pending_combat_effect_state'>['Returns'][number];
+export type GetHeroExplorationDifficultyCardPreviewsRpcArgs =
+  Rpc<'get_hero_exploration_difficulty_card_previews'>['Args'];
+export type GetHeroExplorationDifficultyCardPreviewsRpcRow =
+  Rpc<'get_hero_exploration_difficulty_card_previews'>['Returns'][number];
 
 export type StartOrGetHeroExplorationRpcArgs =
   Rpc<'start_or_get_hero_exploration'>['Args'];
 export type StartOrGetHeroExplorationRpcRow =
   Rpc<'start_or_get_hero_exploration'>['Returns'][number];
+export type StartOrGetHeroExplorationAndStartInitialStepRpcArgs =
+  Rpc<'start_or_get_hero_exploration_and_start_initial_step'>['Args'];
+export type StartOrGetHeroExplorationAndStartInitialStepRpcResult =
+  Rpc<'start_or_get_hero_exploration_and_start_initial_step'>['Returns'];
 
 export type StartHeroExplorationStepRpcArgs =
   Rpc<'start_hero_exploration_step'>['Args'];
@@ -66,6 +78,10 @@ export type AutoResolveHeroExplorationChallengeAttemptRpcArgs =
   Rpc<'auto_resolve_hero_exploration_challenge_attempt'>['Args'];
 export type AutoResolveHeroExplorationChallengeAttemptRpcRow =
   Rpc<'auto_resolve_hero_exploration_challenge_attempt'>['Returns'][number];
+export type AutoResolveCombatSessionRpcArgs =
+  Rpc<'auto_resolve_combat_session'>['Args'];
+export type AutoResolveCombatSessionRpcRow =
+  Rpc<'auto_resolve_combat_session'>['Returns'][number];
 
 export type PreviewTrialOpportunityCurveRpcArgs =
   Rpc<'preview_trial_opportunity_curve'>['Args'];

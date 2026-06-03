@@ -5,6 +5,7 @@ import { TABLES } from '../../constants/tables.const';
 import { FilterOperator } from '../../enums/filter-operators';
 import {
   BulkEquipHeroItemsRpcRow,
+  BulkUnequipHeroItemsRpcRow,
   ApplyHeroLoadoutPresetRpcRow,
   ClearHeroLoadoutPresetRpcRow,
   EquipHeroItemRpcRow,
@@ -289,6 +290,56 @@ describe('HeroEquipment', () => {
     );
   });
 
+  it('bulk unequips selected items through canonical RPC without single-slot loops', async () => {
+    backend.rpc.and.returnValue(of([
+      bulkUnequipRow({
+        result_journal_json: [
+          {
+            action: 'unequipped',
+            itemId: 'item-main',
+            slotKey: 'main_hand',
+          },
+          {
+            action: 'skipped',
+            itemId: 'item-ring',
+            slotKey: 'ring_1',
+            reasonKey: 'already_empty',
+          },
+        ],
+      }),
+    ]));
+
+    const result = await firstValueFrom(service.bulkUnequipItems({
+      requestId: ' unequip-request-1 ',
+      items: [
+        { slotKey: ' main_hand ', itemId: ' item-main ' },
+        { itemId: ' item-ring ' },
+      ],
+    }));
+
+    expect(backend.rpc).toHaveBeenCalledOnceWith(
+      RPC.bulk_unequip_hero_items,
+      {
+        p_hero_id: 'active-hero-1',
+        p_items_json: [
+          { itemId: 'item-main', slotKey: 'main_hand' },
+          { itemId: 'item-ring' },
+        ],
+        p_request_id: 'unequip-request-1',
+      },
+    );
+    expect(backend.rpc).not.toHaveBeenCalledWith(
+      RPC.unequip_hero_item,
+      jasmine.anything(),
+    );
+    expect(result.unequipped[0].itemId).toBe('item-main');
+    expect(result.skipped[0].reason).toBe('already_empty');
+    expect(backend.create).not.toHaveBeenCalled();
+    expect(backend.update).not.toHaveBeenCalled();
+    expect(backend.delete).not.toHaveBeenCalled();
+    expect(backend.upsert).not.toHaveBeenCalled();
+  });
+
   it('reads loadout presets through canonical RPC and preserves preset numbers', async () => {
     backend.rpc.and.returnValue(of([
       loadoutPresetRow({ preset_number: 2, preset_id: 'preset-2', name: 'Trial gear' }),
@@ -445,7 +496,7 @@ describe('HeroEquipment', () => {
       presetNumber: 2,
       name: 'Boss fights',
     }))).toBeRejectedWithError(
-      'rename_hero_loadout_preset returned no preset row.',
+      'rename_hero_loadout_preset returned no row.',
     );
   });
 
@@ -686,7 +737,7 @@ describe('HeroEquipment', () => {
       itemId: 'item-1',
       targetSlotKey: 'main_hand',
     }))).toBeRejectedWithError(
-      'equip_hero_item returned no equipment operation row.',
+      'equip_hero_item returned no row.',
     );
   });
 });
@@ -792,6 +843,25 @@ function bulkEquipRow(
     result_journal_json: [],
     skipped_count: 0,
     success: false,
+    ...overrides,
+  };
+}
+
+function bulkUnequipRow(
+  overrides: Partial<BulkUnequipHeroItemsRpcRow> = {},
+): BulkUnequipHeroItemsRpcRow {
+  return {
+    armory_state_json: {},
+    failed_count: 0,
+    final_equipment_json: [],
+    hero_id: 'active-hero-1',
+    request_id: 'unequip-request-1',
+    result_journal_json: [],
+    server_id: 'server-1',
+    skipped_count: 1,
+    success: true,
+    unequipped_count: 1,
+    visible_items_json: [],
     ...overrides,
   };
 }

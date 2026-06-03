@@ -6,19 +6,28 @@ import {
   CurrentEquipmentLoadout,
   EquipmentOperationJournal,
   EquipmentSlot,
-  EquipmentSlotKey,
   LoadoutPreset,
-  LoadoutPresetNumber,
   LoadoutPresetPreview,
   SaveLoadoutPresetResult,
   RenameLoadoutPresetResult,
   ClearLoadoutPresetResult,
 } from '../../domain/item/item-equipment.model';
 import { FilterOperator } from '../../enums/filter-operators';
+import {
+  BulkEquipHeroItemsInput,
+  BulkUnequipHeroItemsInput,
+  EquipHeroItemInput,
+  LoadoutPresetInput,
+  RenameLoadoutPresetInput,
+  SaveCurrentLoadoutPresetInput,
+  UnequipHeroSlotInput,
+} from '../../interfaces/item/equipment-actions.interface';
 import { Json } from '../../types/database.types';
 import {
   BulkEquipHeroItemsRpcArgs,
   BulkEquipHeroItemsRpcRow,
+  BulkUnequipHeroItemsRpcArgs,
+  BulkUnequipHeroItemsRpcRow,
   ApplyHeroLoadoutPresetRpcArgs,
   ApplyHeroLoadoutPresetRpcRow,
   ClearHeroLoadoutPresetRpcArgs,
@@ -50,42 +59,9 @@ import {
   mapClearLoadoutPresetResult,
 } from '../../utils/item-equipment-mappers';
 import { trimText } from '../../utils/normalize-text';
+import { firstRpcRow } from '../../utils/rpc-result';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
-
-export interface EquipHeroItemInput {
-  itemId: string;
-  targetSlotKey?: EquipmentSlotKey | null;
-  requestId?: string | null;
-}
-
-export interface UnequipHeroSlotInput {
-  slotKey: EquipmentSlotKey;
-  requestId?: string | null;
-}
-
-export interface BulkEquipHeroItemInput {
-  itemId: string;
-  targetSlotKey?: EquipmentSlotKey | null;
-}
-
-export interface BulkEquipHeroItemsInput {
-  items: readonly BulkEquipHeroItemInput[];
-  requestId?: string | null;
-}
-
-export interface LoadoutPresetInput {
-  presetNumber: LoadoutPresetNumber;
-  requestId?: string | null;
-}
-
-export interface SaveCurrentLoadoutPresetInput extends LoadoutPresetInput {
-  name?: string | null;
-}
-
-export interface RenameLoadoutPresetInput extends LoadoutPresetInput {
-  name: string;
-}
 
 @Injectable({ providedIn: 'root' })
 export class HeroEquipment {
@@ -99,10 +75,7 @@ export class HeroEquipment {
         filters: {
           is_active: { operator: FilterOperator.EQ, value: true },
         },
-        orderBy: [
-          { column: 'sort_order' },
-          { column: 'key' },
-        ],
+        orderBy: [{ column: 'sort_order' }, { column: 'key' }],
         camelCase: false,
       })
       .pipe(map((rows) => rows.map(mapEquipmentSlot)));
@@ -116,10 +89,9 @@ export class HeroEquipment {
         };
 
         return this.backend
-          .rpc<GetHeroEquipmentRuntimeSlotsRpcRow[]>(
-            RPC.get_hero_equipment_runtime_slots,
-            args,
-          )
+          .rpc<
+            GetHeroEquipmentRuntimeSlotsRpcRow[]
+          >(RPC.get_hero_equipment_runtime_slots, args)
           .pipe(
             map((rows) => mapCurrentEquipmentLoadout(context.heroId, rows)),
           );
@@ -135,21 +107,22 @@ export class HeroEquipment {
         };
 
         return this.backend
-          .rpc<GetHeroLoadoutPresetsRpcRow[]>(
-            RPC.get_hero_loadout_presets,
-            args,
-          )
-          .pipe(map((rows) => {
-            assertRowsBelongToHero(
-              rows,
-              context.heroId,
-              RPC.get_hero_loadout_presets,
-            );
+          .rpc<
+            GetHeroLoadoutPresetsRpcRow[]
+          >(RPC.get_hero_loadout_presets, args)
+          .pipe(
+            map((rows) => {
+              assertRowsBelongToHero(
+                rows,
+                context.heroId,
+                RPC.get_hero_loadout_presets,
+              );
 
-            return rows
-              .map(mapLoadoutPreset)
-              .sort((left, right) => left.presetNumber - right.presetNumber);
-          }));
+              return rows
+                .map(mapLoadoutPreset)
+                .sort((left, right) => left.presetNumber - right.presetNumber);
+            }),
+          );
       }),
     );
   }
@@ -172,9 +145,13 @@ export class HeroEquipment {
 
         return this.backend
           .rpc<EquipHeroItemRpcRow[]>(RPC.equip_hero_item, args)
-          .pipe(map((rows) => mapEquipmentOperationJournal(
-            firstEquipmentOperationRow(rows, RPC.equip_hero_item),
-          )));
+          .pipe(
+            map((rows) =>
+              mapEquipmentOperationJournal(
+                firstRpcRow(rows, RPC.equip_hero_item),
+              ),
+            ),
+          );
       }),
     );
   }
@@ -196,22 +173,23 @@ export class HeroEquipment {
         };
 
         return this.backend
-          .rpc<SaveCurrentHeroLoadoutPresetRpcRow[]>(
-            RPC.save_current_hero_loadout_preset,
-            args,
-          )
-          .pipe(map((rows) => {
-            assertPresetRowsMatch(
-              rows,
-              context.heroId,
-              presetNumber,
-              RPC.save_current_hero_loadout_preset,
-            );
+          .rpc<
+            SaveCurrentHeroLoadoutPresetRpcRow[]
+          >(RPC.save_current_hero_loadout_preset, args)
+          .pipe(
+            map((rows) => {
+              assertPresetRowsMatch(
+                rows,
+                context.heroId,
+                presetNumber,
+                RPC.save_current_hero_loadout_preset,
+              );
 
-            return mapSaveLoadoutPresetResult(
-              firstPresetMutationRow(rows, RPC.save_current_hero_loadout_preset),
-            );
-          }));
+              return mapSaveLoadoutPresetResult(
+                firstRpcRow(rows, RPC.save_current_hero_loadout_preset),
+              );
+            }),
+          );
       }),
     );
   }
@@ -233,22 +211,23 @@ export class HeroEquipment {
         };
 
         return this.backend
-          .rpc<RenameHeroLoadoutPresetRpcRow[]>(
-            RPC.rename_hero_loadout_preset,
-            args,
-          )
-          .pipe(map((rows) => {
-            assertPresetRowsMatch(
-              rows,
-              context.heroId,
-              presetNumber,
-              RPC.rename_hero_loadout_preset,
-            );
+          .rpc<
+            RenameHeroLoadoutPresetRpcRow[]
+          >(RPC.rename_hero_loadout_preset, args)
+          .pipe(
+            map((rows) => {
+              assertPresetRowsMatch(
+                rows,
+                context.heroId,
+                presetNumber,
+                RPC.rename_hero_loadout_preset,
+              );
 
-            return mapRenameLoadoutPresetResult(
-              firstPresetMutationRow(rows, RPC.rename_hero_loadout_preset),
-            );
-          }));
+              return mapRenameLoadoutPresetResult(
+                firstRpcRow(rows, RPC.rename_hero_loadout_preset),
+              );
+            }),
+          );
       }),
     );
   }
@@ -268,22 +247,23 @@ export class HeroEquipment {
         };
 
         return this.backend
-          .rpc<ClearHeroLoadoutPresetRpcRow[]>(
-            RPC.clear_hero_loadout_preset,
-            args,
-          )
-          .pipe(map((rows) => {
-            assertPresetRowsMatch(
-              rows,
-              context.heroId,
-              presetNumber,
-              RPC.clear_hero_loadout_preset,
-            );
+          .rpc<
+            ClearHeroLoadoutPresetRpcRow[]
+          >(RPC.clear_hero_loadout_preset, args)
+          .pipe(
+            map((rows) => {
+              assertPresetRowsMatch(
+                rows,
+                context.heroId,
+                presetNumber,
+                RPC.clear_hero_loadout_preset,
+              );
 
-            return mapClearLoadoutPresetResult(
-              firstPresetMutationRow(rows, RPC.clear_hero_loadout_preset),
-            );
-          }));
+              return mapClearLoadoutPresetResult(
+                firstRpcRow(rows, RPC.clear_hero_loadout_preset),
+              );
+            }),
+          );
       }),
     );
   }
@@ -325,11 +305,14 @@ export class HeroEquipment {
               presetNumber,
               RPC.preview_hero_loadout_preset,
             );
-            const presetRow = data.presets
-              .find((entry) => entry.preset_number === presetNumber);
+            const presetRow = data.presets.find(
+              (entry) => entry.preset_number === presetNumber,
+            );
 
             if (!presetRow) {
-              throw new Error('preview_hero_loadout_preset returned no preset header.');
+              throw new Error(
+                'preview_hero_loadout_preset returned no preset header.',
+              );
             }
 
             assertPresetRowsMatch(
@@ -364,22 +347,23 @@ export class HeroEquipment {
         };
 
         return this.backend
-          .rpc<ApplyHeroLoadoutPresetRpcRow[]>(
-            RPC.apply_hero_loadout_preset,
-            args,
-          )
-          .pipe(map((rows) => {
-            assertPresetRowsMatch(
-              rows,
-              context.heroId,
-              presetNumber,
-              RPC.apply_hero_loadout_preset,
-            );
+          .rpc<
+            ApplyHeroLoadoutPresetRpcRow[]
+          >(RPC.apply_hero_loadout_preset, args)
+          .pipe(
+            map((rows) => {
+              assertPresetRowsMatch(
+                rows,
+                context.heroId,
+                presetNumber,
+                RPC.apply_hero_loadout_preset,
+              );
 
-            return mapEquipmentOperationJournal(
-              firstEquipmentOperationRow(rows, RPC.apply_hero_loadout_preset),
-            );
-          }));
+              return mapEquipmentOperationJournal(
+                firstRpcRow(rows, RPC.apply_hero_loadout_preset),
+              );
+            }),
+          );
       }),
     );
   }
@@ -400,9 +384,13 @@ export class HeroEquipment {
 
         return this.backend
           .rpc<UnequipHeroItemRpcRow[]>(RPC.unequip_hero_item, args)
-          .pipe(map((rows) => mapEquipmentOperationJournal(
-            firstEquipmentOperationRow(rows, RPC.unequip_hero_item),
-          )));
+          .pipe(
+            map((rows) =>
+              mapEquipmentOperationJournal(
+                firstRpcRow(rows, RPC.unequip_hero_item),
+              ),
+            ),
+          );
       }),
     );
   }
@@ -434,32 +422,62 @@ export class HeroEquipment {
 
         return this.backend
           .rpc<BulkEquipHeroItemsRpcRow[]>(RPC.bulk_equip_hero_items, args)
-          .pipe(map((rows) => mapEquipmentOperationJournal(
-            firstEquipmentOperationRow(rows, RPC.bulk_equip_hero_items),
-          )));
+          .pipe(
+            map((rows) =>
+              mapEquipmentOperationJournal(
+                firstRpcRow(rows, RPC.bulk_equip_hero_items),
+              ),
+            ),
+          );
       }),
     );
   }
-}
 
-function firstEquipmentOperationRow<T>(rows: readonly T[], rpcName: string): T {
-  const row = rows[0];
+  bulkUnequipItems(
+    input: BulkUnequipHeroItemsInput,
+  ): Observable<EquipmentOperationJournal> {
+    const items = input.items.map((item, index) => {
+      const itemId = nullableText(item.itemId);
+      const slotKey = nullableText(item.slotKey);
 
-  if (!row) {
-    throw new Error(`${rpcName} returned no equipment operation row.`);
+      if (!itemId && !slotKey) {
+        throw new Error(
+          `items[${index}] requires itemId or slotKey for equipment RPC.`,
+        );
+      }
+
+      const payload: Record<string, string> = {};
+      if (itemId) {
+        payload['itemId'] = itemId;
+      }
+      if (slotKey) {
+        payload['slotKey'] = slotKey;
+      }
+
+      return payload;
+    });
+    const requestId = nullableText(input.requestId);
+
+    return this.activeHero.requireActiveHero().pipe(
+      switchMap((context) => {
+        const args: BulkUnequipHeroItemsRpcArgs = {
+          p_hero_id: context.heroId,
+          p_items_json: items as unknown as Json,
+          p_request_id: requestId,
+        };
+
+        return this.backend
+          .rpc<BulkUnequipHeroItemsRpcRow[]>(RPC.bulk_unequip_hero_items, args)
+          .pipe(
+            map((rows) =>
+              mapEquipmentOperationJournal(
+                firstRpcRow(rows, RPC.bulk_unequip_hero_items),
+              ),
+            ),
+          );
+      }),
+    );
   }
-
-  return row;
-}
-
-function firstPresetMutationRow<T>(rows: readonly T[], rpcName: string): T {
-  const row = rows[0];
-
-  if (!row) {
-    throw new Error(`${rpcName} returned no preset row.`);
-  }
-
-  return row;
 }
 
 function assertRowsBelongToHero<T extends { hero_id: string }>(
@@ -472,10 +490,12 @@ function assertRowsBelongToHero<T extends { hero_id: string }>(
   }
 }
 
-function assertPresetRowsMatch<T extends {
-  hero_id: string;
-  preset_number: number;
-}>(
+function assertPresetRowsMatch<
+  T extends {
+    hero_id: string;
+    preset_number: number;
+  },
+>(
   rows: readonly T[],
   heroId: string,
   presetNumber: number,
@@ -504,7 +524,9 @@ function nullableText(value: string | null | undefined): string | undefined {
 
 function presetNumberValue(value: number): number {
   if (!Number.isInteger(value) || value < 1) {
-    throw new Error('presetNumber must be a positive integer for equipment RPC.');
+    throw new Error(
+      'presetNumber must be a positive integer for equipment RPC.',
+    );
   }
 
   return value;

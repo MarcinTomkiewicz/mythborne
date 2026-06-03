@@ -1,81 +1,188 @@
-<section class="mg-card mg-card--legend flex-col gap-lg w-100">
+<section class="flex-col w-100">
   <app-loading-overlay
     [visible]="page.isSubmitting()"
-    label="Creating character..."
-    description="Saving account profile, hero, estate and starting resources."
+    label="Tworzenie bohatera..."
+    description="Gra tworzy bohatera, przydziela punkty postaci, zasoby startowe i pierwszą posiadłość."
   />
 
-  <div class="flex-col gap-xs">
-    <p class="card-legend mb-0">Create Character</p>
-    <h1 class="mg-section__title mb-0">Forge your hunter</h1>
-    <p class="mb-0 text-muted">
-      Complete the onboarding flow to unlock the game, estate and stat assignment.
-    </p>
-  </div>
-
-  @if (page.errorMessage()) {
+  @if (page.serverAvailabilityError()) {
     <div class="mg-card border-danger bg-danger-soft flex-col gap-xs w-100">
-      <p class="mb-0 text-danger">{{ page.errorMessage() }}</p>
+      <p class="m-0 text-danger">{{ page.serverAvailabilityError() }}</p>
     </div>
   }
 
-  <p-stepper
-    class="w-100"
-    [value]="page.step()"
-    [linear]="true"
-    (valueChange)="page.onStepChange($event)"
-  >
-    <p-step-list>
-      <p-step [value]="1">Account</p-step>
-      <p-step [value]="2" [disabled]="!page.canOpenStep(2)">Hero</p-step>
-      <p-step [value]="3" [disabled]="!page.canOpenStep(3)">Origin</p-step>
-      <p-step [value]="4" [disabled]="!page.canOpenStep(4)">Profile</p-step>
-    </p-step-list>
+  @if (page.errorMessage()) {
+    <div class="mg-card border-danger bg-danger-soft flex-col gap-xs w-100">
+      <p class="m-0 text-danger">{{ page.errorMessage() }}</p>
+    </div>
+  }
 
-    <p-step-panels>
-      <p-step-panel [value]="1">
-        <ng-template #content>
-          <app-step-account
-            [form]="page.accountForm"
-            [isExistingAccount]="page.hasExistingAccount()"
-            [existingEmail]="page.user()?.email ?? ''"
-            (next)="page.nextFromAccount()"
-          />
-        </ng-template>
-      </p-step-panel>
+  @switch (page.hasExistingAccount() ? page.existingAccountCreateStage() : 'unauthenticated') {
+    @case ('server_select') {
+      @if (page.isServerAvailabilityLoading()) {
+        <app-loading-overlay
+          [visible]="true"
+          label="Wczytywanie światów..."
+          description="Sprawdzamy dostępne światy i możliwość stworzenia bohatera."
+        />
+      } @else {
+        <app-account-entry-server-selector
+          [form]="serverForm"
+          [options]="page.creationServerOptions()"
+          [details]="page.selectedServerDetails()"
+          [emptyMessage]="page.creationServerOptions().length === 0 && !page.serverAvailabilityError()
+            ? 'Nie ma teraz żadnego świata dostępnego do stworzenia bohatera. Spróbuj ponownie później albo skontaktuj się z obsługą gry.'
+            : null"
+          (continue)="page.continueToHeroCreation()"
+        />
+      }
+    }
 
-      <p-step-panel [value]="2">
-        <ng-template #content>
-          <app-step-hero
-            [form]="page.heroForm"
-            (back)="page.prevStep(1)"
-            (next)="page.nextFromHero()"
-          />
-        </ng-template>
-      </p-step-panel>
+    @case ('hero_creation') {
+      <section class="flex-col gap-lg w-100" aria-label="Tworzenie bohatera">
+        <header class="flex-col gap-xs w-100">
+          <h1 class="mg-section__title m-0">Wybierz imię i pochodzenie bohatera</h1>
+          <p class="m-0 color-muted">
+            Wybierz imię bohatera i pochodzenie z dostępnych opcji.
+          </p>
+        </header>
 
-      <p-step-panel [value]="3">
-        <ng-template #content>
-          <app-step-origin
-            [selectedOrigin]="page.selectedOrigin()"
-            [showBack]="true"
-            (back)="page.prevStep(2)"
-            (next)="page.onOriginNext($event)"
-          />
-        </ng-template>
-      </p-step-panel>
+        <div class="grid-2-1 grid-items-start gap-xl w-100">
+          <article class="flex-col gap-lg w-100">
+            <form [formGroup]="page.heroForm" class="mg-card mg-form p-md flex-col gap-md w-100">
+              <div class="flex-col gap-xs">
+                <h2 class="color-heading text-lg m-0">
+                  Imię bohatera
+                </h2>
+                <p class="m-0 color-muted">
+                  Imię musi być unikalne na wybranym serwerze. Gra sprawdzi je podczas tworzenia bohatera.
+                </p>
+              </div>
 
-      <p-step-panel [value]="4">
-        <ng-template #content>
-          <app-step-user
-            [form]="page.profileForm"
-            [submitting]="page.isSubmitting()"
-            (back)="page.prevStep(3)"
-            (submit)="page.submit()"
-          />
-        </ng-template>
-      </p-step-panel>
-    </p-step-panels>
-  </p-stepper>
+              <div class="max-w-500 w-100">
+                <app-form-fields [form]="page.heroForm" [fields]="heroFields" />
+              </div>
+            </form>
+
+            <app-step-origin
+              [selectedOrigin]="page.selectedOrigin()"
+              [serverAvailability]="page.selectedServerAvailability()"
+              [heroName]="page.heroForm.controls.characterName.value"
+              [showBack]="false"
+              [nextLabel]="'Stwórz bohatera'"
+              [submitDisabled]="page.heroForm.invalid || !page.canSubmitHeroCreation()"
+              (next)="page.onOriginNext($event)"
+            />
+          </article>
+
+          <aside class="flex-col-start-stretch gap-md w-100" aria-label="Zasady pochodzenia">
+            @if (page.selectedServerAvailability(); as availability) {
+              <section class="mg-card p-md flex-col gap-sm w-100" aria-label="Wybrany świat">
+                <div class="flex-col gap-xs">
+                  <span class="color-muted small-caps uppercase text-xs">Serwer</span>
+                  <strong class="color-heading text-lg">{{ availability.serverName }}</strong>
+                  <p class="m-0 color-muted">{{ availability.description }}</p>
+                </div>
+                @if (availability.districtACapacity > 0) {
+                  <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+                    <span class="color-muted small-caps uppercase text-xs">Dzielnica A</span>
+                    <strong class="color-heading">
+                      {{ availability.districtAFree }} / {{ availability.districtACapacity }}
+                    </strong>
+                  </div>
+                }
+              </section>
+            }
+
+            <section class="mg-card p-lg flex-col gap-sm w-100">
+              <h4 class="color-heading m-0">Pochodzenie bohatera</h4>
+              <p class="m-0 color-muted">
+                Pochodzenie wybierasz raz. Jego opis i bonusy są częścią zasad wybranego świata i zostaną przypisane przy utworzeniu bohatera.
+              </p>
+            </section>
+
+            <section class="mg-card p-lg flex-col gap-sm w-100">
+              <h4 class="color-heading m-0">Następny krok</h4>
+              <p class="m-0 color-muted">
+                Po utworzeniu bohatera przejdziesz do pierwszego przydziału atrybutów. Adres startowy zostanie przydzielony automatycznie.
+              </p>
+            </section>
+          </aside>
+        </div>
+      </section>
+    }
+
+    @case ('unauthenticated') {
+      <ng-container [ngTemplateOutlet]="heroCreationHeader" />
+
+      <p-stepper
+        class="w-100"
+        [value]="page.step()"
+        [linear]="true"
+        (valueChange)="page.onStepChange($event)"
+      >
+        <p-step-list>
+          <p-step [value]="1">Konto</p-step>
+          <p-step [value]="2" [disabled]="!page.canOpenStep(2)">Bohater</p-step>
+          <p-step [value]="3" [disabled]="!page.canOpenStep(3)">Pochodzenie</p-step>
+          <p-step [value]="4" [disabled]="!page.canOpenStep(4)">Profil</p-step>
+        </p-step-list>
+
+        <p-step-panels>
+          <p-step-panel [value]="1">
+            <ng-template #content>
+              <app-step-account
+                [form]="page.accountForm"
+                [isExistingAccount]="false"
+                [existingEmail]="''"
+                (next)="page.nextFromAccount()"
+              />
+            </ng-template>
+          </p-step-panel>
+
+          <p-step-panel [value]="2">
+            <ng-template #content>
+              <app-step-hero
+                [form]="page.heroForm"
+                (back)="page.prevStep(1)"
+                (next)="page.nextFromHero()"
+              />
+            </ng-template>
+          </p-step-panel>
+
+          <p-step-panel [value]="3">
+            <ng-template #content>
+              <app-step-origin
+                [selectedOrigin]="page.selectedOrigin()"
+                [heroName]="page.heroForm.controls.characterName.value"
+                [showBack]="true"
+                (back)="page.prevStep(2)"
+                (next)="page.onOriginNext($event)"
+              />
+            </ng-template>
+          </p-step-panel>
+
+          <p-step-panel [value]="4">
+            <ng-template #content>
+              <app-step-user
+                [form]="page.profileForm"
+                [submitting]="page.isSubmitting()"
+                (back)="page.prevStep(3)"
+                (submit)="page.submit()"
+              />
+            </ng-template>
+          </p-step-panel>
+        </p-step-panels>
+      </p-stepper>
+    }
+  }
 </section>
 
+<ng-template #heroCreationHeader>
+  <div class="flex-col gap-xs">
+    <h1 class="mg-section__title m-0">Wybierz imię i pochodzenie bohatera</h1>
+    <p class="m-0 color-muted">
+      Wybierz imię i pochodzenie. Po utworzeniu bohatera gra przydzieli punkty postaci, zasoby startowe i pierwszą posiadłość.
+    </p>
+  </div>
+</ng-template>

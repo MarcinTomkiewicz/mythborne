@@ -1,5 +1,5 @@
 @if (selectedServer(); as server) {
-  <div class="mg-surface-card flex-col gap-md p-md">
+  <div class="mg-card flex-col gap-md p-md">
     <div class="flex-row-between-end flex-wrap gap-md">
       <div class="flex-col gap-xs min-w-200 mb-sm">
         <p class="card-legend mb-0">Server</p>
@@ -48,7 +48,7 @@
     }
   </div>
 } @else if (isLoading()) {
-  <div class="mg-surface-card p-md muted-text">Loading active server...</div>
+  <div class="mg-card p-md muted-text">Loading active server...</div>
 } @else if (error()) {
-  <div class="mg-surface-card p-md muted-text">{{ error() }}</div>
+  <div class="mg-card p-md muted-text">{{ error() }}</div>
 }

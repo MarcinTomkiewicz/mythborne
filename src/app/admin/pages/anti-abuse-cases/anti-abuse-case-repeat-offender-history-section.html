@@ -14,7 +14,7 @@
   }
 
   @if (targetOptions().length) {
-    <div class="mg-surface-card p-md flex-col gap-md">
+    <div class="mg-card p-md flex-col gap-md">
       <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100">
         <label class="flex-col gap-sm">
           <span class="muted-text">Target</span>
@@ -40,23 +40,23 @@
 
       @if (history(); as model) {
         <div class="mg-grid grid-cols-5 grid-cols-2-md grid-cols-1-sm gap-sm w-100">
-          <div class="mg-surface-card p-sm flex-col gap-xs">
+          <div class="mg-card p-sm flex-col gap-xs">
             <span class="muted-text">Cases</span>
             <strong class="heading-color">{{ model.totals.cases }}</strong>
           </div>
-          <div class="mg-surface-card p-sm flex-col gap-xs">
+          <div class="mg-card p-sm flex-col gap-xs">
             <span class="muted-text">Sanctions</span>
             <strong class="heading-color">{{ model.totals.sanctions }}</strong>
           </div>
-          <div class="mg-surface-card p-sm flex-col gap-xs">
+          <div class="mg-card p-sm flex-col gap-xs">
             <span class="muted-text">Warnings</span>
             <strong class="heading-color">{{ model.totals.warnings }}</strong>
           </div>
-          <div class="mg-surface-card p-sm flex-col gap-xs">
+          <div class="mg-card p-sm flex-col gap-xs">
             <span class="muted-text">Character Point penalties</span>
             <strong class="heading-color">{{ model.totals.characterPointPenalties }}</strong>
           </div>
-          <div class="mg-surface-card p-sm flex-col gap-xs">
+          <div class="mg-card p-sm flex-col gap-xs">
             <span class="muted-text">Remaining Character Points</span>
             <strong class="heading-color">{{ model.totals.remainingCharacterPoints }}</strong>
           </div>
@@ -66,7 +66,7 @@
           <div class="flex-col gap-sm">
             <h4 class="mg-section__title mg-section__title--xs mb-0">Prior cases</h4>
             @for (caseItem of model.cases; track caseItem.id) {
-              <article class="mg-surface-card p-sm flex-col gap-xs">
+              <article class="mg-card p-sm flex-col gap-xs">
                 <div class="flex-row-between-center flex-col-sm gap-xs">
                   <strong class="heading-color text-break">{{ caseItem.title }}</strong>
                   <span class="mg-tag">{{ caseStatus(caseItem.status) }}</span>
@@ -82,7 +82,7 @@
           <div class="flex-col gap-sm">
             <h4 class="mg-section__title mg-section__title--xs mb-0">Sanctions and warnings</h4>
             @for (sanction of model.sanctions; track sanction.id) {
-              <article class="mg-surface-card p-sm flex-col gap-xs">
+              <article class="mg-card p-sm flex-col gap-xs">
                 <div class="flex-row-between-center flex-col-sm gap-xs">
                   <strong class="heading-color text-break">{{ sanctionTypeLabel(sanction) }}</strong>
                   <span class="mg-tag">{{ sanctionStatus(sanction.status) }}</span>
@@ -105,7 +105,7 @@
               Character Point penalties
             </h4>
             @for (penalty of model.characterPointPenalties; track penalty.id) {
-              <article class="mg-surface-card p-sm flex-col gap-xs">
+              <article class="mg-card p-sm flex-col gap-xs">
                 <div class="flex-row-between-center flex-col-sm gap-xs">
                   <strong class="heading-color text-break">{{ penalty.heroId }}</strong>
                   <span class="mg-tag">{{ sanctionStatus(penalty.status) }}</span>

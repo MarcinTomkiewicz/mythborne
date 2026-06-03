@@ -3,15 +3,12 @@ import { FormFieldConfig } from '../../types/form-field.types';
 import { CatalogSection } from '../../domain/item/item-generation-admin.model';
 import { ItemGenerationBaseType } from '../../domain/item/item-generation.model';
 import { CatalogEntity } from '../../types/item-catalog-admin.types';
-import { BONUS_TYPE_OPTIONS } from '../../utils/bonus';
 
 export const ITEM_CATALOG_SECTION_BUTTONS = [
   { label: 'Base items', section: 'base' },
   { label: 'Prefixes', section: 'prefix' },
   { label: 'Suffixes', section: 'suffix' },
 ] as const;
-
-export const ITEM_CATALOG_BONUS_TYPE_OPTIONS = BONUS_TYPE_OPTIONS;
 
 const AFFIX_KIND_OPTIONS = [
   { label: 'prefix', value: 'prefix' },

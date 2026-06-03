@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
-import { from, map, of, switchMap, take, tap } from 'rxjs';
+import { from, map, Observable, of, shareReplay, switchMap, take, tap } from 'rxjs';
 import { TABLES } from '../../constants/tables.const';
 import { IUserData } from '../../interfaces/i-user-data/i-user-data';
+import { AccountRegistrationResult } from '../../interfaces/auth/account-registration-result.interface';
 import { Insert } from '../../types/supabase.types';
 import { Platform } from '../platform/platform';
 import { SupabaseClientService } from '../supabase/supabase-client';
@@ -16,18 +17,20 @@ export class Auth {
   private readonly authState = inject(AuthState);
   private readonly activeHero = inject(ActiveHero);
   private readonly platform = inject(Platform);
-  private initializationStarted = false;
+  private initialization$: Observable<void> | null = null;
   private authListenerRegistered = false;
 
-  initialize() {
+  initialize(): Observable<void> {
     this.registerAuthListener();
 
-    if (!this.initializationStarted) {
-      this.initializationStarted = true;
-      return this.initializeAuthState().pipe(take(1));
+    if (!this.initialization$) {
+      this.initialization$ = this.initializeAuthState().pipe(
+        take(1),
+        shareReplay({ bufferSize: 1, refCount: false }),
+      );
     }
 
-    return of(void 0);
+    return this.initialization$;
   }
 
   initializeAuthState() {
@@ -46,17 +49,15 @@ export class Auth {
         );
 
     return authSource$.pipe(
-      switchMap(({ error, user }) => {
+      map(({ error, user }) => {
         if (error || !user) {
           this.authState.setUser(null);
           this.activeHero.clear();
-          return of(void 0);
+          return;
         }
 
         this.authState.setUser(user);
-
-        return this.activeHero.loadActiveHero().pipe(map(() => void 0));
-      })
+      }),
     );
   }
 
@@ -97,6 +98,36 @@ export class Auth {
     );
   }
 
+  registerAccount(email: string, password: string): Observable<AccountRegistrationResult> {
+    return from(this.supabase.auth.signUp({ email, password })).pipe(
+      switchMap(({ data, error }) => {
+        if (error || !data.user) {
+          throw error ?? new Error('User not created');
+        }
+
+        this.activeHero.clear();
+
+        if (!data.session) {
+          return of({
+            userId: data.user.id,
+            email: data.user.email ?? email,
+            isSignedIn: false,
+            requiresEmailConfirmation: true,
+          });
+        }
+
+        this.authState.setUser(data.user);
+
+        return of({
+          userId: data.user.id,
+          email: data.user.email ?? email,
+          isSignedIn: true,
+          requiresEmailConfirmation: false,
+        });
+      }),
+    );
+  }
+
   saveUserData(userId: string, userData: Omit<IUserData, 'id'>) {
     const payload: Insert<'user_data'> = {
       id: userId,
@@ -131,17 +162,22 @@ export class Auth {
         const user = data.user;
         this.authState.setUser(user);
 
-        return this.activeHero.loadActiveHero().pipe(map(() => user));
+        return of(user);
       })
     );
   }
 
   logout() {
     return from(this.supabase.auth.signOut()).pipe(
-      tap(() => {
+      tap(({ error }) => {
+        if (error) {
+          throw error;
+        }
+
         this.authState.setUser(null);
         this.activeHero.clear();
-      })
+      }),
+      map(() => void 0),
     );
   }
 }

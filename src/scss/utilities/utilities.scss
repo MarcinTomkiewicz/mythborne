@@ -3,12 +3,16 @@
 @use "./borders";
 @use "./spacings";
 @use "./gap";
+@use "./text-colors";
 @use "./status-text";
 @use "./text-alignment";
 @use "./width";
 @use "./height";
+@use "./size";
 @use "./interactions";
 @use "./overflow";
+@use "./position";
 @use "./transitions";
 @use "./dropdowns";
 @use "./z-index";
+@use "./fonts";

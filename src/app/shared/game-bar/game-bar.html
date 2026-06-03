@@ -2,30 +2,29 @@
   @if (showLabel() || showValue()) {
     <div class="flex-row-between-center gap-sm muted-text">
       @if (showLabel()) {
-        <span>{{ label() }}</span>
+        <span class="small-caps">{{ label() }}</span>
       } @else {
         <span></span>
       }
 
       @if (showValue()) {
-        <span class="heading-color">{{ value() }} / {{ max() }}</span>
+        <span class="heading-color">{{ displayValue() }}</span>
       }
     </div>
   }
 
-  <div class="flex-row-start-center gap-xs w-100">
-    @for (_ of steps(); let index = $index; track $index) {
-      <div
-        class="flex-1 overflow-hidden"
-        [style.height]="getStepHeight()"
-        style="border-radius: 6px; border: 1px solid var(--mg-color-border); background: var(--mg-color-bg-surface);"
-      >
-        <div
-          [style.width.%]="getStepFill(index)"
-          [style.background]="fillColor()"
-          style="height: 100%; border-radius: 6px;"
-        ></div>
-      </div>
-    }
+  <div
+    class="game-bar__track"
+    [class.game-bar__track--compact]="compact()"
+    [class.game-bar__track--xp]="isXp()"
+    [class.game-bar__track--chance]="isChance()"
+  >
+    <div
+      class="game-bar__fill"
+      [class.game-bar__fill--hp]="isHp()"
+      [class.game-bar__fill--xp]="isXp()"
+      [class.game-bar__fill--chance]="isChance()"
+      [style.width.%]="percentValue()"
+    ></div>
   </div>
 </div>

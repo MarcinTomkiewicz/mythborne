@@ -1,10 +1,14 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
-import { HeroExplorationEdgeReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
+import {
+  HeroExplorationMovementOptionReadModel,
+} from '../../../core/domain/exploration/exploration-runtime.model';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
+import { ToastService } from '../../../core/services/ui/toast';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
+import { ExplorationMinigameHandoffState } from './exploration-minigame-handoff.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 
 @Injectable()
@@ -12,30 +16,39 @@ export class ExplorationMovementState {
   private readonly destroyRef = inject(DestroyRef);
   private readonly explorations = inject(HeroExplorations);
   private readonly feedback = inject(ExplorationFeedbackState);
+  private readonly minigameHandoff = inject(ExplorationMinigameHandoffState);
   private readonly overview = inject(ExplorationOverviewState);
+  private readonly toast = inject(ToastService);
   private readonly movementToken = new RequestToken();
 
   readonly isMoving = signal(false);
-  readonly edges = computed(() => this.overview.state()?.edges ?? []);
+  readonly movementOptions = computed(() => this.overview.state()?.movementOptions ?? []);
   readonly movementBlockReason = computed(() => this.resolveMovementBlockReason());
 
-  canChooseDirection(edge: HeroExplorationEdgeReadModel): boolean {
-    return !this.isMoving() && edge.isAvailable && this.movementBlockReason() === null;
+  canChooseMovementOption(option: HeroExplorationMovementOptionReadModel): boolean {
+    return (
+      !this.isMoving()
+      && option.isAvailable
+      && this.movementBlockReason() === null
+      && this.movementOptionValidationError(option) === null
+    );
   }
 
-  edgeStatusLabel(edge: HeroExplorationEdgeReadModel): string {
-    if (!edge.isAvailable) {
-      return 'Unavailable';
+  movementOptionStatusLabel(option: HeroExplorationMovementOptionReadModel): string {
+    if (!option.isAvailable) {
+      return 'Niedostępna';
     }
 
-    return edge.toNodeId ? 'Known path' : 'Undiscovered branch';
+    return option.isBacktrack || option.stepKind === 'backtrack'
+      ? 'Powrót'
+      : 'Dostępna ścieżka';
   }
 
-  directionLabel(edge: HeroExplorationEdgeReadModel): string {
-    return edge.label || edge.directionKey;
+  movementOptionLabel(option: HeroExplorationMovementOptionReadModel): string {
+    return option.label || option.directionKey || option.stepKind;
   }
 
-  chooseDirection(edge: HeroExplorationEdgeReadModel): void {
+  chooseMovementOption(option: HeroExplorationMovementOptionReadModel): void {
     const context = this.overview.currentContext();
     const state = this.overview.state();
     const exploration = state?.exploration;
@@ -43,14 +56,19 @@ export class ExplorationMovementState {
     this.feedback.clear();
 
     if (!context || !state?.hasExploration || !exploration) {
-      this.feedback.setError(null, 'Start exploration before choosing a direction.');
+      this.feedback.setError(null, 'Rozpocznij eksplorację przed wyborem kierunku.');
       return;
     }
 
     const blockReason = this.movementBlockReason();
 
-    if (blockReason || !edge.isAvailable || edge.explorationId !== exploration.id) {
-      this.feedback.setError(null, blockReason ?? 'Direction is not available.');
+    const validationError = this.movementOptionValidationError(option);
+
+    if (blockReason || !option.isAvailable || validationError) {
+      this.feedback.setError(
+        null,
+        blockReason ?? validationError ?? 'Ten kierunek jest niedostępny.',
+      );
       return;
     }
 
@@ -62,7 +80,8 @@ export class ExplorationMovementState {
         heroId: context.heroId,
         difficultyKey: context.difficultyKey,
         explorationId: exploration.id,
-        edgeId: edge.id,
+        edgeId: option.edgeId,
+        stepKind: option.stepKind,
       })
       .pipe(
         finalize(() => {
@@ -78,15 +97,16 @@ export class ExplorationMovementState {
             return;
           }
 
+          this.minigameHandoff.clearMinigameReportPointer();
           this.overview.setStateFromWorkflow(nextState);
-          this.feedback.setSuccess('Movement step started.');
+          this.toast.show('success', 'Eksploracja', 'Ruch został rozpoczęty.');
         },
         error: (error: unknown) => {
           if (!this.isCurrentMovement(token, context.heroId, context.difficultyKey, exploration.id)) {
             return;
           }
 
-          this.feedback.setError(error, 'Failed to start movement step.');
+          this.feedback.setError(error, 'Nie udało się rozpocząć kroku eksploracji.');
         },
       });
   }
@@ -95,23 +115,19 @@ export class ExplorationMovementState {
     const state = this.overview.state();
 
     if (!state?.hasExploration || !state.exploration) {
-      return 'Start exploration before choosing a direction.';
+      return 'Rozpocznij eksplorację przed wyborem kierunku.';
     }
 
     if (state.activeChallenge) {
-      return 'Resolve the active challenge before moving.';
+      return 'Rozstrzygnij aktywne wyzwanie przed dalszym ruchem.';
     }
 
     if (state.activeStep) {
-      return 'Wait for the active movement step to resolve.';
+      return 'Poczekaj na rozstrzygnięcie bieżącego kroku.';
     }
 
-    if (state.remainingTrials <= 0) {
-      return 'No trial attempts remain today.';
-    }
-
-    if (!state.edges.some((edge) => edge.isAvailable)) {
-      return 'No available directions.';
+    if (!state.movementOptions.some((option) => option.isAvailable)) {
+      return 'Brak dostępnych kierunków.';
     }
 
     return null;
@@ -128,5 +144,34 @@ export class ExplorationMovementState {
       this.overview.isCurrentContext(heroId, difficultyKey) &&
       this.overview.state()?.exploration?.id === explorationId
     );
+  }
+
+  private movementOptionValidationError(
+    option: HeroExplorationMovementOptionReadModel,
+  ): string | null {
+    const stepKind = option.stepKind.trim();
+    const isBacktrack = option.isBacktrack || stepKind === 'backtrack';
+
+    if (!stepKind) {
+      return 'Ten kierunek nie ma poprawnego rodzaju ruchu.';
+    }
+
+    if (isBacktrack) {
+      if (stepKind !== 'backtrack') {
+        return 'Ścieżka powrotu nie ma poprawnego rodzaju ruchu.';
+      }
+
+      if (option.edgeId !== null) {
+        return 'Ścieżka powrotu ma niepoprawne dane trasy.';
+      }
+
+      return null;
+    }
+
+    if (!option.edgeId) {
+      return 'Ten kierunek nie ma poprawnego połączenia trasy.';
+    }
+
+    return null;
   }
 }

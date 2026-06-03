@@ -1,0 +1,20 @@
+<footer class="border-top py-md px-lg w-100" aria-label="Stopka Mythsworn">
+  <div class="mg-container max-w-none flex-row-between-center flex-wrap gap-md">
+    <div class="flex-col gap-xs">
+      <strong class="color-heading font-display text-lg">{{ brand }}</strong>
+      <span class="color-muted text-sm">{{ subtitle }}</span>
+    </div>
+
+    <nav class="flex-row-center-center flex-wrap gap-sm" aria-label="Linki stopki">
+      @for (link of links; track link.key) {
+        <a class="text-sm font-bold" [routerLink]="link.route">
+          {{ link.label }}
+        </a>
+      }
+    </nav>
+
+    <p class="m-0 color-muted text-sm">
+      Copyright {{ currentYear }} {{ brand }}.
+    </p>
+  </div>
+</footer>

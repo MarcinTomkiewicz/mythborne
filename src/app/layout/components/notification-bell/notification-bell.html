@@ -1,13 +1,16 @@
-<div class="dropdown-anchor">
+<div
+  class="dropdown-anchor"
+  [appDropdownOutsideClose]="state.isOpen()"
+  (outsideClick)="state.closeDropdown()"
+>
   <button
     type="button"
-    class="dropdown-trigger mg-card flex-row-center-center gap-xs p-sm cursor-pointer"
+    class="dropdown-trigger mg-shell-topbar-control flex-row-center-center cursor-pointer"
     [attr.aria-expanded]="state.isOpen()"
     aria-label="Notifications"
     (click)="state.toggleDropdown()"
   >
     <i class="pi pi-bell"></i>
-    <span class="muted-text">Notifications</span>
     @if (state.unreadCount() > 0) {
       <span
         class="notification-badge"
@@ -22,10 +25,7 @@
   @if (state.isOpen()) {
     <section class="dropdown-panel mg-card flex-col gap-md p-md">
       <div class="flex-row-between-center gap-md">
-        <div class="flex-col gap-xs">
-          <strong class="heading-color">Notifications</strong>
-          <span class="muted-text">Latest player inbox items</span>
-        </div>
+        <strong class="heading-color">Notifications</strong>
         @if (state.unreadCount() > 0) {
           <span class="tag-badge tag-badge--warn">{{ state.unreadCountLabel() }} unread</span>
         }
@@ -39,8 +39,7 @@
         <div class="flex-col gap-sm dropdown-list">
           @for (notification of state.notifications(); track notification.notificationId) {
             <article
-              class="list-card-item mg-card flex-col gap-xs p-sm"
-              [class.list-card-item--highlight]="notification.readState.isUnread"
+              class="dropdown-list-item flex-col gap-xs"
             >
               <div class="flex-row-between-center flex-col-sm gap-sm">
                 <strong class="heading-color">{{ notification.title }}</strong>
@@ -49,18 +48,6 @@
                 } @else {
                   <span class="tag-badge tag-badge--muted">Read</span>
                 }
-              </div>
-
-              <div class="flex-row-start-center flex-wrap gap-xs">
-                <span [class]="state.severityBadgeClass(notification)">
-                  {{ notification.severity }}
-                </span>
-                <span class="tag-badge tag-badge--muted">
-                  {{ notification.type.label }}
-                </span>
-                <span class="tag-badge tag-badge--muted">
-                  {{ notification.type.category }}
-                </span>
               </div>
 
               @if (state.shortBody(notification); as body) {

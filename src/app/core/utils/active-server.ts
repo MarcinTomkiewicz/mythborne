@@ -3,14 +3,19 @@ import {
   GameServerStatus,
   GlobalRoleKey,
   SERVER_SANDBOX_KEY,
+  ServerMembershipStatus,
   ServerSortRank,
 } from '../enums/active-server.enum';
+import { StartFlowServerAvailability } from '../domain/start-flow/start-flow.model';
 import {
   GameServerSummary,
+  GameServerKindValue,
+  GameServerStatusValue,
   ResolvedActiveServerState,
   SelectedGameServer,
   ServerAccessState,
   ActiveServerRows,
+  ServerMembershipStatusValue,
 } from '../interfaces/server/active-server.interface';
 import { Row } from '../types/supabase.types';
 import {
@@ -25,6 +30,7 @@ export function resolveActiveServerState(
   rows: ActiveServerRows,
   userId: string | null,
   currentServer: SelectedGameServer | null,
+  preferredServerId: string | null = null,
 ): ResolvedActiveServerState {
   const selectedServers = toAccessibleServers(
     rows.servers,
@@ -33,12 +39,40 @@ export function resolveActiveServerState(
     userId,
     rows.globalRoleKey,
   );
-  const selectedServer = resolveSelectedServer(selectedServers, currentServer);
+  const selectedServer = resolveSelectedServer(
+    selectedServers,
+    currentServer,
+    preferredServerId,
+  );
 
   return {
     selectedServers,
     selectedServer,
     access: toAccessState(userId, rows.globalRoleKey, selectedServer),
+  };
+}
+
+export function resolveActiveServerStateFromStartFlowAvailability(
+  availability: StartFlowServerAvailability[],
+  userId: string | null,
+  globalRoleKey: GlobalRoleKey | null,
+  currentServer: SelectedGameServer | null,
+  preferredServerId: string | null = null,
+): ResolvedActiveServerState {
+  const selectedServers = availability
+    .filter((entry) => entry.isVisible)
+    .map(toSelectedServerFromStartFlowAvailability)
+    .sort((left, right) => compareServers(left, right, userId));
+  const selectedServer = resolveSelectedServer(
+    selectedServers,
+    currentServer,
+    preferredServerId,
+  );
+
+  return {
+    selectedServers,
+    selectedServer,
+    access: toAccessState(userId, globalRoleKey, selectedServer),
   };
 }
 
@@ -97,6 +131,46 @@ export function emptyServerAccessState(): ServerAccessState {
     canAccessSandbox: false,
     canManageSelectedServer: false,
   };
+}
+
+function toSelectedServerFromStartFlowAvailability(
+  availability: StartFlowServerAvailability,
+): SelectedGameServer {
+  const membershipStatus = toMembershipStatus(availability.membershipStatus);
+
+  return {
+    id: availability.serverId,
+    key: availability.serverKey,
+    name: availability.serverName,
+    kind: availability.serverKind as GameServerKindValue,
+    status: availability.serverStatus as GameServerStatusValue,
+    description: availability.description,
+    launchedAt: null,
+    archivedAt: null,
+    membershipStatus,
+    membership: membershipStatus
+      ? {
+          status: membershipStatus,
+          suspendedUntil: null,
+          suspensionReason: null,
+          banReason: null,
+        }
+      : null,
+    staffRole: null,
+    canManage: false,
+    canUseAsSandbox: availability.isSandbox && availability.isStaffContext,
+  };
+}
+
+function toMembershipStatus(status: string | null): ServerMembershipStatusValue | null {
+  switch (status) {
+    case ServerMembershipStatus.Active:
+    case ServerMembershipStatus.Banned:
+    case ServerMembershipStatus.Suspended:
+      return status;
+    default:
+      return null;
+  }
 }
 
 function toAccessibleServers(
@@ -158,9 +232,19 @@ function toAccessibleServers(
 function resolveSelectedServer(
   servers: SelectedGameServer[],
   currentServer: SelectedGameServer | null,
+  preferredServerId: string | null,
 ): SelectedGameServer | null {
   if (currentServer && servers.some((server) => server.id === currentServer.id)) {
     return servers.find((server) => server.id === currentServer.id) ?? null;
+  }
+
+  if (preferredServerId) {
+    const preferredServer =
+      servers.find((server) => server.id === preferredServerId) ?? null;
+
+    if (preferredServer) {
+      return preferredServer;
+    }
   }
 
   return (

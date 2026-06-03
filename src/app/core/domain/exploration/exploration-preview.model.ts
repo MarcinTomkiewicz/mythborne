@@ -28,6 +28,36 @@ export interface TrialOpportunityCurvePreview {
   explanation: string;
 }
 
+export interface HeroExplorationDifficultyCardPreview {
+  difficultyKey: string;
+  difficultyLabel: string;
+  difficultyDescription: string;
+  difficultyHelperText: string | null;
+  isActive: boolean;
+  isAvailable: boolean;
+  stepDurationDisplay: string;
+  stepDurationSeconds: number;
+  trialOpportunityDisplay: string;
+  trialOpportunityChance: number;
+  trialOpportunityIsGuaranteedByStepCap: boolean;
+  manifestationDisplay: string;
+  manifestationChance: number;
+  autoResultPolicy: string;
+  autoResultDisplay: string;
+  autoResultSuccessChance: number;
+  rewardItemCountDisplay: string;
+  statDetails: HeroExplorationDifficultyStatDetail[];
+}
+
+export interface HeroExplorationDifficultyStatDetail {
+  statKey: string;
+  statLabel: string;
+  manifestationDisplay: string;
+  manifestationChance: number;
+  autoResultDisplay: string;
+  autoResultSuccessChance: number;
+}
+
 export interface TrialManifestationChancePreview {
   trialDefinitionId: string;
   trialKey: string;

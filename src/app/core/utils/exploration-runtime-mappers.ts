@@ -7,8 +7,10 @@ import {
   HeroExplorationReadModel,
   HeroExplorationStepReadModel,
   HeroExplorationTestOverrideReadModel,
+  HeroPendingCombatEffectStateReadModel,
 } from '../domain/exploration/exploration-runtime.model';
 import { Row } from '../types/supabase.types';
+import { GetHeroPendingCombatEffectStateRpcRow } from '../types/exploration-runtime-rpc.types';
 import { mapHeroExplorationChallengeAutoResolve } from './exploration-challenge-auto-resolve-read-model';
 import { mapHeroExplorationStepRng } from './exploration-rng-read-model';
 import { mapHeroExplorationTrialManifestation } from './exploration-trial-manifestation-read-model';
@@ -142,6 +144,38 @@ export function mapHeroExplorationEffect(
     metadataJson: row.metadata_json,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+export function mapHeroPendingCombatEffectState(
+  row: GetHeroPendingCombatEffectStateRpcRow,
+): HeroPendingCombatEffectStateReadModel {
+  return {
+    effectId: row.effect_id,
+    serverId: row.server_id,
+    heroId: row.hero_id,
+    explorationId: row.exploration_id,
+    effectDefinitionId: row.effect_definition_id,
+    effectKey: row.effect_key,
+    effectLabel: row.effect_label,
+    effectDescription: row.effect_description,
+    effectHelperText: row.effect_helper_text,
+    effectKind: row.effect_kind,
+    effectKindLabel: row.effect_kind_label,
+    effectTargetKey: row.effect_target_key,
+    effectTargetLabel: row.effect_target_label,
+    bonusTemplateKey: row.bonus_template_key,
+    bonusTemplateLabel: row.bonus_template_label,
+    valueDisplay: row.value_display,
+    status: row.status,
+    isActive: row.is_active,
+    runtimeIncluded: row.runtime_included,
+    playerSummary: row.player_summary,
+    metadataJson: row.metadata_json,
+    appliedAt: row.applied_at,
+    consumedAt: row.consumed_at,
+    consumedByKind: row.consumed_by_kind,
+    consumedById: row.consumed_by_id,
   };
 }
 

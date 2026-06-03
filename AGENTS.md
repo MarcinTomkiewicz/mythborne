@@ -154,7 +154,22 @@ Rules:
 - do not export domain interfaces/types from components;
 - route/page components should stay thin.
 
-If a new abstraction is added, it must have a clear reason. In the final report, mention it briefly only when it matters.
+Meaningful reuse means reusing existing logic, not merely instantiating or touching classes/components that are naturally part of the edited page.
+
+Do not count as strong reuse evidence:
+- using the component/page/facade that the task is already editing;
+- using a child component that is already part of that page composition;
+- listing classes only because they were necessary to render the current feature.
+
+Strong reuse evidence means naming concrete existing methods, helpers, utils, mappers, validators, factories, form configs, service methods, RPC helpers, state patterns or shared UI/workflow patterns that were checked and reused.
+
+If existing code was checked but not reused, say what was checked and why it was not suitable.
+
+If a new abstraction, feature-local helper, state, service, mapper or model is added, it must have a clear reason. In the final report, mention briefly:
+- the concrete reusable logic/patterns checked;
+- what was reused;
+- what was checked but not reused and why;
+- what was added new and why existing logic was insufficient.
 
 ---
 
@@ -292,6 +307,7 @@ Default successful report:
 - 20 lines maximum;
 - no long preflight dump;
 - no full reuse inventory;
+- reuse report should stay compact, but when new logic/helper/state/service/mapper is added it must name concrete methods/helpers/patterns checked, not just components/classes used in page composition;
 - no full touched-file cleanup table;
 - no reviewer-style rationale;
 - no repeated project rules.

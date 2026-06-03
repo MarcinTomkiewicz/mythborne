@@ -27,23 +27,23 @@
 
     <section class="mg-card p-lg w-100">
       <div class="mg-grid grid-cols-5 grid-cols-1-md gap-md w-100">
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="muted-text">Families</span>
           <strong class="mg-section__title mg-section__title--xs mb-0">{{ page.data().opponents.families.length }}</strong>
         </div>
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="muted-text">Opponents</span>
           <strong class="mg-section__title mg-section__title--xs mb-0">{{ page.data().opponents.opponents.length }}</strong>
         </div>
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="muted-text">Natural attacks</span>
           <strong class="mg-section__title mg-section__title--xs mb-0">{{ page.data().opponents.attackSources.length }}</strong>
         </div>
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="muted-text">Encounter candidates</span>
           <strong class="mg-section__title mg-section__title--xs mb-0">{{ page.data().encounterCandidates.length }}</strong>
         </div>
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="muted-text">Trial candidates</span>
           <strong class="mg-section__title mg-section__title--xs mb-0">{{ page.data().trialCandidates.length }}</strong>
         </div>
@@ -62,7 +62,7 @@
 
       <form [formGroup]="page.form" class="flex-col gap-md">
         <div class="mg-grid grid-cols-2 grid-cols-1-md gap-lg w-100">
-          <div class="mg-surface-card p-md flex-col gap-md">
+          <div class="mg-card p-md flex-col gap-md">
             <h4 class="mg-section__title mg-section__title--xs mb-0">Initiator</h4>
             <label class="flex-col gap-xs">
               <span class="muted-text">Intelligence</span>
@@ -78,7 +78,7 @@
             </label>
           </div>
 
-          <div class="mg-surface-card p-md flex-col gap-md">
+          <div class="mg-card p-md flex-col gap-md">
             <h4 class="mg-section__title mg-section__title--xs mb-0">Defender</h4>
             <label class="flex-col gap-xs">
               <span class="muted-text">Intelligence</span>
@@ -112,12 +112,12 @@
 
       @if (page.initiativePreview(); as preview) {
         <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md w-100 mt-lg">
-          <div class="mg-surface-card p-md flex-col gap-xs">
+          <div class="mg-card p-md flex-col gap-xs">
             <span class="muted-text">Formula</span>
             <strong class="heading-color">{{ preview.plan.formula.formulaLabel }}</strong>
             <span class="muted-text">{{ preview.plan.formula.formulaExpression }}</span>
           </div>
-          <div class="mg-surface-card p-md flex-col gap-xs">
+          <div class="mg-card p-md flex-col gap-xs">
             <span class="muted-text">Ordering rule</span>
             <strong class="heading-color">Sample order for one evaluation</strong>
             <span class="muted-text">{{ preview.plan.explanation.tieBreaker }}</span>
@@ -126,7 +126,7 @@
 
         <div class="flex-col gap-sm mt-lg">
           @for (slot of page.initiativeRows(); track slot.side + ':' + slot.slotIndex) {
-            <article class="mg-surface-card p-md flex-row-between-center flex-col-sm gap-md">
+            <article class="mg-card p-md flex-row-between-center flex-col-sm gap-md">
               <div class="flex-col gap-xs">
                 <strong class="heading-color">#{{ $index + 1 }} {{ slot.sideLabel }}</strong>
                 <span class="muted-text">{{ slot.sourceKindLabel }} - {{ slot.source.label }}</span>
@@ -149,7 +149,7 @@
 
       <div class="flex-col gap-md">
         @for (view of page.data().opponents.opponentViews; track view.opponent.id) {
-          <article class="mg-surface-card p-md flex-col gap-md">
+          <article class="mg-card p-md flex-col gap-md">
             <div class="flex-row-between-center flex-col-sm gap-sm">
               <div class="flex-col gap-xs">
                 <strong class="heading-color">{{ view.opponent.label }}</strong>
@@ -219,7 +219,7 @@
         <div class="flex-col gap-md">
           <h4 class="mg-section__title mg-section__title--xs mb-0">Encounter candidates</h4>
           @for (candidate of page.data().encounterCandidates; track candidate.id) {
-            <article class="mg-surface-card p-md flex-col gap-xs">
+            <article class="mg-card p-md flex-col gap-xs">
               <div class="flex-row-between-center flex-col-sm gap-sm">
                 <strong class="heading-color">{{ candidate.sourceLabel }}</strong>
                 <span class="mg-tag">{{ candidate.isActive ? 'active' : 'inactive' }}</span>
@@ -238,7 +238,7 @@
         <div class="flex-col gap-md">
           <h4 class="mg-section__title mg-section__title--xs mb-0">Trial candidates</h4>
           @for (candidate of page.data().trialCandidates; track candidate.id) {
-            <article class="mg-surface-card p-md flex-col gap-xs">
+            <article class="mg-card p-md flex-col gap-xs">
               <div class="flex-row-between-center flex-col-sm gap-sm">
                 <strong class="heading-color">{{ candidate.sourceLabel }}</strong>
                 <span class="mg-tag">{{ candidate.isActive ? 'active' : 'inactive' }}</span>

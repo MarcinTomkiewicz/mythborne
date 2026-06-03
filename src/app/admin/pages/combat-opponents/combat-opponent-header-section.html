@@ -10,7 +10,7 @@
   </div>
 
   @if (page.missingUiMetadataGaps().length > 0) {
-    <div class="mg-surface-card p-md mt-md flex-col gap-xs">
+    <div class="mg-card p-md mt-md flex-col gap-xs">
       <strong class="heading-color">Missing DB UI metadata</strong>
       @for (gap of page.missingUiMetadataGaps(); track gap) {
         <span class="muted-text">{{ gap }}</span>

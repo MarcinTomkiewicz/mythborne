@@ -23,6 +23,7 @@ describe('ArmoryShelfState', () => {
     ]);
     lifecycle = jasmine.createSpyObj<ItemLifecycleService>('ItemLifecycleService', [
       'vendorScrapHeroItem',
+      'bulkVendorScrapHeroItems',
     ]);
 
     TestBed.configureTestingModule({
@@ -182,6 +183,37 @@ describe('ArmoryShelfState', () => {
       reason: 'Player vendor scrap',
     });
     expect(state.actionMessage()).toBe('Item sold to vendor.');
+    expect(state.status()).toBe('empty');
+  });
+
+  it('bulk vendor scraps selected items through the canonical lifecycle service and refreshes armory', () => {
+    lifecycle.bulkVendorScrapHeroItems.and.returnValue(of({
+      heroId: 'hero-1',
+      serverId: 'server-1',
+      requestId: 'request-1',
+      success: true,
+      selectedCount: 2,
+      soldCount: 2,
+      skippedCount: 0,
+      failedCount: 0,
+      totalDrachmaAmount: 40,
+      balanceAfter: 140,
+    }));
+    armory.getArmory.and.returnValue(readModelSubject(0));
+    const afterResponse = jasmine.createSpy('afterResponse');
+
+    state.bulkVendorScrapItems(['item-1', 'item-2', 'item-1'], afterResponse);
+
+    expect(lifecycle.bulkVendorScrapHeroItems).toHaveBeenCalledWith({
+      actorHeroId: 'hero-1',
+      items: [
+        { itemId: 'item-1' },
+        { itemId: 'item-2' },
+      ],
+      reason: 'Player bulk vendor scrap',
+    });
+    expect(afterResponse).toHaveBeenCalledTimes(1);
+    expect(state.actionMessage()).toBe('Selected items sold to vendor.');
     expect(state.status()).toBe('empty');
   });
 

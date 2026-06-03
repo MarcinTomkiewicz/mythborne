@@ -1,28 +1,56 @@
-<section class="mg-card mg-card--legend flex-col gap-md">
-  <p class="mg-section__eyebrow mb-0">Public</p>
-  <h2 class="mg-section__title mb-0">Mythsworn</h2>
-  <p class="mb-0">
-    Publiczna warstwa projektu będzie zbierała informacje o świecie gry, zasadach,
-    instrukcjach i materiałach dla nowych graczy.
-  </p>
-  <div class="mg-grid mg-grid--2 gap-md">
-    <article class="mg-card flex-col gap-sm">
-      <h3 class="mg-section__title mg-section__title--xs mb-0">Założenia z dokumentów</h3>
-      <p class="mb-0">
-        Gra łączy rozwój bohatera, polowania, ekwipunek, budynki, PVP, surowce
-        i handel w jednej gospodarce osadzonej w świecie inspirowanym antyczną Grecją.
-      </p>
-    </article>
-    <article class="mg-card flex-col gap-sm">
-      <h3 class="mg-section__title mg-section__title--xs mb-0">Docelowy podział</h3>
-      <p class="mb-0">
-        `public` dla treści otwartych, `auth` dla wejścia do systemu, `hero`
-        dla postaci gracza, `game` dla mechanik rozgrywki i `admin` dla zarządzania.
-      </p>
-    </article>
-  </div>
-  <div class="flex-row-start-center gap-sm">
-    <a routerLink="/auth/create-character" class="mg-button-secondary">Create character</a>
-    <a routerLink="/hero/dashboard" class="mg-button-ghost">Go to hero dashboard</a>
+<section class="mg-section mg-section--full grid-items-start py-lg">
+  <div class="mg-container flex-col gap-xl min-h-full w-100">
+    <header class="flex-row-center-center w-100 py-sm">
+      <a routerLink="/" class="flex-row-center-center w-100" aria-label="Mythsworn">
+        <img
+          src="/images/banner.png"
+          alt="Mythsworn"
+          class="mg-brand-banner w-70 max-w-full h-auto object-fit-contain"
+        />
+      </a>
+    </header>
+
+    <main class="grid-2-1 grid-items-start flex-1 gap-xl">
+      <section class="flex-col-between-start gap-lg">
+        <div class="flex-col gap-md">
+          <h1 class="mg-section__title m-0">Mythsworn: Throne of Hellas</h1>
+
+          @for (block of loreBlocks; track block.key) {
+            @if (block.closing) {
+              <p class="m-0 text-xl color-heading font-display">{{ block.text }}</p>
+            } @else if (block.prominent) {
+              <p class="m-0 text-lg color-heading font-bold">{{ block.text }}</p>
+            } @else {
+              <p class="m-0 text-md">{{ block.text }}</p>
+            }
+          }
+        </div>
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <p-button
+            [label]="primaryCta().label"
+            [icon]="primaryCta().icon"
+            [routerLink]="primaryCta().route"
+          />
+          <p-button
+            [label]="secondaryCta().label"
+            [icon]="secondaryCta().icon"
+            severity="secondary"
+            [routerLink]="secondaryCta().route"
+          />
+        </div>
+      </section>
+
+      <aside class="flex-col-start-stretch gap-md" aria-label="Start gry">
+        @for (card of infoCards; track card.key) {
+          <section class="mg-card flex-col gap-sm">
+            <h2 class="mg-section__title mg-section__title--xs m-0">{{ card.title }}</h2>
+            <p class="m-0">{{ card.body }}</p>
+          </section>
+        }
+      </aside>
+    </main>
+
+    <div class="h-px-100 flex-none" aria-hidden="true"></div>
   </div>
 </section>

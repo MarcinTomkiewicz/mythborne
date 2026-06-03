@@ -1,0 +1,6 @@
+@use "abstracts/variables" as v;
+
+:host(.stat-card--derived) .stat-card-compact__tile {
+  border-color: color-mix(in srgb, v.$color-info 18%, transparent);
+  background: color-mix(in srgb, v.$color-info 7%, transparent);
+}

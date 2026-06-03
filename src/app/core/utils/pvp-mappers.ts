@@ -1,40 +1,36 @@
 import {
-  AdminPvpAttackResult,
-  AdminPvpRuntimeActivitySummary,
-  AdminPvpSpyResult,
+  ActivePvpActionOffer,
+  HeroPvpDailyAttackState,
   PvpActionKindEntry,
   PvpActionStartResult,
   PvpActionStatusEntry,
-  PvpAttackOutcomeEntry,
-  PvpAttackResult,
-  PvpRuntimeActivitySummary,
-  PvpSpyResult,
+  PvpSpyGameReportResult,
+  PvpSpySettlementResult,
   PvpTargetCandidate,
 } from '../domain/pvp/pvp.model';
-import { Json } from '../types/database.types';
 import {
-  GetMyPvpAttackResultRpcRow,
-  GetMyPvpSpyResultRpcRow,
+  CreatePvpSpyGameReportRpcRow,
+  GetActivePvpActionOfferRpcRow,
+  GetHeroPvpDailyAttackStateRpcRow,
   GetPvpTargetCandidatesRpcRow,
+  GetPvpVisibleAddressTargetOverlayRpcRow,
   PvpActionKindKey,
   PvpActionKindRow,
-  PvpActionRow,
   PvpActionStatusKey,
   PvpActionStatusRow,
-  PvpAttackOutcomeKey,
-  PvpAttackOutcomeKindRow,
-  PvpAttackResultRow,
-  PvpSpyResultRow,
+  SettleDuePvpSpyActionRpcRow,
   StartPvpActionRpcRow,
 } from '../types/pvp-rpc.types';
+import { optionalInteger } from './number';
+import { requiredTrimmedText, trimToNull } from './normalize-text';
 
 export function mapPvpActionKind(row: PvpActionKindRow): PvpActionKindEntry {
   return {
     key: row.key,
     label: row.label,
     description: row.description,
-    helperText: nullableText(row.helper_text),
-    adminDescription: nullableText(row.admin_description),
+    helperText: trimToNull(row.helper_text),
+    adminDescription: trimToNull(row.admin_description),
     sortOrder: row.sort_order,
     isActive: row.is_active,
     createsCombat: row.creates_combat,
@@ -49,8 +45,8 @@ export function mapPvpActionStatus(row: PvpActionStatusRow): PvpActionStatusEntr
     key: row.key,
     label: row.label,
     description: row.description,
-    helperText: nullableText(row.helper_text),
-    adminDescription: nullableText(row.admin_description),
+    helperText: trimToNull(row.helper_text),
+    adminDescription: trimToNull(row.admin_description),
     sortOrder: row.sort_order,
     isActive: row.is_active,
     isBlocking: row.is_blocking,
@@ -58,40 +54,44 @@ export function mapPvpActionStatus(row: PvpActionStatusRow): PvpActionStatusEntr
   };
 }
 
-export function mapPvpAttackOutcomeKind(
-  row: PvpAttackOutcomeKindRow,
-): PvpAttackOutcomeEntry {
-  return {
-    key: row.key,
-    label: row.label,
-    description: row.description,
-    helperText: nullableText(row.helper_text),
-    adminDescription: nullableText(row.admin_description),
-    sortOrder: row.sort_order,
-    isActive: row.is_active,
-  };
-}
-
 export function mapPvpTargetCandidate(
   row: GetPvpTargetCandidatesRpcRow,
 ): PvpTargetCandidate {
+  return mapPvpTargetCandidateBase(row);
+}
+
+export function mapPvpVisibleAddressTargetOverlay(
+  row: GetPvpVisibleAddressTargetOverlayRpcRow,
+): PvpTargetCandidate {
+  return mapPvpTargetCandidateBase(row);
+}
+
+function mapPvpTargetCandidateBase(
+  row: GetPvpTargetCandidatesRpcRow | GetPvpVisibleAddressTargetOverlayRpcRow,
+): PvpTargetCandidate {
   return {
-    targetHeroId: requiredText(row.target_hero_id, 'targetHeroId'),
-    targetDisplayName: requiredText(row.target_display_name, 'targetDisplayName'),
+    targetHeroId: requiredTrimmedText(row.target_hero_id, 'targetHeroId', 'PvP read model'),
+    targetDisplayName: requiredTrimmedText(row.target_display_name, 'targetDisplayName', 'PvP read model'),
     targetLevel: row.target_level,
+    targetGuildId: 'target_guild_id' in row ? trimToNull(row.target_guild_id) : null,
+    targetGuildName: 'target_guild_name' in row ? trimToNull(row.target_guild_name) : null,
+    targetGuildTag: 'target_guild_tag' in row ? trimToNull(row.target_guild_tag) : null,
+    targetGuildDisplayLabel: 'target_guild_display_label' in row
+      ? trimToNull(row.target_guild_display_label)
+      : null,
     targetAddress: {
-      estateId: requiredText(row.target_estate_id, 'targetEstateId'),
-      districtCode: requiredText(row.target_district_code, 'targetDistrictCode'),
-      address: requiredText(row.target_address, 'targetAddress'),
+      estateId: requiredTrimmedText(row.target_estate_id, 'targetEstateId', 'PvP read model'),
+      districtCode: requiredTrimmedText(row.target_district_code, 'targetDistrictCode', 'PvP read model'),
+      address: requiredTrimmedText(row.target_address, 'targetAddress', 'PvP read model'),
       addressNumber: row.target_address_number,
       estateRank: row.target_estate_rank,
     },
     distanceScore: row.distance_score,
     underProtection: row.under_protection,
-    protectionExpiresAt: nullableText(row.protection_expires_at),
+    protectionExpiresAt: trimToNull(row.protection_expires_at),
     attackEligibility: {
       canStart: row.can_attack,
-      blockReason: nullableText(row.attack_block_reason),
+      blockReason: trimToNull(row.attack_block_reason),
       travelTimeSeconds: row.attack_travel_time_seconds,
       minTargetLevel: row.attack_min_target_level,
       maxTargetLevel: row.attack_max_target_level,
@@ -99,9 +99,28 @@ export function mapPvpTargetCandidate(
     },
     spyEligibility: {
       canStart: row.can_spy,
-      blockReason: nullableText(row.spy_block_reason),
+      blockReason: trimToNull(row.spy_block_reason),
       travelTimeSeconds: row.spy_travel_time_seconds,
     },
+  };
+}
+
+export function mapHeroPvpDailyAttackState(
+  row: GetHeroPvpDailyAttackStateRpcRow,
+): HeroPvpDailyAttackState {
+  return {
+    heroId: requiredTrimmedText(row.hero_id, 'heroId', 'PvP read model'),
+    serverId: requiredTrimmedText(row.server_id, 'serverId', 'PvP read model'),
+    actionDate: requiredTrimmedText(row.action_date, 'actionDate', 'PvP read model'),
+    actionKind: requiredTrimmedText(row.action_kind, 'actionKind', 'PvP read model'),
+    usedDailyAttacks: row.used_daily_attacks,
+    remainingDailyAttacks: row.remaining_daily_attacks,
+    dailyAttackLimit: row.daily_attack_limit,
+    extraDailyAttacks: row.extra_daily_attacks,
+    canStartAttack: row.can_start_attack,
+    attackerHasBlockingActivity: row.attacker_has_blocking_activity,
+    counterExists: row.counter_exists,
+    generatedAt: requiredTrimmedText(row.generated_at, 'generatedAt', 'PvP read model'),
   };
 }
 
@@ -109,296 +128,147 @@ export function mapPvpActionStartResult(
   row: StartPvpActionRpcRow,
 ): PvpActionStartResult {
   return {
-    pvpActionId: requiredText(row.pvp_action_id, 'pvpActionId'),
-    runtimeActivityId: nullableText(row.runtime_activity_id),
-    serverId: requiredText(row.server_id, 'serverId'),
-    actionKind: requiredText(row.action_kind, 'actionKind') as PvpActionKindKey,
-    status: requiredText(row.status, 'status') as PvpActionStatusKey,
-    attackerHeroId: requiredText(row.attacker_hero_id, 'attackerHeroId'),
-    attackerEstateId: nullableText(row.attacker_estate_id),
-    targetHeroId: requiredText(row.target_hero_id, 'targetHeroId'),
-    targetEstateId: nullableText(row.target_estate_id),
-    startedAt: requiredText(row.started_at, 'startedAt'),
-    arrivesAt: requiredText(row.arrives_at, 'arrivesAt'),
+    pvpActionId: requiredTrimmedText(row.pvp_action_id, 'pvpActionId', 'PvP read model'),
+    runtimeActivityId: trimToNull(row.runtime_activity_id),
+    serverId: requiredTrimmedText(row.server_id, 'serverId', 'PvP read model'),
+    actionKind: requiredTrimmedText(row.action_kind, 'actionKind', 'PvP read model') as PvpActionKindKey,
+    status: requiredTrimmedText(row.status, 'status', 'PvP read model') as PvpActionStatusKey,
+    attackerHeroId: requiredTrimmedText(row.attacker_hero_id, 'attackerHeroId', 'PvP read model'),
+    attackerEstateId: trimToNull(row.attacker_estate_id),
+    targetHeroId: requiredTrimmedText(row.target_hero_id, 'targetHeroId', 'PvP read model'),
+    targetEstateId: trimToNull(row.target_estate_id),
+    startedAt: requiredTrimmedText(row.started_at, 'startedAt', 'PvP read model'),
+    arrivesAt: requiredTrimmedText(row.arrives_at, 'arrivesAt', 'PvP read model'),
     travelTimeSeconds: row.travel_time_seconds,
     attackTravelTimeSeconds: row.attack_travel_time_seconds,
     spyTravelTimeSeconds: row.spy_travel_time_seconds,
     distanceScore: row.distance_score,
-    manualFightWindowSeconds: nullableNumber(row.manual_fight_window_seconds),
-    manualDeadlineAt: nullableText(row.manual_deadline_at),
-    targetProtectionId: nullableText(row.target_protection_id),
-    targetProtectionSeconds: nullableNumber(row.target_protection_seconds),
+    manualFightWindowSeconds: optionalInteger(row.manual_fight_window_seconds),
+    manualDeadlineAt: trimToNull(row.manual_deadline_at),
+    targetProtectionId: trimToNull(row.target_protection_id),
+    targetProtectionSeconds: optionalInteger(row.target_protection_seconds),
   };
 }
 
-export function mapPvpRuntimeActivitySummary(
-  row: PvpActionRow,
-): PvpRuntimeActivitySummary {
+export function mapPvpSpySettlementResult(
+  row: SettleDuePvpSpyActionRpcRow,
+): PvpSpySettlementResult {
   return {
-    pvpActionId: requiredText(row.id, 'pvpActionId'),
-    runtimeActivityId: nullableText(row.runtime_activity_id),
-    actionKind: requiredText(row.action_kind, 'actionKind') as PvpActionKindKey,
-    status: requiredText(row.status, 'status') as PvpActionStatusKey,
-    targetHeroId: requiredText(row.target_hero_id, 'targetHeroId'),
-    targetLevelSnapshot: row.target_level_snapshot,
-    targetAddress: {
-      estateId: nullableText(row.target_estate_id),
-      districtCode: nullableText(row.target_district_code_snapshot),
-      addressNumber: nullableNumber(row.target_address_number_snapshot),
-    },
-    startedAt: requiredText(row.started_at, 'startedAt'),
-    arrivesAt: requiredText(row.arrives_at, 'arrivesAt'),
-    resolvedAt: nullableText(row.resolved_at),
-    travelTimeSeconds: row.travel_time_seconds,
-    manualDeadlineAt: nullableText(row.manual_deadline_at),
+    pvpActionId: requiredTrimmedText(row.pvp_action_id, 'pvpActionId', 'PvP spy settlement'),
+    pvpSpyResultId: trimToNull(row.pvp_spy_result_id),
+    runtimeActivityId: trimToNull(row.runtime_activity_id),
+    status: requiredTrimmedText(row.status, 'status', 'PvP spy settlement'),
+    settledAsOf: requiredTrimmedText(row.settled_as_of, 'settledAsOf', 'PvP spy settlement'),
   };
 }
 
-export function mapAdminPvpRuntimeActivitySummary(
-  row: PvpActionRow,
-): AdminPvpRuntimeActivitySummary {
+export function mapPvpSpyGameReportResult(
+  row: CreatePvpSpyGameReportRpcRow,
+): PvpSpyGameReportResult {
   return {
-    ...mapPvpRuntimeActivitySummary(row),
-    serverId: requiredText(row.server_id, 'serverId'),
-    attackerHeroId: requiredText(row.attacker_hero_id, 'attackerHeroId'),
-    attackerLevelSnapshot: row.attacker_level_snapshot,
-    attackerAddress: {
-      estateId: nullableText(row.attacker_estate_id),
-      districtCode: nullableText(row.attacker_district_code_snapshot),
-      addressNumber: nullableNumber(row.attacker_address_number_snapshot),
-    },
-    attackTravelTimeSeconds: row.attack_travel_time_seconds,
-    spyTravelTimeSeconds: row.spy_travel_time_seconds,
-    targetProtectionId: nullableText(row.target_protection_id),
-    targetProtectionSeconds: nullableNumber(row.target_protection_seconds),
-    reason: nullableText(row.reason),
-    requestId: nullableText(row.request_id),
-    metadataJson: jsonValue(row.metadata_json),
+    gameReportId: requiredTrimmedText(row.game_report_id, 'gameReportId', 'PvP spy report'),
+    pvpSpyResultId: requiredTrimmedText(row.pvp_spy_result_id, 'pvpSpyResultId', 'PvP spy report'),
+    createdNewReport: row.created_new_report,
+    participantsCreated: row.participants_created,
+    accessRowsTouched: row.access_rows_touched,
   };
 }
 
-export function mapPvpSpyResult(row: GetMyPvpSpyResultRpcRow): PvpSpyResult {
-  return mapPvpSpyResultBase({
-    spyResultId: row.spy_result_id,
-    pvpActionId: row.pvp_action_id,
-    serverId: row.server_id,
-    createdAt: row.created_at,
-    spyHeroId: row.spy_hero_id,
-    spyLevelSnapshot: row.spy_level_snapshot,
-    targetHeroId: row.target_hero_id,
-    targetDisplayName: row.target_display_name_snapshot,
-    targetLevelSnapshot: row.target_level_snapshot,
-    targetAddress: row.target_address_snapshot,
-    visibilityKey: row.visibility_key,
-    resultSummary: row.result_summary,
-    estateSnapshotJson: row.estate_snapshot_json,
-    buildingsSnapshotJson: row.buildings_snapshot_json,
-    resourcesSnapshotJson: row.resources_snapshot_json,
-    equipmentSnapshotJson: row.equipment_snapshot_json,
-    baseStatsSnapshotJson: row.base_stats_snapshot_json,
-    derivedCombatStatsJson: row.derived_combat_stats_json,
-  });
-}
-
-export function mapAdminPvpSpyResult(row: PvpSpyResultRow): AdminPvpSpyResult {
+export function mapActivePvpActionOffer(
+  row: GetActivePvpActionOfferRpcRow,
+): ActivePvpActionOffer {
   return {
-    ...mapPvpSpyResultBase({
-      spyResultId: row.id,
-      pvpActionId: row.pvp_action_id,
-      serverId: row.server_id,
-      createdAt: row.created_at,
-      spyHeroId: row.spy_hero_id,
-      spyLevelSnapshot: row.spy_level_snapshot,
-      targetHeroId: row.target_hero_id,
-      targetDisplayName: row.target_display_name_snapshot,
-      targetLevelSnapshot: row.target_level_snapshot,
-      targetAddress: row.target_address_snapshot,
-      visibilityKey: row.visibility_key,
-      resultSummary: row.result_summary,
-      estateSnapshotJson: row.estate_snapshot_json,
-      buildingsSnapshotJson: row.buildings_snapshot_json,
-      resourcesSnapshotJson: row.resources_snapshot_json,
-      equipmentSnapshotJson: row.equipment_snapshot_json,
-      baseStatsSnapshotJson: row.base_stats_snapshot_json,
-      derivedCombatStatsJson: row.derived_combat_stats_json,
+    pvpActionId: requiredTrimmedText(row.pvp_action_id, 'pvpActionId', 'PvP read model'),
+    runtimeActivityId: trimToNull(row.runtime_activity_id),
+    serverId: requiredTrimmedText(row.server_id, 'serverId', 'PvP read model'),
+    actionKind: requiredTrimmedText(row.action_kind, 'actionKind', 'PvP read model') as PvpActionKindKey,
+    actionKindLabel: pvpActionKindDisplayLabel(row.action_kind),
+    phase: requiredTrimmedText(row.phase, 'phase', 'PvP read model'),
+    phaseLabel: requiredTrimmedText(row.phase_label, 'phaseLabel', 'PvP read model'),
+    statusLabel: requiredTrimmedText(row.status_label, 'statusLabel', 'PvP read model'),
+    rawStatus: trimToNull(row.raw_status),
+    attackerHeroId: trimToNull(row.attacker_hero_id),
+    attackerName: trimToNull(row.attacker_name),
+    defenderHeroId: trimToNull(row.defender_hero_id),
+    defenderName: trimToNull(row.defender_name),
+    targetHeroId: trimToNull(row.defender_hero_id),
+    targetHeroDisplayName: trimToNull(row.target_name) ?? trimToNull(row.defender_name),
+    targetAddressLabel: pvpAddressLabel({
+      districtCode: trimToNull(row.target_district_code),
+      address: trimToNull(row.target_address),
+      addressNumber: optionalInteger(row.target_address_number),
     }),
-    metadataJson: jsonValue(row.metadata_json),
-    targetEstateId: nullableText(row.target_estate_id),
-  };
-}
-
-export function mapPvpAttackResult(
-  row: GetMyPvpAttackResultRpcRow,
-): PvpAttackResult {
-  return mapPvpAttackResultBase({
-    attackResultId: row.attack_result_id,
-    pvpActionId: row.pvp_action_id,
-    serverId: row.server_id,
-    createdAt: row.created_at,
-    attackerHeroId: row.attacker_hero_id,
-    attackerLevelSnapshot: row.attacker_level_snapshot,
-    defenderHeroId: row.defender_hero_id,
-    defenderLevelSnapshot: row.defender_level_snapshot,
-    combatResultId: row.combat_result_id,
-    combatOutcome: row.combat_outcome,
-    outcomeKey: row.outcome_key,
-    outcomeLabel: row.outcome_label,
-    winnerHeroId: row.winner_hero_id,
-    loserHeroId: row.loser_hero_id,
-    levelDifference: row.level_difference,
-    resourceOutcomeJson: row.resource_outcome_json,
-    rewardContextJson: row.reward_context_json,
-    prestigeContextJson: row.prestige_context_json,
-    reportContextJson: row.report_context_json,
-    notificationContextJson: row.notification_context_json,
-  });
-}
-
-export function mapAdminPvpAttackResult(
-  row: PvpAttackResultRow,
-  outcomeLabel = row.outcome_key,
-): AdminPvpAttackResult {
-  return {
-    ...mapPvpAttackResultBase({
-      attackResultId: row.id,
-      pvpActionId: row.pvp_action_id,
-      serverId: row.server_id,
-      createdAt: row.created_at,
-      attackerHeroId: row.attacker_hero_id,
-      attackerLevelSnapshot: row.attacker_level_snapshot,
-      defenderHeroId: row.defender_hero_id,
-      defenderLevelSnapshot: row.defender_level_snapshot,
-      combatResultId: row.combat_result_id,
-      combatOutcome: row.combat_outcome,
-      outcomeKey: row.outcome_key,
-      outcomeLabel,
-      winnerHeroId: row.winner_hero_id,
-      loserHeroId: row.loser_hero_id,
-      levelDifference: row.level_difference,
-      resourceOutcomeJson: row.resource_outcome_json,
-      rewardContextJson: row.reward_context_json,
-      prestigeContextJson: row.prestige_context_json,
-      reportContextJson: row.report_context_json,
-      notificationContextJson: row.notification_context_json,
+    targetDistrictCode: trimToNull(row.target_district_code),
+    targetAddressNumber: optionalInteger(row.target_address_number),
+    attackerAddressLabel: pvpAddressLabel({
+      districtCode: optionalRowText(row, 'attacker_district_code'),
+      address: optionalRowText(row, 'attacker_address'),
+      addressNumber: optionalRowInteger(row, 'attacker_address_number'),
     }),
-    metadataJson: jsonValue(row.metadata_json),
-    attackerEstateId: nullableText(row.attacker_estate_id),
-    defenderEstateId: nullableText(row.defender_estate_id),
+    startedAt: requiredTrimmedText(row.started_at, 'startedAt', 'PvP read model'),
+    arrivesAt: trimToNull(row.arrives_at),
+    availableAt: trimToNull(row.available_at),
+    expiresAt: trimToNull(row.expires_at),
+    resolvedAt: trimToNull(row.resolved_at),
+    phaseStartedAt: trimToNull(row.phase_started_at),
+    phaseEndsAt: trimToNull(row.phase_ends_at),
+    returnStartedAt: trimToNull(row.return_started_at),
+    returnAvailableAt: trimToNull(row.return_available_at),
+    manualDeadlineAt: trimToNull(row.manual_deadline_at),
+    remainingSeconds: optionalInteger(row.remaining_seconds),
+    secondsUntilArrival: optionalInteger(row.seconds_until_arrival),
+    secondsUntilExpiry: optionalInteger(row.seconds_until_expiry),
+    secondsUntilManualDeadline: optionalInteger(row.seconds_until_manual_deadline),
+    isBlockingRuntimeActivity: row.is_blocking_runtime_activity,
+    isTravelPhase: row.is_travel_phase,
+    isManualWindow: row.is_manual_window,
+    isResolved: row.is_resolved,
+    viewerRole: trimToNull(row.viewer_role),
+    viewerIsAttacker: row.viewer_role === 'attacker',
+    viewerIsTarget: row.viewer_role === 'defender',
+    pvpSpyResultId: optionalRowText(row, 'pvp_spy_result_id'),
+    pvpAttackResultId: trimToNull(row.pvp_attack_result_id),
+    combatLiveSessionId: trimToNull(row.combat_live_session_id),
+    combatResultId: trimToNull(row.combat_result_id),
   };
 }
 
-function mapPvpSpyResultBase(input: {
-  spyResultId: string | null | undefined;
-  pvpActionId: string | null | undefined;
-  serverId: string | null | undefined;
-  createdAt: string | null | undefined;
-  spyHeroId: string | null | undefined;
-  spyLevelSnapshot: number;
-  targetHeroId: string | null | undefined;
-  targetDisplayName: string | null | undefined;
-  targetLevelSnapshot: number;
-  targetAddress: string | null | undefined;
-  visibilityKey: string | null | undefined;
-  resultSummary: string | null | undefined;
-  estateSnapshotJson: Json;
-  buildingsSnapshotJson: Json;
-  resourcesSnapshotJson: Json;
-  equipmentSnapshotJson: Json;
-  baseStatsSnapshotJson: Json;
-  derivedCombatStatsJson: Json;
-}): PvpSpyResult {
-  return {
-    spyResultId: requiredText(input.spyResultId, 'spyResultId'),
-    pvpActionId: requiredText(input.pvpActionId, 'pvpActionId'),
-    serverId: requiredText(input.serverId, 'serverId'),
-    createdAt: requiredText(input.createdAt, 'createdAt'),
-    spyHeroId: requiredText(input.spyHeroId, 'spyHeroId'),
-    spyLevelSnapshot: input.spyLevelSnapshot,
-    targetHeroId: requiredText(input.targetHeroId, 'targetHeroId'),
-    targetDisplayName: requiredText(input.targetDisplayName, 'targetDisplayName'),
-    targetLevelSnapshot: input.targetLevelSnapshot,
-    targetAddress: nullableText(input.targetAddress),
-    visibilityKey: requiredText(input.visibilityKey, 'visibilityKey'),
-    resultSummary: nullableText(input.resultSummary),
-    snapshots: {
-      estate: jsonValue(input.estateSnapshotJson),
-      buildings: jsonValue(input.buildingsSnapshotJson),
-      resources: jsonValue(input.resourcesSnapshotJson),
-      equipment: jsonValue(input.equipmentSnapshotJson),
-      baseStats: jsonValue(input.baseStatsSnapshotJson),
-      derivedCombatStats: jsonValue(input.derivedCombatStatsJson),
-    },
-  };
-}
-
-function mapPvpAttackResultBase(input: {
-  attackResultId: string | null | undefined;
-  pvpActionId: string | null | undefined;
-  serverId: string | null | undefined;
-  createdAt: string | null | undefined;
-  attackerHeroId: string | null | undefined;
-  attackerLevelSnapshot: number;
-  defenderHeroId: string | null | undefined;
-  defenderLevelSnapshot: number;
-  combatResultId: string | null | undefined;
-  combatOutcome: PvpAttackResult['combatOutcome'];
-  outcomeKey: string | null | undefined;
-  outcomeLabel: string | null | undefined;
-  winnerHeroId: string | null | undefined;
-  loserHeroId: string | null | undefined;
-  levelDifference: number;
-  resourceOutcomeJson: Json;
-  rewardContextJson: Json;
-  prestigeContextJson: Json;
-  reportContextJson: Json;
-  notificationContextJson: Json;
-}): PvpAttackResult {
-  return {
-    attackResultId: requiredText(input.attackResultId, 'attackResultId'),
-    pvpActionId: requiredText(input.pvpActionId, 'pvpActionId'),
-    serverId: requiredText(input.serverId, 'serverId'),
-    createdAt: requiredText(input.createdAt, 'createdAt'),
-    attacker: {
-      heroId: requiredText(input.attackerHeroId, 'attackerHeroId'),
-      levelSnapshot: input.attackerLevelSnapshot,
-    },
-    defender: {
-      heroId: requiredText(input.defenderHeroId, 'defenderHeroId'),
-      levelSnapshot: input.defenderLevelSnapshot,
-    },
-    combatResultId: requiredText(input.combatResultId, 'combatResultId'),
-    combatOutcome: input.combatOutcome,
-    outcomeKey: requiredText(input.outcomeKey, 'outcomeKey') as PvpAttackOutcomeKey,
-    outcomeLabel: requiredText(input.outcomeLabel, 'outcomeLabel'),
-    winnerHeroId: nullableText(input.winnerHeroId),
-    loserHeroId: nullableText(input.loserHeroId),
-    levelDifference: input.levelDifference,
-    resourceOutcome: { raw: jsonValue(input.resourceOutcomeJson) },
-    rewardContext: { raw: jsonValue(input.rewardContextJson) },
-    prestigeContext: jsonValue(input.prestigeContextJson),
-    reportContext: { raw: jsonValue(input.reportContextJson) },
-    notificationContext: { raw: jsonValue(input.notificationContextJson) },
-  };
-}
-
-function jsonValue(value: Json | null | undefined): Json {
-  return value ?? {};
-}
-
-function nullableNumber(value: number | null | undefined): number | null {
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-function requiredText(value: string | null | undefined, field: string): string {
-  const normalized = nullableText(value);
-
-  if (!normalized) {
-    throw new Error(`${field} must be a non-empty PvP field.`);
+function pvpAddressLabel(input: {
+  districtCode: string | null;
+  address: string | null;
+  addressNumber: number | null;
+}): string | null {
+  if (input.address) {
+    return input.address;
   }
 
-  return normalized;
+  if (input.districtCode && input.addressNumber !== null) {
+    return `${input.districtCode}-${input.addressNumber}`;
+  }
+
+  return null;
 }
 
-function nullableText(value: string | null | undefined): string | null {
-  return typeof value === 'string' && value.length > 0 ? value : null;
+function optionalRowText(row: object, key: string): string | null {
+  return key in row
+    ? trimToNull((row as Record<string, unknown>)[key])
+    : null;
+}
+
+function optionalRowInteger(row: object, key: string): number | null {
+  return key in row
+    ? optionalInteger((row as Record<string, unknown>)[key])
+    : null;
+}
+
+function pvpActionKindDisplayLabel(actionKind: string): string {
+  if (actionKind === 'attack') {
+    return 'Atak';
+  }
+
+  if (actionKind === 'spy') {
+    return 'Szpiegowanie';
+  }
+
+  return requiredTrimmedText(actionKind, 'actionKind', 'PvP read model');
 }

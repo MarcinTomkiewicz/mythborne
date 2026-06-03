@@ -1,0 +1,22 @@
+<div class="flex-row-between-center flex-wrap gap-md mt-md w-100" aria-label="Paginacja okolicy">
+  <strong>{{ pageLabel() }}</strong>
+  <div class="flex-row-end-center flex-wrap gap-sm">
+    <span class="muted-text text-sm px-sm py-xs">{{ rangeSummary() }}</span>
+    <span class="flex-row-start-center px-sm py-xs">
+      <p-select
+        styleClass="min-w-160"
+        [options]="pageOptions()"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Strona"
+        (onChange)="pageChange.emit({ first: $event.value })"
+      />
+    </span>
+    <p-paginator
+      [first]="first()"
+      [rows]="20"
+      [totalRecords]="totalRecords()"
+      (onPageChange)="pageChange.emit($event)"
+    />
+  </div>
+</div>

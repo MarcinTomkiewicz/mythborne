@@ -1,8 +1,11 @@
-import { Component, input, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
+import { Confirmation, ConfirmationService } from 'primeng/api';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import {
@@ -12,34 +15,56 @@ import {
   EquipmentOperationJournal,
   EquipmentSlot,
   EquippedItemSummary,
+  LoadoutPreset,
 } from '../../../core/domain/item/item-equipment.model';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
-import {
-  ArmoryShelfReadStatus,
-  ArmoryShelfState,
-} from '../../../core/services/items/armory-shelf.state';
-import {
-  CurrentEquipmentReadStatus,
-  CurrentEquipmentState,
-} from '../../../core/services/items/current-equipment.state';
+import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
+import { ArmoryShelfReadStatus } from '../../../core/types/armory-shelf.types';
+import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
+import { CurrentEquipmentReadStatus } from '../../../core/types/current-equipment.types';
+import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loadout-presets.state';
+import { ToastService } from '../../../core/services/ui/toast';
+import { ArmoryBulkActionsToolbar } from '../../components/armory-bulk-actions-toolbar/armory-bulk-actions-toolbar';
+import { ArmoryInventorySection } from '../../components/armory-inventory-section/armory-inventory-section';
 import { ArmoryPage } from './armory-page';
+import { ARMORY_RING_SLOT_FILTER_VALUE } from '../../../core/constants/armory-inventory-filter.const';
 import {
   ArmoryGuildItemUsageState,
-  ArmoryGuildItemUsage,
 } from './armory-guild-item-usage.state';
+import { ArmoryGuildItemUsage } from '../../../core/interfaces/item/armory-guild-item-usage.interface';
+import {
+  EquipmentPreviewItemDisplay,
+  EquipmentPreviewSlotRow,
+} from '../../../core/domain/equipment/equipment-preview.model';
 
 describe('ArmoryPage', () => {
   let fixture: ComponentFixture<ArmoryPage>;
   let page: FakeArmoryPageFacade;
   let equipment: FakeCurrentEquipmentState;
   let armory: FakeArmoryShelfState;
+  let loadoutPresets: FakeHeroLoadoutPresetsState;
   let guildItemUsage: FakeArmoryGuildItemUsageState;
+  let toast: FakeToastService;
+  let confirmationService: jasmine.SpyObj<ConfirmationService>;
+  let lastConfirmation: Confirmation | null;
 
   beforeEach(async () => {
     page = new FakeArmoryPageFacade();
     equipment = new FakeCurrentEquipmentState();
     armory = new FakeArmoryShelfState();
+    loadoutPresets = new FakeHeroLoadoutPresetsState();
     guildItemUsage = new FakeArmoryGuildItemUsageState();
+    toast = new FakeToastService();
+    lastConfirmation = null;
+    confirmationService = jasmine.createSpyObj<ConfirmationService>(
+      'ConfirmationService',
+      ['confirm'],
+    );
+    confirmationService.confirm.and.callFake((confirmation: Confirmation) => {
+      lastConfirmation = confirmation;
+
+      return confirmationService;
+    });
 
     await TestBed.configureTestingModule({
       imports: [ArmoryPage],
@@ -49,9 +74,13 @@ describe('ArmoryPage', () => {
           imports: [
             ReactiveFormsModule,
             ButtonModule,
-            CheckboxModule,
+            ConfirmDialogModule,
+            InplaceModule,
             InputTextModule,
             SelectModule,
+            ArmoryBulkActionsToolbar,
+            ArmoryInventorySection,
+            MockEquipmentPreview,
             MockArmoryItemDetailPopover,
             MockLoadoutPresetManagement,
           ],
@@ -59,7 +88,10 @@ describe('ArmoryPage', () => {
             { provide: ArmoryPageFacade, useValue: page },
             { provide: CurrentEquipmentState, useValue: equipment },
             { provide: ArmoryShelfState, useValue: armory },
+            { provide: HeroLoadoutPresetsState, useValue: loadoutPresets },
             { provide: ArmoryGuildItemUsageState, useValue: guildItemUsage },
+            { provide: ToastService, useValue: toast },
+            { provide: ConfirmationService, useValue: confirmationService },
           ],
         },
       })
@@ -67,6 +99,7 @@ describe('ArmoryPage', () => {
 
     fixture = TestBed.createComponent(ArmoryPage);
     fixture.detectChanges();
+    toast.show.calls.reset();
   });
 
   it('loads armory support data and current equipment on init', () => {
@@ -76,7 +109,7 @@ describe('ArmoryPage', () => {
     expect(guildItemUsage.load).toHaveBeenCalled();
   });
 
-  it('renders all paperdoll slots with empty slot copy', () => {
+  it('renders dashboard equipment preview rows with empty slot copy', () => {
     page.equipmentSlots.set([
       equipmentSlot({ slotKey: 'main_hand', label: 'Main hand', sortOrder: 10 }),
       equipmentSlot({ slotKey: 'off_hand', label: 'Off hand', sortOrder: 20 }),
@@ -104,7 +137,7 @@ describe('ArmoryPage', () => {
     expect(text).toContain('No item equipped');
   });
 
-  it('renders equipped item layers and active lifecycle status', () => {
+  it('renders equipped item name and active lifecycle status', () => {
     page.equipmentSlots.set([
       equipmentSlot({ slotKey: 'main_hand', label: 'Blade slot', sortOrder: 30 }),
     ]);
@@ -124,8 +157,6 @@ describe('ArmoryPage', () => {
 
     expect(text).toContain('Fine Bronze Blade');
     expect(text).toContain('Blade slot');
-    expect(text).toContain('Fine - Bronze blade - Dawn - Guard');
-    expect(text).toContain('Active');
   });
 
   it('shows locked equipped item as equipped instead of hiding it', () => {
@@ -143,9 +174,9 @@ describe('ArmoryPage', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Trade Locked Shield');
-    expect(text).toContain('Locked Trade');
     expect(text).not.toContain('unusable');
-    expect(text).toContain('Unequip');
+    expect(text).toContain('Unequip selected');
+    expect(text).toContain('Unequip all');
   });
 
   it('renders custom DB slot labels and slots not present in the old local list', () => {
@@ -224,13 +255,327 @@ describe('ArmoryPage', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Unsorted');
-    expect(text).toContain('Position 0');
     expect(text).toContain('Weapons');
-    expect(text).toContain('Shelf 1');
+    expect(text).toContain('Stand 1');
     expect(text).toContain('Fresh Drop Blade');
     expect(text).toContain('Shelf Sword');
-    expect(text).toContain('2 / 5 visible');
-    expect(text).toContain('3 stored beyond visible range');
+    expect(text).not.toContain('Owned items');
+    expect(text).not.toContain('Visible capacity');
+    expect(text).not.toContain('Hidden3');
+  });
+
+  it('renders visible shelves from highest position down with unsorted last', () => {
+    armory.setShelves([
+      armoryShelf({
+        position: 0,
+        name: 'Unsorted',
+        isUnsortedDropArea: true,
+      }),
+      armoryShelf({ position: 1, name: 'Shelf One' }),
+      armoryShelf({ position: 10, name: 'Shelf Ten' }),
+      armoryShelf({ position: 7, name: 'Shelf Seven' }),
+    ]);
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text.indexOf('Shelf Ten')).toBeLessThan(text.indexOf('Shelf Seven'));
+    expect(text.indexOf('Shelf Seven')).toBeLessThan(text.indexOf('Shelf One'));
+    expect(text.indexOf('Shelf One')).toBeLessThan(text.indexOf('Unsorted'));
+  });
+
+  it('filters visible armory items by list-backed name, type, base and slot tokens', () => {
+    page.equipmentSlots.set([
+      equipmentSlot({ slotKey: 'ring_1', label: 'Ring 1', sortOrder: 80 }),
+      equipmentSlot({ slotKey: 'main_hand', label: 'Main hand', sortOrder: 10 }),
+    ]);
+    armory.setShelves([
+      armoryShelf({
+        position: 10,
+        name: 'High stand',
+        visibleItems: [
+          armoryItem({
+            itemId: 'item-bronze',
+            name: 'Bronze Spear',
+          }),
+          armoryItem({
+            itemId: 'item-ring',
+            name: 'Moon Band',
+            baseName: 'Silver Signet',
+            baseTypeKey: 'ring',
+            primarySlotKey: 'ring_1',
+            allowedSlotKeys: ['ring_1'],
+          }),
+        ],
+      }),
+      armoryShelf({
+        position: 9,
+        name: 'Lower stand',
+        visibleItems: [
+          armoryItem({
+            itemId: 'item-iron',
+            name: 'Iron Axe',
+            baseName: 'Axe Base',
+            baseTypeKey: 'weapon',
+            handUsageKey: 'two_handed',
+            primarySlotKey: 'main_hand',
+          }),
+        ],
+      }),
+    ]);
+
+    inventorySection(fixture).searchControl.setValue(' silver ');
+    fixture.detectChanges();
+    expect(textContent(fixture)).toContain('Moon Band');
+    expect(textContent(fixture)).not.toContain('Bronze Spear');
+    expect(textContent(fixture)).not.toContain('Iron Axe');
+
+    inventorySection(fixture).searchControl.setValue('main hand');
+    fixture.detectChanges();
+    expect(textContent(fixture)).toContain('Iron Axe');
+    expect(textContent(fixture)).not.toContain('Moon Band');
+
+    inventorySection(fixture).searchControl.setValue('jewelry');
+    fixture.detectChanges();
+    expect(textContent(fixture)).toContain('Moon Band');
+    expect(textContent(fixture)).not.toContain('Iron Axe');
+  });
+
+  it('filters visible armory items by slot and availability controls', () => {
+    page.equipmentSlots.set([
+      equipmentSlot({ slotKey: 'main_hand', label: 'Main hand', sortOrder: 10 }),
+      equipmentSlot({ slotKey: 'ring_1', label: 'Ring 1', sortOrder: 80 }),
+    ]);
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [
+          armoryItem({
+            itemId: 'item-main',
+            name: 'Demonic Sword',
+            primarySlotKey: 'main_hand',
+            lifecycleStatus: 'active',
+          }),
+          armoryItem({
+            itemId: 'item-ring',
+            name: 'Listed Signet',
+            primarySlotKey: 'ring_1',
+            lifecycleStatus: 'locked_auction',
+          }),
+        ],
+      }),
+    ]);
+
+    inventorySection(fixture).slotFilterControl.setValue('ring_1');
+    inventorySection(fixture).availabilityFilterControl.setValue('locked_auction');
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Listed Signet');
+    expect(text).not.toContain('Demonic Sword');
+    expect(text).toContain('1 matching item');
+  });
+
+  it('groups both ring slots under one player-facing ring filter option', () => {
+    page.equipmentSlots.set([
+      equipmentSlot({ slotKey: 'ring_1', label: 'Pierścień 1', sortOrder: 80 }),
+      equipmentSlot({ slotKey: 'ring_2', label: 'Pierścień 2', sortOrder: 90 }),
+      equipmentSlot({ slotKey: 'main_hand', label: 'Główna ręka', sortOrder: 10 }),
+    ]);
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Jewelry',
+        visibleItems: [
+          armoryItem({
+            itemId: 'item-ring-left',
+            name: 'Moon Ring',
+            baseTypeKey: 'ring',
+            primarySlotKey: 'ring_1',
+          }),
+          armoryItem({
+            itemId: 'item-ring-right',
+            name: 'Sun Ring',
+            baseTypeKey: 'ring',
+            primarySlotKey: 'ring_2',
+          }),
+          armoryItem({
+            itemId: 'item-sword',
+            name: 'Short Sword',
+            primarySlotKey: 'main_hand',
+          }),
+        ],
+      }),
+    ]);
+
+    inventorySection(fixture).slotFilterControl.setValue(ARMORY_RING_SLOT_FILTER_VALUE);
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Moon Ring');
+    expect(text).toContain('Sun Ring');
+    expect(text).not.toContain('Short Sword');
+    expect(inventorySection(fixture).slotOptions()).toContain(jasmine.objectContaining({
+      label: 'Pierścień',
+      value: ARMORY_RING_SLOT_FILTER_VALUE,
+    }));
+    expect(inventorySection(fixture).slotOptions()).not.toContain(jasmine.objectContaining({
+      label: 'Pierścień 1',
+    }));
+    expect(inventorySection(fixture).slotOptions()).not.toContain(jasmine.objectContaining({
+      label: 'Pierścień 2',
+    }));
+  });
+
+  it('uses exact normalized substring search and exposes hidden match tokens', () => {
+    page.equipmentSlots.set([
+      equipmentSlot({ slotKey: 'off_hand', label: 'Druga ręka', sortOrder: 20 }),
+    ]);
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Mixed',
+        visibleItems: [
+          armoryItem({
+            itemId: 'item-one',
+            name: 'Simple Hatchet',
+            baseTypeKey: 'weapon',
+            handUsageKey: 'one_handed',
+          }),
+          armoryItem({
+            itemId: 'item-armor',
+            name: 'Bronze Armor',
+            baseTypeKey: 'armor',
+          }),
+          armoryItem({
+            itemId: 'item-shield',
+            name: 'Round Shield',
+            baseTypeKey: 'shield',
+          }),
+        ],
+      }),
+    ]);
+
+    inventorySection(fixture).searchControl.setValue('one');
+    fixture.detectChanges();
+    let text = textContent(fixture);
+
+    expect(text).toContain('Simple Hatchet');
+    expect(text).not.toContain('Bronze Armor');
+    expect(text).not.toContain('Round Shield');
+
+    inventorySection(fixture).searchControl.setValue('druga');
+    fixture.detectChanges();
+    text = textContent(fixture);
+
+    expect(text).toContain('Round Shield');
+    expect(text).toContain('Matched Druga ręka');
+    expect(text).not.toContain('Bronze Armor');
+  });
+
+  it('shows an empty filtered state when no visible item matches filters', () => {
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [armoryItem({ name: 'Bronze Spear' })],
+      }),
+    ]);
+    inventorySection(fixture).searchControl.setValue('missing');
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('0 matching items');
+    expect(text).toContain('No visible items match these filters.');
+    expect(text).toContain('Clear filters to show all visible armory stands.');
+    expect((fixture.nativeElement as HTMLElement).querySelector('.pi-maze')).not.toBeNull();
+    expect(text).not.toContain('Bronze Spear');
+  });
+
+  it('clears armory filters and restores visible stand grouping', () => {
+    page.equipmentSlots.set([
+      equipmentSlot({ slotKey: 'main_hand', label: 'Main hand', sortOrder: 10 }),
+    ]);
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [armoryItem({
+          name: 'Bronze Spear',
+          primarySlotKey: 'main_hand',
+        })],
+      }),
+    ]);
+    inventorySection(fixture).searchControl.setValue('missing');
+    inventorySection(fixture).slotFilterControl.setValue('main_hand');
+    inventorySection(fixture).availabilityFilterControl.setValue('active');
+    fixture.detectChanges();
+
+    inventorySection(fixture).clearFilters();
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(inventorySection(fixture).searchControl.value).toBe('');
+    expect(inventorySection(fixture).slotFilterControl.value).toBe('all');
+    expect(inventorySection(fixture).availabilityFilterControl.value).toBe('all');
+    expect(text).not.toContain('No visible items match these filters.');
+    expect(text).toContain('Weapons');
+    expect(text).toContain('Bronze Spear');
+  });
+
+  it('keeps equipped items out of visible inventory shelves', () => {
+    equipment.setSlots([
+      equippedItem({
+        itemId: 'item-equipped',
+        itemName: 'Equipped Sword',
+        slotKey: 'main_hand',
+      }),
+    ]);
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [
+          armoryItem({
+            itemId: 'item-equipped',
+            name: 'Equipped Sword',
+          }),
+          armoryItem({
+            itemId: 'item-stored',
+            name: 'Stored Axe',
+          }),
+        ],
+      }),
+    ], visibility({
+      visibleItemCount: 2,
+      visibilityLimit: 30,
+    }));
+    fixture.detectChanges();
+    const text = textContent(fixture);
+
+    expect(text).toContain('Stored Axe');
+    expect(fixture.componentInstance.displayShelves()
+      .flatMap((shelf) => shelf.visibleItems.map((item) => item.itemId)))
+      .toEqual(['item-stored']);
+    expect(inventorySection(fixture).selectedBulkItems()).toEqual([]);
+  });
+
+  it('uses full-width armory host and dashboard equipment preview invocation', () => {
+    fixture.detectChanges();
+    const host = fixture.nativeElement as HTMLElement;
+    const preview = (fixture.nativeElement as HTMLElement)
+      .querySelector('app-equipment-preview');
+
+    expect(host.classList).toContain('w-100');
+    expect(preview?.classList).toContain('d-block');
+    expect(preview?.classList).toContain('w-100');
+  });
+
+  it('does not render admin links in the player-facing armory header', () => {
+    const text = textContent(fixture);
+
+    expect(text).not.toContain('Admin item catalog');
+    expect(text).not.toContain('Admin balance');
   });
 
   it('does not expose rename action for unsorted position zero', () => {
@@ -245,7 +590,6 @@ describe('ArmoryPage', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Unsorted');
-    expect(text).toContain('Position 0');
     expect(text).not.toContain('Rename');
   });
 
@@ -258,17 +602,54 @@ describe('ArmoryPage', () => {
     ]);
     fixture.detectChanges();
 
+    activateRenameStand(fixture);
+    fixture.detectChanges();
+
     const input = fixture.nativeElement.querySelector(
-      'input[aria-label="Shelf name"]',
+      'input[aria-label="Stand name"]',
     ) as HTMLInputElement;
-    const button = buttonWithText(fixture, 'Rename');
     input.value = 'Materials II';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const button = buttonWithAriaLabel(fixture, 'Rename stand');
     button.click();
 
     expect(armory.renameShelf).toHaveBeenCalledWith({
       shelfPosition: 2,
       newName: 'Materials II',
     });
+  });
+
+  it('shows cancel icon action for pristine or blank inline stand rename', () => {
+    armory.setShelves([
+      armoryShelf({
+        position: 2,
+        name: 'Materials',
+      }),
+    ]);
+    fixture.detectChanges();
+
+    activateRenameStand(fixture);
+    fixture.detectChanges();
+
+    let button = buttonWithAriaLabel(fixture, 'Cancel');
+
+    expect(button.classList).toContain('p-button-danger');
+    expect(button.classList).toContain('p-button-outlined');
+    expect(button.querySelector('.pi-interdiction')).not.toBeNull();
+
+    const input = fixture.nativeElement.querySelector(
+      'input[aria-label="Stand name"]',
+    ) as HTMLInputElement;
+    input.value = '';
+    input.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    button = buttonWithAriaLabel(fixture, 'Cancel');
+
+    expect(button.classList).toContain('p-button-danger');
+    expect(button.querySelector('.pi-interdiction')).not.toBeNull();
+    expect(armory.renameShelf).not.toHaveBeenCalled();
   });
 
   it('renders locked armory items as owned items without unusable copy', () => {
@@ -289,7 +670,7 @@ describe('ArmoryPage', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Auction Locked Shield');
-    expect(text).toContain('Locked Auction');
+    expect(text).toContain('Listed on auction');
     expect(text).toContain('Owned item reserved by market state.');
     expect(text).not.toContain('unusable');
     expect(text).not.toContain('Scrap');
@@ -343,14 +724,14 @@ describe('ArmoryPage', () => {
 
     expect(text).toContain('Guild Spear');
     expect(text).toContain('Deposited in guild armory');
-    expect(text).toContain('Withdraw from guild armory before equipping');
+    expect(text).not.toContain('Withdraw from guild armory before equipping');
     expect(text).not.toContain('Select for bulk equip');
     expect(text).not.toContain('Sell to vendor');
     expect(buttonsWithText(fixture, 'Equip').length).toBe(0);
     expect(buttonsWithText(fixture, 'Move').length).toBe(0);
   });
 
-  it('blocks direct private item action calls for guild armory items', () => {
+  it('blocks direct private equip and vendor calls for guild armory items', () => {
     const item = armoryItem({ itemId: 'item-borrowed' });
     guildItemUsage.setUsage('item-borrowed', usage({
       key: 'borrowed_by_guild_member',
@@ -360,11 +741,9 @@ describe('ArmoryPage', () => {
     }));
 
     fixture.componentInstance.equipItem(item);
-    fixture.componentInstance.moveItemToShelf(item, 1);
     fixture.componentInstance.vendorScrapItem(item);
 
     expect(equipment.equipItem).not.toHaveBeenCalled();
-    expect(armory.moveItemToShelf).not.toHaveBeenCalled();
     expect(armory.vendorScrapItem).not.toHaveBeenCalled();
   });
 
@@ -415,35 +794,6 @@ describe('ArmoryPage', () => {
     expect(page.loadData).toHaveBeenCalledTimes(2);
   });
 
-  it('calls item move action and supports target position zero', () => {
-    const item = armoryItem({
-      itemId: 'item-locked',
-      name: 'Auction Locked Shield',
-      lifecycleStatus: 'locked_auction',
-      shelfPosition: 2,
-    });
-    armory.setShelves([
-      armoryShelf({
-        position: 0,
-        name: 'Unsorted',
-        isUnsortedDropArea: true,
-      }),
-      armoryShelf({
-        position: 2,
-        name: 'Market reserves',
-        visibleItems: [item],
-      }),
-    ]);
-    fixture.detectChanges();
-
-    fixture.componentInstance.moveItemToShelf(item, '0');
-
-    expect(armory.moveItemToShelf).toHaveBeenCalledWith({
-      itemId: 'item-locked',
-      targetShelfPosition: 0,
-    });
-  });
-
   it('renders simple equip action without exposing slot selection', () => {
     armory.setShelves([
       armoryShelf({
@@ -464,7 +814,7 @@ describe('ArmoryPage', () => {
       .querySelector('p-select[aria-label="Equip item slot"]')).toBeNull();
   });
 
-  it('calls default equip without target slot and refreshes armory after response', () => {
+  it('calls default equip without target slot and refreshes equipment and armory after response', () => {
     const item = armoryItem({
       itemId: 'item-dagger',
       name: 'Demonic Dagger',
@@ -483,6 +833,7 @@ describe('ArmoryPage', () => {
     expect(equipment.equipItem).toHaveBeenCalledWith({
       itemId: 'item-dagger',
     }, jasmine.any(Function));
+    expect(equipment.refresh).toHaveBeenCalled();
     expect(armory.refresh).toHaveBeenCalled();
     expect(guildItemUsage.load).toHaveBeenCalledTimes(2);
     expect(page.loadData).toHaveBeenCalledTimes(2);
@@ -500,9 +851,9 @@ describe('ArmoryPage', () => {
     ]);
     fixture.detectChanges();
 
-    fixture.componentInstance.setBulkItemSelected(second, true);
-    fixture.componentInstance.setBulkItemSelected(first, true);
-    fixture.componentInstance.bulkEquipSelectedItems();
+    inventorySection(fixture).toggleBulkItemSelection(second);
+    inventorySection(fixture).toggleBulkItemSelection(first);
+    inventorySection(fixture).emitBulkEquipSelectedItems();
 
     expect(equipment.bulkEquipItems).toHaveBeenCalledWith({
       items: [
@@ -510,55 +861,164 @@ describe('ArmoryPage', () => {
         { itemId: 'item-first' },
       ],
     }, jasmine.any(Function));
+    expect(equipment.refresh).toHaveBeenCalled();
     expect(armory.refresh).toHaveBeenCalled();
     expect(page.loadData).toHaveBeenCalledTimes(2);
-    expect(fixture.componentInstance.selectedBulkItems()).toEqual([]);
+    expect(inventorySection(fixture).selectedBulkItems()).toEqual([]);
   });
 
-  it('renders bulk equip selection controls without exposing slot selection', () => {
+  it('renders bulk equip action without exposing checkbox or slot selection', () => {
+    const first = armoryItem({ itemId: 'item-first', name: 'First Blade' });
     armory.setShelves([
       armoryShelf({
         position: 1,
         name: 'Weapons',
         visibleItems: [
-          armoryItem({ itemId: 'item-first', name: 'First Blade' }),
+          first,
           armoryItem({ itemId: 'item-second', name: 'Second Blade' }),
         ],
       }),
     ]);
     fixture.detectChanges();
-    const text = textContent(fixture);
 
-    expect(text).toContain('Equip selected');
-    expect(text).toContain('Select for bulk equip');
+    expect(textContent(fixture)).toContain('No items selected');
+    expect(buttonsWithText(fixture, 'Equip selected')[0].hasAttribute('disabled'))
+      .toBeTrue();
+    expect(buttonsWithText(fixture, 'Sell selected')[0].hasAttribute('disabled'))
+      .toBeTrue();
+    expect((fixture.nativeElement as HTMLElement)
+      .querySelector('.pi-equip')).not.toBeNull();
+    expect((fixture.nativeElement as HTMLElement)
+      .querySelector('.pi-sold')).not.toBeNull();
+
+    inventorySection(fixture).toggleBulkItemSelection(first);
+    fixture.detectChanges();
+
+    expect(textContent(fixture)).toContain('1 selected');
+    expect(textContent(fixture)).toContain('20 drachma');
+    expect(textContent(fixture)).not.toContain('Bulk equip');
+    expect(textContent(fixture)).not.toContain('Sellable: 1');
+    expect(buttonsWithText(fixture, 'Equip selected')[0].hasAttribute('disabled'))
+      .toBeFalse();
+    expect(buttonsWithText(fixture, 'Sell selected')[0].hasAttribute('disabled'))
+      .toBeFalse();
+    expect(textContent(fixture)).not.toContain('Select for bulk equip');
     expect((fixture.nativeElement as HTMLElement)
       .querySelector('p-select[aria-label="Equip item slot"]')).toBeNull();
   });
 
-  it('calls unequip for the selected paperdoll slot and refreshes armory after response', () => {
-    page.equipmentSlots.set([
-      equipmentSlot({ slotKey: 'armor', label: 'Pancerz' }),
-    ]);
-    equipment.setSlots([
-      equippedItem({
-        itemId: 'locked-vest',
-        itemName: 'Trade Locked Vest',
-        lifecycleStatus: 'locked_trade',
-        slotKey: 'armor',
+  it('confirms bulk vendor scrap before selling selected active items', () => {
+    const first = armoryItem({ itemId: 'item-first', name: 'First Blade' });
+    const locked = armoryItem({
+      itemId: 'item-locked',
+      name: 'Locked Blade',
+      lifecycleStatus: 'locked_trade',
+    });
+    armory.setShelves([
+      armoryShelf({
+        position: 1,
+        name: 'Weapons',
+        visibleItems: [first, locked],
       }),
     ]);
     fixture.detectChanges();
 
-    fixture.componentInstance.unequipSlot('armor');
+    inventorySection(fixture).toggleBulkItemSelection(first);
+    inventorySection(fixture).toggleBulkItemSelection(locked);
+    inventorySection(fixture).emitBulkSellSelectedItems();
+    fixture.detectChanges();
 
-    expect(equipment.unequipSlot).toHaveBeenCalledWith({
-      slotKey: 'armor',
+    expect(armory.bulkVendorScrapItems).not.toHaveBeenCalled();
+    expect(confirmationService.confirm).toHaveBeenCalledWith(jasmine.objectContaining({
+      header: 'Sell selected items',
+      acceptLabel: 'Sell selected',
+      rejectLabel: 'Cancel',
+      acceptIcon: 'pi pi-sold',
+      rejectIcon: 'pi pi-times',
+      acceptButtonStyleClass: 'p-button-success',
+      rejectButtonStyleClass: 'p-button-danger',
+    }));
+    expect(lastConfirmation?.message).toContain('Sell to vendor');
+    expect(lastConfirmation?.message).toContain('1 items');
+    expect(lastConfirmation?.message).toContain('20 drachmas');
+
+    lastConfirmation?.accept?.();
+
+    expect(armory.bulkVendorScrapItems).toHaveBeenCalledWith(
+      ['item-first'],
+      jasmine.any(Function),
+    );
+    expect(equipment.refresh).toHaveBeenCalled();
+    expect(guildItemUsage.load).toHaveBeenCalledTimes(2);
+    expect(page.loadData).toHaveBeenCalledTimes(2);
+    expect(inventorySection(fixture).selectedBulkItems()).toEqual([]);
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Items sold to vendor',
+      '1 sold for 20 drachma.',
+    );
+  });
+
+  it('toggles paperdoll equipped item selection without mutating equipment', () => {
+    const row = previewRow({
+      slotKey: 'main_hand',
+      item: previewItem({ itemId: 'item-main' }),
+    });
+
+    fixture.componentInstance.togglePaperdollItemSelection(row);
+    fixture.componentInstance.togglePaperdollItemSelection(row);
+
+    expect(fixture.componentInstance.selectedPaperdollItemIds()).toEqual([]);
+    expect(equipment.bulkUnequipItems).not.toHaveBeenCalled();
+    expect(equipment.unequipSlot).not.toHaveBeenCalled();
+  });
+
+  it('bulk unequips selected paperdoll items through current equipment state', () => {
+    equipment.setSlots([
+      equippedItem({ itemId: 'item-main', slotKey: 'main_hand' }),
+      equippedItem({ itemId: 'item-ring', slotKey: 'ring_1' }),
+    ]);
+    fixture.detectChanges();
+
+    fixture.componentInstance.togglePaperdollItemSelection(previewRow({
+      slotKey: 'ring_1',
+      item: previewItem({ itemId: 'item-ring' }),
+    }));
+    fixture.componentInstance.unequipSelectedPaperdollItems();
+
+    expect(equipment.bulkUnequipItems).toHaveBeenCalledWith({
+      items: [
+        { itemId: 'item-ring', slotKey: 'ring_1' },
+      ],
     }, jasmine.any(Function));
+    expect(equipment.unequipSlot).not.toHaveBeenCalled();
+    expect(equipment.refresh).toHaveBeenCalled();
+    expect(armory.refresh).toHaveBeenCalled();
+    expect(page.loadData).toHaveBeenCalledTimes(2);
+    expect(fixture.componentInstance.selectedPaperdollItemIds()).toEqual([]);
+  });
+
+  it('bulk unequips all paperdoll items through current equipment state', () => {
+    equipment.setSlots([
+      equippedItem({ itemId: 'item-main', slotKey: 'main_hand' }),
+      equippedItem({ itemId: 'item-ring', slotKey: 'ring_1' }),
+    ]);
+
+    fixture.componentInstance.unequipAllPaperdollItems();
+
+    expect(equipment.bulkUnequipItems).toHaveBeenCalledWith({
+      items: [
+        { itemId: 'item-main', slotKey: 'main_hand' },
+        { itemId: 'item-ring', slotKey: 'ring_1' },
+      ],
+    }, jasmine.any(Function));
+    expect(equipment.unequipSlot).not.toHaveBeenCalled();
+    expect(equipment.refresh).toHaveBeenCalled();
     expect(armory.refresh).toHaveBeenCalled();
     expect(page.loadData).toHaveBeenCalledTimes(2);
   });
 
-  it('renders domain failure journal as player-facing feedback', () => {
+  it('shows domain failure journal as toast feedback', () => {
     equipment.actionJournal.set(operationJournal({
       success: false,
       failed: [{
@@ -572,32 +1032,49 @@ describe('ArmoryPage', () => {
       }],
     }));
     fixture.detectChanges();
-    const text = textContent(fixture);
 
-    expect(text).toContain('Equipment result');
-    expect(text).toContain('Failed: Requirements not met.');
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Equipment action failed',
+      '1 failed, 0 skipped.',
+    );
+    expect(textContent(fixture)).not.toContain('Equipment result');
   });
 
-  it('renders unequip journal feedback', () => {
+  it('shows unequip journal as player-facing toast feedback', () => {
     equipment.actionJournal.set(operationJournal({
-      unequipped: [{
-        action: 'unequipped',
-        itemId: 'locked-vest',
-        slotKey: 'armor',
-        reason: 'slot_cleared',
-        message: 'Unequipped.',
-        success: true,
-        detailsJson: null,
-      }],
+      unequipped: [
+        {
+          action: 'unequipped',
+          itemId: 'locked-vest',
+          slotKey: 'armor',
+          reason: 'slot_cleared',
+          message: 'Unequipped.',
+          success: true,
+          detailsJson: null,
+        },
+        {
+          action: 'unequipped',
+          itemId: 'locked-vest',
+          slotKey: 'back',
+          reason: 'slot_cleared',
+          message: 'Unequipped.',
+          success: true,
+          detailsJson: null,
+        },
+      ],
     }));
     fixture.detectChanges();
-    const text = textContent(fixture);
 
-    expect(text).toContain('Equipment result');
-    expect(text).toContain('Unequipped: Unequipped.');
+    expect(toast.show).toHaveBeenCalledWith(
+      'success',
+      'Item unequipped',
+      '1 item unequipped.',
+    );
+    expect(textContent(fixture)).not.toContain('Equipment result');
   });
 
-  it('renders shifted journal feedback with neutral equipment wording', () => {
+  it('does not show a player-facing toast for shifted-only journal rows', () => {
     equipment.actionJournal.set(operationJournal({
       shifted: [{
         action: 'shifted',
@@ -610,14 +1087,12 @@ describe('ArmoryPage', () => {
       }],
     }));
     fixture.detectChanges();
-    const text = textContent(fixture);
 
-    expect(text).toContain('Equipment result');
-    expect(text).toContain('Shifted: Moved to off hand.');
-    expect(text).not.toContain('Already equipped:');
+    expect(toast.show).not.toHaveBeenCalled();
+    expect(textContent(fixture)).not.toContain('Already equipped:');
   });
 
-  it('renders preset apply skipped entries and final equipment from DB journal', () => {
+  it('shows preset apply skipped entries as warning toast', () => {
     equipment.actionJournal.set(operationJournal({
       success: false,
       equipped: [{
@@ -651,31 +1126,13 @@ describe('ArmoryPage', () => {
       },
     }));
     fixture.detectChanges();
-    const text = textContent(fixture);
 
-    expect(text).toContain('Equipment result');
-    expect(text).toContain('Equipped: Applied exact item.');
-    expect(text).toContain('Skipped: Saved ring is missing.');
-    expect(text).toContain('Final equipment');
-    expect(text).toContain('Main hand: Demonic Dagger');
-  });
-
-  it('rejects blank, null, and non-numeric move targets before state action', () => {
-    const item = armoryItem({ itemId: 'item-1' });
-
-    expect(() => fixture.componentInstance.moveItemToShelf(
-      item,
-      '',
-    )).toThrowError('targetShelfPosition is required for armory action.');
-    expect(() => fixture.componentInstance.moveItemToShelf(
-      item,
-      null,
-    )).toThrowError('targetShelfPosition is required for armory action.');
-    expect(() => fixture.componentInstance.moveItemToShelf(
-      item,
-      'not-a-number',
-    )).toThrowError('targetShelfPosition must be a number.');
-    expect(armory.moveItemToShelf).not.toHaveBeenCalled();
+    expect(toast.show).toHaveBeenCalledWith(
+      'error',
+      'Equipment action failed',
+      '1 failed, 1 skipped.',
+    );
+    expect(textContent(fixture)).not.toContain('Equipment result');
   });
 
   it('uses styled PrimeNG controls instead of raw browser controls', () => {
@@ -689,9 +1146,12 @@ describe('ArmoryPage', () => {
     fixture.detectChanges();
     const element = fixture.nativeElement as HTMLElement;
 
-    expect(element.querySelector('input[aria-label="Shelf name"]')).not.toBeNull();
-    expect(element.querySelector('p-select[aria-label="Move item to shelf"]')).not.toBeNull();
-    expect(element.querySelector('select[aria-label="Move item to shelf"]')).toBeNull();
+    activateRenameStand(fixture);
+    fixture.detectChanges();
+
+    expect(element.querySelector('input[aria-label="Stand name"]')).not.toBeNull();
+    expect(element.querySelector('p-select[aria-label="Move item to stand"]')).toBeNull();
+    expect(element.querySelector('select[aria-label="Move item to stand"]')).toBeNull();
     expect(element.querySelector('.form-control')).toBeNull();
     expect(element.querySelector('.btn.btn-secondary')).toBeNull();
   });
@@ -733,32 +1193,18 @@ describe('ArmoryPage', () => {
     const text = textContent(fixture);
 
     expect(text).toContain('Shelf From DB');
-    expect(text).toContain('current estate capacity');
     expect(text).not.toContain('visible_item_capacity');
     expect(text).not.toContain('secretDebug');
     expect(text).not.toContain('unsorted-json');
     expect(text).not.toContain('shelf-json');
   });
 
-  it('renders the exact DB/RPC visibility limit without local recalculation', () => {
-    armory.setShelves([
-      armoryShelf({ position: 1, name: 'Shelf From DB' }),
-    ], visibility({
-      visibilityLimit: 123,
-      visibilityLimitSource: 'visible_item_capacity',
-    }));
-    fixture.detectChanges();
-    const text = textContent(fixture);
-
-    expect(text).toContain('Limit 123');
-    expect(text).not.toContain('Limit 30');
-    expect(text).not.toContain('Limit 35');
-  });
 });
 
 class FakeArmoryPageFacade {
   readonly heroLuck = signal(0);
   readonly equipmentSlots = signal<EquipmentSlot[]>([]);
+  readonly origin = signal<{ key: string } | null>(null);
   readonly loadData = jasmine.createSpy('loadData');
 }
 
@@ -778,6 +1224,9 @@ class FakeCurrentEquipmentState {
     .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
   readonly bulkEquipItems = jasmine
     .createSpy('bulkEquipItems')
+    .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
+  readonly bulkUnequipItems = jasmine
+    .createSpy('bulkUnequipItems')
     .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
   readonly applyLoadoutPreset = jasmine
     .createSpy('applyLoadoutPreset')
@@ -811,10 +1260,26 @@ class FakeArmoryShelfState {
   readonly load = jasmine.createSpy('load');
   readonly refresh = jasmine.createSpy('refresh');
   readonly renameShelf = jasmine.createSpy('renameShelf');
-  readonly moveItemToShelf = jasmine.createSpy('moveItemToShelf');
   readonly vendorScrapItem = jasmine
     .createSpy('vendorScrapItem')
-    .and.callFake((_itemId, afterResponse?: () => void) => afterResponse?.());
+    .and.callFake((_itemId, afterResponse?: (result: {
+      drachmaAmount: number;
+    }) => void) => afterResponse?.({ drachmaAmount: 20 }));
+  readonly bulkVendorScrapItems = jasmine
+    .createSpy('bulkVendorScrapItems')
+    .and.callFake((itemIds: readonly string[], afterResponse?: (result: {
+      selectedCount: number;
+      soldCount: number;
+      skippedCount: number;
+      failedCount: number;
+      totalDrachmaAmount: number;
+    }) => void) => afterResponse?.({
+      selectedCount: itemIds.length,
+      soldCount: itemIds.length,
+      skippedCount: 0,
+      failedCount: 0,
+      totalDrachmaAmount: itemIds.length * 20,
+    }));
 
   setShelves(
     shelves: ArmoryShelfReadModel[],
@@ -831,6 +1296,11 @@ class FakeArmoryShelfState {
     this.status.set(summary.visibleItemCount ? 'loaded' : 'empty');
     this.isEmpty.set(summary.visibleItemCount === 0);
   }
+}
+
+class FakeHeroLoadoutPresetsState {
+  readonly presets = signal<LoadoutPreset[]>([]);
+  readonly isLoading = signal(false);
 }
 
 class FakeArmoryGuildItemUsageState {
@@ -855,26 +1325,93 @@ class FakeArmoryGuildItemUsageState {
   }
 }
 
+class FakeToastService {
+  readonly show = jasmine.createSpy('show');
+  readonly clear = jasmine.createSpy('clear');
+}
+
 @Component({
   selector: 'app-loadout-preset-management',
   standalone: true,
-  template: '<section>Loadout presets</section>',
+  template: '<section>Saved presets</section>',
 })
 class MockLoadoutPresetManagement {}
 
 @Component({
+  selector: 'app-equipment-preview',
+  standalone: true,
+  template: `
+    <section>
+      @for (row of rows(); track row.slotKey) {
+        <article>
+          <span>{{ row.label }}</span>
+          <span>{{ row.slotKey }}</span>
+          @if (row.item; as item) {
+            <strong>{{ item.name }}</strong>
+            @if (item.metadata) {
+              <span>{{ item.metadata }}</span>
+            }
+          } @else {
+            <strong>Empty slot</strong>
+            <span>No item equipped</span>
+          }
+        </article>
+      }
+      @if (isLoading()) {
+        <span>Loading</span>
+      }
+      @if (isUnavailable()) {
+        <span>Unavailable</span>
+      }
+      @if (error()) {
+        <span>{{ error() }}</span>
+      }
+      @if (isArmory()) {
+        <button type="button" (click)="unequipSelected.emit()">Unequip selected</button>
+        <button type="button" (click)="unequipAll.emit()">Unequip all</button>
+      }
+    </section>
+  `,
+})
+class MockEquipmentPreview {
+  readonly rows = input.required<EquipmentPreviewSlotRow[]>();
+  readonly isArmory = input(false);
+  readonly isLoading = input(false);
+  readonly isUnavailable = input(false);
+  readonly error = input<string | null>(null);
+  readonly compact = input(false);
+  readonly showSlotLabels = input(true);
+  readonly armoryLink = input('/game/armory');
+  readonly paperdollImageUrl = input('/images/warrior.png');
+  readonly selectedItemIds = input<readonly string[]>([]);
+  readonly selectionActionDisabled = input(false);
+  readonly equippedItemToggle = output<EquipmentPreviewSlotRow>();
+  readonly unequipSelected = output<void>();
+  readonly unequipAll = output<void>();
+}
+
+@Component({
   selector: 'app-armory-item-detail-popover',
   standalone: true,
-  template: '<button type="button">Details</button>',
+  template: '<ng-content /><button type="button">Details</button>',
 })
 class MockArmoryItemDetailPopover {
   readonly item = input.required<ArmoryItemSummary | EquippedItemSummary>();
   readonly guildContextLabel = input<string | null>(null);
   readonly guildContextDetail = input<string | null>(null);
+  readonly buttonTrigger = input(true);
+  readonly triggerFullWidth = input(false);
 }
 
 function textContent(fixture: ComponentFixture<ArmoryPage>): string {
   return (fixture.nativeElement as HTMLElement).textContent ?? '';
+}
+
+function inventorySection(
+  fixture: ComponentFixture<ArmoryPage>,
+): ArmoryInventorySection {
+  return fixture.debugElement.query(By.directive(ArmoryInventorySection))
+    .componentInstance as ArmoryInventorySection;
 }
 
 function buttonWithText(
@@ -899,6 +1436,31 @@ function buttonsWithText(
   ) as HTMLButtonElement[];
 
   return buttons.filter((entry) => (entry.textContent ?? '').trim() === label);
+}
+
+function buttonWithAriaLabel(
+  fixture: ComponentFixture<ArmoryPage>,
+  label: string,
+): HTMLButtonElement {
+  const button = (fixture.nativeElement as HTMLElement)
+    .querySelector(`button[aria-label="${label}"]`) as HTMLButtonElement | null;
+
+  if (!button) {
+    throw new Error(`Button with aria-label "${label}" was not rendered.`);
+  }
+
+  return button;
+}
+
+function activateRenameStand(fixture: ComponentFixture<ArmoryPage>): void {
+  const element = (fixture.nativeElement as HTMLElement)
+    .querySelector('.p-inplace-display') as HTMLElement | null;
+
+  if (!element) {
+    throw new Error('Rename stand inplace display was not rendered.');
+  }
+
+  element.click();
 }
 
 function equippedItem(
@@ -931,6 +1493,34 @@ function equippedItem(
     suffixKey: null,
     suffixName: null,
     isRuntimeUsable: true,
+    ...overrides,
+  };
+}
+
+function previewRow(
+  overrides: Partial<EquipmentPreviewSlotRow> = {},
+): EquipmentPreviewSlotRow {
+  return {
+    slotKey: 'main_hand',
+    label: 'Main hand',
+    sortOrder: 10,
+    iconClass: 'pi pi-one-handed',
+    item: null,
+    ...overrides,
+  };
+}
+
+function previewItem(
+  overrides: Partial<EquipmentPreviewItemDisplay> = {},
+): EquipmentPreviewItemDisplay {
+  return {
+    itemId: 'item-1',
+    name: 'Bronze Blade',
+    metadata: 'Main hand · Normal',
+    statusLabel: 'active',
+    qualityLabel: 'Normal',
+    kindLabel: 'Weapon',
+    slotLabel: 'Main hand',
     ...overrides,
   };
 }

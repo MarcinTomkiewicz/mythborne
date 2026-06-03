@@ -1,0 +1,19 @@
+<section class="mg-card p-lg w-100">
+  <div class="grid-2-1 gap-lg grid-items-center">
+    <div class="flex-col gap-xs min-w-0">
+      <p class="small-caps color-muted text-xs mb-0">{{ eyebrowLabel() }}</p>
+      <h2 class="color-heading text-xl m-0">
+        {{ title() }}
+      </h2>
+    </div>
+
+    <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium">
+      @for (row of summaryRows(); track row.key) {
+        <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+          <span class="color-muted small-caps uppercase text-xs">{{ row.label }}</span>
+          <strong class="color-heading text-md">{{ row.value }}</strong>
+        </div>
+      }
+    </aside>
+  </div>
+</section>

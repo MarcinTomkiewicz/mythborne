@@ -2,7 +2,7 @@
   <h3 class="mg-section__title mg-section__title--xs mb-lg">Participants</h3>
   <div class="flex-col gap-md">
     @for (participant of participants(); track participant.id) {
-      <article class="mg-surface-card p-md flex-col gap-sm">
+      <article class="mg-card p-md flex-col gap-sm">
         <div class="flex-row-between-center flex-col-sm gap-sm">
           <strong class="heading-color">{{ participant.roleKey }}</strong>
           <span class="mg-tag">{{ participant.createdAt }}</span>

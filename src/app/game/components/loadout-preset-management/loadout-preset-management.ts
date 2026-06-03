@@ -1,19 +1,15 @@
-import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, input } from '@angular/core';
 import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { LoadoutPreset } from '../../../core/domain/item/item-equipment.model';
+import {
+  PlayerArmoryLoadoutPresetReadModel,
+  PlayerArmoryPageCopyActions,
+  PlayerArmoryPageCopyLoadoutPresets,
+} from '../../../core/domain/item/player-armory-page-context.model';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
-import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { HeroLoadoutPresetsState } from '../../../core/services/items/hero-loadout-presets.state';
-import {
-  buildLoadoutPresetPreviewRows,
-  loadoutPresetUpdateSuggestion,
-  previewItemName,
-  previewStatusClass,
-  previewStatusLabel,
-} from './loadout-preset-preview-display';
+import { InlineTextEdit } from '../../../shared/inline-text-edit/inline-text-edit';
 
 @Component({
   selector: 'app-loadout-preset-management',
@@ -21,93 +17,72 @@ import {
   imports: [
     ReactiveFormsModule,
     ButtonModule,
-    InputTextModule,
+    InlineTextEdit,
   ],
-  providers: [HeroLoadoutPresetsState],
   templateUrl: './loadout-preset-management.html',
+  host: { class: 'd-block w-100' },
+  providers: [CurrentEquipmentState, HeroLoadoutPresetsState],
 })
-export class LoadoutPresetManagement implements OnInit {
-  readonly presets = inject(HeroLoadoutPresetsState);
+export class LoadoutPresetManagement {
+  private readonly presetsState = inject(HeroLoadoutPresetsState);
   readonly equipment = inject(CurrentEquipmentState);
-  private readonly armory = inject(ArmoryShelfState);
   private readonly page = inject(ArmoryPageFacade);
-  private readonly dismissedUpdateSuggestionKey = signal<string | null>(null);
+
+  readonly presets = input.required<readonly PlayerArmoryLoadoutPresetReadModel[]>();
+  readonly title = input.required<string>();
+  readonly copy = input.required<PlayerArmoryPageCopyLoadoutPresets>();
+  readonly actionsCopy = input.required<PlayerArmoryPageCopyActions>();
+  readonly cancelLabel = input.required<string>();
   readonly presetNameForm = new FormRecord<FormControl<string>>({});
+  readonly isMutating = computed(() =>
+    this.presetsState.isMutating() || this.equipment.isMutating(),
+  );
   readonly presetRows = computed(() =>
-    this.presets.presets().map((preset) => ({
+    this.presets().map((preset) => ({
       ...preset,
       controlName: presetControlName(preset.presetNumber),
     })),
   );
-  readonly previewRows = computed(() =>
-    buildLoadoutPresetPreviewRows(
-      this.presets.preview(),
-      this.presets.previewSlots(),
-    ),
-  );
-  readonly updateSuggestion = computed(() =>
-    loadoutPresetUpdateSuggestion(
-      this.presets.preview(),
-      this.previewRows(),
-      (slotKey) => this.equipment.slot(slotKey)?.itemId ?? null,
-      this.canComparePreviewWithCurrentLoadout(),
-      this.dismissedUpdateSuggestionKey(),
-    ),
-  );
-  readonly previewStatusLabel = previewStatusLabel;
-  readonly previewStatusClass = previewStatusClass;
-  readonly previewItemName = previewItemName;
   private readonly syncPresetForms = effect(() =>
-    this.syncLoadoutPresetForms(this.presets.presets()),
+    this.syncLoadoutPresetForms(this.presets()),
   );
 
-  ngOnInit(): void {
-    this.presets.load();
-  }
-
-  renamePreset(preset: LoadoutPreset): void {
-    const controlName = presetControlName(preset.presetNumber);
-    const name = this.presetNameForm.controls[controlName]?.value ?? '';
-
-    this.presets.renamePreset({
+  renamePreset(preset: PlayerArmoryLoadoutPresetReadModel, name: string): void {
+    this.presetsState.renamePreset({
       presetNumber: preset.presetNumber,
       name,
-    });
+    }, () => this.page.loadData());
   }
 
-  saveCurrentLoadout(preset: LoadoutPreset): void {
+  saveCurrentLoadout(preset: PlayerArmoryLoadoutPresetReadModel): void {
     const controlName = presetControlName(preset.presetNumber);
-    const name = this.presetNameForm.controls[controlName]?.value ?? preset.name;
+    const name = this.presetNameForm.controls[controlName]?.value.trim() || preset.name;
 
-    this.presets.saveCurrentLoadout({
+    this.presetsState.saveCurrentLoadout({
       presetNumber: preset.presetNumber,
       name,
-    });
+    }, () => this.page.loadData());
   }
 
-  clearPreset(preset: LoadoutPreset): void {
-    this.presets.clearPreset({
+  clearPreset(preset: PlayerArmoryLoadoutPresetReadModel): void {
+    this.presetsState.clearPreset({
       presetNumber: preset.presetNumber,
-    });
+    }, () => this.page.loadData());
   }
 
-  previewPreset(preset: LoadoutPreset): void {
-    this.presets.previewPreset({
-      presetNumber: preset.presetNumber,
-    });
-  }
-
-  applyPreset(preset: LoadoutPreset): void {
+  applyPreset(preset: PlayerArmoryLoadoutPresetReadModel): void {
     this.equipment.applyLoadoutPreset({
       presetNumber: preset.presetNumber,
-    }, () => this.refreshArmoryAndDerivedStats());
+    }, () => this.page.loadData());
   }
 
-  dismissUpdateSuggestion(key: string): void {
-    this.dismissedUpdateSuggestionKey.set(key);
+  isPresetSaved(preset: PlayerArmoryLoadoutPresetReadModel): boolean {
+    return preset.savedAt !== null;
   }
 
-  private syncLoadoutPresetForms(presets: readonly LoadoutPreset[]): void {
+  private syncLoadoutPresetForms(
+    presets: readonly PlayerArmoryLoadoutPresetReadModel[],
+  ): void {
     const controlNames = new Set(
       presets.map((preset) => presetControlName(preset.presetNumber)),
     );
@@ -123,7 +98,7 @@ export class LoadoutPresetManagement implements OnInit {
     }
   }
 
-  private ensurePresetNameControl(preset: LoadoutPreset): void {
+  private ensurePresetNameControl(preset: PlayerArmoryLoadoutPresetReadModel): void {
     const controlName = presetControlName(preset.presetNumber);
     const currentControl = this.presetNameForm.controls[controlName];
 
@@ -141,16 +116,6 @@ export class LoadoutPresetManagement implements OnInit {
     );
   }
 
-  private refreshArmoryAndDerivedStats(): void {
-    this.armory.refresh();
-    this.page.loadData();
-  }
-
-  private canComparePreviewWithCurrentLoadout(): boolean {
-    const status = this.equipment.status();
-
-    return status === 'loaded' || status === 'empty';
-  }
 }
 
 function presetControlName(presetNumber: number): string {

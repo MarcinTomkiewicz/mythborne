@@ -1,5 +1,6 @@
 import { Json } from '../../types/database.types';
 import { Row } from '../../types/supabase.types';
+import type { PlayerItemDisplayCore } from './player-item-display-core.model';
 
 export type ItemLifecycleStatus = Row<'items'>['status'];
 export type ItemRequirementValueType = Row<'requirement_definitions'>['value_type'];
@@ -136,6 +137,11 @@ export interface ItemEffectiveRequirement {
   requiredKey: string | null;
   requiredStatKey: string | null;
   requiredValue: number;
+  currentValueLabel?: string | null;
+  isMet?: boolean | null;
+  missingValue?: number | null;
+  failureReasonKey?: string | null;
+  failureReasonLabel?: string | null;
   finalDecimalValue: number;
   highestComponentValue: number;
   additionalComponentValue: number;
@@ -150,6 +156,9 @@ export interface ItemRequirementPreview {
   itemId: string;
   heroId: string | null;
   meetsRequirements: boolean | null;
+  requirementCount: number | null;
+  unmetCount: number | null;
+  failedRequirementKeys: string[];
   components: ItemRequirementComponent[];
   effectiveRequirements: ItemEffectiveRequirement[];
 }
@@ -195,6 +204,14 @@ export interface HeroArmoryReadModel {
 export interface ArmoryItemSummary extends ItemSummary {
   shelfPosition: ArmoryShelfPosition;
   shelfName: string | null;
+  baseKey?: string | null;
+  baseName?: string | null;
+  baseTypeKey?: string | null;
+  itemCategoryKey?: string | null;
+  equipmentArea?: string | null;
+  handUsageKey?: string | null;
+  primarySlotKey?: string | null;
+  allowedSlotKeys?: string[];
   requirementPreview: ItemRequirementPreview | null;
 }
 
@@ -263,12 +280,15 @@ export type ArmoryItemDetailRowKind = 'native_stat' | 'modifier_bonus';
 export type ArmoryItemDetailDisplaySection = 'item_stats' | 'bonuses';
 
 export interface ArmoryItemDetailStat {
+  statKey: string | null;
   label: string;
   displayValue: string;
+  numericValue?: number | null;
 }
 
 export interface ArmoryItemDetailBonus {
   label: string;
+  targetKey: string | null;
   displayValue: string;
   numericValue: number | null;
   rowKind: ArmoryItemDetailRowKind;
@@ -282,6 +302,7 @@ export interface ArmoryItemDetailReadModel {
   itemId: string;
   heroId: string;
   serverId: string;
+  displayCore: PlayerItemDisplayCore;
   name: string;
   lifecycleStatus: ItemLifecycleStatus | null;
   qualityLabel: string | null;

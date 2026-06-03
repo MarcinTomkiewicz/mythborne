@@ -1,39 +1,132 @@
 @use "../abstracts/variables" as v;
 
-/* =========================================================
-   PrimeNG — Buttons (MG semantic mapping)
-   ZASADA:
-   - Prime czyta --p-button-*
-   - my mapujemy je na MG tokens
-   - zero logiki, tylko kolory
-   ========================================================= */
+/* PrimeNG button skin extracted from docs/ui-ux/prototypes/mythsworn_server_select.html. */
+
+@mixin prototype-semantic-soft($color) {
+  border-color: color-mix(in srgb, $color 42%, transparent);
+  background: color-mix(in srgb, $color 12%, transparent);
+  color: $color;
+}
+
+:root {
+  --p-button-icon-only-width: 40px;
+  --p-button-sm-icon-only-width: 40px;
+}
 
 .p-button {
-  border-radius: v.$radius-md;
-  font-family: v.$font-family-body;
-  font-weight: 700;
-  transition:
-    background-color v.$transition-fast,
-    border-color v.$transition-fast,
-    color v.$transition-fast,
-    box-shadow v.$transition-fast;
+  min-height: 2.55rem;
+  padding: 0.58rem 0.9rem;
+  /* Prototype literal: rgba(240,201,111,.24). */
+  border: 1px solid rgba(240, 201, 111, 0.24);
+  border-radius: 999px;
+  /* Prototype literal: rgba(240,201,111,.2) -> rgba(91,58,19,.32). */
+  background: linear-gradient(180deg, rgba(240, 201, 111, 0.2), rgba(91, 58, 19, 0.32));
+  color: v.$color-text;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+  text-decoration: none;
+}
 
-  &:focus-visible {
-    outline: 0;
-    box-shadow: 0 0 0 2px color-mix(
-      in srgb,
-      #{v.$color-secondary} 35%,
-      transparent
-    );
-  }
+.p-button:not(.p-button-secondary):not(.p-button-outlined):not(.p-button-text):not(.p-button-danger),
+.p-button.p-button-primary:not(.p-button-outlined):not(.p-button-text) {
+  /* Prototype literal: rgba(240,201,111,.34) -> rgba(91,58,19,.46). */
+  background: linear-gradient(180deg, rgba(240, 201, 111, 0.34), rgba(91, 58, 19, 0.46));
+}
+
+.p-button.p-button-secondary:not(.p-button-outlined):not(.p-button-text):not(.p-button-danger),
+.p-button.p-button-outlined:not(.p-button-danger) {
+  /* Prototype literal: rgba(8,12,18,.54). */
+  background: rgba(8, 12, 18, 0.54);
+  color: v.$color-text-muted;
+}
+
+.p-button.p-button-text:not(.p-button-danger) {
+  border-color: transparent;
+  background: transparent;
+  color: v.$color-text-muted;
+  box-shadow: none;
+}
+
+.p-button.p-button-success:not(.p-button-outlined):not(.p-button-text) {
+  @include prototype-semantic-soft(v.$color-success);
+}
+
+.p-button.p-button-info:not(.p-button-outlined):not(.p-button-text) {
+  @include prototype-semantic-soft(v.$color-info);
+}
+
+.p-button.p-button-warn:not(.p-button-outlined):not(.p-button-text) {
+  @include prototype-semantic-soft(v.$color-warn);
+}
+
+.p-button.p-button-help:not(.p-button-outlined):not(.p-button-text) {
+  @include prototype-semantic-soft(v.$color-help);
+}
+
+.p-button.p-button-danger,
+.p-button.p-button-outlined.p-button-danger,
+.p-button.p-button-text.p-button-danger {
+  @include prototype-semantic-soft(v.$color-danger);
+  /* Prototype danger text literal. No matching project token exists. */
+  color: #f2b4aa;
+}
+
+.p-button.p-button-outlined.p-button-success,
+.p-button.p-button-text.p-button-success {
+  @include prototype-semantic-soft(v.$color-success);
+}
+
+.p-button.p-button-outlined.p-button-info,
+.p-button.p-button-text.p-button-info {
+  @include prototype-semantic-soft(v.$color-info);
+}
+
+.p-button.p-button-outlined.p-button-warn,
+.p-button.p-button-text.p-button-warn {
+  @include prototype-semantic-soft(v.$color-warn);
+}
+
+.p-button.p-button-outlined.p-button-help,
+.p-button.p-button-text.p-button-help {
+  @include prototype-semantic-soft(v.$color-help);
+}
+
+.p-button:disabled,
+.p-button.p-disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.mg-compact-icon-button.p-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0;
+  border-radius: v.$radius-sm;
+  border-color: color-mix(in srgb, v.$color-shell-border 72%, v.$color-text-muted);
+  line-height: 1;
+}
+
+.mg-compact-icon-button.p-button .p-button-icon {
+  font-size: 0.75rem;
+}
+
+.p-button.p-button-icon-only {
+  width: var(--p-button-icon-only-width);
+  min-width: var(--p-button-icon-only-width);
+  padding: 0;
 }
 
 .small-icon.p-button,
 .small-icon .p-button {
-  padding: 0 !important;
   min-width: auto !important;
   width: auto !important;
   height: auto !important;
+  padding: 0 !important;
   --p-button-icon-only-width: auto;
   --p-button-sm-icon-only-width: auto;
 }
@@ -42,259 +135,3 @@
 .small-icon .p-button.p-button-icon-only {
   padding: 0 !important;
 }
-
-@mixin _button-link-like($width, $background-on-hover: true) {
-  border-radius: v.$radius-sm;
-  background: transparent;
-  border-color: transparent;
-  color: v.$color-text;
-  box-shadow: none;
-  width: $width;
-  justify-content: start;
-
-  @if $width == auto {
-    min-width: auto;
-    padding: 0;
-  }
-
-  &:hover {
-    @if $background-on-hover {
-      background-color: color-mix(
-        in srgb,
-        v.$color-bg-surface 85%,
-        v.$color-primary
-      );
-    } @else {
-      background: transparent;
-      color: v.$heading-color;
-    }
-  }
-
-  &:focus-visible {
-    background-color: color-mix(
-      in srgb,
-      v.$color-bg-surface 82%,
-      v.$color-primary
-    );
-  }
-}
-
-@mixin _button-semantic-class($name, $color) {
-  .p-button.#{$name} {
-    background: $color;
-    border-color: $color;
-    color: v.$color-white;
-
-    &:hover {
-      background: color-mix(in srgb, $color 88%, black);
-      border-color: color-mix(in srgb, $color 88%, black);
-    }
-
-    &:active {
-      background: color-mix(in srgb, $color 78%, black);
-      border-color: color-mix(in srgb, $color 78%, black);
-    }
-  }
-
-  .p-button.p-button-outlined.#{$name} {
-    background: transparent;
-    border-color: $color;
-    color: $color;
-
-    &:hover,
-    &:active {
-      background: color-mix(in srgb, v.$color-bg-surface 88%, $color);
-      border-color: $color;
-      color: $color;
-    }
-  }
-
-  .p-button.p-button-text.#{$name} {
-    background: transparent;
-    border-color: transparent;
-    color: $color;
-
-    &:hover,
-    &:active {
-      background: color-mix(in srgb, v.$color-bg-surface 88%, $color);
-      border-color: transparent;
-      color: $color;
-    }
-  }
-}
-
-/* =========================================================
-   BASE COLORS
-   ========================================================= */
-
-:root {
-  /* SUCCESS */
-  --p-button-success-background: #{v.$color-success};
-  --p-button-success-border-color: #{v.$color-success};
-  --p-button-success-color: #{v.$color-white};
-
-  /* INFO */
-  --p-button-info-background: #{v.$color-info};
-  --p-button-info-border-color: #{v.$color-info};
-  --p-button-info-color: #{v.$color-white};
-
-  /* DANGER */
-  --p-button-danger-background: #{v.$color-danger};
-  --p-button-danger-border-color: #{v.$color-danger};
-  --p-button-danger-color: #{v.$color-white};
-
-  /* WARN */
-  --p-button-warn-background: #{v.$color-warn};
-  --p-button-warn-border-color: #{v.$color-warn};
-  --p-button-warn-color: #{v.$color-white};
-
-  /* HELP => ARCANE */
-  --p-button-help-background: #{v.$color-arcane};
-  --p-button-help-border-color: #{v.$color-arcane};
-  --p-button-help-color: #{v.$color-white};
-
-  /* SECONDARY */
-  --p-button-secondary-background: #{v.$color-secondary};
-  --p-button-secondary-border-color: #{v.$color-secondary};
-  --p-button-secondary-color: #{v.$color-white};
-}
-
-/* =========================================================
-   OUTLINED
-   ========================================================= */
-
-:root {
-  --p-button-outlined-success-border-color: #{v.$color-success};
-  --p-button-outlined-success-color: #{v.$color-success};
-
-  --p-button-outlined-info-border-color: #{v.$color-info};
-  --p-button-outlined-info-color: #{v.$color-info};
-
-  --p-button-outlined-danger-border-color: #{v.$color-danger};
-  --p-button-outlined-danger-color: #{v.$color-danger};
-
-  --p-button-outlined-warn-border-color: #{v.$color-warn};
-  --p-button-outlined-warn-color: #{v.$color-warn};
-
-  --p-button-outlined-help-border-color: #{v.$color-arcane};
-  --p-button-outlined-help-color: #{v.$color-arcane};
-
-  --p-button-outlined-secondary-border-color: #{v.$color-secondary};
-  --p-button-outlined-secondary-color: #{v.$color-secondary};
-  --p-button-outlined-secondary-hover-background: color-mix(
-    in srgb,
-    #{v.$color-bg-surface} 88%,
-    black
-  );
-}
-
-/* =========================================================
-   TEXT
-   ========================================================= */
-
-:root {
-  --p-button-text-success-color: #{v.$color-success};
-  --p-button-text-info-color: #{v.$color-info};
-  --p-button-text-danger-color: #{v.$color-danger};
-  --p-button-text-warn-color: #{v.$color-warn};
-  --p-button-text-help-color: #{v.$color-arcane};
-  --p-button-text-secondary-color: #{v.$color-secondary};
-}
-
-/* =========================================================
-   HOVER / ACTIVE — TEN SAM STYL CO RESZTA
-   ========================================================= */
-
-:root {
-  /* SUCCESS */
-  --p-button-success-hover-background: color-mix(
-    in srgb,
-    #{v.$color-success} 88%,
-    black
-  );
-  --p-button-success-active-background: color-mix(
-    in srgb,
-    #{v.$color-success} 78%,
-    black
-  );
-
-  /* INFO */
-  --p-button-info-hover-background: color-mix(
-    in srgb,
-    #{v.$color-info} 88%,
-    black
-  );
-  --p-button-info-active-background: color-mix(
-    in srgb,
-    #{v.$color-info} 78%,
-    black
-  );
-
-  /* DANGER */
-  --p-button-danger-hover-background: color-mix(
-    in srgb,
-    #{v.$color-danger} 88%,
-    black
-  );
-  --p-button-danger-active-background: color-mix(
-    in srgb,
-    #{v.$color-danger} 78%,
-    black
-  );
-
-  --p-button-warn-hover-background: color-mix(
-    in srgb,
-    #{v.$color-warn} 88%,
-    black
-  );
-  --p-button-warn-active-background: color-mix(
-    in srgb,
-    #{v.$color-warn} 78%,
-    black
-  );
-
-  --p-button-help-hover-background: color-mix(
-    in srgb,
-    #{v.$color-arcane} 88%,
-    black
-  );
-  --p-button-help-active-background: color-mix(
-    in srgb,
-    #{v.$color-arcane} 78%,
-    black
-  );
-
-  --p-button-secondary-hover-background: color-mix(
-    in srgb,
-    #{v.$color-secondary} 88%,
-    black
-  );
-  --p-button-secondary-active-background: color-mix(
-    in srgb,
-    #{v.$color-secondary} 78%,
-    black
-  );
-}
-
-:root {
-  --p-button-icon-only-width: 40px;
-  --p-button-sm-icon-only-width: 40px
-}
-
-.link-like {
-  @include _button-link-like(100%);
-}
-
-.link-like.is-active {
-  background-color: color-mix(in srgb, v.$color-bg-surface 72%, v.$color-primary);
-  border-color: v.$color-secondary;
-}
-
-.link-like-inline {
-  @include _button-link-like(auto, false);
-  border: 0;
-  font: inherit;
-  cursor: pointer;
-}
-
-@include _button-semantic-class(arcane, v.$color-arcane);

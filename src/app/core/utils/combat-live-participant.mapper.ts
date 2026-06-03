@@ -1,12 +1,23 @@
-import { CombatLiveParticipantReadModel } from '../domain/combat/combat-live.model';
+import {
+  CombatLiveParticipantReadModel,
+  CombatLiveParticipantStatRow,
+} from '../domain/combat/combat-live.model';
 import { Json } from '../types/database.types';
 import {
   JsonRecord,
+  mapJsonArray,
+  optionalBoolean,
   optionalNumber,
   optionalText,
   read,
 } from './json-read';
 import { trimToNull } from './normalize-text';
+import {
+  displayScalar,
+  displayText,
+  sortBySortOrder,
+} from './stat-row-display';
+import { statTone } from './stat-tone-class';
 
 export function mapParticipant(record: JsonRecord): CombatLiveParticipantReadModel | null {
   const participantId = trimToNull(optionalText(read(
@@ -27,6 +38,9 @@ export function mapParticipant(record: JsonRecord): CombatLiveParticipantReadMod
 
   return {
     participantId,
+    previewParticipantKey: participantId,
+    participantKey: participantId,
+    participantKind: trimToNull(optionalText(read(record, 'participantKind', 'participant_kind', 'kind'))),
     side: trimToNull(optionalText(read(record, 'side', 'participantSide', 'participant_side'))),
     displayName,
     statusKey: trimToNull(optionalText(read(record, 'statusKey', 'status_key', 'status'))),
@@ -41,6 +55,8 @@ export function mapParticipant(record: JsonRecord): CombatLiveParticipantReadMod
       'healthMax',
       'health_max',
     )),
+    baseStatRows: mapParticipantStatRows(read(record, 'baseStatRows', 'base_stat_rows')),
+    combatStatRows: mapParticipantStatRows(read(record, 'combatStatRows', 'combat_stat_rows')),
     heroId: trimToNull(optionalText(read(record, 'heroId', 'hero_id'))),
     opponentDefinitionId: trimToNull(optionalText(read(
       record,
@@ -48,5 +64,44 @@ export function mapParticipant(record: JsonRecord): CombatLiveParticipantReadMod
       'opponent_definition_id',
     ))),
     rawJson: record as unknown as Json,
+  };
+}
+
+export function mapParticipantStatRows(value: Json | undefined): CombatLiveParticipantStatRow[] {
+  return sortBySortOrder(
+    mapJsonArray(value, mapParticipantStatRow)
+      .filter((row): row is CombatLiveParticipantStatRow => row !== null),
+  );
+}
+
+function mapParticipantStatRow(record: JsonRecord): CombatLiveParticipantStatRow | null {
+  const key = trimToNull(optionalText(read(record, 'key')));
+  const label = trimToNull(optionalText(read(record, 'label')));
+  const value = displayScalar(read(record, 'value'));
+
+  if (
+    !key ||
+    !label ||
+    value === null
+  ) {
+    return null;
+  }
+
+  return {
+    key,
+    label,
+    value,
+    displayValue: trimToNull(optionalText(read(record, 'displayValue', 'display_value'))) ??
+      displayText(value),
+    sortOrder: optionalNumber(read(record, 'sortOrder', 'sort_order')) ?? 0,
+    kind: trimToNull(optionalText(read(record, 'kind'))) ?? 'stat',
+    tone: statTone(read(record, 'tone')),
+    colorableFinalValue: optionalBoolean(read(
+      record,
+      'colorableFinalValue',
+      'colorable_final_value',
+    )) ?? false,
+    maxValue: optionalNumber(read(record, 'maxValue', 'max_value')),
+    unit: trimToNull(optionalText(read(record, 'unit'))),
   };
 }

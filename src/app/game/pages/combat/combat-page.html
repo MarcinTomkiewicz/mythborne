@@ -1,167 +1,80 @@
-<app-loading-overlay
-  [visible]="page.isLoading() && !page.loadError()"
-  label="Loading combat..."
-  description="Loading the current hero, combat formulas and a demo opponent."
-/>
-
-@if (page.loadError()) {
-  <section class="mg-card flex-col gap-sm p-lg w-100">
-    <p class="card-legend mb-0">Error</p>
-    <p class="mb-0 muted-text">{{ page.loadError() }}</p>
-  </section>
-} @else if (page.hero(); as hero) {
-  <div class="flex-col gap-xl w-100">
-    <section class="mg-card p-lg w-100">
-      <div class="flex-row-between-center flex-col-sm gap-md">
-        <div class="flex-col gap-xs">
-          <p class="card-legend mb-0">Combat</p>
-          <h2 class="mg-section__title mg-section__title--sm mb-0">Training Duel</h2>
-          <p class="muted-text mb-0">
-            Sandbox caller for the reusable combat core. Stop Walking Dead to seed the first player timing input; the core resolver completes the duel.
-          </p>
-          <p class="muted-text mb-0">
-            This test surface uses the currently loaded hero runtime snapshot. Production
-            live combat resolves loadout and timing manifests through DB/RPC per action.
-          </p>
-        </div>
-
-        <div class="flex-row-start-center flex-wrap gap-sm">
-          <span class="tag-badge tag-badge--muted">Turn {{ page.turnLabel() }}</span>
-          <span class="tag-badge tag-badge--muted">DB turn limit</span>
-          @if (page.origin()?.name) {
-            <span class="tag-badge tag-badge--muted">{{ page.origin()?.name }}</span>
-          }
-          <p-button
-            [label]="page.result() ? 'Fight again' : 'Start fight'"
-            [disabled]="!page.canStartFight()"
-            (onClick)="page.startFight()"
-          />
-        </div>
-      </div>
-    </section>
-
-    @if (page.battleError()) {
-      <section class="mg-card flex-col gap-sm p-lg w-100">
-        <p class="card-legend mb-0">Battle error</p>
-        <p class="mb-0 muted-text">{{ page.battleError() }}</p>
-      </section>
-    }
-
-    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-xl w-100">
-      <app-combatant-card
-        title="Hero"
-        [combatant]="hero"
-        [currentHealth]="page.currentHealth(hero)"
-        [maxHealth]="page.maxHealth(hero)"
-        [baseStats]="page.baseStatEntries(hero)"
+<div class="flex-col gap-lg min-w-0">
+  @if (completion()?.reportId) {
+    <div class="flex-row-start-center">
+      <p-button
+        label="Wróć do okolicy"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        routerLink="/game/vicinity"
       />
-
-      @if (page.enemy(); as enemy) {
-        <app-combatant-card
-          title="Opponent"
-          [combatant]="enemy"
-          [currentHealth]="page.currentHealth(enemy)"
-          [maxHealth]="page.maxHealth(enemy)"
-          [baseStats]="page.baseStatEntries(enemy)"
-        />
-      }
     </div>
 
-    @if (!page.result() && page.phase() === 'player_turn') {
-      <app-walking-dead-meter
-        [position]="page.walkingPosition()"
-        [zoneStart]="page.playerHitWindow().start"
-        [zoneEnd]="page.playerHitWindow().end"
-        [zoneWidth]="page.playerHitWindow().width"
-        [speed]="page.walkingSpeed()"
-        [streak]="page.streak()"
-        [disabled]="!page.canStrike()"
-        (strike)="page.strike()"
-      />
+    <app-combat-report-handoff-card [completion]="completion()" />
+
+    <app-vicinity-active-pvp-action-panel
+      [offer]="pvpAction.visibleOffer()"
+      [timer]="pvpAction.timer()"
+      [factRows]="pvpAction.factRows()"
+      [helperText]="pvpAction.helperText()"
+      [pendingHelperText]="pvpAction.pendingHelperText()"
+      [isLoading]="pvpAction.isLoading()"
+      [isTimerReady]="pvpAction.isTimerReady()"
+      (refresh)="refreshActivePvpOffer()"
+    />
+    @if (pvpAction.error()) {
+      <p class="warn-text mb-0">{{ pvpAction.error() }}</p>
     }
-
+  } @else if (sourceRef(); as source) {
     <section class="mg-card p-lg w-100">
-      <div class="flex-col gap-md">
-        <div class="flex-row-between-center flex-col-sm gap-md">
-          <div class="flex-col gap-xs">
-            <p class="card-legend mb-0">Battle Log</p>
-            <h3 class="mg-section__title mg-section__title--xs mb-0">Result</h3>
-          </div>
-
-          @if (page.result()) {
-            <div class="flex-row-start-center flex-wrap gap-sm">
-              <span class="tag-badge tag-badge--warn">{{ page.outcomeLabel() }}</span>
-              @if (page.sourceTypeLabel()) {
-                <span class="tag-badge tag-badge--muted">Source: {{ page.sourceTypeLabel() }}</span>
-              }
-              @if (page.winnerLabel()) {
-                <span class="tag-badge tag-badge--muted">Winner: {{ page.winnerLabel() }}</span>
-              }
-              @if (page.winnerSideLabel()) {
-                <span class="tag-badge tag-badge--muted">Side: {{ page.winnerSideLabel() }}</span>
-              }
-            </div>
-          }
-        </div>
-
-        @if (page.result(); as result) {
-          <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md w-100">
-            <div class="mg-card flex-col gap-xs p-md">
-              <span class="muted-text">Turns played</span>
-              <strong class="heading-color">{{ result.turnsPlayed }}</strong>
-            </div>
-            <div class="mg-card flex-col gap-xs p-md">
-              <span class="muted-text">Hero remaining health</span>
-              <strong class="heading-color">{{ result.heroRemainingHealth }}</strong>
-            </div>
-            <div class="mg-card flex-col gap-xs p-md">
-              <span class="muted-text">Opponent remaining health</span>
-              <strong class="heading-color">{{ result.enemyRemainingHealth }}</strong>
-            </div>
-          </div>
-        } @else {
-          <p class="mb-0 muted-text">
-            Start the duel and stop Walking Dead inside the green zone to send a timing sample into the combat core.
+      <div class="flex-row-between-start flex-wrap gap-md w-100">
+        <div class="flex-col gap-xs">
+          <p class="color-muted small-caps uppercase text-xs mb-0">Walka</p>
+          <h2 class="color-heading text-xl mb-0">{{ contextTitle() }}</h2>
+          <p class="muted-text mb-0">
+            Rozstrzygnięcie korzysta z aktualnego stanu walki i prowadzi do raportu gracza.
           </p>
-        }
-
-        <div class="flex-col gap-sm">
-          @for (entry of page.logEntries(); track page.trackLogEntry($index, entry)) {
-            <div class="mg-card flex-col gap-xs p-md">
-              <strong class="heading-color">
-                Turn {{ entry.turn }}: {{ entry.attackerName }} -> {{ entry.defenderName }}
-              </strong>
-              @if (entry.attackSourceLabel) {
-                <span class="muted-text">
-                  Source:
-                  @if (entry.attackSourceKindLabel) {
-                    <span>{{ entry.attackSourceKindLabel }} - </span>
-                  }
-                  <span>{{ entry.attackSourceLabel }}</span>
-                </span>
-              }
-
-              @switch (entry.result) {
-                @case ('miss') {
-                  <span class="muted-text">
-                    {{ entry.displayText ?? 'Miss. The indicator stayed outside the green zone.' }}
-                  </span>
-                }
-                @case ('evaded') {
-                  <span class="muted-text">
-                    {{ entry.displayText ?? 'Timing hit succeeded, but the defender evaded the strike.' }}
-                  </span>
-                }
-                @default {
-                  <span class="muted-text">
-                    {{ entry.displayText ?? ('Final damage ' + entry.damage + '. ' + entry.defenderName + ' health: ' + entry.defenderHealthAfter + '.') }}
-                  </span>
-                }
-              }
-            </div>
-          }
         </div>
+        <p-button
+          label="Wróć do okolicy"
+          icon="pi pi-arrow-left"
+          severity="secondary"
+          routerLink="/game/vicinity"
+        />
       </div>
     </section>
-  </div>
-}
+
+    <app-minigame-host
+      [minigameKey]="minigameKey"
+      [sourceRef]="source"
+      [contextTitle]="contextTitle()"
+      contextLabel="PvP"
+      [combatDecisionDeadline]="pvpAction.decisionDeadline()"
+      (completed)="acceptCompletion($event)"
+    />
+
+    @if (completion(); as completed) {
+      <app-combat-report-handoff-card [completion]="completed" />
+
+      <app-vicinity-active-pvp-action-panel
+        [offer]="pvpAction.visibleOffer()"
+        [timer]="pvpAction.timer()"
+        [factRows]="pvpAction.factRows()"
+        [helperText]="pvpAction.helperText()"
+        [pendingHelperText]="pvpAction.pendingHelperText()"
+        [isLoading]="pvpAction.isLoading()"
+        [isTimerReady]="pvpAction.isTimerReady()"
+        (refresh)="refreshActivePvpOffer()"
+      />
+      @if (pvpAction.error()) {
+        <p class="warn-text mb-0">{{ pvpAction.error() }}</p>
+      }
+    }
+  } @else {
+    <section class="mg-card p-lg flex-col gap-sm w-100">
+      <p class="small-caps color-muted text-xs mb-0">Brak aktywnej walki</p>
+      <p class="warn-text mb-0">
+        Nie udało się rozpoznać źródła walki. Wróć do okolicy i otwórz walkę z aktywnej akcji PvP.
+      </p>
+    </section>
+  }
+</div>

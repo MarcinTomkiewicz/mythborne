@@ -1,0 +1,89 @@
+<aside class="flex-col gap-md min-w-0 w-100">
+  <section class="mg-card flex-col gap-md p-lg w-100">
+    <div class="flex-col gap-xs">
+      <h2 class="color-heading text-lg mb-0">Wybrany cel</h2>
+      <p class="muted-text mb-0">Dostępne akcje dla wskazanej posiadłości.</p>
+    </div>
+
+    @if (selected(); as row) {
+      <div class="flex-col gap-sm w-100">
+        @for (fact of factRows(); track fact.label) {
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">{{ fact.label }}</span>
+            <strong class="text-md text-right">{{ fact.value }}</strong>
+          </div>
+        }
+      </div>
+
+      @if (row.kind === 'occupied' && (row.playerSafeAttackReason || row.playerSafeSpyReason)) {
+        <div class="flex-col gap-xs warn-text">
+          @if (row.playerSafeAttackReason; as attackReason) {
+            <p class="mb-0">
+              <strong>Atak:</strong>
+              {{ attackReason.reasonLabel }}
+              @if (attackReason.reasonDetail) {
+                <span> - {{ attackReason.reasonDetail }}</span>
+              }
+            </p>
+          }
+          @if (row.playerSafeSpyReason; as spyReason) {
+            <p class="mb-0">
+              <strong>Szpieg:</strong>
+              {{ spyReason.reasonLabel }}
+              @if (spyReason.reasonDetail) {
+                <span> - {{ spyReason.reasonDetail }}</span>
+              }
+            </p>
+          }
+        </div>
+      }
+
+      @if (row.kind === 'empty') {
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <p-button
+            label="Przeprowadź się"
+            severity="danger"
+            [disabled]="!hasSelectedTarget() || isRelocating()"
+            [loading]="isRelocating()"
+            (onClick)="confirmRelocation.emit()"
+          />
+        </div>
+      } @else if (row.actions.length > 0) {
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          @for (action of row.actions; track action.kind) {
+            <p-button
+              [icon]="action.icon"
+              [label]="action.label"
+              [severity]="action.severity"
+              [disabled]="action.disabled"
+              [loading]="action.pending"
+              (onClick)="startAction.emit({ row, actionKind: action.kind })"
+            />
+          }
+        </div>
+      } @else if (row.kind === 'occupied') {
+        <p class="muted-text mb-0">
+          Brak dostępnych akcji PvP dla tego adresu.
+        </p>
+      } @else {
+        <p class="muted-text mb-0">
+          To jest twoja posiadłość. Nie jest celem PvP i nie ma akcji ataku ani szpiega.
+        </p>
+      }
+
+      @if (relocationError()) {
+        <p class="error-text mb-0">{{ relocationError() }}</p>
+      }
+      @if (relocationSuccess()) {
+        <p class="success-text mb-0">{{ relocationSuccess() }}</p>
+      }
+    } @else {
+      <p class="muted-text mb-0">Wybierz adres z listy, aby zobaczyć dostępne akcje.</p>
+    }
+  </section>
+
+  <p class="mg-card p-md muted-text mb-0 w-100">
+    Atak rozpoczyna dojście do celu. Szpiegowanie działa osobną akcją, a wyniki pojawią się
+    w raportach po zakończeniu.
+  </p>
+</aside>

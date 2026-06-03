@@ -2,10 +2,11 @@ import { signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ButtonModule } from 'primeng/button';
+import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
+import { Popover } from 'primeng/popover';
 import {
   EquipmentSlot,
-  EquippedItemSummary,
   LoadoutPreset,
   LoadoutPresetPreview,
 } from '../../../core/domain/item/item-equipment.model';
@@ -36,7 +37,9 @@ describe('LoadoutPresetManagement', () => {
           imports: [
             ReactiveFormsModule,
             ButtonModule,
+            InplaceModule,
             InputTextModule,
+            Popover,
           ],
           providers: [
             { provide: HeroLoadoutPresetsState, useValue: presets },
@@ -56,42 +59,40 @@ describe('LoadoutPresetManagement', () => {
     expect(presets.load).toHaveBeenCalled();
   });
 
-  it('renders preset management actions', () => {
+  it('renders compact saved preset rows and actions', () => {
     presets.setPresets([
-      loadoutPreset({ presetNumber: 1, name: 'Travel', slotCount: 2 }),
-      loadoutPreset({ presetNumber: 2, name: 'Trials', slotCount: 5 }),
+      loadoutPreset({
+        presetNumber: 1,
+        name: 'Travel',
+        slotCount: 2,
+        savedAt: '2026-05-08T10:00:00.000Z',
+      }),
+      loadoutPreset({ presetNumber: 2, name: '', slotCount: 0, savedAt: null }),
     ]);
     fixture.detectChanges();
     const text = textContent(fixture);
-    const firstInput = (fixture.nativeElement as HTMLElement)
-      .querySelector('input[aria-label="Preset 1 name"]') as HTMLInputElement;
 
-    expect(text).toContain('Loadout presets');
-    expect(text).toContain('Preset 1');
-    expect(firstInput.value).toBe('Travel');
-    expect(text).toContain('2 slots');
+    expect(text).toContain('Saved presets');
+    expect(text).toContain('Travel');
+    expect(text).toContain('Preset 2');
     expect(text).toContain('Rename');
-    expect(text).toContain('Save current loadout');
-    expect(text).toContain('Preview');
-    expect(text).toContain('Apply preset');
+    expect(text).toContain('Save preset');
+    expect(text).toContain('Apply');
     expect(text).toContain('Clear');
+    expect(text).not.toContain('Preview');
+    expect(text).not.toContain('slots');
   });
 
   it('renames, saves and clears presets through preset state', () => {
     presets.setPresets([loadoutPreset({ presetNumber: 2, name: 'Trials' })]);
     fixture.detectChanges();
 
-    const input = (fixture.nativeElement as HTMLElement)
-      .querySelector('input[aria-label="Preset 2 name"]') as HTMLInputElement;
-    input.value = 'Boss loadout';
-    input.dispatchEvent(new Event('input'));
-    fixture.detectChanges();
-
     const component = fixture.componentInstance;
     const preset = component.presetRows()[0];
+    component.presetNameForm.controls[preset.controlName].setValue('Boss loadout');
+
     component.renamePreset(preset);
     component.saveCurrentLoadout(preset);
-    component.previewPreset(preset);
     component.applyPreset(preset);
     component.clearPreset(preset);
 
@@ -103,9 +104,6 @@ describe('LoadoutPresetManagement', () => {
       presetNumber: 2,
       name: 'Boss loadout',
     });
-    expect(presets.previewPreset).toHaveBeenCalledWith({
-      presetNumber: 2,
-    });
     expect(equipment.applyLoadoutPreset).toHaveBeenCalledWith({
       presetNumber: 2,
     }, jasmine.any(Function));
@@ -116,7 +114,35 @@ describe('LoadoutPresetManagement', () => {
     });
   });
 
-  it('renders preview exact items, unavailable statuses and empty literal slots', () => {
+  it('opens preview from saved preset names only', () => {
+    const savedPreset = loadoutPreset({
+      presetNumber: 1,
+      savedAt: '2026-05-08T10:00:00.000Z',
+    });
+    const emptyPreset = loadoutPreset({ presetNumber: 2, savedAt: null });
+    const popover = {
+      show: jasmine.createSpy('show'),
+      hide: jasmine.createSpy('hide'),
+    } as unknown as Popover;
+    const component = fixture.componentInstance;
+
+    component.openPresetPreview(new Event('mouseenter'), popover, savedPreset);
+
+    expect(presets.previewPreset).toHaveBeenCalledWith({
+      presetNumber: 1,
+    });
+    expect(popover.show).toHaveBeenCalled();
+
+    presets.previewPreset.calls.reset();
+    (popover.show as jasmine.Spy).calls.reset();
+
+    component.openPresetPreview(new Event('mouseenter'), popover, emptyPreset);
+
+    expect(presets.previewPreset).not.toHaveBeenCalled();
+    expect(popover.show).not.toHaveBeenCalled();
+  });
+
+  it('builds compact preview rows from exact saved preset items', () => {
     presets.setPresets([loadoutPreset({ presetNumber: 1, name: 'Trials' })]);
     presets.preview.set(loadoutPreview({
       slotItems: [
@@ -153,97 +179,19 @@ describe('LoadoutPresetManagement', () => {
       equipmentSlot({ slotKey: 'ring_2', label: 'Ring 2', sortOrder: 90 }),
     ]);
     fixture.detectChanges();
-    const text = textContent(fixture);
+    const component = fixture.componentInstance;
+    const rows = component.previewItemRows();
 
-    expect(text).toContain('Preset 1 preview');
-    expect(text).toContain('Demonic Dagger');
-    expect(text).toContain('Exact item ID: item-owned');
-    expect(text).toContain('No longer owned');
-    expect(text).toContain('Scrapped');
-    expect(text).toContain('Empty slot');
-    expect(text).toContain('No saved item for this literal slot.');
-    expect(text).not.toContain('requirements');
-    expect(text).not.toContain('similar');
-  });
-
-  it('suggests overwriting previewed preset when current loadout differs', () => {
-    presets.setPresets([loadoutPreset({ presetNumber: 1, name: 'Trials' })]);
-    presets.preview.set(loadoutPreview({
-      preset: loadoutPreset({ presetNumber: 1, name: 'Trials' }),
-      slotItems: [
-        previewItem({
-          slotKey: 'main_hand',
-          savedItemId: 'saved-dagger',
-          currentItemName: 'Saved Dagger',
-        }),
-      ],
-    }));
-    presets.previewSlots.set([
-      equipmentSlot({ slotKey: 'main_hand', label: 'Main hand' }),
+    expect(rows.map((row) => row.slotKey)).toEqual([
+      'main_hand',
+      'ring_1',
+      'ring_2',
     ]);
-    equipment.setSlots([
-      equippedItem({ itemId: 'current-dagger', slotKey: 'main_hand' }),
-    ]);
-    fixture.detectChanges();
-    const text = textContent(fixture);
-
-    expect(text).toContain('Current loadout differs');
-    expect(text).toContain('This preset can be overwritten with the current equipment.');
-
-    fixture.componentInstance.saveCurrentLoadout(
-      fixture.componentInstance.updateSuggestion()!.preset,
-    );
-
-    expect(presets.saveCurrentLoadout).toHaveBeenCalledWith({
-      presetNumber: 1,
-      name: 'Trials',
-    });
-  });
-
-  it('does not suggest update when previewed preset matches current loadout or is dismissed', () => {
-    const preset = loadoutPreset({ presetId: 'preset-2', presetNumber: 2 });
-    presets.setPresets([preset]);
-    presets.preview.set(loadoutPreview({
-      preset,
-      slotItems: [
-        previewItem({
-          slotKey: 'main_hand',
-          savedItemId: 'same-dagger',
-        }),
-      ],
-    }));
-    presets.previewSlots.set([
-      equipmentSlot({ slotKey: 'main_hand', label: 'Main hand' }),
-    ]);
-    equipment.setSlots([
-      equippedItem({ itemId: 'same-dagger', slotKey: 'main_hand' }),
-    ]);
-    fixture.detectChanges();
-
-    expect(textContent(fixture)).not.toContain('Current loadout differs');
-
-    equipment.setSlots([
-      equippedItem({ itemId: 'different-dagger', slotKey: 'main_hand' }),
-    ]);
-    fixture.detectChanges();
-    const suggestion = fixture.componentInstance.updateSuggestion();
-
-    expect(suggestion).not.toBeNull();
-    fixture.componentInstance.dismissUpdateSuggestion(suggestion!.key);
-    fixture.detectChanges();
-
-    expect(textContent(fixture)).not.toContain('Current loadout differs');
-  });
-
-  it('does not suggest update while current equipment data is unavailable', () => {
-    presets.setPresets([loadoutPreset()]);
-    presets.preview.set(loadoutPreview({
-      slotItems: [previewItem({ savedItemId: 'saved-dagger' })],
-    }));
-    equipment.status.set('loading');
-    fixture.detectChanges();
-
-    expect(textContent(fixture)).not.toContain('Current loadout differs');
+    expect(component.previewItemName(rows[0].item!)).toBe('Demonic Dagger');
+    expect(component.previewSlotFallbackIconClass(rows[0])).toBe('pi pi-one-handed');
+    expect(component.previewSlotFallbackIconClass(rows[1])).toBe('pi pi-ring');
+    expect(component.previewStatusLabel(rows[1].item)).toBe('No longer owned');
+    expect(component.previewStatusLabel(rows[2].item)).toBe('Scrapped');
   });
 
   it('shows controlled preset feedback', () => {
@@ -286,20 +234,9 @@ class FakeHeroLoadoutPresetsState {
 
 class FakeCurrentEquipmentState {
   readonly isMutating = signal(false);
-  readonly status = signal<'loaded' | 'empty' | 'loading'>('empty');
-  readonly slots = signal<EquippedItemSummary[]>([]);
   readonly applyLoadoutPreset = jasmine
     .createSpy('applyLoadoutPreset')
     .and.callFake((_input, afterResponse?: () => void) => afterResponse?.());
-
-  slot(slotKey: string): EquippedItemSummary | null {
-    return this.slots().find((slot) => slot.slotKey === slotKey) ?? null;
-  }
-
-  setSlots(slots: EquippedItemSummary[]): void {
-    this.slots.set(slots);
-    this.status.set(slots.length ? 'loaded' : 'empty');
-  }
 }
 
 class FakeArmoryShelfState {
@@ -367,40 +304,6 @@ function equipmentSlot(overrides: Partial<EquipmentSlot> = {}): EquipmentSlot {
     sortOrder: 10,
     equipmentArea: 'weapon',
     equipmentSlotGroup: 'hand',
-    ...overrides,
-  };
-}
-
-function equippedItem(
-  overrides: Partial<EquippedItemSummary> = {},
-): EquippedItemSummary {
-  return {
-    itemId: 'item-1',
-    heroId: 'hero-1',
-    ownerHeroId: 'hero-1',
-    itemName: 'Bronze Blade',
-    lifecycleStatus: 'active',
-    generationBaseId: 'base-1',
-    generationQualityKey: 'normal',
-    prefixAffixId: null,
-    suffixAffixId: null,
-    slotKey: 'main_hand',
-    slotLabel: 'Main hand',
-    slotSortOrder: 10,
-    equipmentArea: 'weapon',
-    equipmentSlotGroup: 'hand',
-    equippedAt: '2026-05-08T10:00:00.000Z',
-    baseKey: 'bronze_blade',
-    baseName: 'Bronze Blade',
-    baseTypeKey: 'weapon',
-    handUsage: 'one_handed',
-    qualityLabel: 'Normal',
-    qualityMultiplier: 1,
-    prefixKey: null,
-    prefixName: null,
-    suffixKey: null,
-    suffixName: null,
-    isRuntimeUsable: true,
     ...overrides,
   };
 }

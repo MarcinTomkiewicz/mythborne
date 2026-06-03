@@ -1,0 +1,76 @@
+@use "../abstracts/variables" as v;
+
+.mg-drag-stack-preview {
+  position: relative;
+  width: 300px;
+  max-width: min(300px, 80vw);
+}
+
+.mg-drag-stack-preview--group {
+  padding-bottom: 0;
+}
+
+.mg-drag-stack-preview__card {
+  position: relative;
+  z-index: 8;
+}
+
+.mg-drag-stack-preview__cascade {
+  position: relative;
+  min-height: 18.8rem;
+}
+
+.mg-drag-stack-preview__mini-card {
+  position: absolute;
+  top: calc(var(--mg-drag-stack-index, 0) * 3.55rem);
+  left: calc(var(--mg-drag-stack-index, 0) * 0.35rem);
+  z-index: calc(7 - var(--mg-drag-stack-index, 0));
+  width: calc(100% - (var(--mg-drag-stack-index, 0) * 0.35rem));
+  min-height: 5.25rem;
+  border-color: color-mix(in srgb, v.$color-secondary 28%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, v.$color-bg-surface 90%, v.$color-secondary),
+      v.$color-bg-surface
+    );
+  box-shadow: v.$shadow-soft;
+}
+
+.mg-game-shell .mg-drag-stack-preview__mini-card {
+  border-color: color-mix(in srgb, v.$color-progress-gold-end 28%, transparent);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, v.$color-shell-surface-elevated 90%, v.$color-progress-gold-end),
+      v.$color-shell-surface
+    );
+}
+
+.mg-drag-stack-preview__items {
+  max-height: none;
+  overflow: visible;
+}
+
+.mg-drag-stack-preview__item {
+  min-height: 1.8rem;
+  background: color-mix(in srgb, v.$color-bg-surface 92%, transparent);
+}
+
+.mg-game-shell .mg-drag-stack-preview__item {
+  background: color-mix(in srgb, v.$color-shell-surface-elevated 70%, transparent);
+}
+
+.mg-drag-stack-preview--placeholder {
+  opacity: 0.72;
+}
+
+.mg-drag-stack-preview--placeholder .mg-drag-stack-preview__card {
+  border-style: dashed;
+  box-shadow: none;
+}
+
+.mg-drag-stack-preview--placeholder .mg-drag-stack-preview__mini-card {
+  border-style: dashed;
+  box-shadow: none;
+}

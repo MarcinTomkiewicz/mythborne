@@ -70,6 +70,22 @@ export interface HeroExplorationEdgeReadModel {
   updatedAt: string;
 }
 
+export interface HeroExplorationMovementOptionReadModel {
+  optionKind: string | null;
+  actionKey: string | null;
+  stepKind: string;
+  edgeId: string | null;
+  directionKey: string | null;
+  label: string;
+  sortOrder: number | null;
+  toNodeId: string | null;
+  isKnownPath: boolean | null;
+  isBacktrack: boolean;
+  isAvailable: boolean;
+  startRpc: Json;
+  metadataJson: Json;
+}
+
 export interface HeroExplorationStepReadModel {
   id: string;
   serverId: string;
@@ -168,6 +184,11 @@ export interface HeroExplorationEffectReadModel {
   explorationId: string;
   effectDefinitionId: string;
   effectKind: string;
+  effectLabel?: string | null;
+  effectKindLabel?: string | null;
+  effectTargetLabel?: string | null;
+  valueDisplay?: string | null;
+  playerSummary?: string | null;
   sourceKind: string;
   sourceId: string | null;
   isActive: boolean;
@@ -178,6 +199,34 @@ export interface HeroExplorationEffectReadModel {
   metadataJson: Json;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface HeroPendingCombatEffectStateReadModel {
+  effectId: string;
+  serverId: string;
+  heroId: string;
+  explorationId: string;
+  effectDefinitionId: string;
+  effectKey: string;
+  effectLabel: string;
+  effectDescription: string;
+  effectHelperText: string;
+  effectKind: string;
+  effectKindLabel: string;
+  effectTargetKey: string;
+  effectTargetLabel: string;
+  bonusTemplateKey: string;
+  bonusTemplateLabel: string;
+  valueDisplay: string;
+  status: string;
+  isActive: boolean;
+  runtimeIncluded: boolean;
+  playerSummary: string;
+  metadataJson: Json;
+  appliedAt: string;
+  consumedAt: string | null;
+  consumedByKind: string | null;
+  consumedById: string | null;
 }
 
 export interface HeroExplorationChallengeAttemptReadModel {
@@ -245,6 +294,7 @@ export interface HeroExplorationStateReadModel {
   exploration: HeroExplorationReadModel | null;
   currentNode: HeroExplorationNodeReadModel | null;
   edges: HeroExplorationEdgeReadModel[];
+  movementOptions: HeroExplorationMovementOptionReadModel[];
   activeStep: HeroExplorationStepReadModel | null;
   activeChallenge: HeroExplorationChallengeAttemptReadModel | null;
   activeEffect: HeroExplorationEffectReadModel | null;
@@ -285,11 +335,14 @@ export interface HeroExplorationChallengeCompletionReadModel {
   autoResolveChance: number | null;
   autoResolveRoll: number | null;
   combatResultId?: string | null;
+  combatSessionId?: string | null;
   combatOutcome?: string | null;
+  gameReportId?: string | null;
   turnsCompleted?: number | null;
   participantsCreated?: number | null;
   participantStatsCreated?: number | null;
   attacksCreated?: number | null;
+  finalEventCount?: number | null;
 }
 
 export interface HeroExplorationChallengeCompletionWorkflowResult {

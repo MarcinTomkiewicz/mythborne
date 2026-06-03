@@ -1,0 +1,41 @@
+@let state = overview.state();
+
+@if (state?.hasExploration && state?.exploration) {
+  @if (page.sandboxChallengeResult() || minigameHandoff.currentMinigameReportPointer()) {
+    <app-exploration-result-report />
+  } @else if (challenge.activeChallenge()) {
+    <app-exploration-active-challenge-report />
+  } @else if (step.currentStepResult()) {
+    <app-exploration-step-handoff-card />
+  } @else if (step.activeStep()) {
+    <app-pending-timer-oracle
+      [timer]="step.activeStepTimerDisplay()"
+      [isReady]="step.canCheckActiveStepResult()"
+      [isResolving]="step.isResolving()"
+      [isUpdating]="page.isUpdatingActiveStepTimer()"
+      timerAriaLabel="Czas kroku eksploracji"
+      progressAriaLabel="Postęp czasu eksploracji"
+      pendingLabel="Pozostały czas"
+      pendingHelperText="Wynik będzie dostępny po zakończeniu czasu."
+      pendingNeutralHelperText="Aktualizujemy czas kroku."
+      readyLabel="Wynik gotowy"
+      readyTitle="Cel osiągnięty"
+      readyHelperText="Bohater dotarł do celu. Sprawdź, co się wydarzyło."
+      primaryActionLabel="Sprawdź wynik"
+      decorativeLabel="CZAS"
+      (primaryAction)="step.checkResult()"
+    />
+  } @else if (!page.canShowDirectionBoard()) {
+    <div class="mg-card p-md w-100">
+      <p class="color-text m-0">
+        Eksploracja nie ma teraz dostępnej akcji w tym widoku.
+      </p>
+    </div>
+  }
+} @else {
+  <div class="mg-card p-md w-100">
+    <p class="color-text m-0">
+      Brak aktywnej eksploracji dla tej trudności. Wróć do wyboru trudności i rozpocznij wyprawę.
+    </p>
+  </div>
+}

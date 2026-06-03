@@ -11,7 +11,7 @@ import {
   BuildingProgressionPreview,
   BuildingProgressionPreviewInput,
 } from '../../domain/building/building.model';
-import { resolveBuildingImagePath } from '../../domain/building/building-image-paths';
+import { resolveBuildingLocalImagePath } from '../../domain/building/building-image-paths';
 import {
   mapEditableBuildingEntityBonus,
   mapBuildingBonusTemplateMetadata,
@@ -122,7 +122,7 @@ export class BuildingAdminService {
       name: trimText(draft.name),
       description: trimToNull(draft.description),
       imagePath:
-        (resolveBuildingImagePath(draft.key, draft.districtCode) ??
+        (resolveBuildingLocalImagePath(draft.key, draft.districtCode) ??
           trimText(draft.imagePath)) ||
         null,
       districtCode: draft.districtCode,

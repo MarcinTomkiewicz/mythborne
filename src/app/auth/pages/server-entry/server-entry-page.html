@@ -1,0 +1,53 @@
+<section class="flex-col gap-lg w-100">
+  @if (state.error()) {
+    <div class="mg-card border-danger bg-danger-soft flex-col gap-xs w-100">
+      <p class="m-0 text-danger">{{ state.error() }}</p>
+    </div>
+  }
+
+  @if (state.blocker()) {
+    <div class="mg-card flex-col gap-xs w-100">
+      <p class="status-text-warning m-0">{{ state.blocker() }}</p>
+    </div>
+  }
+
+  @if (state.isLoading()) {
+    <app-loading-overlay
+      [visible]="true"
+      label="Wczytywanie dostępnych serwerów..."
+      description="Sprawdzamy światy i bohaterów dostępnych dla tego konta."
+    />
+  } @else {
+    <section class="flex-col gap-md w-100">
+      @if (state.visibleAvailability().length === 0) {
+        <app-account-entry-hero-selector
+          [form]="heroContextForm"
+          [options]="[]"
+          [selectedContext]="null"
+          emptyMessage="Nie ma teraz żadnego świata dostępnego dla tego konta. Spróbuj ponownie później albo skontaktuj się z obsługą gry."
+          [isTransitioning]="state.isTransitioning()"
+          (enter)="enterSelectedHeroContext()"
+        />
+      } @else if (!hasPlayableHeroContext()) {
+        <div class="mg-card flex-col gap-sm">
+          <p class="m-0 color-heading">Nie masz jeszcze bohatera gotowego do gry.</p>
+          <p class="m-0 color-muted">Stwórz bohatera na dostępnym świecie, aby wejść do gry.</p>
+          <p-button
+            type="button"
+            label="Stwórz bohatera"
+            severity="secondary"
+            routerLink="/auth/create-character"
+          />
+        </div>
+      } @else {
+        <app-account-entry-hero-selector
+          [form]="heroContextForm"
+          [options]="playableHeroContextOptions()"
+          [selectedContext]="selectedHeroContext()"
+          [isTransitioning]="state.isTransitioning()"
+          (enter)="enterSelectedHeroContext()"
+        />
+      }
+    </section>
+  }
+</section>

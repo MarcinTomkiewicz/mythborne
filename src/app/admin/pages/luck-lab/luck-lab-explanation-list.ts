@@ -16,14 +16,14 @@ export interface LuckLabExplanationRow {
   template: `
     <div class="grid-2 gap-md">
       @for (row of rows; track row.key) {
-        <article class="mg-surface-card p-md flex-col gap-xs">
+        <article class="mg-card p-md flex-col gap-xs">
           <span class="card-legend">{{ row.label }}</span>
           <span>{{ row.text }}</span>
           @if (row.metadata) {
             <span class="muted-text">{{ row.metadata }}</span>
           }
           @if (row.formulaTargetKeys?.length) {
-            <a class="text-link" routerLink="/admin/formulas">
+            <a routerLink="/admin/formulas">
               Open formula governance
             </a>
             <span class="muted-text">

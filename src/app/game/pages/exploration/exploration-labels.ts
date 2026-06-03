@@ -1,19 +1,14 @@
+import { ExplorationActiveEffectDisplay } from '../../../core/interfaces/exploration/active-effect-display.interface';
+import { ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
 import { HeroExplorationStateReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
 import { humanizeKey } from '../../../core/utils/normalize-text';
-
-export interface ExplorationActiveEffectDisplay {
-  title: string;
-  summary: string;
-  warning: string | null;
-  facts: Array<{ label: string; value: string }>;
-}
 
 export function explorationCurrentNodeLabel(
   state: HeroExplorationStateReadModel | null,
 ): string {
   const node = state?.currentNode;
-  return node?.label ?? node?.id ?? 'No current node';
+  return node?.label ?? 'Aktualny punkt jest niedostępny';
 }
 
 export function explorationActiveStepLabel(
@@ -22,10 +17,10 @@ export function explorationActiveStepLabel(
   const step = state?.activeStep;
 
   if (!step) {
-    return 'No active movement step.';
+    return 'Brak aktywnego ruchu.';
   }
 
-  return `${step.stepKind} - ${step.status} - resolves at ${step.resolvesAt}`;
+  return `${step.stepKind} - ${step.status} - gotowe ${step.resolvesAt}`;
 }
 
 export function explorationActiveChallengeLabel(
@@ -34,7 +29,7 @@ export function explorationActiveChallengeLabel(
   const challenge = state?.activeChallenge;
 
   if (!challenge) {
-    return 'No active challenge.';
+    return 'Brak aktywnego wyzwania.';
   }
 
   return `${challenge.challengeKind} - ${challenge.status}`;
@@ -46,10 +41,10 @@ export function explorationActiveEffectLabel(
   const display = explorationActiveEffectDisplay(state);
 
   if (!display) {
-    return 'No active exploration effect.';
+    return 'Brak aktywnego efektu eksploracji.';
   }
 
-  return `${display.title}. ${display.summary}`;
+  return display.summary ? `${display.title}. ${display.summary}` : display.title;
 }
 
 export function explorationActiveEffectDisplay(
@@ -61,9 +56,9 @@ export function explorationActiveEffectDisplay(
     return null;
   }
 
-  const status = effect.isActive ? 'active' : 'inactive';
+  const status = effect.isActive ? 'aktywne' : 'nieaktywne';
   const metadata = jsonRecord(effect.metadataJson);
-  const dbLabel = optionalText(read(
+  const dbLabel = effect.effectLabel ?? optionalText(read(
     metadata,
     'effectLabel',
     'effect_label',
@@ -71,24 +66,66 @@ export function explorationActiveEffectDisplay(
     'title',
     'name',
   ));
-  const dbSummary = optionalText(read(
+  const dbSummary = effect.playerSummary ?? optionalText(read(
     metadata,
+    'playerSummary',
+    'player_summary',
     'summary',
     'description',
     'helperText',
     'helper_text',
   ));
-  const kindLabel = `${humanizeKey(effect.effectKind, 'Effect')} effect`;
+  const kindLabel = effect.effectKindLabel
+    ?? optionalText(read(metadata, 'effectKindLabel', 'effect_kind_label'))
+    ?? effectKindLabel(effect.effectKind);
+  const targetLabel = effect.effectTargetLabel
+    ?? optionalText(read(metadata, 'effectTargetLabel', 'effect_target_label', 'targetLabel', 'target_label'));
+  const valueDisplay = effect.valueDisplay
+    ?? optionalText(read(metadata, 'displayValue', 'display_value', 'valueDisplay', 'value_display'));
+  const concreteTitle = valueDisplay
+    ?? dbSummary
+    ?? (targetLabel && dbLabel ? `${dbLabel} ${targetLabel}` : null);
+  const summary = concreteTitle && valueDisplay
+    ? usablePlayerSummary(dbSummary, dbLabel, valueDisplay)
+    : dbSummary;
+  const fallbackSummary = targetLabel && valueDisplay
+    ? `${targetLabel}: ${valueDisplay}.`
+    : `${kindLabel} jest ${status} w bieżącej eksploracji.`;
 
   return {
-    title: dbLabel ?? `${kindLabel} ${status}`,
-    summary: dbSummary ?? 'Effect details unavailable from the DB read model.',
-    warning: dbLabel ? null : 'Effect details unavailable from DB read model.',
+    title: concreteTitle ?? dbLabel ?? `${kindLabel} ${status}`,
+    summary: concreteTitle
+      ? summary ?? ''
+      : summary ?? fallbackSummary,
+    warning: null,
     facts: [
-      { label: 'Kind', value: kindLabel },
+      { label: 'Typ', value: kindLabel },
       { label: 'Status', value: status },
-      { label: 'Source', value: humanizeKey(effect.sourceKind, 'source') },
-      { label: 'Applied', value: effect.appliedAt },
+      { label: 'Źródło', value: humanizeKey(effect.sourceKind, 'źródło') },
+      { label: 'Nałożono', value: effect.appliedAt },
     ],
   };
+}
+
+function usablePlayerSummary(
+  summary: string | null,
+  label: string | null,
+  valueDisplay: string,
+): string | null {
+  if (!summary || summary === label || summary === valueDisplay) {
+    return null;
+  }
+
+  return summary;
+}
+
+function effectKindLabel(effectKind: string): string {
+  switch (effectKind) {
+    case ENCOUNTER_KIND.buff:
+      return 'Wzmocnienie';
+    case ENCOUNTER_KIND.debuff:
+      return 'Osłabienie';
+    default:
+      return humanizeKey(effectKind, 'Efekt');
+  }
 }

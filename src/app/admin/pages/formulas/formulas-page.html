@@ -27,27 +27,27 @@
 
     <section class="mg-card p-lg w-100">
       <div class="mg-grid grid-cols-5 grid-cols-1-md gap-md w-100">
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="muted-text">Targets</span>
           <strong class="mg-section__title mg-section__title--xs mb-0">{{ data().targets.length }}</strong>
         </div>
 
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="muted-text">Formulas</span>
           <strong class="mg-section__title mg-section__title--xs mb-0">{{ data().formulas.length }}</strong>
         </div>
 
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="muted-text">Global assignments</span>
           <strong class="mg-section__title mg-section__title--xs mb-0">{{ data().assignments.length }}</strong>
         </div>
 
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="muted-text">Entity overrides</span>
           <strong class="mg-section__title mg-section__title--xs mb-0">{{ data().entityAssignments.length }}</strong>
         </div>
 
-        <div class="mg-surface-card p-md flex-col gap-xs">
+        <div class="mg-card p-md flex-col gap-xs">
           <span class="muted-text">Blocks</span>
           <strong class="mg-section__title mg-section__title--xs mb-0">{{ data().blocks.length }}</strong>
         </div>
@@ -76,7 +76,7 @@
 
       <div class="flex-col gap-lg">
         @for (scope of scopeRows(); track scope.scopeKey) {
-          <article class="mg-surface-card p-md flex-col gap-md">
+          <article class="mg-card p-md flex-col gap-md">
             <div class="flex-row-between-center flex-col-sm gap-sm">
               <h4 class="mg-section__title mg-section__title--xs mb-0">{{ scope.scopeKey }}</h4>
               <div class="flex-row-start-center flex-wrap gap-xs">
@@ -120,7 +120,7 @@
 
       <div class="flex-col gap-md">
         @for (row of entityAssignmentRows(); track row.assignment.id) {
-          <article class="mg-surface-card p-md flex-col gap-sm">
+          <article class="mg-card p-md flex-col gap-sm">
             <div class="flex-row-between-center flex-col-sm gap-sm">
               <div class="flex-col gap-xs">
                 <p class="card-legend mb-0">{{ row.assignment.entityKind }}</p>

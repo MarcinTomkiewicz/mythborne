@@ -1,0 +1,14 @@
+<div class="flex-col gap-xs">
+  <p-button
+    type="button"
+    label="Wyloguj"
+    severity="secondary"
+    [disabled]="isLoggingOut()"
+    [loading]="isLoggingOut()"
+    (onClick)="logout()"
+  />
+
+  @if (errorMessage()) {
+    <p class="mb-0 text-danger">{{ errorMessage() }}</p>
+  }
+</div>
