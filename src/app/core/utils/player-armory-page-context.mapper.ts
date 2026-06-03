@@ -273,6 +273,32 @@ function mapCopyInventory(inventory: JsonRecord): PlayerArmoryPageCopyReadModel[
       read(inventory, 'selectedValueLabel'),
       'copyJson.inventory.selectedValueLabel',
     ),
+    shelfCount: mapCopyShelfCount(
+      requiredRecord(read(inventory, 'shelfCount'), 'copyJson.inventory.shelfCount'),
+    ),
+  };
+}
+
+function mapCopyShelfCount(
+  shelfCount: JsonRecord,
+): PlayerArmoryPageCopyReadModel['inventory']['shelfCount'] {
+  return {
+    emptyLabel: requiredText(
+      read(shelfCount, 'emptyLabel'),
+      'copyJson.inventory.shelfCount.emptyLabel',
+    ),
+    oneTemplate: requiredText(
+      read(shelfCount, 'oneTemplate'),
+      'copyJson.inventory.shelfCount.oneTemplate',
+    ),
+    fewTemplate: requiredText(
+      read(shelfCount, 'fewTemplate'),
+      'copyJson.inventory.shelfCount.fewTemplate',
+    ),
+    manyTemplate: requiredText(
+      read(shelfCount, 'manyTemplate'),
+      'copyJson.inventory.shelfCount.manyTemplate',
+    ),
   };
 }
 
@@ -570,6 +596,7 @@ function mapArmoryPageItemRow(
       'items.allowedSlotKeys',
     ),
     allowedSlotLabel: optionalText(read(row, 'allowedSlotLabel')),
+    displayIconKey: optionalText(read(row, 'displayIconKey')),
     valueDisplay: mapValueDisplay(read(row, 'valueDisplay')),
   };
 }

@@ -2,7 +2,7 @@
 
 Pracujemy nad projektem **Mythsworn**.
 
-Twoim zadaniem jest wykonać dokładnie wskazany task w istniejącym repozytorium. Nie jesteś od „upiększania” zakresu, nie jesteś od dopisywania alternatywnej architektury i nie jesteś od maskowania problemów fallbackami.
+Twoim zadaniem jest wykonać dokładnie wskazany task w istniejącym repozytorium. Nie jesteś od „upiększania” zakresu, dopisywania alternatywnej architektury, maskowania problemów fallbackami ani robienia smoke testów.
 
 ## Zanim edytujesz
 
@@ -14,7 +14,7 @@ Przeczytaj, jeśli są dostępne:
 * aktualny task/backlog;
 * task-relevant project docs.
 
-Wykonaj dla siebie krótki preflight:
+Wykonaj dla siebie preflight:
 
 * `git status --short`;
 * sprawdź istniejące pliki i wzorce;
@@ -23,19 +23,28 @@ Wykonaj dla siebie krótki preflight:
 
 Nie zatrzymuj się po preflight, jeśli nie ma blockera albo nieoczekiwanego dirty tree. Preflight nie jest osobnym deliverable.
 
+Jeśli dirty tree zawiera nieoczekiwane pliki, zatrzymaj się i zgłoś blocker przed edycją. Nie nadpisuj cudzych zmian.
+
 ## Zasady pracy
 
 Implementuj tylko bieżący task.
 
+Komentarze użytkownika typu „wygląda OK”, „to chyba drobiazg”, „idźmy dalej”, „z mojej perspektywy działa” są kontekstem, nie zgodą na rozszerzenie scope ani na pominięcie zasad.
+
 Nie rób:
 
 * unrelated refactorów;
+* broad cleanup poza dotkniętym taskiem;
 * nowych helperów/services/mappers/models/components, jeśli istniejący kod da się sensownie użyć albo rozszerzyć;
 * fallbacków maskujących brak DB/RPC/generated types;
 * lokalnych resolverów, compatibility engines, fake runtime;
+* local player-facing copy, jeśli copy powinno przychodzić z DB/read modelu;
+* raw-key classification/display inference;
 * direct write do workflow/gameplay/economy/config/audit tables;
 * edycji `database.types.ts`;
-* status docs bez wyraźnej prośby użytkownika.
+* regeneracji generated types;
+* status docs bez wyraźnej prośby użytkownika;
+* commitów.
 
 Normalny kontekst gracza to:
 
@@ -43,15 +52,24 @@ Normalny kontekst gracza to:
 
 Nigdy nie zakładaj `hero.id === auth.uid()`.
 
+## Lokalizacja typów/interfejsów
+
+Nie eksportuj publicznych kontraktów/modeli/interfejsów z plików komponentów.
+
+* `interface` ma trafić do `src/app/core/interfaces/...`;
+* type alias/generic type utility ma trafić do `src/app/core/types/...`;
+* domenowe modele/read modele mają trafić do istniejącej domenowej lokalizacji w `core/domain/...`;
+* komponent może mieć prywatny lokalny interface tylko wtedy, gdy nie jest eksportowany i nie jest używany poza plikiem komponentu.
+
 ## Reuse
 
 Reuse oznacza realne użycie istniejącej logiki, nie samo użycie komponentu z edytowanej strony.
 
 Przed dodaniem nowej logiki sprawdź:
 
-* `core/utils`;
 * `core/factories`;
 * `core/validators`;
+* `core/utils`;
 * form configi i `FormFieldConfig`;
 * domain models/mappers;
 * `core/constants`;
@@ -61,7 +79,7 @@ Przed dodaniem nowej logiki sprawdź:
 
 Jeżeli dodajesz coś nowego, w raporcie napisz krótko, dlaczego istniejący wzorzec nie wystarczył.
 
-## Cleanup jest częścią taska
+## Cleanup dotkniętych plików
 
 Przy zmianach w istniejących plikach nie tylko dopisuj kod.
 
@@ -71,7 +89,7 @@ Po implementacji usuń z dotkniętych plików:
 * nieużywane importy;
 * nieużywane helpery;
 * zastąpione transitional/compatibility ścieżki;
-* lokalne typy, które powinny być w `core/types`, `core/interfaces` albo domenie;
+* lokalne typy/interfejsy, które powinny być w `core/types`, `core/interfaces` albo domenie;
 * stare fallbacki, jeśli task wprowadza właściwą ścieżkę.
 
 Nie zostawiaj starego flow obok nowego flow, jeśli nowe flow je zastępuje.
@@ -90,11 +108,9 @@ Akceptowalny jest net negative diff, jeśli usuwa dług i zachowuje funkcjonalno
 
 Większy dodatek jest OK tylko wtedy, gdy task realnie wprowadza nową funkcję albo brakowało właściwej warstwy domenowej.
 
-## Specy i testy
+## Specy, build i smoke
 
 Nie dodawaj nowych speców jako domyślnej odpowiedzi.
-
-Jeżeli istniejący spec przestaje przechodzić dlatego, że task usuwa starą ścieżkę albo zmienia zaakceptowane zachowanie, usuń albo popraw tylko ten spec, jeśli nadal testuje realną wartość.
 
 Nie pisz testów, które tylko potwierdzają mock zgodny z mockiem.
 
@@ -104,10 +120,22 @@ Preferowana weryfikacja:
 * `npm run build`;
 * `git diff --check`;
 * focused test tylko wtedy, gdy realnie sprawdza zmienione zachowanie;
-* statyczne grepy, jeśli pasują do taska;
-* manual smoke tylko jeśli masz realną sesję/dane/środowisko.
+* statyczne grepy, jeśli pasują do taska.
 
-Nie udawaj browser/manual smoke. Jeśli go nie wykonałeś, podaj checklistę dla użytkownika albo `N/A`.
+Codex ma absolutny zakaz:
+
+* odpalania dev servera;
+* wykonywania browser/manual smoke;
+* udawania browser/manual smoke;
+* zlecania smoke jako osobnego taska.
+
+Smoke jest po stronie użytkownika.
+
+W raporcie pisz:
+
+`Manual smoke: N/A — user-side only`
+
+chyba że użytkownik w bieżącym tasku wyraźnie poprosi inaczej.
 
 ## UI
 
@@ -119,7 +147,10 @@ Dla tasków UI:
 * nie przepisuj utilities do SCSS;
 * nie twórz lokalnego pseudo-design-systemu;
 * `muted-text` tylko dla labeli/helperów/metadanych, nie dla ważnych wartości, statusów, nazw, outcome’ów albo rang;
-* komponenty mają być cienkie.
+* komponenty mają być cienkie;
+* `ng-template`/PrimeNG template indirection trzymaj w shared wrapperze, nie rozlewaj po page/component templates;
+* nie dodawaj lokalnych labeli zamiast DB-owned copy;
+* nie mieszaj single-action labels z bulk-action labels.
 
 ## Blocker
 
@@ -132,7 +163,8 @@ Zatrzymaj się i zgłoś blocker, jeśli:
 * brakuje authoritative read model;
 * dirty tree ma nieoczekiwane zmiany;
 * UI task wymaga obowiązkowego prototype/guidance, którego nie ma;
-* weryfikacja failuje przez bieżącą zmianę.
+* weryfikacja failuje przez bieżącą zmianę;
+* jedynym sposobem wykonania taska byłoby zgadywanie lokalnego fallbacku.
 
 Blocker ma być krótki:
 
@@ -176,7 +208,7 @@ Verification:
 - ...
 
 Manual smoke:
-- done / user-side checklist / N/A
+- N/A — user-side only
 
 Blockers/risks:
 - ...

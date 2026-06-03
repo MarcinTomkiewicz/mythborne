@@ -119,6 +119,14 @@ export interface PlayerArmoryPageCopyInventory {
   noFilterResultsLabel: string;
   selectedCountLabel: string;
   selectedValueLabel: string;
+  shelfCount: PlayerArmoryPageCopyShelfCount;
+}
+
+export interface PlayerArmoryPageCopyShelfCount {
+  emptyLabel: string;
+  oneTemplate: string;
+  fewTemplate: string;
+  manyTemplate: string;
 }
 
 export interface PlayerArmoryPageCopyLoadoutPresets {
@@ -192,6 +200,7 @@ export interface PlayerArmoryItemReadModel {
   primarySlotLabel: string | null;
   allowedSlotKeys: string[];
   allowedSlotLabel: string | null;
+  displayIconKey: string | null;
   valueDisplay: PlayerArmoryItemValueDisplay | null;
 }
 

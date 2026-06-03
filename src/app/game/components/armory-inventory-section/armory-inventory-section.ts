@@ -2,12 +2,11 @@ import { Component, computed, effect, input, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
 import {
   PlayerArmoryPageCopyFilters,
   PlayerArmoryPageCopyInventory,
   PlayerArmoryPageCopySearch,
+  PlayerArmoryPageCopyShelfCount,
   PlayerArmoryItemReadModel,
   PlayerArmoryStorageSlotReadModel,
 } from '../../../core/domain/item/player-armory-page-context.model';
@@ -24,6 +23,7 @@ import {
 import { normalizeSearchText } from '../../../core/utils/normalize-text';
 import { InlineTextEdit } from '../../../shared/inline-text-edit/inline-text-edit';
 import { SelectOption } from '../../../core/types/select-option.types';
+import { ArmoryInventoryFilterBar } from '../armory-inventory-filter-bar/armory-inventory-filter-bar';
 import { ArmoryBulkActionsToolbar } from '../armory-bulk-actions-toolbar/armory-bulk-actions-toolbar';
 
 @Component({
@@ -32,10 +32,9 @@ import { ArmoryBulkActionsToolbar } from '../armory-bulk-actions-toolbar/armory-
   imports: [
     ReactiveFormsModule,
     ArmoryBulkActionsToolbar,
+    ArmoryInventoryFilterBar,
     ButtonModule,
     InlineTextEdit,
-    InputTextModule,
-    SelectModule,
   ],
   templateUrl: './armory-inventory-section.html',
 })
@@ -119,11 +118,19 @@ export class ArmoryInventorySection {
       : this.shelves(),
   );
   readonly shelfRows = computed(() =>
-    this.visibleShelves().map((shelf) => ({
-      ...shelf,
-      controlName: shelfControlName(shelf.position),
-      canRename: shelf.isPersisted && !shelf.isUnsortedDropArea,
-    })),
+    this.visibleShelves().map((shelf) => {
+      const visibleItemCount = shelf.visibleItems.length;
+
+      return {
+        ...shelf,
+        controlName: shelfControlName(shelf.position),
+        canRename: shelf.isPersisted && !shelf.isUnsortedDropArea,
+        shelfCountLabel: formatShelfCountLabel(
+          visibleItemCount,
+          this.inventoryCopy().shelfCount,
+        ),
+      };
+    }),
   );
   readonly visibleItems = computed(() =>
     this.visibleShelves().flatMap((shelf) => shelf.visibleItems),
@@ -328,4 +335,25 @@ export class ArmoryInventorySection {
 
 function shelfControlName(position: number): string {
   return `shelf_${position}`;
+}
+
+function formatShelfCountLabel(
+  count: number,
+  copy: PlayerArmoryPageCopyShelfCount,
+): string {
+  if (count === 0) {
+    return copy.emptyLabel;
+  }
+
+  const lastDigit = count % 10;
+  const lastTwoDigits = count % 100;
+  const template = count === 1
+    ? copy.oneTemplate
+    : lastDigit >= 2
+      && lastDigit <= 4
+      && (lastTwoDigits < 12 || lastTwoDigits > 14)
+        ? copy.fewTemplate
+        : copy.manyTemplate;
+
+  return template.replace(/\{count\}/g, String(count));
 }
