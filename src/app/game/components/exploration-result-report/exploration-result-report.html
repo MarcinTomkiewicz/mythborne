@@ -64,13 +64,19 @@
               @for (item of reward.items; track item.id) {
                 <app-item-detail-popover
                   [itemId]="item.id"
-                  [fallbackName]="item.name"
-                  [statusLabel]="item.status"
-                  [drachmaValue]="item.drachmaValue"
-                  [detailLines]="[rewardState.itemDetails(item)]"
+                  [fallbackName]="item.displayCore.itemName"
+                  [statusLabel]="item.displayCore.lifecycleStatusLabel"
+                  [qualityLabel]="item.displayCore.qualityLabel"
+                  [kindLabel]="item.displayCore.baseTypeLabel"
+                  [slotLabel]="item.displayCore.allowedSlotLabel"
+                  [iconClass]="rewardState.itemIconClass(item)"
+                  [valueDisplay]="item.displayCore.valueDisplay"
+                  [detailLines]="rewardState.itemDetails(item)"
                   contextKind="reward_item"
                   contextLabel="Przedmiot z nagrody"
                   contextSourceLabel="Nagroda eksploracji"
+                  detailMode="partial"
+                  [preserveDisplayLabels]="true"
                   triggerLabel="Szczegóły"
                   [buttonTrigger]="false"
                 >

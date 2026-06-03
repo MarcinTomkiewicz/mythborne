@@ -1,8 +1,8 @@
 import {
   ExplorationChallengeRewardReadModel,
+  ExplorationGeneratedRewardItemReadModel,
   RewardGrantEntryReadModel,
 } from '../../../core/domain/exploration/exploration-reward.model';
-import { ItemReadModel } from '../../../core/domain/item/item.model';
 import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
 import { resourceAmountLabel } from '../../../core/utils/resource-display';
 
@@ -124,24 +124,30 @@ export function rewardEntryDetails(entry: RewardGrantEntryReadModel): string | n
   return null;
 }
 
-export function rewardItemLabel(item: ItemReadModel): string {
-  return item.name;
+export function rewardItemLabel(item: ExplorationGeneratedRewardItemReadModel): string {
+  return item.displayCore.itemName;
 }
 
-export function rewardItemDetails(item: ItemReadModel): string {
-  const metadata = jsonRecord(item.metadataJson);
-  const quality = optionalText(read(metadata, 'qualityLabel'));
-  const base = optionalText(read(metadata, 'baseName'));
-  const prefix = optionalText(read(metadata, 'prefixName'));
-  const suffix = optionalText(read(metadata, 'suffixName'));
+export function rewardItemDetails(
+  item: ExplorationGeneratedRewardItemReadModel,
+): string[] {
+  const displayCore = item.displayCore;
 
   return [
-    item.drachmaValue !== null ? `Wartość ${item.drachmaValue}` : null,
-    quality ? `Jakość ${quality}` : null,
-    base ? `Baza ${base}` : null,
-    prefix ? `Prefix ${prefix}` : null,
-    suffix ? `Suffix ${suffix}` : null,
-  ].filter(Boolean).join(' - ') || 'Szczegóły przedmiotu są dostępne w podglądzie.';
+    displayCore.valueDisplay
+      ? `${displayCore.valueDisplay.displayLabel}: ${displayCore.valueDisplay.displayValue}`
+      : null,
+    displayCore.qualityLabel,
+    displayCore.baseTypeLabel,
+    displayCore.allowedSlotLabel,
+    displayCore.lifecycleStatusLabel,
+  ].filter((line): line is string => Boolean(line?.trim()));
+}
+
+export function rewardItemIconClass(
+  item: ExplorationGeneratedRewardItemReadModel,
+): string {
+  return `pi pi-${item.displayCore.displayIconKey || 'box'}`;
 }
 
 export function isItemEntry(entry: RewardGrantEntryReadModel): boolean {

@@ -1,3 +1,5 @@
+import type { PlayerItemDisplayCoreValueDisplay } from './player-item-display-core.model';
+
 export type ItemDetailPopoverSnapshotKind =
   | 'current'
   | 'trade_snapshot'
@@ -59,6 +61,7 @@ export interface ItemDetailPopoverViewModel {
   slotLabel: string | null;
   iconClass: string;
   drachmaValue: number | null;
+  valueDisplay: PlayerItemDisplayCoreValueDisplay | null;
   nativeStats: ItemDetailPopoverValueRow[];
   bonusRows: ItemDetailPopoverValueRow[];
   requirementRows: ItemDetailPopoverRequirementRow[];

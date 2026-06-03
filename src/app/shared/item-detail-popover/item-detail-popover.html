@@ -55,13 +55,15 @@
             <span>{{ detail.slotLabel }}</span>
           }
         </div>
-        <div class="color-secondary text-sm font-extrabold">
-          @if (detail.drachmaValue !== null) {
-            Value: {{ detail.drachmaValue }} drachma
-          } @else {
-            No drachma value.
-          }
-        </div>
+        @if (detail.valueDisplay || detail.drachmaValue !== null) {
+          <div class="color-secondary text-sm font-extrabold">
+            @if (detail.valueDisplay) {
+            {{ detail.valueDisplay.displayLabel }}: {{ detail.valueDisplay.displayValue }}
+            } @else {
+              {{ detail.drachmaValue }}
+            }
+          </div>
+        }
       </div>
     </header>
 

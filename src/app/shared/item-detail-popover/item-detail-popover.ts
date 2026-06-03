@@ -8,6 +8,7 @@ import {
   ItemDetailPopoverValueRow,
   ItemDetailPopoverViewModel,
 } from '../../core/domain/item/item-detail-popover.model';
+import type { PlayerItemDisplayCoreValueDisplay } from '../../core/domain/item/player-item-display-core.model';
 import { ItemDetailReader } from '../../core/services/items/item-detail-reader';
 import {
   armoryDetailPopover,
@@ -36,7 +37,9 @@ export class ItemDetailPopover {
   readonly slotLabel = input<string | null>(null);
   readonly iconClass = input<string>('pi pi-chest');
   readonly drachmaValue = input<number | null>(null);
+  readonly valueDisplay = input<PlayerItemDisplayCoreValueDisplay | null>(null);
   readonly detailLines = input<readonly string[]>([]);
+  readonly preserveDisplayLabels = input(false);
   readonly contextKind = input<ItemDetailPopoverSnapshotKind>('current');
   readonly contextLabel = input('Current item');
   readonly contextSourceLabel = input<string | null>(null);
@@ -69,7 +72,9 @@ export class ItemDetailPopover {
       slotLabel: this.slotLabel(),
       iconClass: this.iconClass(),
       drachmaValue: this.drachmaValue(),
+      valueDisplay: this.valueDisplay(),
       detailRows: this.partialRows(),
+      preserveDisplayLabels: this.preserveDisplayLabels(),
       context: this.context(),
       isLoading: this.shouldReadFullDetail() && this.status() === 'loading',
       error: this.playerSafeError(),

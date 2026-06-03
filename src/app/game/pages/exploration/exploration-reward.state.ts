@@ -4,10 +4,10 @@ import { Observable, finalize } from 'rxjs';
 import { ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
 import {
   ExplorationChallengeRewardReadModel,
+  ExplorationGeneratedRewardItemReadModel,
   RewardGrantEntryReadModel,
 } from '../../../core/domain/exploration/exploration-reward.model';
 import { HeroExplorationStepResolutionReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
-import { ItemReadModel } from '../../../core/domain/item/item.model';
 import { HeroExplorationRewards } from '../../../core/services/exploration/hero-exploration-rewards';
 import { PlayerDashboardShellState } from '../../../core/services/hero/player-dashboard-shell-state';
 import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
@@ -21,6 +21,7 @@ import {
   rewardEntryLabel,
   rewardEntryName,
   rewardItemDetails,
+  rewardItemIconClass,
   rewardItemLabel,
 } from './exploration-reward-card-ui';
 import {
@@ -100,12 +101,16 @@ export class ExplorationRewardState {
     return rewardEntryName(entry);
   }
 
-  itemLabel(item: ItemReadModel): string {
+  itemLabel(item: ExplorationGeneratedRewardItemReadModel): string {
     return rewardItemLabel(item);
   }
 
-  itemDetails(item: ItemReadModel): string {
+  itemDetails(item: ExplorationGeneratedRewardItemReadModel): string[] {
     return rewardItemDetails(item);
+  }
+
+  itemIconClass(item: ExplorationGeneratedRewardItemReadModel): string {
+    return rewardItemIconClass(item);
   }
 
   private resolveRewardSource(): RewardSource | null {

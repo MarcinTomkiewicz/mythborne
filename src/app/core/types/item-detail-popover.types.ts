@@ -14,9 +14,11 @@ export type PartialItemDetailPopoverInput = Pick<
   | 'slotLabel'
   | 'iconClass'
   | 'drachmaValue'
+  | 'valueDisplay'
   | 'context'
   | 'isLoading'
   | 'error'
 > & {
   detailRows: readonly ItemDetailPopoverValueRow[];
+  preserveDisplayLabels: boolean;
 };

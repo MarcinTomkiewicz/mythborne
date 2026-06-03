@@ -10,7 +10,7 @@ import {
 import { ArmoryItemDetailReadModel } from '../domain/item/item-equipment.model';
 import { PartialItemDetailPopoverInput } from '../types/item-detail-popover.types';
 import { normalizeBonusTargetKey } from './bonus';
-import { humanizeKey } from './normalize-text';
+import { humanizeKey, trimText } from './normalize-text';
 
 export function armoryDetailPopover(
   detail: ArmoryItemDetailReadModel,
@@ -44,6 +44,7 @@ export function armoryDetailPopover(
     slotLabel: itemDisplay.slotLabel,
     iconClass: itemDisplay.iconClass,
     drachmaValue: detail.drachmaValue,
+    valueDisplay: null,
     nativeStats: detail.itemStats.map((stat, index) => ({
       key: `stat-${index}-${stat.label}`,
       label: stat.label,
@@ -94,12 +95,13 @@ export function partialItemPopover(
     itemId: input.itemId,
     name: input.name,
     description: input.description,
-    statusLabel: displayLabel(input.statusLabel),
-    qualityLabel: displayLabel(input.qualityLabel),
-    kindLabel: displayLabel(input.kindLabel),
-    slotLabel: displayLabel(input.slotLabel),
+    statusLabel: partialDisplayLabel(input.statusLabel, input.preserveDisplayLabels),
+    qualityLabel: partialDisplayLabel(input.qualityLabel, input.preserveDisplayLabels),
+    kindLabel: partialDisplayLabel(input.kindLabel, input.preserveDisplayLabels),
+    slotLabel: partialDisplayLabel(input.slotLabel, input.preserveDisplayLabels),
     iconClass: input.iconClass,
     drachmaValue: input.drachmaValue,
+    valueDisplay: input.valueDisplay,
     nativeStats: [...input.detailRows],
     bonusRows: [],
     requirementRows: [],
@@ -116,6 +118,19 @@ export function partialItemPopover(
 
 function displayLabel(value: string | null): string | null {
   return value?.trim() ? humanizeKey(value) : null;
+}
+
+function partialDisplayLabel(
+  value: string | null,
+  preserveDisplayLabel: boolean,
+): string | null {
+  if (!preserveDisplayLabel) {
+    return displayLabel(value);
+  }
+
+  const label = trimText(value);
+
+  return label || null;
 }
 
 function statValueParts(
