@@ -14,13 +14,11 @@ import { mapBaseStatSnapshots } from '../../domain/stats/base-stat.mapper';
 import { CORE_RESOURCE_DISPLAY_DEFINITIONS } from '../../config/resource-display.config';
 import { Json } from '../../types/database.types';
 import { GetHeroDashboardRuntimeStatsRpcRow } from '../../types/hero-runtime-stats-rpc.types';
-import { GetHeroEquipmentRuntimeSlotsRpcRow } from '../../types/item-equipment-rpc.types';
 import { HeroResourceRow } from '../../types/resource-display.types';
 import { IStat } from '../../interfaces/i-stats/i-stats';
 import {
   JsonRecord,
   jsonRecord,
-  optionalBoolean,
   optionalNumber,
   optionalText,
   read,
@@ -34,6 +32,7 @@ import {
 } from './dashboard-persistent-state.model';
 import {
   PlayerAttributesPageContext,
+  PlayerDashboardCopyJson,
   PlayerDashboardExperienceContext,
   PlayerDashboardPageContext,
 } from './player-page-context.model';
@@ -80,6 +79,7 @@ export function mapPlayerDashboardPageContext(value: Json): PlayerDashboardPageC
       read(hero, 'characterPoints', 'character_points'),
       'hero.character_points',
     ),
+    copyJson: mapDashboardCopyJson(root),
     estateSummary,
     estateAddress: null,
     experience: mapExperienceContext(root),
@@ -88,6 +88,44 @@ export function mapPlayerDashboardPageContext(value: Json): PlayerDashboardPageC
     heroResources: mapHeroResourcesContext(root),
     equipmentPreviewRows: mapEquipmentPreviewRowsContext(root),
     persistentStateRows: mapPersistentStateRowsContext(root),
+  };
+}
+
+function mapDashboardCopyJson(root: JsonRecord): PlayerDashboardCopyJson {
+  const copyJson = requireRecord(read(root, 'copyJson'), 'copyJson');
+  const equipmentPreview = requireRecord(
+    read(copyJson, 'equipmentPreview'),
+    'copyJson.equipmentPreview',
+  );
+
+  return {
+    equipmentPreview: {
+      title: requiredText(read(equipmentPreview, 'title'), 'copyJson.equipmentPreview.title'),
+      emptyLabel: requiredText(
+        read(equipmentPreview, 'emptyLabel'),
+        'copyJson.equipmentPreview.emptyLabel',
+      ),
+      emptySlotLabel: requiredText(
+        read(equipmentPreview, 'emptySlotLabel'),
+        'copyJson.equipmentPreview.emptySlotLabel',
+      ),
+      emptySlotDetail: requiredText(
+        read(equipmentPreview, 'emptySlotDetail'),
+        'copyJson.equipmentPreview.emptySlotDetail',
+      ),
+      loadingLabel: requiredText(
+        read(equipmentPreview, 'loadingLabel'),
+        'copyJson.equipmentPreview.loadingLabel',
+      ),
+      unavailableLabel: requiredText(
+        read(equipmentPreview, 'unavailableLabel'),
+        'copyJson.equipmentPreview.unavailableLabel',
+      ),
+      armoryLabel: requiredText(
+        read(equipmentPreview, 'armoryLabel'),
+        'copyJson.equipmentPreview.armoryLabel',
+      ),
+    },
   };
 }
 
@@ -351,30 +389,30 @@ function mapEquipmentPreviewRowsContext(root: JsonRecord): EquipmentPreviewSlotR
 }
 
 function mapEquipmentPreviewRow(row: JsonRecord): EquipmentPreviewSlotRow {
-  const slotKey = requiredText(read(row, 'slotKey', 'slot_key'), 'equipmentSlots.slot_key');
-  const hasItem = optionalBoolean(read(row, 'hasItem', 'has_item')) ?? !!read(row, 'itemId', 'item_id');
-  const runtimeSlot = row as unknown as GetHeroEquipmentRuntimeSlotsRpcRow;
+  const slotKey = requiredText(read(row, 'slotKey'), 'equipmentSlots.slotKey');
+  const hasItem = requiredBoolean(read(row, 'hasItem'), 'equipmentSlots.hasItem');
+  const slotLabel = requiredText(read(row, 'slotLabel'), 'equipmentSlots.slotLabel');
+  const itemDisplayStateLabel = optionalText(
+    read(row, 'itemDisplayStateLabel'),
+  );
 
   return {
     slotKey,
-    label: requiredText(read(row, 'slotLabel', 'slot_label'), 'equipmentSlots.slot_label'),
+    label: slotLabel,
     sortOrder: requiredNonNegativeInteger(
-      read(row, 'slotSortOrder', 'slot_sort_order'),
-      'equipmentSlots.slot_sort_order',
+      read(row, 'slotSortOrder'),
+      'equipmentSlots.slotSortOrder',
     ),
     iconClass: equipmentPreviewIcon(row, slotKey),
     item: hasItem
       ? {
-          itemId: requiredText(read(row, 'itemId', 'item_id'), 'equipmentSlots.item_id'),
-          name: requiredText(read(row, 'itemName', 'item_name'), 'equipmentSlots.item_name'),
-          metadata: [
-            optionalText(read(row, 'slotLabel', 'slot_label')),
-            optionalText(read(row, 'qualityLabel', 'quality_label')),
-          ].filter(Boolean).join(' - '),
-          statusLabel: optionalText(read(row, 'itemStatusKey', 'item_status_key')),
-          qualityLabel: optionalText(read(row, 'qualityLabel', 'quality_label')),
-          kindLabel: optionalText(read(row, 'baseName', 'base_name')),
-          slotLabel: optionalText(read(row, 'slotLabel', 'slot_label')),
+          itemId: requiredText(read(row, 'itemId'), 'equipmentSlots.itemId'),
+          name: requiredText(read(row, 'itemDisplayName'), 'equipmentSlots.itemDisplayName'),
+          metadata: itemDisplayStateLabel,
+          statusLabel: itemDisplayStateLabel,
+          qualityLabel: optionalText(read(row, 'qualityLabel')),
+          kindLabel: optionalText(read(row, 'baseName')),
+          slotLabel,
         }
       : null,
   };
@@ -383,14 +421,10 @@ function mapEquipmentPreviewRow(row: JsonRecord): EquipmentPreviewSlotRow {
     value: JsonRecord,
     fallbackSlotKey: string,
   ): EquipmentPreviewIconClass {
-    const iconClass = optionalText(read(value, 'iconClass', 'icon_class'));
+    const iconClass = optionalText(read(value, 'iconClass'));
 
     if (iconClass) {
       return iconClass as EquipmentPreviewIconClass;
-    }
-
-    if (runtimeSlot.has_item && runtimeSlot.base_type_key) {
-      return equipmentPreviewIconClassForSlot(runtimeSlot.slot_key);
     }
 
     return equipmentPreviewIconClassForSlot(fallbackSlotKey);

@@ -13,7 +13,10 @@ import {
   mapDashboardHealthDisplay,
 } from './dashboard-page.mappers';
 import type { StatCardRow } from '../../types/stat-card.types';
-import { EquipmentPreviewSlotRow } from '../../domain/equipment/equipment-preview.model';
+import {
+  EquipmentPreviewCopy,
+  EquipmentPreviewSlotRow,
+} from '../../domain/equipment/equipment-preview.model';
 import { DashboardPersistentStateRow } from './dashboard-persistent-state.model';
 import { getErrorMessage } from '../../utils/error-message';
 import { PlayerPageContext } from './player-page-context';
@@ -73,6 +76,7 @@ export class DashboardPageFacade {
   origin = signal<Origin | null>(null);
   runtimeStats = signal<HeroDashboardRuntimeStatsReadModel | null>(null);
   runtimeStatsError = signal<string | null>(null);
+  equipmentPreviewCopy = signal<EquipmentPreviewCopy | null>(null);
   equipmentPreviewRows = signal<EquipmentPreviewSlotRow[]>([]);
   isEquipmentLoading = signal(false);
   equipmentStatus = signal<'idle' | 'loaded' | 'empty' | 'error'>('idle');
@@ -135,6 +139,7 @@ export class DashboardPageFacade {
         this.origin.set(pageContext.origin);
         this.runtimeStats.set(pageContext.runtimeStats);
         this.shellState.applyDashboardContext(pageContext);
+        this.equipmentPreviewCopy.set(pageContext.copyJson.equipmentPreview);
         this.equipmentPreviewRows.set(pageContext.equipmentPreviewRows);
         this.equipmentStatus.set(
           pageContext.equipmentPreviewRows.length > 0 ? 'loaded' : 'empty',
@@ -191,6 +196,7 @@ export class DashboardPageFacade {
     this.runtimeStats.set(null);
     this.runtimeStatsError.set(null);
     this.shellState.clear();
+    this.equipmentPreviewCopy.set(null);
     this.equipmentPreviewRows.set([]);
     this.isEquipmentLoading.set(false);
     this.equipmentStatus.set('idle');

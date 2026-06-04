@@ -19,3 +19,13 @@ export interface EquipmentPreviewSlotRow {
   emptyDisplayName?: string | null;
   emptyDisplayDetail?: string | null;
 }
+
+export interface EquipmentPreviewCopy {
+  title: string;
+  emptyLabel: string;
+  emptySlotLabel: string;
+  emptySlotDetail: string;
+  loadingLabel: string;
+  unavailableLabel: string;
+  armoryLabel: string;
+}

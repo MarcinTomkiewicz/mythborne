@@ -1,5 +1,8 @@
 import { Origin } from '../../domain/origin/origin.model';
-import { EquipmentPreviewSlotRow } from '../../domain/equipment/equipment-preview.model';
+import {
+  EquipmentPreviewCopy,
+  EquipmentPreviewSlotRow,
+} from '../../domain/equipment/equipment-preview.model';
 import { HeroDashboardRuntimeStatsReadModel } from '../../domain/hero/hero-dashboard-runtime-stats.model';
 import {
   AttributeAllocationModel,
@@ -26,6 +29,7 @@ export interface PlayerDashboardPageContext {
   heroName: string;
   heroLevel: number;
   characterPoints: number;
+  copyJson: PlayerDashboardCopyJson;
   estateSummary: JsonRecord | null;
   estateAddress: string | null;
   experience: PlayerDashboardExperienceContext;
@@ -34,6 +38,10 @@ export interface PlayerDashboardPageContext {
   heroResources: HeroResourceRow[];
   equipmentPreviewRows: EquipmentPreviewSlotRow[];
   persistentStateRows: DashboardPersistentStateRow[];
+}
+
+export interface PlayerDashboardCopyJson {
+  equipmentPreview: EquipmentPreviewCopy;
 }
 
 export interface PlayerAttributesPageContext {
