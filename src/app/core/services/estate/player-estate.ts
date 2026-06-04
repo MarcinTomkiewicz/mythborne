@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { map, Observable, switchMap } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
-import { PlayerEstatePageContextV2 } from '../../domain/estate/player-estate-page-context.model';
+import { PlayerEstatePageContextV3 } from '../../domain/estate/player-estate-page-context.model';
 import { Database } from '../../types/database.types';
 import { mapPlayerEstatePageContext } from '../../utils/player-estate-page-context.mapper';
 import { Backend } from '../backend/backend';
@@ -12,7 +12,7 @@ export class PlayerEstate {
   private readonly activeHero = inject(ActiveHero);
   private readonly backend = inject(Backend);
 
-  getPageContext(): Observable<PlayerEstatePageContextV2> {
+  getPageContext(): Observable<PlayerEstatePageContextV3> {
     return this.activeHero.requireActiveHero().pipe(
       switchMap((context) => {
         const args: Database['public']['Functions']['get_player_estate_page_context']['Args'] = {

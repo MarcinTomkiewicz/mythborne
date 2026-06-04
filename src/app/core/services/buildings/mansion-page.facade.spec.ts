@@ -4,7 +4,7 @@ import { of, Subject } from 'rxjs';
 import {
   EstateBuildingJob,
   EstateBuildingRow,
-  PlayerEstatePageContextV2,
+  PlayerEstatePageContextV3,
 } from '../../domain/estate/player-estate-page-context.model';
 import {
   ActiveHeroState,
@@ -54,7 +54,7 @@ describe('MansionPageFacade', () => {
     facade.loadData();
 
     expect(playerEstate.getPageContext).toHaveBeenCalledTimes(1);
-    expect(facade.context()?.contractVersion).toBe('player_estate_page_context_v2');
+    expect(facade.context()?.contractVersion).toBe('player_estate_page_context_v3');
     expect(facade.estateRuntimeState()?.address).toBe('A-3301');
     expect(facade.resources().map((row) => row.displayLabel)).toEqual([
       'Drachma',
@@ -69,8 +69,8 @@ describe('MansionPageFacade', () => {
   });
 
   it('ignores stale page-context responses from an earlier load request', () => {
-    const first = new Subject<PlayerEstatePageContextV2>();
-    const second = new Subject<PlayerEstatePageContextV2>();
+    const first = new Subject<PlayerEstatePageContextV3>();
+    const second = new Subject<PlayerEstatePageContextV3>();
     playerEstate.getPageContext.and.returnValues(
       first.asObservable(),
       second.asObservable(),
@@ -164,9 +164,9 @@ function requiredActiveHeroState(): RequiredActiveHeroState {
 function pageContext(input: {
   address?: string;
   activeJob?: EstateBuildingJob;
-} = {}): PlayerEstatePageContextV2 {
+} = {}): PlayerEstatePageContextV3 {
   return {
-    contractVersion: 'player_estate_page_context_v2',
+    contractVersion: 'player_estate_page_context_v3',
     hero: {
       id: 'hero-1',
       name: 'Hero',
@@ -202,8 +202,6 @@ function pageContext(input: {
       actions: {
         upgrade: 'Upgrade',
         details: 'Details',
-        openProgressionPreview: 'Open',
-        closeProgressionPreview: 'Close',
       },
       empty: {
         buildings: 'No buildings',
@@ -229,7 +227,7 @@ function pageContext(input: {
       estate_rank: 1,
       settled_completed_count: 0,
       settled_as_of: '2026-05-04T10:00:00.000Z',
-      ...(input.activeJob ? { active_job_json: input.activeJob } : {}),
+      active_job_json: input.activeJob ?? null,
       recent_jobs_json: [],
       resources_json: [
         {
@@ -307,7 +305,7 @@ function buildingRow(input: {
     requirementsJson: [],
     bonusesJson: [],
     upgradePreviewJson: {
-      contractVersion: 'estate_building_upgrade_preview_v1',
+      contractVersion: 'estate_building_upgrade_preview_v2',
       currentLevel: 0,
       targetLevel: 1,
       nextLevel: 1,
@@ -317,7 +315,15 @@ function buildingRow(input: {
       resourceCostsJson: [],
       requirementsJson: [],
       bonusesJson: [],
+      meetsRequirements: true,
+      requirementCount: 0,
+      unmetCount: 0,
+      failuresJson: [],
     },
+    meetsRequirements: true,
+    requirementCount: 0,
+    unmetCount: 0,
+    requirementFailuresJson: [],
   };
 }
 

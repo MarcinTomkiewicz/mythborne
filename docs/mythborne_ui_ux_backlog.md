@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-05-30 — UI-ENTRY no-server entry/create-character handling accepted
+Updated: 2026-06-04 — UI-ESTATE-1 accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -8277,6 +8277,10 @@ Zbudować Estate overview jako player-facing ekran posiadłości z budynkami dos
 - active job source:
 - checked but not reused:
 - local SCSS added:
+
+**Status:** Accepted on 2026-06-04. `/game/estate` is now supported as the canonical Estate route target by aliasing the existing Mansion page, while `/game/mansion` cleanup/legacy navigation decisions remain a later route/IA task. UI-ESTATE-1 uses `player_estate_page_context_v3` from `get_player_estate_page_context(p_hero_id)` as the page context source, preserves `copyJson`, shared `app-game-page-header`, `app-game-bar`, existing building image resolution and utility-only layout, and shows the accepted overview slice: district, building count, active job/empty state, Vicinity entry, current/next effect rows, build time, cost rows and basic build action where DB-owned eligibility fields allow it. No local calculation of costs, time, requirements, bonuses, max level, district availability or resource sufficiency was added.
+
+**Follow-ups:** DB/RPC copy cleanup should remove the trailing period from `copyJson.empty.activeJob` so the Estate header summary value is punctuation-free and consistent with dashboard/topbar summary conventions; do not trim or hardcode this in Angular. Image slot aspect ratio polish is deferred to a later visual cleanup task. Requirements/prestige/full disabled-reason UI remains UI-ESTATE-4 scope, and district grouping remains UI-ESTATE-2 scope.
 
 ## UI-ESTATE-2 / formerly UI-24 — Building cards and district grouping
 

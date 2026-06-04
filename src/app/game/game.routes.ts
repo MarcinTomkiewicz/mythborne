@@ -36,6 +36,11 @@ export const gameRoutes: Routes = [
       import('./pages/guild/guild-page').then((m) => m.GuildPage),
   },
   {
+    path: 'estate',
+    loadComponent: () =>
+      import('./pages/mansion/mansion-page').then((m) => m.MansionPage),
+  },
+  {
     path: 'mansion',
     loadComponent: () =>
       import('./pages/mansion/mansion-page').then((m) => m.MansionPage),

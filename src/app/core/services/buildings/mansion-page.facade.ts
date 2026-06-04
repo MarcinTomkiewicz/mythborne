@@ -2,8 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { switchMap } from 'rxjs';
 import {
   EstateBuildingRow,
-  EstateRequirementRow,
-  PlayerEstatePageContextV2,
+  PlayerEstatePageContextV3,
 } from '../../domain/estate/player-estate-page-context.model';
 import { resolveBuildingImagePath } from '../../domain/building/building-image-paths';
 import { toBuildingDurationLabel } from '../../utils/building-display';
@@ -21,9 +20,8 @@ export class MansionPageFacade {
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
-  readonly context = signal<PlayerEstatePageContextV2 | null>(null);
+  readonly context = signal<PlayerEstatePageContextV3 | null>(null);
   readonly startingBuildingId = signal<string | null>(null);
-  readonly expandedBuildingId = signal<string | null>(null);
 
   readonly copyJson = computed(() => this.context()?.copyJson ?? null);
   readonly estateRuntimeState = computed(
@@ -84,8 +82,9 @@ export class MansionPageFacade {
       || !estate
       || this.activeJob()
       || this.startingBuildingId()
-      || building.isAtMaxLevel
-      || !building.isAvailableInEstateDistrict
+      || building.isAtMaxLevel === true
+      || building.isAvailableInEstateDistrict === false
+      || (building.upgradePreviewJson?.meetsRequirements ?? building.meetsRequirements) === false
     ) {
       return;
     }
@@ -141,18 +140,6 @@ export class MansionPageFacade {
     });
   }
 
-  toggleProgressionPreview(building: EstateBuildingRow): void {
-    this.expandedBuildingId.set(
-      this.expandedBuildingId() === building.buildingId
-        ? null
-        : building.buildingId,
-    );
-  }
-
-  isProgressionPreviewOpen(building: EstateBuildingRow): boolean {
-    return this.expandedBuildingId() === building.buildingId;
-  }
-
   isStartingUpgrade(building: EstateBuildingRow): boolean {
     return this.startingBuildingId() === building.buildingId;
   }
@@ -162,7 +149,7 @@ export class MansionPageFacade {
   }
 
   buildingImageUrl(building: EstateBuildingRow): string | null {
-    return resolveBuildingImagePath(building.buildingKey, building.districtCode);
+    return resolveBuildingImagePath(building.buildingKey, building.districtCode ?? null);
   }
 
   trackByBuilding(_: number, building: EstateBuildingRow): string {
@@ -173,14 +160,7 @@ export class MansionPageFacade {
     return new Date(value).toLocaleString();
   }
 
-  requirementDisplay(requirement: EstateRequirementRow): string {
-    return [
-      requirement.displayValue,
-      requirement.displayUnit,
-    ].filter((value): value is string => !!value).join(' ');
-  }
-
-  private acceptsContext(context: PlayerEstatePageContextV2): boolean {
+  private acceptsContext(context: PlayerEstatePageContextV3): boolean {
     const activeHero = this.activeHero.state();
     const estate = context.estateRuntimeState;
 
@@ -200,7 +180,7 @@ export class MansionPageFacade {
       );
   }
 
-  private contextKey(context: PlayerEstatePageContextV2 | null): string | null {
+  private contextKey(context: PlayerEstatePageContextV3 | null): string | null {
     const estate = context?.estateRuntimeState;
 
     return context && estate

@@ -20,7 +20,13 @@
         @for (row of summaryRows(); track row.key) {
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
             <span class="color-muted small-caps uppercase text-xs">{{ row.label }}</span>
-            <strong class="color-heading text-md">{{ row.value }}</strong>
+            @if (row.route) {
+              <a class="color-heading text-md font-bold text-right" [routerLink]="row.route">
+                {{ row.value }}
+              </a>
+            } @else {
+              <strong class="color-heading text-md text-right">{{ row.value }}</strong>
+            }
           </div>
         }
       </aside>
