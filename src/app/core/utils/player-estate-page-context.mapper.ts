@@ -105,6 +105,10 @@ function mapCopyJson(copyJson: JsonRecord): EstateCopyJson {
         readPath(copyJson, 'summary', 'activeJob'),
         'copyJson.summary.activeJob',
       ),
+      vicinity: requiredText(
+        readPath(copyJson, 'summary', 'vicinity'),
+        'copyJson.summary.vicinity',
+      ),
     },
     actions: {
       upgrade: requiredText(
@@ -114,6 +118,14 @@ function mapCopyJson(copyJson: JsonRecord): EstateCopyJson {
       details: requiredText(
         readPath(copyJson, 'actions', 'details'),
         'copyJson.actions.details',
+      ),
+      openVicinityEstateList: requiredText(
+        readPath(copyJson, 'actions', 'openVicinityEstateList'),
+        'copyJson.actions.openVicinityEstateList',
+      ),
+      openVicinityEstateListAriaLabel: requiredText(
+        readPath(copyJson, 'actions', 'openVicinityEstateListAriaLabel'),
+        'copyJson.actions.openVicinityEstateListAriaLabel',
       ),
     },
     empty: {
@@ -159,8 +171,24 @@ function mapCopyJson(copyJson: JsonRecord): EstateCopyJson {
     'availableInDistrict',
     optionalText(readPath(copyJson, 'labels', 'availableInDistrict')),
   );
+  assignTopSummary(mapped, read(copyJson, 'topSummary'));
 
   return mapped;
+}
+
+function assignTopSummary(target: EstateCopyJson, value: Json | undefined): void {
+  if (value === undefined || value === null) {
+    return;
+  }
+
+  const topSummary = requiredRecord(value, 'copyJson.topSummary');
+  const mapped: NonNullable<EstateCopyJson['topSummary']> = {};
+
+  assignText(mapped, 'vicinityLabel', optionalText(read(topSummary, 'vicinityLabel')));
+  assignText(mapped, 'vicinityActionLabel', optionalText(read(topSummary, 'vicinityActionLabel')));
+  assignText(mapped, 'activeJobEmptyLabel', optionalText(read(topSummary, 'activeJobEmptyLabel')));
+
+  target.topSummary = mapped;
 }
 
 function mapNullableRuntimeState(value: Json | undefined): EstateRuntimeState | null {
@@ -413,6 +441,7 @@ function mapBonus(bonus: JsonRecord, field: string): EstateBuildingBonusRow {
     scopeKey: requiredText(read(bonus, 'scopeKey'), `${field}.scopeKey`),
   };
 
+  assignText(row, 'displayLabel', optionalText(read(bonus, 'displayLabel')));
   assignText(row, 'targetLabel', optionalText(read(bonus, 'targetLabel')));
   assignText(row, 'targetDescription', optionalText(read(bonus, 'targetDescription')));
   assignText(row, 'targetHelperText', optionalText(read(bonus, 'targetHelperText')));
@@ -427,6 +456,9 @@ function mapBonus(bonus: JsonRecord, field: string): EstateBuildingBonusRow {
   assignText(row, 'displayText', optionalText(read(bonus, 'displayText')));
   assignText(row, 'nextDisplayText', optionalText(read(bonus, 'nextDisplayText')));
   assignText(row, 'deltaDisplayText', optionalText(read(bonus, 'deltaDisplayText')));
+  assignText(row, 'fullDisplayText', optionalText(read(bonus, 'fullDisplayText')));
+  assignText(row, 'nextFullDisplayText', optionalText(read(bonus, 'nextFullDisplayText')));
+  assignText(row, 'deltaFullDisplayText', optionalText(read(bonus, 'deltaFullDisplayText')));
 
   return row;
 }

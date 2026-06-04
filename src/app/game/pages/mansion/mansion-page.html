@@ -8,6 +8,10 @@
   @let copy = context.copyJson;
 
   @if (context.estateRuntimeState; as estate) {
+    @let activeJobEmptyLabel = copy.topSummary?.activeJobEmptyLabel ?? copy.empty.activeJob;
+    @let vicinityLabel = copy.topSummary?.vicinityLabel ?? copy.summary.vicinity;
+    @let vicinityActionLabel = copy.topSummary?.vicinityActionLabel ?? copy.actions.openVicinityEstateList;
+
     <div class="flex-col gap-xl w-100">
       <app-game-page-header
         [eyebrowLabel]="copy.sections.overview"
@@ -16,8 +20,8 @@
         [summaryRows]="[
           { key: 'district', label: copy.summary.district, value: estate.district_code },
           { key: 'buildings', label: copy.sections.buildings, value: page.buildings().length.toString() },
-          { key: 'active-job', label: copy.summary.activeJob, value: page.activeJob()?.buildingName ?? copy.empty.activeJob },
-          { key: 'vicinity', label: copy.actions.details, value: copy.actions.details, route: '/game/vicinity' }
+          { key: 'active-job', label: copy.summary.activeJob, value: page.activeJob()?.buildingName ?? activeJobEmptyLabel },
+          { key: 'vicinity', label: vicinityLabel, value: vicinityActionLabel, route: '/game/vicinity' }
         ]"
       />
 
@@ -75,110 +79,129 @@
           </div>
         </div>
 
-        <div class="mg-grid grid-cols-3 grid-cols-2-md grid-cols-1-sm gap-lg w-100">
-          @for (building of page.buildings(); track page.trackByBuilding($index, building)) {
-            <article
-              class="mg-card flex-col gap-md p-md w-100"
-              [class.border-secondary]="page.activeJob()?.buildingId === building.buildingId"
-            >
-              <span class="image__preview image__preview--landscape min-w-auto w-100">
-                @if (page.buildingImageUrl(building); as imageUrl) {
-                  <img
-                    [ngSrc]="imageUrl"
-                    [alt]="building.buildingName"
-                    class="image__preview-image object-fit-cover"
-                    [width]="buildingImageDimensions.width"
-                    [height]="buildingImageDimensions.height"
-                  />
-                } @else {
-                  <span class="flex-col-center-center h-100 w-100">
-                    <i class="pi pi-capitol color-heading" aria-hidden="true"></i>
-                  </span>
+        <div class="flex-col gap-xl w-100">
+          @for (group of page.buildingDistrictGroups(); track page.trackByBuildingDistrictGroup($index, group)) {
+            <section class="flex-col gap-md w-100">
+              <div
+                class="flex-col gap-xs border-bottom pb-sm"
+                [class.border-secondary]="group.districtCode === estate.district_code"
+              >
+                <h3 class="color-heading text-lg m-0">{{ copy.sections.buildings }}</h3>
+                @if (group.districtCode) {
+                  <p class="card-legend mb-0">{{ copy.summary.district }} {{ group.districtCode }}</p>
                 }
-              </span>
-
-              <div class="flex-col gap-sm flex-1">
-                @let preview = building.upgradePreviewJson;
-                @let bonusRows = preview?.bonusesJson ?? building.bonusesJson;
-                @let costRows = preview?.resourceCostsJson ?? building.resourceCostsJson;
-
-                <div class="flex-row-between-start gap-sm">
-                  <div class="flex-col gap-xs min-w-0">
-                    <h3 class="color-heading font-display text-lg m-0">{{ building.buildingName }}</h3>
-                    @if (building.buildingDescription) {
-                      <p class="muted-text mb-0">{{ building.buildingDescription }}</p>
-                    }
-                  </div>
-                </div>
-
-                <div class="flex-col gap-sm">
-                  @let buildTimeSeconds = preview?.buildTimeSeconds;
-
-                  <div class="flex-col gap-xs border-bottom pb-sm">
-                    <span class="color-muted small-caps uppercase text-xs">
-                      {{ copy.labels.currentLevel }} {{ building.currentLevel }}
-                    </span>
-                    <div class="flex-col gap-xs">
-                      @for (bonus of building.bonusesJson; track bonus.entityBonusId) {
-                        <div class="flex-row-between-start gap-md">
-                          @if (bonus.targetLabel) {
-                            <span class="color-muted">{{ bonus.targetLabel }}</span>
-                          }
-                          <strong class="color-heading text-right">{{ bonus.displayText }}</strong>
-                        </div>
-                      } @empty {
-                        <span class="muted-text">{{ copy.empty.bonuses }}</span>
-                      }
-                    </div>
-                  </div>
-
-                  <div class="flex-col gap-xs border-bottom pb-sm">
-                    <span class="color-muted small-caps uppercase text-xs">
-                      {{ copy.labels.nextLevel }} {{ building.nextLevel }}
-                    </span>
-                    <div class="flex-col gap-xs">
-                      @for (bonus of bonusRows; track bonus.entityBonusId) {
-                        <div class="flex-row-between-start gap-md">
-                          @if (bonus.targetLabel) {
-                            <span class="color-muted">{{ bonus.targetLabel }}</span>
-                          }
-                          <strong class="color-heading text-right">
-                            {{ bonus.nextDisplayText ?? bonus.displayText }}
-                          </strong>
-                        </div>
-                      } @empty {
-                        <span class="muted-text">{{ copy.empty.bonuses }}</span>
-                      }
-                    </div>
-                  </div>
-
-                  @if (buildTimeSeconds !== undefined) {
-                    <div class="flex-row-between-start gap-md border-bottom pb-sm">
-                      <span class="color-muted small-caps uppercase text-xs">{{ copy.labels.buildTime }}</span>
-                      <strong class="color-heading text-right">
-                        {{ page.formatDuration(buildTimeSeconds) }}
-                      </strong>
-                    </div>
-                  }
-
-                  <div class="flex-row-between-start gap-md">
-                    <span class="color-muted small-caps uppercase text-xs">{{ copy.sections.resources }}</span>
-                    <strong class="color-heading text-right">
-                      @for (cost of costRows; track $index) {
-                        <span class="d-block">{{ cost.displayValue }} {{ cost.displayLabel }}</span>
-                      }
-                    </strong>
-                  </div>
-                </div>
               </div>
 
-              <p-button
-                [label]="copy.actions.upgrade"
-                [disabled]="page.isStartingUpgrade(building) || !!page.activeJob() || building.isAtMaxLevel === true || building.isAvailableInEstateDistrict === false || (building.upgradePreviewJson?.meetsRequirements ?? building.meetsRequirements) === false"
-                [loading]="page.isStartingUpgrade(building)"
-                (onClick)="page.startBuildingUpgrade(building)"
-              />
-            </article>
+              <div class="mg-grid grid-cols-3 grid-cols-2-md grid-cols-1-sm gap-lg w-100">
+                @for (building of group.buildings; track page.trackByBuilding($index, building)) {
+                  <article
+                    class="mg-card flex-col gap-md p-md w-100"
+                    [class.border-secondary]="page.activeJob()?.buildingId === building.buildingId"
+                  >
+                    <span class="image__preview image__preview--landscape min-w-auto w-100">
+                      @if (page.buildingImageUrl(building); as imageUrl) {
+                        <img
+                          [ngSrc]="imageUrl"
+                          [alt]="building.buildingName"
+                          class="image__preview-image object-fit-cover"
+                          [width]="buildingImageDimensions.width"
+                          [height]="buildingImageDimensions.height"
+                        />
+                      } @else {
+                        <span class="flex-col-center-center h-100 w-100">
+                          <i class="pi pi-capitol color-heading" aria-hidden="true"></i>
+                        </span>
+                      }
+                    </span>
+
+                    <div class="flex-col gap-sm flex-1">
+                      @let preview = building.upgradePreviewJson;
+                      @let bonusRows = preview?.bonusesJson ?? building.bonusesJson;
+                      @let costRows = preview?.resourceCostsJson ?? building.resourceCostsJson;
+
+                      <div class="flex-row-between-start gap-sm">
+                        <div class="flex-col gap-xs min-w-0">
+                          <h3 class="color-heading font-display text-lg m-0">{{ building.buildingName }}</h3>
+                          @if (building.buildingDescription) {
+                            <p class="muted-text mb-0">{{ building.buildingDescription }}</p>
+                          }
+                        </div>
+                      </div>
+
+                      <div class="flex-col gap-sm">
+                        @let buildTimeSeconds = preview?.buildTimeSeconds;
+
+                        <div class="flex-col gap-xs border-bottom pb-sm">
+                          <span class="color-muted small-caps uppercase text-xs">
+                            {{ copy.labels.currentLevel }} {{ building.currentLevel }}
+                          </span>
+                          <div class="flex-col gap-xs">
+                            @for (bonus of building.bonusesJson; track bonus.entityBonusId) {
+                              @let bonusLabel = bonus.displayLabel ?? bonus.targetLabel;
+                              <div class="flex-row-between-start gap-md">
+                                @if (bonusLabel) {
+                                  <span class="color-muted">{{ bonusLabel }}</span>
+                                }
+                                <strong class="color-heading text-right">{{ bonus.displayValue }}</strong>
+                              </div>
+                            } @empty {
+                              <span class="muted-text">{{ copy.empty.bonuses }}</span>
+                            }
+                          </div>
+                        </div>
+
+                        <div class="flex-col gap-xs border-bottom pb-sm">
+                          <span class="color-muted small-caps uppercase text-xs">
+                            {{ copy.labels.nextLevel }} {{ building.nextLevel }}
+                          </span>
+                          <div class="flex-col gap-xs">
+                            @for (bonus of bonusRows; track bonus.entityBonusId) {
+                              @let bonusLabel = bonus.displayLabel ?? bonus.targetLabel;
+                              <div class="flex-row-between-start gap-md">
+                                @if (bonusLabel) {
+                                  <span class="color-muted">{{ bonusLabel }}</span>
+                                }
+                                <strong class="color-heading text-right">{{ bonus.nextDisplayValue }}</strong>
+                              </div>
+                            } @empty {
+                              <span class="muted-text">{{ copy.empty.bonuses }}</span>
+                            }
+                          </div>
+                        </div>
+
+                        @if (buildTimeSeconds !== undefined) {
+                          <div class="flex-row-between-start gap-md border-bottom pb-sm">
+                            <span class="color-muted small-caps uppercase text-xs">{{ copy.labels.buildTime }}</span>
+                            <strong class="color-heading text-right">
+                              {{ page.formatDuration(buildTimeSeconds) }}
+                            </strong>
+                          </div>
+                        }
+
+                        @if (costRows.length > 0) {
+                          <div class="flex-col gap-xs">
+                            <span class="color-muted small-caps uppercase text-xs">{{ copy.sections.resources }}</span>
+                            @for (cost of costRows; track $index) {
+                              <div class="flex-row-between-start gap-md">
+                                <span class="color-muted">{{ cost.displayLabel }}</span>
+                                <strong class="color-heading text-right">{{ cost.displayValue }}</strong>
+                              </div>
+                            }
+                          </div>
+                        }
+                      </div>
+                    </div>
+
+                    <p-button
+                      [label]="copy.actions.upgrade"
+                      [disabled]="page.isStartingUpgrade(building) || !!page.activeJob() || building.isAtMaxLevel === true || building.isAvailableInEstateDistrict === false || (building.upgradePreviewJson?.meetsRequirements ?? building.meetsRequirements) === false"
+                      [loading]="page.isStartingUpgrade(building)"
+                      (onClick)="page.startBuildingUpgrade(building)"
+                    />
+                  </article>
+                }
+              </div>
+            </section>
           } @empty {
             <section class="mg-card flex-col gap-sm p-lg w-100">
               <p class="mb-0 muted-text">{{ copy.empty.buildings }}</p>

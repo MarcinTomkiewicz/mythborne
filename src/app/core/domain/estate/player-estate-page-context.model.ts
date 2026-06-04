@@ -36,6 +36,7 @@ export interface EstateCopyJson {
   summary: {
     district: string;
     activeJob: string;
+    vicinity: string;
     address?: string;
     rank?: string;
     buildingsReady?: string;
@@ -43,6 +44,8 @@ export interface EstateCopyJson {
   actions: {
     upgrade: string;
     details: string;
+    openVicinityEstateList: string;
+    openVicinityEstateListAriaLabel: string;
   };
   empty: {
     buildings: string;
@@ -56,6 +59,11 @@ export interface EstateCopyJson {
     buildTime: string;
     maxLevel?: string;
     availableInDistrict?: string;
+  };
+  topSummary?: {
+    vicinityLabel?: string;
+    vicinityActionLabel?: string;
+    activeJobEmptyLabel?: string;
   };
 }
 
@@ -137,6 +145,11 @@ export interface EstateBuildingRow {
   requirementFailuresJson: EstateRequirementRow[];
 }
 
+export interface EstateBuildingDistrictGroup {
+  districtCode: string | null;
+  buildings: EstateBuildingRow[];
+}
+
 export interface EstateResourceCostRow {
   resourceType: 'drachma' | 'materials' | 'workforce' | string;
   amount: number;
@@ -175,6 +188,7 @@ export interface EstateBuildingBonusRow {
   targetKey: string;
   typeKey: 'flat' | 'percent' | 'per_4_levels' | string;
   scopeKey: string;
+  displayLabel?: string;
   targetLabel?: string;
   targetDescription?: string;
   targetHelperText?: string;
@@ -189,6 +203,9 @@ export interface EstateBuildingBonusRow {
   displayText?: string;
   nextDisplayText?: string;
   deltaDisplayText?: string;
+  fullDisplayText?: string;
+  nextFullDisplayText?: string;
+  deltaFullDisplayText?: string;
 }
 
 export interface EstateUpgradePreview {
