@@ -2,258 +2,336 @@ import { signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { of, Subject } from 'rxjs';
 import {
-  MansionBuilding,
-  MansionEstateView,
-  StartBuildingUpgradeResult,
-} from '../../domain/building/building.model';
-import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
+  EstateBuildingJob,
+  EstateBuildingRow,
+  PlayerEstatePageContextV2,
+} from '../../domain/estate/player-estate-page-context.model';
+import {
+  ActiveHeroState,
+  RequiredActiveHeroState,
+} from '../../interfaces/hero/active-hero.interface';
 import { ActiveHero } from '../hero/active-hero';
-import { BuildingExplainabilityMetadata } from './building-explainability-metadata';
-import { BuildingsService } from './buildings';
+import { PlayerEstate } from '../estate/player-estate';
+import { BuildingJobs } from './building-jobs';
 import { MansionPageFacade } from './mansion-page.facade';
-import { ToastService } from '../ui/toast';
+import { StartBuildingUpgradeResult } from '../../domain/building/building.model';
 
 describe('MansionPageFacade', () => {
   let facade: MansionPageFacade;
-  let buildingsService: jasmine.SpyObj<BuildingsService>;
-  let explainabilityMetadata: jasmine.SpyObj<BuildingExplainabilityMetadata>;
+  let playerEstate: jasmine.SpyObj<PlayerEstate>;
+  let buildingJobs: jasmine.SpyObj<BuildingJobs>;
   let activeHero: jasmine.SpyObj<ActiveHero>;
-  let toast: jasmine.SpyObj<ToastService>;
   let activeHeroState: WritableSignal<ActiveHeroState | null>;
 
   beforeEach(() => {
-    buildingsService = jasmine.createSpyObj<BuildingsService>('BuildingsService', [
-      'getMansionEstateView',
-      'startBuildingUpgrade',
+    playerEstate = jasmine.createSpyObj<PlayerEstate>('PlayerEstate', ['getPageContext']);
+    buildingJobs = jasmine.createSpyObj<BuildingJobs>('BuildingJobs', [
+      'startHeroEstateBuildingUpgrade',
     ]);
-    explainabilityMetadata = jasmine.createSpyObj<BuildingExplainabilityMetadata>(
-      'BuildingExplainabilityMetadata',
-      ['getRuntimeEntries'],
-    );
-    activeHeroState = signal<ActiveHeroState | null>({
-      heroId: 'hero-1',
-      serverId: 'server-1',
-      userId: 'user-1',
-      hero: {} as never,
-      heroRow: {} as never,
-      server: {} as never,
-    });
+    activeHeroState = signal<ActiveHeroState | null>(activeHeroStateValue());
     activeHero = jasmine.createSpyObj<ActiveHero>(
       'ActiveHero',
-      ['loadActiveHero'],
+      ['requireActiveHero'],
       { state: activeHeroState.asReadonly() },
     );
-    toast = jasmine.createSpyObj<ToastService>('ToastService', ['show']);
-    buildingsService.getMansionEstateView.and.returnValue(of(mansionView()));
-    explainabilityMetadata.getRuntimeEntries.and.returnValue(of([]));
-    buildingsService.startBuildingUpgrade.and.returnValue(of({
-      auditLogId: 'audit-1',
-      buildTimeSeconds: 120,
-      buildingId: 'building-1',
-      completesAt: '2026-05-04T10:02:00.000Z',
-      estateId: 'estate-1',
-      jobId: 'job-1',
-      startedAt: '2026-05-04T10:00:00.000Z',
-      status: 'active',
-      targetLevel: 1,
-      resourceCosts: [
-        { resourceType: 'drachma', cost: 100, balanceAfter: 900 },
-      ],
-    }));
-    activeHero.loadActiveHero.and.returnValue(of(null));
+
+    playerEstate.getPageContext.and.returnValue(of(pageContext()));
+    activeHero.requireActiveHero.and.returnValue(of(requiredActiveHeroState()));
+    buildingJobs.startHeroEstateBuildingUpgrade.and.returnValue(of(upgradeResult()));
 
     TestBed.configureTestingModule({
       providers: [
         MansionPageFacade,
-        { provide: BuildingsService, useValue: buildingsService },
-        { provide: BuildingExplainabilityMetadata, useValue: explainabilityMetadata },
+        { provide: PlayerEstate, useValue: playerEstate },
+        { provide: BuildingJobs, useValue: buildingJobs },
         { provide: ActiveHero, useValue: activeHero },
-        { provide: ToastService, useValue: toast },
       ],
     });
     facade = TestBed.inject(MansionPageFacade);
   });
 
-  it('loads mansion building state without relocation UI state', () => {
+  it('loads only the player estate page context for Mansion state', () => {
     facade.loadData();
 
-    expect(facade.currentAddress()).toBe('A-3301');
-    expect(facade.currentDistrictCode()).toBe('A');
-    expect(facade.currentDistrictRank()).toBe(1);
-    expect(facade.resourceBalances()).toEqual([
-      { resourceType: 'drachma', amount: 900, perHour: 10 },
-      { resourceType: 'materials', amount: 450, perHour: 0 },
-      { resourceType: 'workforce', amount: 100, perHour: 0 },
+    expect(playerEstate.getPageContext).toHaveBeenCalledTimes(1);
+    expect(facade.context()?.contractVersion).toBe('player_estate_page_context_v2');
+    expect(facade.estateRuntimeState()?.address).toBe('A-3301');
+    expect(facade.resources().map((row) => row.displayLabel)).toEqual([
+      'Drachma',
+      'Materials',
     ]);
-    expect(facade.activeBuildingJob()).toBeNull();
-    expect(facade.recentBuildingJobs()).toEqual([]);
-    expect(facade.finalizedBuildingJobsCount()).toBe(0);
-    expect(facade.visibleBuildings()).toEqual([]);
-    expect(explainabilityMetadata.getRuntimeEntries).toHaveBeenCalled();
-    expect(activeHero.loadActiveHero).toHaveBeenCalled();
+    expect(facade.buildings().map((row) => row.buildingId)).toEqual(['building-1']);
 
     const exposedKeys = Object.keys(facade as unknown as Record<string, unknown>);
     expect(exposedKeys.some((key) => key.toLowerCase().includes('relocation'))).toBeFalse();
-    expect(exposedKeys).not.toContain('relocateEstate');
+    expect(exposedKeys).not.toContain('uiMetadata');
+    expect(exposedKeys).not.toContain('resourceBalances');
   });
 
-  it('ignores stale mansion responses from an earlier load request', () => {
-    const first = new Subject<MansionEstateView>();
-    const second = new Subject<MansionEstateView>();
-    buildingsService.getMansionEstateView.and.returnValues(
+  it('ignores stale page-context responses from an earlier load request', () => {
+    const first = new Subject<PlayerEstatePageContextV2>();
+    const second = new Subject<PlayerEstatePageContextV2>();
+    playerEstate.getPageContext.and.returnValues(
       first.asObservable(),
       second.asObservable(),
     );
 
     facade.loadData();
     facade.loadData();
-    second.next({
-      ...mansionView(),
-      currentAddress: 'A-3302',
-    });
+    second.next(pageContext({ address: 'A-3302' }));
     second.complete();
-    first.next({
-      ...mansionView(),
-      currentAddress: 'A-3301',
-    });
+    first.next(pageContext({ address: 'A-3301' }));
     first.complete();
 
-    expect(facade.currentAddress()).toBe('A-3302');
+    expect(facade.estateRuntimeState()?.address).toBe('A-3302');
   });
 
-  it('starts a build action, refreshes active hero and reloads mansion data', () => {
+  it('starts upgrades through the canonical RPC helper and reloads page context', () => {
     facade.loadData();
 
-    facade.startBuildingUpgrade(building());
+    facade.startBuildingUpgrade(buildingRow());
 
-    expect(buildingsService.startBuildingUpgrade).toHaveBeenCalledWith('building-1');
-    expect(activeHero.loadActiveHero).toHaveBeenCalled();
-    expect(buildingsService.getMansionEstateView).toHaveBeenCalledTimes(2);
-    expect(facade.lastStartedJob()).toEqual(jasmine.objectContaining({
-      jobId: 'job-1',
-      targetLevel: 1,
-    }));
-    expect(facade.actionSuccess()).toBe('Agora started to level 1.');
-    expect(toast.show).toHaveBeenCalledWith(
-      'success',
-      'Building started',
-      'Agora started to level 1. Completion is tracked by the active building job.',
-    );
-    expect(facade.actionError()).toBeNull();
-    expect(facade.canStartBuilding(building())).toBeFalse();
-    expect(facade.disabledBuildReason(building()))
-      .toBe('A building job has just started and estate state is refreshing.');
-  });
-
-  it('blocks build action locally while another building job is active', () => {
-    facade.activeBuildingJob.set({
-      id: 'job-active',
-      estateId: 'estate-1',
-      buildingId: 'building-2',
-      buildingKey: 'farm',
-      buildingName: 'Farm',
-      targetLevel: 2,
-      status: 'active',
-      startedAt: '2026-05-04T10:00:00.000Z',
-      completesAt: '2026-05-04T10:10:00.000Z',
-      durationSeconds: 600,
-      remainingSeconds: 600,
-      progressPercent: 0,
-      createdAt: '2026-05-04T10:00:00.000Z',
-      updatedAt: '2026-05-04T10:00:00.000Z',
-    });
-
-    facade.startBuildingUpgrade(building());
-
-    expect(buildingsService.startBuildingUpgrade).not.toHaveBeenCalled();
-    expect(facade.actionError()).toBe('Another estate building job is already active.');
-    expect(toast.show).toHaveBeenCalledWith(
-      'warn',
-      'Building action unavailable',
-      'Another estate building job is already active.',
-    );
-  });
-
-  it('ignores stale building action responses after active hero context changes', () => {
-    const action = new Subject<StartBuildingUpgradeResult>();
-    buildingsService.startBuildingUpgrade.and.returnValue(action.asObservable());
-
-    facade.loadData();
-    facade.startBuildingUpgrade(building());
-
-    activeHeroState.set({
-      heroId: 'hero-2',
-      serverId: 'server-1',
-      userId: 'user-1',
-      hero: {} as never,
-      heroRow: {} as never,
-      server: {} as never,
-    });
-    action.next({
-      auditLogId: 'audit-1',
-      buildTimeSeconds: 120,
+    expect(activeHero.requireActiveHero).toHaveBeenCalled();
+    expect(buildingJobs.startHeroEstateBuildingUpgrade).toHaveBeenCalledWith({
+      heroId: 'hero-1',
       buildingId: 'building-1',
-      completesAt: '2026-05-04T10:02:00.000Z',
-      estateId: 'estate-1',
-      jobId: 'job-1',
-      startedAt: '2026-05-04T10:00:00.000Z',
-      status: 'active',
-      targetLevel: 1,
-      resourceCosts: [],
     });
-
-    expect(facade.lastStartedJob()).toBeNull();
-    expect(facade.actionSuccess()).toBeNull();
+    expect(playerEstate.getPageContext).toHaveBeenCalledTimes(2);
     expect(facade.startingBuildingId()).toBeNull();
+    expect(facade.actionError()).toBeNull();
+  });
+
+  it('blocks upgrade RPC when an active job is present in the context', () => {
+    playerEstate.getPageContext.and.returnValue(of(pageContext({
+      activeJob: activeJob(),
+    })));
+
+    facade.loadData();
+    facade.startBuildingUpgrade(buildingRow());
+
+    expect(buildingJobs.startHeroEstateBuildingUpgrade).not.toHaveBeenCalled();
+  });
+
+  it('blocks upgrade RPC for max-level or unavailable buildings', () => {
+    facade.loadData();
+
+    facade.startBuildingUpgrade(buildingRow({ isAtMaxLevel: true }));
+    facade.startBuildingUpgrade(buildingRow({ isAvailableInEstateDistrict: false }));
+
+    expect(buildingJobs.startHeroEstateBuildingUpgrade).not.toHaveBeenCalled();
+  });
+
+  it('ignores stale upgrade responses after active hero context changes', () => {
+    const action = new Subject<StartBuildingUpgradeResult>();
+    buildingJobs.startHeroEstateBuildingUpgrade.and.returnValue(action.asObservable());
+
+    facade.loadData();
+    facade.startBuildingUpgrade(buildingRow());
+
+    activeHeroState.set(activeHeroStateValue({ heroId: 'hero-2' }));
+    action.next(upgradeResult());
+    action.complete();
+
+    expect(playerEstate.getPageContext).toHaveBeenCalledTimes(1);
+    expect(facade.startingBuildingId()).toBeNull();
+    expect(facade.actionError()).toBeNull();
   });
 });
 
-function mansionView(): MansionEstateView {
+function activeHeroStateValue(input: {
+  heroId?: string;
+  serverId?: string;
+} = {}): ActiveHeroState {
   return {
-    heroId: 'hero-1',
-    serverId: 'server-1',
-    currentAddress: 'A-3301',
-    currentDistrictCode: 'A',
-    currentDistrictName: 'District A',
-    currentDistrictRank: 1,
-    resourceBalances: [
-      { resourceType: 'drachma', amount: 900, perHour: 10 },
-      { resourceType: 'materials', amount: 450, perHour: 0 },
-      { resourceType: 'workforce', amount: 100, perHour: 0 },
-    ],
-    activeBuildingJob: null,
-    recentBuildingJobs: [],
-    finalizedBuildingJobsCount: 0,
-    buildings: [],
+    heroId: input.heroId ?? 'hero-1',
+    serverId: input.serverId ?? 'server-1',
+    userId: 'user-1',
+    hero: {} as never,
+    heroRow: {} as never,
+    server: {} as never,
   };
 }
 
-function building(): MansionBuilding {
+function requiredActiveHeroState(): RequiredActiveHeroState {
   return {
-    id: 'building-1',
-    key: 'agora',
-    name: 'Agora',
-    description: null,
-    imagePath: null,
+    ...activeHeroStateValue(),
+    heroId: 'hero-1',
+    hero: {} as never,
+    heroRow: {} as never,
+  };
+}
+
+function pageContext(input: {
+  address?: string;
+  activeJob?: EstateBuildingJob;
+} = {}): PlayerEstatePageContextV2 {
+  return {
+    contractVersion: 'player_estate_page_context_v2',
+    hero: {
+      id: 'hero-1',
+      name: 'Hero',
+      level: 1,
+      origin_id: null,
+      rank: 1,
+      experience: 0,
+      profile_picture: null,
+      created_at: '2026-05-04T10:00:00.000Z',
+      estate_id: 'estate-1',
+      user_id: 'user-1',
+      server_id: 'server-1',
+      character_points: 0,
+      total_character_points_earned: 0,
+      total_experience_earned: 0,
+    },
+    copyJson: {
+      sections: {
+        overview: 'Overview',
+        buildings: 'Buildings',
+        resources: 'Resources',
+        requirements: 'Requirements',
+        upgradePreview: 'Upgrade preview',
+        bonuses: 'Bonuses',
+      },
+      summary: {
+        address: 'Address',
+        district: 'District',
+        rank: 'Rank',
+        buildingsReady: 'Ready',
+        activeJob: 'Active job',
+      },
+      actions: {
+        upgrade: 'Upgrade',
+        details: 'Details',
+        openProgressionPreview: 'Open',
+        closeProgressionPreview: 'Close',
+      },
+      empty: {
+        buildings: 'No buildings',
+        requirements: 'No requirements',
+        bonuses: 'No bonuses',
+        activeJob: 'No active job',
+      },
+      labels: {
+        currentLevel: 'Current',
+        nextLevel: 'Next',
+        maxLevel: 'Max',
+        buildTime: 'Build time',
+        availableInDistrict: 'District',
+      },
+    },
+    estateRuntimeState: {
+      hero_id: 'hero-1',
+      server_id: 'server-1',
+      estate_id: 'estate-1',
+      district_code: 'A',
+      address_number: 3301,
+      address: input.address ?? 'A-3301',
+      estate_rank: 1,
+      settled_completed_count: 0,
+      settled_as_of: '2026-05-04T10:00:00.000Z',
+      ...(input.activeJob ? { active_job_json: input.activeJob } : {}),
+      recent_jobs_json: [],
+      resources_json: [
+        {
+          resourceId: 'resource-1',
+          heroId: 'hero-1',
+          resourceType: 'drachma',
+          amount: 900,
+          perHour: 10,
+          updatedAt: '2026-05-04T10:00:00.000Z',
+          dbNow: '2026-05-04T10:00:00.000Z',
+          elapsedHours: 0,
+          naiveLiveAmountIfAccrued: 900,
+          displayLabel: 'Drachma',
+          displayValue: '900',
+        },
+        {
+          resourceId: 'resource-2',
+          heroId: 'hero-1',
+          resourceType: 'materials',
+          amount: 450,
+          perHour: 0,
+          updatedAt: '2026-05-04T10:00:00.000Z',
+          dbNow: '2026-05-04T10:00:00.000Z',
+          elapsedHours: 0,
+          naiveLiveAmountIfAccrued: 450,
+          displayLabel: 'Materials',
+          displayValue: '450',
+        },
+      ],
+      buildings_json: [buildingRow()],
+      attack_protection_active: false,
+      siege_protection_active: false,
+    },
+  };
+}
+
+function activeJob(): EstateBuildingJob {
+  return {
+    jobId: 'job-active',
+    estateId: 'estate-1',
+    buildingId: 'building-2',
+    buildingKey: 'farm',
+    buildingName: 'Farm',
+    targetLevel: 2,
+    status: 'active',
+    startedAt: '2026-05-04T10:00:00.000Z',
+    completesAt: '2026-05-04T10:10:00.000Z',
+    createdAt: '2026-05-04T10:00:00.000Z',
+    updatedAt: '2026-05-04T10:00:00.000Z',
+    secondsUntilCompletion: 600,
+    isDue: false,
+  };
+}
+
+function buildingRow(input: {
+  isAtMaxLevel?: boolean;
+  isAvailableInEstateDistrict?: boolean;
+} = {}): EstateBuildingRow {
+  return {
+    buildingId: 'building-1',
+    buildingKey: 'agora',
+    buildingName: 'Agora',
+    buildingDescription: 'Agora description',
     districtCode: 'A',
-    districtUnlockRank: 1,
-    rankRequired: 1,
-    sortOrder: 10,
-    startingLevel: 1,
-    baseCost: 100,
+    level: 0,
+    currentLevel: 0,
+    targetLevel: 1,
+    nextLevel: 1,
+    startingLevel: 0,
     maxLevel: 0,
     effectiveMaxLevel: 0,
-    isUnlimited: true,
-    currentLevel: 0,
-    nextLevel: 1,
-    baseBuildTimeSeconds: 120,
-    isOwned: false,
-    isUnlocked: true,
-    canUpgrade: true,
-    nextUpgradeTimeSeconds: 120,
-    nextUpgradeCosts: [{ resourceType: 'drachma', amount: 100 }],
-    activeCostRules: [],
-    activeRequirements: [],
-    bonuses: [],
+    isAtMaxLevel: input.isAtMaxLevel ?? false,
+    isAvailableInEstateDistrict: input.isAvailableInEstateDistrict ?? true,
+    resourceCostsJson: [],
+    requirementsJson: [],
+    bonusesJson: [],
+    upgradePreviewJson: {
+      contractVersion: 'estate_building_upgrade_preview_v1',
+      currentLevel: 0,
+      targetLevel: 1,
+      nextLevel: 1,
+      isAtMaxLevel: false,
+      effectiveMaxLevel: 0,
+      buildTimeSeconds: 120,
+      resourceCostsJson: [],
+      requirementsJson: [],
+      bonusesJson: [],
+    },
+  };
+}
+
+function upgradeResult(): StartBuildingUpgradeResult {
+  return {
+    auditLogId: 'audit-1',
+    buildTimeSeconds: 120,
+    buildingId: 'building-1',
+    completesAt: '2026-05-04T10:02:00.000Z',
+    estateId: 'estate-1',
+    jobId: 'job-1',
+    startedAt: '2026-05-04T10:00:00.000Z',
+    status: 'active',
+    targetLevel: 1,
+    resourceCosts: [],
   };
 }

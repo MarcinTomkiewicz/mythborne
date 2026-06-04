@@ -70,6 +70,16 @@ export function optionalNumber(value: Json | undefined): number | null {
   return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
+export function requiredNumber(value: Json | undefined, field: string): number {
+  const number = optionalNumber(value);
+
+  if (number === null) {
+    throw new Error(`${field} must be a number.`);
+  }
+
+  return number;
+}
+
 export function booleanValue(value: Json | undefined): boolean {
   return typeof value === 'boolean' ? value : false;
 }

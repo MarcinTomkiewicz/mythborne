@@ -1,96 +1,66 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
+import { switchMap } from 'rxjs';
 import {
-  MansionBuildingJob,
-  BuildingRequirementPreview,
-  BuildingResourceType,
-  MansionBuilding,
-  MansionResourceBalance,
-  StartBuildingUpgradeResult,
-} from '../../domain/building/building.model';
-import { BuildingsService } from './buildings';
-import {
-  toBuildingBonusLabel,
-  toBuildingBonusValue,
-  toBuildingDurationLabel,
-  toResourceLabel,
-} from '../../utils/building-display';
+  EstateBuildingRow,
+  EstateRequirementRow,
+  PlayerEstatePageContextV2,
+} from '../../domain/estate/player-estate-page-context.model';
+import { resolveBuildingImagePath } from '../../domain/building/building-image-paths';
+import { toBuildingDurationLabel } from '../../utils/building-display';
 import { getErrorMessage } from '../../utils/error-message';
 import { ActiveHero } from '../hero/active-hero';
-import { MansionBuildingActionRunner } from './mansion-building-action-runner';
-import { BuildingExplainabilityMetadata } from './building-explainability-metadata';
-import { BuildingUiMetadata } from './building-ui-metadata';
-import { UiMetadataEntryReadModel } from '../../domain/admin-ui-metadata.model';
+import { PlayerEstate } from '../estate/player-estate';
+import { BuildingJobs } from './building-jobs';
 
 @Injectable()
 export class MansionPageFacade {
-  private readonly buildingsService = inject(BuildingsService);
+  private readonly playerEstate = inject(PlayerEstate);
   private readonly activeHero = inject(ActiveHero);
-  private readonly explainabilityMetadata = inject(BuildingExplainabilityMetadata);
-  private readonly actionRunner = inject(MansionBuildingActionRunner);
+  private readonly buildingJobs = inject(BuildingJobs);
 
-  readonly isLoading = signal(true);
+  readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
   readonly actionError = signal<string | null>(null);
-  readonly actionSuccess = signal<string | null>(null);
-  readonly lastStartedJob = signal<StartBuildingUpgradeResult | null>(null);
+  readonly context = signal<PlayerEstatePageContextV2 | null>(null);
   readonly startingBuildingId = signal<string | null>(null);
-  readonly startedJobPendingRefresh = signal(false);
-  readonly currentAddress = signal<string | null>(null);
-  readonly currentDistrictCode = signal<string | null>(null);
-  readonly currentDistrictName = signal<string | null>(null);
-  readonly currentDistrictRank = signal<number | null>(null);
-  readonly resourceBalances = signal<MansionResourceBalance[]>([]);
-  readonly activeBuildingJob = signal<MansionBuildingJob | null>(null);
-  readonly recentBuildingJobs = signal<MansionBuildingJob[]>([]);
-  readonly finalizedBuildingJobsCount = signal(0);
-  readonly buildings = signal<MansionBuilding[]>([]);
-  readonly uiMetadataEntries = signal<UiMetadataEntryReadModel[]>([]);
-  readonly uiMetadata = new BuildingUiMetadata(() => this.uiMetadataEntries());
-  readonly visibleBuildings = computed(() =>
-    this.buildings().filter((building) => building.isOwned || building.isUnlocked)
-  );
-  readonly availableBuildingCount = computed(() => this.visibleBuildings().length);
-  readonly unbuiltBuildingCount = computed(
-    () => this.visibleBuildings().filter((building) => building.currentLevel === 0).length,
-  );
-  private loadRequestId = 0;
+  readonly expandedBuildingId = signal<string | null>(null);
 
-  loadData() {
+  readonly copyJson = computed(() => this.context()?.copyJson ?? null);
+  readonly estateRuntimeState = computed(
+    () => this.context()?.estateRuntimeState ?? null,
+  );
+  readonly resources = computed(
+    () => this.estateRuntimeState()?.resources_json ?? [],
+  );
+  readonly buildings = computed(
+    () => this.estateRuntimeState()?.buildings_json ?? [],
+  );
+  readonly activeJob = computed(
+    () => this.estateRuntimeState()?.active_job_json ?? null,
+  );
+  readonly recentJobs = computed(
+    () => this.estateRuntimeState()?.recent_jobs_json ?? [],
+  );
+
+  private loadRequestId = 0;
+  private actionRequestId = 0;
+
+  loadData(): void {
     const requestId = ++this.loadRequestId;
 
     this.isLoading.set(true);
     this.error.set(null);
 
-    forkJoin({
-      view: this.buildingsService.getMansionEstateView(),
-      uiMetadataEntries: this.explainabilityMetadata.getRuntimeEntries(),
-    }).pipe(
-      switchMap((payload) =>
-        this.activeHero.loadActiveHero().pipe(
-          map(() => payload),
-          catchError(() => of(payload)),
-        ),
-      ),
-    ).subscribe({
-      next: ({ view, uiMetadataEntries }) => {
-        if (requestId !== this.loadRequestId) {
+    this.playerEstate.getPageContext().subscribe({
+      next: (context) => {
+        if (
+          requestId !== this.loadRequestId
+          || !this.acceptsContext(context)
+        ) {
           return;
         }
 
-        this.uiMetadataEntries.set(uiMetadataEntries);
-        this.currentAddress.set(view.currentAddress);
-        this.currentDistrictCode.set(view.currentDistrictCode);
-        this.currentDistrictName.set(view.currentDistrictName);
-        this.currentDistrictRank.set(view.currentDistrictRank);
-        this.resourceBalances.set(view.resourceBalances);
-        this.activeBuildingJob.set(view.activeBuildingJob);
-        this.recentBuildingJobs.set(view.recentBuildingJobs);
-        this.finalizedBuildingJobsCount.set(view.finalizedBuildingJobsCount);
-        this.buildings.set(view.buildings);
-        if (view.activeBuildingJob || view.finalizedBuildingJobsCount > 0) {
-          this.startedJobPendingRefresh.set(false);
-        }
+        this.context.set(context);
         this.error.set(null);
         this.isLoading.set(false);
       },
@@ -99,131 +69,165 @@ export class MansionPageFacade {
           return;
         }
 
-        this.error.set(getErrorMessage(error, 'Failed to load estate buildings.'));
+        this.setError(error);
         this.isLoading.set(false);
       },
     });
   }
 
-  startBuildingUpgrade(building: MansionBuilding): void {
-    this.actionRunner.start({
-      building,
-      currentAddress: () => this.currentAddress(),
-      canStart: () => this.canStartBuilding(building),
-      disabledReason: () => this.disabledBuildReason(building),
-      setStartingBuildingId: (value) => this.startingBuildingId.set(value),
-      setActionError: (value) => this.actionError.set(value),
-      setActionSuccess: (value) => this.actionSuccess.set(value),
-      setLastStartedJob: (value) => this.lastStartedJob.set(value),
-      setStartedJobPendingRefresh: (value) => this.startedJobPendingRefresh.set(value),
-      reload: () => this.loadData(),
+  startBuildingUpgrade(building: EstateBuildingRow): void {
+    const context = this.context();
+    const estate = context?.estateRuntimeState;
+
+    if (
+      !context
+      || !estate
+      || this.activeJob()
+      || this.startingBuildingId()
+      || building.isAtMaxLevel
+      || !building.isAvailableInEstateDistrict
+    ) {
+      return;
+    }
+
+    const requestId = ++this.actionRequestId;
+    const contextKey = this.contextKey(context);
+
+    this.startingBuildingId.set(building.buildingId);
+    this.actionError.set(null);
+
+    this.activeHero.requireActiveHero().pipe(
+      switchMap((activeHero) =>
+        this.buildingJobs.startHeroEstateBuildingUpgrade({
+          heroId: activeHero.heroId,
+          buildingId: building.buildingId,
+        }),
+      ),
+    ).subscribe({
+      next: (result) => {
+        if (
+          requestId !== this.actionRequestId
+          || !this.isCurrentContextKey(contextKey)
+        ) {
+          this.clearStartingBuilding(requestId);
+          return;
+        }
+
+        if (
+          result.estateId !== estate.estate_id
+          || result.buildingId !== building.buildingId
+        ) {
+          this.clearStartingBuilding(requestId);
+          this.loadData();
+          return;
+        }
+
+        this.clearStartingBuilding(requestId);
+        this.loadData();
+      },
+      error: (error: unknown) => {
+        if (
+          requestId !== this.actionRequestId
+          || !this.isCurrentContextKey(contextKey)
+        ) {
+          this.clearStartingBuilding(requestId);
+          return;
+        }
+
+        const message = getErrorMessage(error, '');
+        this.actionError.set(message || null);
+        this.clearStartingBuilding(requestId);
+      },
     });
   }
 
-  trackByBuilding(_: number, building: MansionBuilding): string {
-    return building.id;
-  }
-
-  canStartBuilding(building: MansionBuilding): boolean {
-    return (
-      building.canUpgrade &&
-      this.activeBuildingJob() === null &&
-      this.startingBuildingId() === null &&
-      !this.startedJobPendingRefresh()
+  toggleProgressionPreview(building: EstateBuildingRow): void {
+    this.expandedBuildingId.set(
+      this.expandedBuildingId() === building.buildingId
+        ? null
+        : building.buildingId,
     );
   }
 
-  buildButtonLabel(building: MansionBuilding): string {
-    if (this.startingBuildingId() === building.id) {
-      return 'Starting...';
-    }
-
-    if (this.startedJobPendingRefresh()) {
-      return 'Job active';
-    }
-
-    if (this.activeBuildingJob()) {
-      return 'Job active';
-    }
-
-    if (!building.canUpgrade) {
-      return 'Unavailable';
-    }
-
-    return building.currentLevel > 0 ? 'Upgrade' : 'Build';
+  isProgressionPreviewOpen(building: EstateBuildingRow): boolean {
+    return this.expandedBuildingId() === building.buildingId;
   }
 
-  disabledBuildReason(building: MansionBuilding): string {
-    if (this.activeBuildingJob()) {
-      return 'Another estate building job is already active.';
-    }
-
-    if (this.startedJobPendingRefresh()) {
-      return 'A building job has just started and estate state is refreshing.';
-    }
-
-    if (!building.canUpgrade) {
-      return 'This building cannot be upgraded from the current level or district cap.';
-    }
-
-    if (this.startingBuildingId()) {
-      return 'A building start request is already in progress.';
-    }
-
-    return 'Building action is unavailable.';
+  isStartingUpgrade(building: EstateBuildingRow): boolean {
+    return this.startingBuildingId() === building.buildingId;
   }
 
-  toBonusLabel(target: string): string {
-    return toBuildingBonusLabel(target);
-  }
-
-  toBonusValue(value: number, type: MansionBuilding['bonuses'][number]['type']): string {
-    return toBuildingBonusValue(value, type);
-  }
-
-  toRequirementLabel(requirement: BuildingRequirementPreview): string {
-    return requirement.label;
-  }
-
-  toRequirementValue(requirement: BuildingRequirementPreview): string {
-    const value = requirement.valueLabel;
-
-    if (!value) {
-      return requirement.appliesFromLevel <= 1
-        ? ''
-        : `From level ${requirement.appliesFromLevel}`;
-    }
-
-    if (requirement.appliesFromLevel <= 1) {
-      return value;
-    }
-
-    return `${value} from level ${requirement.appliesFromLevel}`;
-  }
-
-  toDurationLabel(seconds: number | null): string {
+  formatDuration(seconds: number): string {
     return toBuildingDurationLabel(seconds);
+  }
+
+  buildingImageUrl(building: EstateBuildingRow): string | null {
+    return resolveBuildingImagePath(building.buildingKey, building.districtCode);
+  }
+
+  trackByBuilding(_: number, building: EstateBuildingRow): string {
+    return building.buildingId;
   }
 
   toDateTimeLabel(value: string): string {
     return new Date(value).toLocaleString();
   }
 
-  resourceLabel(type: BuildingResourceType): string {
-    return toResourceLabel(type);
+  requirementDisplay(requirement: EstateRequirementRow): string {
+    return [
+      requirement.displayValue,
+      requirement.displayUnit,
+    ].filter((value): value is string => !!value).join(' ');
   }
 
-  resourceRateLabel(balance: MansionResourceBalance): string {
-    return `${balance.perHour >= 0 ? '+' : ''}${balance.perHour}/h`;
+  private acceptsContext(context: PlayerEstatePageContextV2): boolean {
+    const activeHero = this.activeHero.state();
+    const estate = context.estateRuntimeState;
+
+    if (
+      !activeHero
+      || activeHero.heroId !== context.hero.id
+      || activeHero.serverId !== context.hero.server_id
+    ) {
+      return false;
+    }
+
+    return estate === null
+      || (
+        estate.hero_id === context.hero.id
+        && estate.server_id === context.hero.server_id
+        && estate.estate_id === context.hero.estate_id
+      );
   }
 
-  handleImageError(event: Event) {
-    const element = event.target as HTMLImageElement | null;
+  private contextKey(context: PlayerEstatePageContextV2 | null): string | null {
+    const estate = context?.estateRuntimeState;
 
-    if (element && !element.dataset['fallback']) {
-      element.dataset['fallback'] = 'true';
-      element.src = '/assets/icons/capitol.svg';
+    return context && estate
+      ? `${context.hero.server_id}:${context.hero.id}:${estate.estate_id}`
+      : null;
+  }
+
+  private isCurrentContextKey(contextKey: string | null): boolean {
+    const context = this.context();
+    const activeHero = this.activeHero.state();
+
+    return !!context
+      && !!activeHero
+      && this.contextKey(context) === contextKey
+      && activeHero.heroId === context.hero.id
+      && activeHero.serverId === context.hero.server_id;
+  }
+
+  private setError(error: unknown): void {
+    const message = getErrorMessage(error, '');
+
+    this.error.set(message || null);
+  }
+
+  private clearStartingBuilding(requestId: number): void {
+    if (requestId === this.actionRequestId) {
+      this.startingBuildingId.set(null);
     }
   }
 }
-

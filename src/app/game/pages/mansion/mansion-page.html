@@ -1,354 +1,321 @@
-<app-loading-overlay
-  [visible]="page.isLoading() && page.error() === null"
-  label="Loading estate..."
-  description="Loading estate buildings and progression data."
-/>
+<app-loading-overlay [visible]="page.isLoading()" />
 
-@if (page.error()) {
+@if (page.error(); as error) {
   <section class="mg-card flex-col gap-sm p-lg w-100">
-    <p class="card-legend mb-0">Error</p>
-    <p class="mb-0 muted-text">{{ page.error() }}</p>
+    <p class="mb-0 heading-color">{{ error }}</p>
   </section>
-} @else {
-  <div class="flex-col gap-xl w-100">
-    <section class="mg-card p-lg w-100">
-      <div class="flex-row-between-center flex-col-sm gap-md">
-        <div class="flex-col gap-xs">
-          <p class="card-legend mb-0">Estate</p>
-          <h2 class="mg-section__title mg-section__title--sm mb-0">
-            {{ page.uiMetadata.runtimeSectionTitle(page.uiMetadata.runtimeSection.pageHeader) }}
-          </h2>
-          <p class="muted-text mb-0">
-            District {{ page.currentDistrictCode() }}{{ page.currentDistrictName() ? ' - ' + page.currentDistrictName() : '' }}
-            @if (page.currentAddress()) {
-              <span> | {{ page.currentAddress() }}</span>
-            }
-          </p>
-        </div>
+} @else if (page.context(); as context) {
+  @let copy = context.copyJson;
 
-        <div class="flex-row-start-center flex-wrap gap-sm">
-          <a routerLink="/game/vicinity" class="tag-badge tag-badge--info">Vicinity</a>
-          <a routerLink="/admin/buildings" class="tag-badge tag-badge--muted">Admin buildings</a>
-          <a routerLink="/admin/balance" class="tag-badge tag-badge--muted">Formulas</a>
-        </div>
-      </div>
-    </section>
-
-    @if (page.uiMetadata.missingRuntimeGaps().length > 0) {
-      <section class="mg-card flex-col gap-sm p-lg w-100">
-        <strong class="heading-color">Missing DB UI metadata</strong>
-        <div class="flex-row-start-center flex-wrap gap-sm">
-          @for (gap of page.uiMetadata.missingRuntimeGaps(); track gap) {
-            <span class="tag-badge tag-badge--warn">{{ gap }}</span>
-          }
-        </div>
-      </section>
-    }
-
-    <section class="mg-card p-lg w-100">
-      <div class="flex-col gap-md">
+  @if (context.estateRuntimeState; as estate) {
+    <div class="flex-col gap-xl w-100">
+      <section class="mg-card p-lg w-100">
         <div class="flex-row-between-center flex-col-sm gap-md">
           <div class="flex-col gap-xs">
-            <p class="card-legend mb-0">Estate overview</p>
-            <h3 class="mg-section__title mg-section__title--xs mb-0">
-              {{ page.currentAddress() || 'No address' }}
-            </h3>
-            <p class="mb-0 muted-text">
-              District {{ page.currentDistrictCode() }}
-              @if (page.currentDistrictName()) {
-                <span> - {{ page.currentDistrictName() }}</span>
-              }
-              @if (page.currentDistrictRank()) {
-                <span> | Rank {{ page.currentDistrictRank() }}</span>
-              }
+            <p class="card-legend mb-0">{{ copy.sections.overview }}</p>
+            <h2 class="mg-section__title mg-section__title--sm mb-0">
+              {{ estate.address }}
+            </h2>
+            <p class="mb-0 heading-color">
+              {{ copy.summary.district }} {{ estate.district_code }}
+              | {{ copy.summary.rank }} {{ estate.estate_rank }}
             </p>
           </div>
+        </div>
+      </section>
 
-          <div class="flex-row-start-center flex-wrap gap-sm">
-            <span class="tag-badge tag-badge--info">
-              {{ page.availableBuildingCount() }} buildings
-            </span>
-            <span class="tag-badge tag-badge--muted">
-              {{ page.unbuiltBuildingCount() }} unbuilt
-            </span>
-            @if (page.activeBuildingJob()) {
-              <span class="tag-badge tag-badge--warn">One active job</span>
+      <section class="mg-card p-lg w-100">
+        <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md">
+          <article class="flex-col gap-xs">
+            <p class="card-legend mb-0">{{ copy.summary.address }}</p>
+            <strong class="heading-color">{{ estate.address }}</strong>
+            <span class="heading-color">{{ estate.address_number }}</span>
+          </article>
+
+          <article class="flex-col gap-xs">
+            <p class="card-legend mb-0">{{ copy.summary.district }}</p>
+            <strong class="heading-color">{{ estate.district_code }}</strong>
+          </article>
+
+          <article class="flex-col gap-xs">
+            <p class="card-legend mb-0">{{ copy.summary.buildingsReady }}</p>
+            <strong class="heading-color">{{ estate.settled_completed_count }}</strong>
+            <span class="heading-color">{{ page.toDateTimeLabel(estate.settled_as_of) }}</span>
+          </article>
+
+          <article class="flex-col gap-xs">
+            <p class="card-legend mb-0">{{ copy.summary.activeJob }}</p>
+            @if (page.activeJob(); as job) {
+              @if (job.buildingName) {
+                <strong class="heading-color">{{ job.buildingName }}</strong>
+              }
+              <span class="tag-badge tag-badge--warn">{{ job.status }}</span>
+              <span class="heading-color">{{ page.formatDuration(job.secondsUntilCompletion) }}</span>
             } @else {
-              <span class="tag-badge tag-badge--muted">No active job</span>
+              <span class="muted-text">{{ copy.empty.activeJob }}</span>
+            }
+          </article>
+        </div>
+      </section>
+
+      <section class="mg-card p-lg w-100">
+        <div class="flex-col gap-md">
+          <p class="card-legend mb-0">{{ copy.sections.resources }}</p>
+
+          <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
+            @for (resource of page.resources(); track resource.resourceId) {
+              <article class="mg-card flex-col gap-xs p-md">
+                <span class="muted-text">{{ resource.displayLabel }}</span>
+                <strong class="heading-color">{{ resource.displayValue }}</strong>
+              </article>
             }
           </div>
         </div>
-
-        <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
-          @for (balance of page.resourceBalances(); track balance.resourceType) {
-            <article class="mg-card flex-col gap-xs p-md">
-              <span class="muted-text">{{ page.resourceLabel(balance.resourceType) }}</span>
-              <strong class="heading-color">{{ balance.amount }}</strong>
-              <span class="muted-text">{{ page.resourceRateLabel(balance) }}</span>
-            </article>
-          } @empty {
-            <p class="mb-0 muted-text">No settled resource balances returned.</p>
-          }
-        </div>
-      </div>
-    </section>
-
-    <section class="mg-card p-lg w-100">
-      <div class="mg-grid grid-cols-4 grid-cols-2-md grid-cols-1-sm gap-md">
-        <article class="flex-col gap-xs">
-          <p class="card-legend mb-0">
-            {{ page.uiMetadata.runtimeSectionTitle(page.uiMetadata.runtimeSection.addressModel) }}
-          </p>
-          <p class="mb-0 muted-text">
-            {{ page.uiMetadata.runtimeSectionText(page.uiMetadata.runtimeSection.addressModel) }}
-          </p>
-        </article>
-
-        <article class="flex-col gap-xs">
-          <p class="card-legend mb-0">
-            {{ page.uiMetadata.buildingRuntimeTitle(page.uiMetadata.buildingRuntimeSection.districtInheritance) }}
-          </p>
-          <p class="mb-0 muted-text">
-            {{ page.uiMetadata.buildingRuntimeText(page.uiMetadata.buildingRuntimeSection.districtInheritance) }}
-          </p>
-        </article>
-
-        <article class="flex-col gap-xs">
-          <p class="card-legend mb-0">
-            {{ page.uiMetadata.buildingRuntimeTitle(page.uiMetadata.buildingRuntimeSection.activeJobModel) }}
-          </p>
-          <p class="mb-0 muted-text">
-            {{ page.uiMetadata.buildingRuntimeText(page.uiMetadata.buildingRuntimeSection.activeJobModel) }}
-          </p>
-        </article>
-
-        <article class="flex-col gap-xs">
-          <p class="card-legend mb-0">
-            {{ page.uiMetadata.buildingRuntimeTitle(page.uiMetadata.buildingRuntimeSection.previewVsAuthoritativeRpc) }}
-          </p>
-          <p class="mb-0 muted-text">
-            {{ page.uiMetadata.buildingRuntimeText(page.uiMetadata.buildingRuntimeSection.previewVsAuthoritativeRpc) }}
-          </p>
-        </article>
-      </div>
-    </section>
-
-    @if (page.actionError(); as actionError) {
-      <section class="mg-card flex-col gap-sm p-lg w-100">
-        <p class="card-legend mb-0">Building action</p>
-        <p class="mb-0 muted-text">{{ actionError }}</p>
       </section>
-    }
 
-    @if (page.lastStartedJob(); as startedJob) {
-      <section class="mg-card flex-col gap-md p-lg w-100">
-        <div class="flex-row-between-center flex-col-sm gap-md">
-          <div class="flex-col gap-xs">
-            <p class="card-legend mb-0">Building action</p>
-            <h3 class="mg-section__title mg-section__title--xs mb-0">
-              {{ page.actionSuccess() }}
-            </h3>
-            <p class="muted-text mb-0">
-              Started {{ page.toDateTimeLabel(startedJob.startedAt) }} | Completes {{ page.toDateTimeLabel(startedJob.completesAt) }}
-            </p>
-          </div>
+      @if (page.actionError(); as actionError) {
+        <section class="mg-card flex-col gap-sm p-lg w-100">
+          <p class="mb-0 heading-color">{{ actionError }}</p>
+        </section>
+      }
 
-          <div class="flex-row-start-center flex-wrap gap-sm">
-            <span class="tag-badge tag-badge--warn">Level {{ startedJob.targetLevel }}</span>
-            <span class="tag-badge tag-badge--muted">
-              {{ page.toDurationLabel(startedJob.buildTimeSeconds) }}
-            </span>
-          </div>
-        </div>
-
-        <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
-          @for (cost of startedJob.resourceCosts; track cost.resourceType) {
-            <div class="mg-card flex-col gap-xs p-md muted-text">
-              <strong class="heading-color">{{ page.resourceLabel(cost.resourceType) }}</strong>
-              <span>Cost: {{ cost.cost }}</span>
-              <span>Balance after: {{ cost.balanceAfter }}</span>
-            </div>
-          }
-        </div>
-      </section>
-    }
-
-    @if (page.activeBuildingJob(); as job) {
-      <section class="mg-card flex-col gap-md p-lg w-100">
-        <div class="flex-row-between-center flex-col-sm gap-md">
-          <div class="flex-col gap-xs">
-            <p class="card-legend mb-0">
-              {{ page.uiMetadata.buildingRuntimeTitle(page.uiMetadata.buildingRuntimeSection.activeJobModel) }}
-            </p>
-            <h3 class="mg-section__title mg-section__title--xs mb-0">
-              {{ job.buildingName }} to level {{ job.targetLevel }}
-            </h3>
-            <p class="muted-text mb-0">
-              Started {{ page.toDateTimeLabel(job.startedAt) }} | Completes {{ page.toDateTimeLabel(job.completesAt) }}
-            </p>
-          </div>
-
-          <div class="flex-row-start-center flex-wrap gap-sm">
-            <span class="tag-badge tag-badge--warn">{{ job.status }}</span>
-            <span class="tag-badge tag-badge--muted">
-              {{ page.toDurationLabel(job.remainingSeconds) }} remaining
-            </span>
-            <span class="tag-badge tag-badge--info">
-              {{ job.progressPercent }}%
-            </span>
-          </div>
-        </div>
-      </section>
-    } @else if (page.finalizedBuildingJobsCount() > 0) {
-      <section class="mg-card flex-row-between-center flex-col-sm gap-md p-lg w-100">
-        <div class="flex-col gap-xs">
-          <p class="card-legend mb-0">
-            {{ page.uiMetadata.buildingRuntimeTitle(page.uiMetadata.buildingRuntimeSection.lazyFinalization) }}
-          </p>
-          <h3 class="mg-section__title mg-section__title--xs mb-0">Completed jobs finalized</h3>
-        </div>
-        <span class="tag-badge tag-badge--info">
-          {{ page.finalizedBuildingJobsCount() }} completed
-        </span>
-      </section>
-    }
-
-    @if (page.recentBuildingJobs().length > 0) {
-      <section class="mg-card flex-col gap-md p-lg w-100">
-        <div class="flex-col gap-xs">
-          <p class="card-legend mb-0">Recent</p>
-          <h3 class="mg-section__title mg-section__title--xs mb-0">Building Job History</h3>
-        </div>
-
-        <div class="flex-col gap-sm">
-          @for (job of page.recentBuildingJobs(); track job.id) {
-            <div class="mg-card flex-row-between-center flex-col-sm gap-md p-sm muted-text">
-              <div class="flex-col gap-xs">
-                <strong class="heading-color">
-                  {{ job.buildingName }} to level {{ job.targetLevel }}
-                </strong>
-                <span>{{ page.toDateTimeLabel(job.startedAt) }} - {{ page.toDateTimeLabel(job.completesAt) }}</span>
-              </div>
-              <span class="tag-badge tag-badge--muted">{{ job.status }}</span>
-            </div>
-          }
-        </div>
-      </section>
-    }
-
-    <div class="mg-grid grid-cols-2 grid-cols-1-md gap-xl w-100">
-      @for (building of page.visibleBuildings(); track page.trackByBuilding($index, building)) {
+      @if (page.activeJob(); as job) {
         <section class="mg-card flex-col gap-md p-lg w-100">
-          <div class="flex-row-start-center flex-col-sm gap-md">
-            <span class="image__preview image__preview--square w-px-200 w-100-sm">
-              <img
-                [ngSrc]="building.imagePath || '/assets/icons/capitol.svg'"
-                [alt]="building.name"
-                class="image__preview-image"
-                [width]="buildingImageDimensions.width"
-                [height]="buildingImageDimensions.height"
-                (error)="page.handleImageError($event)"
-              />
-            </span>
-
-            <div class="flex-col gap-sm flex-1">
-              <div class="flex-row-between-center flex-col-sm gap-sm">
-                <div class="flex-col gap-xs">
-                  <h3 class="mg-section__title mg-section__title--xs mb-0">{{ building.name }}</h3>
-                  <p class="muted-text mb-0">{{ building.description || 'No description yet.' }}</p>
-                </div>
-
-                <div class="flex-row-start-center flex-wrap gap-sm">
-                  @if (building.currentLevel > 0) {
-                    <span class="tag-badge tag-badge--warn">Level {{ building.currentLevel }}</span>
-                  } @else {
-                    <span class="tag-badge tag-badge--info">Unbuilt</span>
-                  }
-                  <span class="tag-badge tag-badge--muted">Starts {{ building.startingLevel }}</span>
-                  @if (!building.isUnlimited) {
-                    <span class="tag-badge tag-badge--muted">Max {{ building.effectiveMaxLevel }}</span>
-                  } @else {
-                    <span class="tag-badge tag-badge--muted">No cap</span>
-                  }
-                </div>
-              </div>
-
-              <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
-                <div class="mg-card flex-col gap-xs p-md">
-                  <span class="muted-text">Preview cost</span>
-                  <div class="flex-col gap-xs">
-                    @for (cost of building.nextUpgradeCosts; track cost.resourceType) {
-                      <div class="flex-row-start-center gap-sm">
-                        @switch (cost.resourceType) {
-                          @case ('drachma') {
-                            <i class="pi pi-cash"></i>
-                          }
-                          @case ('materials') {
-                            <i class="pi pi-marble"></i>
-                          }
-                          @case ('workforce') {
-                            <i class="pi pi-workforce"></i>
-                          }
-                        }
-                        <strong class="heading-color">{{ cost.amount }}</strong>
-                        <span class="muted-text">{{ page.resourceLabel(cost.resourceType) }}</span>
-                      </div>
-                    } @empty {
-                      <span class="muted-text">No resource cost defined.</span>
-                    }
-                  </div>
-                </div>
-
-                <div class="mg-card flex-col gap-xs p-md">
-                  <div class="flex-row-start-center gap-sm">
-                    <i class="pi pi-sundial muted-text"></i>
-                    <span class="muted-text">Preview time</span>
-                  </div>
-                  <strong class="heading-color">
-                    {{ page.toDurationLabel(building.nextUpgradeTimeSeconds) }}
-                  </strong>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
-            <div class="mg-card flex-col gap-sm p-md">
-              <p class="card-legend mb-0">Bonuses</p>
-              @for (bonus of building.bonuses; track bonus.target + bonus.templateId) {
-                <div class="flex-row-between-center gap-md muted-text">
-                  <strong class="heading-color">{{ page.toBonusLabel(bonus.target) }}</strong>
-                  <span>
-                    {{ page.toBonusValue(bonus.currentValue, bonus.type) }} ->
-                    {{ page.toBonusValue(bonus.nextValue, bonus.type) }}
-                  </span>
-                </div>
-              } @empty {
-                <p class="mb-0 muted-text">No bonuses defined for this building.</p>
+          <div class="flex-row-between-center flex-col-sm gap-md">
+            <div class="flex-col gap-xs">
+              <p class="card-legend mb-0">{{ copy.summary.activeJob }}</p>
+              @if (job.buildingName) {
+                <h3 class="mg-section__title mg-section__title--xs mb-0">
+                  {{ job.buildingName }}
+                </h3>
               }
+              <p class="mb-0 heading-color">
+                {{ page.toDateTimeLabel(job.startedAt) }} |
+                {{ page.toDateTimeLabel(job.completesAt) }}
+              </p>
             </div>
 
-            <div class="mg-card flex-col gap-sm p-md">
-              <p class="card-legend mb-0">Requirements</p>
-              @for (requirement of building.activeRequirements; track requirement.requirementDefinitionKey + requirement.appliesFromLevel + requirement.sortOrder + requirement.label) {
-                <div class="flex-row-between-center gap-md muted-text">
-                  <strong class="heading-color">{{ page.toRequirementLabel(requirement) }}</strong>
-                  <span>{{ page.toRequirementValue(requirement) }}</span>
-                </div>
-              } @empty {
-                <p class="mb-0 muted-text">No additional requirements.</p>
-              }
-              <p-button
-                [label]="page.buildButtonLabel(building)"
-                [disabled]="!page.canStartBuilding(building)"
-                styleClass="mt-md"
-                (onClick)="page.startBuildingUpgrade(building)"
-              />
+            <div class="flex-row-start-center flex-wrap gap-sm">
+              <span class="tag-badge tag-badge--warn">{{ job.status }}</span>
+              <span class="tag-badge tag-badge--info">{{ copy.labels.nextLevel }} {{ job.targetLevel }}</span>
+              <span class="tag-badge tag-badge--muted">
+                {{ page.formatDuration(job.secondsUntilCompletion) }}
+              </span>
             </div>
           </div>
         </section>
       }
-    </div>
-  </div>
-}
 
+      @if (page.recentJobs().length > 0) {
+        <section class="mg-card flex-col gap-md p-lg w-100">
+          <p class="card-legend mb-0">{{ copy.summary.activeJob }}</p>
+
+          <div class="flex-col gap-sm">
+            @for (job of page.recentJobs(); track job.jobId) {
+              <div class="mg-card flex-row-between-center flex-col-sm gap-md p-sm">
+                <div class="flex-col gap-xs">
+                  @if (job.buildingName) {
+                    <strong class="heading-color">{{ job.buildingName }}</strong>
+                  }
+                  <span class="heading-color">
+                    {{ page.toDateTimeLabel(job.startedAt) }} |
+                    {{ page.toDateTimeLabel(job.completesAt) }}
+                  </span>
+                </div>
+                <span class="tag-badge tag-badge--muted">{{ job.status }}</span>
+              </div>
+            }
+          </div>
+        </section>
+      }
+
+      <section class="flex-col gap-md w-100">
+        <p class="card-legend mb-0">{{ copy.sections.buildings }}</p>
+
+        <div class="mg-grid grid-cols-2 grid-cols-1-md gap-xl w-100">
+          @for (building of page.buildings(); track page.trackByBuilding($index, building)) {
+            <section class="mg-card flex-col gap-md p-lg w-100">
+              <div class="flex-row-start-center flex-col-sm gap-md">
+                <span class="image__preview image__preview--square w-px-200 w-100-sm">
+                  @if (page.buildingImageUrl(building); as imageUrl) {
+                    <img
+                      [ngSrc]="imageUrl"
+                      [alt]="building.buildingName"
+                      class="image__preview-image object-fit-cover"
+                      [width]="buildingImageDimensions.width"
+                      [height]="buildingImageDimensions.height"
+                    />
+                  } @else {
+                    <span class="flex-col-center-center h-100 w-100">
+                      <i class="pi pi-capitol heading-color" aria-hidden="true"></i>
+                    </span>
+                  }
+                </span>
+
+                <div class="flex-col gap-sm flex-1">
+                  <div class="flex-row-between-center flex-col-sm gap-sm">
+                    <div class="flex-col gap-xs">
+                      <h3 class="mg-section__title mg-section__title--xs mb-0">
+                        {{ building.buildingName }}
+                      </h3>
+                      @if (building.buildingDescription) {
+                        <p class="muted-text mb-0">{{ building.buildingDescription }}</p>
+                      }
+                    </div>
+
+                    <div class="flex-row-start-center flex-wrap gap-sm">
+                      <span class="tag-badge tag-badge--warn">
+                        {{ copy.labels.currentLevel }} {{ building.currentLevel }}
+                      </span>
+                      <span class="tag-badge tag-badge--info">
+                        {{ copy.labels.nextLevel }} {{ building.nextLevel }}
+                      </span>
+                      <span class="tag-badge tag-badge--muted">
+                        {{ copy.labels.maxLevel }} {{ building.effectiveMaxLevel }}
+                      </span>
+                      <span class="tag-badge tag-badge--muted">
+                        {{ copy.labels.availableInDistrict }} {{ building.districtCode }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+                    <div class="mg-card flex-col gap-xs p-md">
+                      <span class="muted-text">{{ copy.sections.resources }}</span>
+                      <div class="flex-col gap-xs">
+                        @for (cost of building.upgradePreviewJson.resourceCostsJson; track cost.sortOrder) {
+                          <div class="flex-row-start-center gap-sm">
+                            <strong class="heading-color">{{ cost.displayValue }}</strong>
+                            <span class="heading-color">{{ cost.displayLabel }}</span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+
+                    <div class="mg-card flex-col gap-xs p-md">
+                      <div class="flex-row-start-center gap-sm">
+                        <i class="pi pi-sundial muted-text"></i>
+                        <span class="muted-text">{{ copy.labels.buildTime }}</span>
+                      </div>
+                      <strong class="heading-color">
+                        {{ page.formatDuration(building.upgradePreviewJson.buildTimeSeconds) }}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mg-grid grid-cols-2 grid-cols-1-sm gap-md w-100">
+                <div class="mg-card flex-col gap-sm p-md">
+                  <p class="card-legend mb-0">{{ copy.sections.bonuses }}</p>
+                  @for (bonus of building.bonusesJson; track bonus.entityBonusId) {
+                    <div class="flex-row-between-center gap-md">
+                      <strong class="heading-color">{{ bonus.targetLabel }}</strong>
+                      <span class="heading-color">{{ bonus.displayText }}</span>
+                    </div>
+                  } @empty {
+                    <p class="mb-0 muted-text">{{ copy.empty.bonuses }}</p>
+                  }
+                </div>
+
+                <div class="mg-card flex-col gap-sm p-md">
+                  <p class="card-legend mb-0">{{ copy.sections.requirements }}</p>
+                  @for (requirement of building.requirementsJson; track requirement.entityRequirementId) {
+                    <div class="flex-row-between-center gap-md">
+                      <strong class="heading-color">{{ requirement.displayLabel }}</strong>
+                      @if (page.requirementDisplay(requirement)) {
+                        <span class="heading-color">{{ page.requirementDisplay(requirement) }}</span>
+                      }
+                    </div>
+                  } @empty {
+                    <p class="mb-0 muted-text">{{ copy.empty.requirements }}</p>
+                  }
+                </div>
+              </div>
+
+              @if (page.isProgressionPreviewOpen(building)) {
+                @let preview = building.upgradePreviewJson;
+                <div class="mg-card flex-col gap-md p-md">
+                  <div class="flex-row-between-center flex-col-sm gap-md">
+                    <div class="flex-col gap-xs">
+                      <p class="card-legend mb-0">{{ copy.sections.upgradePreview }}</p>
+                      <strong class="heading-color">
+                        {{ copy.labels.currentLevel }} {{ preview.currentLevel }}
+                        | {{ copy.labels.nextLevel }} {{ preview.nextLevel }}
+                      </strong>
+                    </div>
+                    <span class="tag-badge tag-badge--muted">
+                      {{ copy.labels.buildTime }} {{ page.formatDuration(preview.buildTimeSeconds) }}
+                    </span>
+                  </div>
+
+                  <div class="mg-grid grid-cols-3 grid-cols-1-sm gap-md">
+                    <div class="mg-card flex-col gap-sm p-md">
+                      <p class="card-legend mb-0">{{ copy.sections.resources }}</p>
+                      @for (cost of preview.resourceCostsJson; track cost.sortOrder) {
+                        <div class="flex-row-between-center gap-md">
+                          <strong class="heading-color">{{ cost.displayLabel }}</strong>
+                          <span class="heading-color">{{ cost.displayValue }}</span>
+                        </div>
+                      }
+                    </div>
+
+                    <div class="mg-card flex-col gap-sm p-md">
+                      <p class="card-legend mb-0">{{ copy.sections.requirements }}</p>
+                      @for (requirement of preview.requirementsJson; track requirement.entityRequirementId) {
+                        <div class="flex-row-between-center gap-md">
+                          <strong class="heading-color">{{ requirement.displayLabel }}</strong>
+                          @if (page.requirementDisplay(requirement)) {
+                            <span class="heading-color">{{ page.requirementDisplay(requirement) }}</span>
+                          }
+                        </div>
+                      } @empty {
+                        <p class="mb-0 muted-text">{{ copy.empty.requirements }}</p>
+                      }
+                    </div>
+
+                    <div class="mg-card flex-col gap-sm p-md">
+                      <p class="card-legend mb-0">{{ copy.sections.bonuses }}</p>
+                      @for (bonus of preview.bonusesJson; track bonus.entityBonusId) {
+                        <div class="flex-col gap-xs">
+                          <strong class="heading-color">{{ bonus.targetLabel }}</strong>
+                          <span class="heading-color">{{ bonus.nextDisplayText }}</span>
+                          <span class="heading-color">{{ bonus.deltaDisplayText }}</span>
+                        </div>
+                      } @empty {
+                        <p class="mb-0 muted-text">{{ copy.empty.bonuses }}</p>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <div class="flex-row-start-center flex-wrap gap-sm">
+                <p-button
+                  [label]="copy.actions.upgrade"
+                  [disabled]="page.isStartingUpgrade(building) || !!page.activeJob() || building.isAtMaxLevel || !building.isAvailableInEstateDistrict"
+                  [loading]="page.isStartingUpgrade(building)"
+                  (onClick)="page.startBuildingUpgrade(building)"
+                />
+                <p-button
+                  [label]="page.isProgressionPreviewOpen(building) ? copy.actions.closeProgressionPreview : copy.actions.openProgressionPreview"
+                  [text]="true"
+                  (onClick)="page.toggleProgressionPreview(building)"
+                />
+              </div>
+            </section>
+          } @empty {
+            <section class="mg-card flex-col gap-sm p-lg w-100">
+              <p class="mb-0 muted-text">{{ copy.empty.buildings }}</p>
+            </section>
+          }
+        </div>
+      </section>
+    </div>
+  } @else {
+    <section class="mg-card flex-col gap-sm p-lg w-100">
+      <p class="card-legend mb-0">{{ copy.sections.overview }}</p>
+      <p class="mb-0 muted-text">{{ copy.empty.buildings }}</p>
+    </section>
+  }
+}

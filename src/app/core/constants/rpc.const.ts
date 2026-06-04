@@ -49,6 +49,7 @@ export const RPC = {
   get_player_dashboard_page_context: 'get_player_dashboard_page_context',
   get_player_attributes_page_context: 'get_player_attributes_page_context',
   get_player_armory_page_context: 'get_player_armory_page_context',
+  get_player_estate_page_context: 'get_player_estate_page_context',
   get_player_vicinity_page_context: 'get_player_vicinity_page_context',
   get_start_flow_origin_options: 'get_start_flow_origin_options',
   create_hero_start_flow: 'create_hero_start_flow',
