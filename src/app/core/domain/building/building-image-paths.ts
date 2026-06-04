@@ -1,6 +1,5 @@
 import {
-  SUPABASE_ASSET_IMAGE_TRANSFORMS,
-  supabaseStorageImageUrl,
+  supabaseStoragePublicAssetUrl,
 } from '../../config/storage-assets.config';
 import { trimToLower, trimToUpper } from '../../utils/normalize-text';
 
@@ -25,7 +24,7 @@ export function resolveBuildingImagePath(
   const assetPath = resolveBuildingAssetPath(key, districtCode);
 
   return assetPath
-    ? supabaseStorageImageUrl(assetPath, SUPABASE_ASSET_IMAGE_TRANSFORMS.buildingCard)
+    ? supabaseStoragePublicAssetUrl(assetPath)
     : null;
 }
 

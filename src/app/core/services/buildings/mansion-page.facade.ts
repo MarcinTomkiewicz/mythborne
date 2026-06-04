@@ -1,7 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { switchMap } from 'rxjs';
 import {
-  EstateBuildingDistrictGroup,
   EstateBuildingRow,
   PlayerEstatePageContextV3,
 } from '../../domain/estate/player-estate-page-context.model';
@@ -33,9 +32,6 @@ export class MansionPageFacade {
   );
   readonly buildings = computed(
     () => this.estateRuntimeState()?.buildings_json ?? [],
-  );
-  readonly buildingDistrictGroups = computed(() =>
-    this.groupBuildingsByDistrict(this.buildings()),
   );
   readonly activeJob = computed(
     () => this.estateRuntimeState()?.active_job_json ?? null,
@@ -156,39 +152,8 @@ export class MansionPageFacade {
     return resolveBuildingImagePath(building.buildingKey, building.districtCode ?? null);
   }
 
-  trackByBuilding(_: number, building: EstateBuildingRow): string {
-    return building.buildingId;
-  }
-
-  trackByBuildingDistrictGroup(_: number, group: EstateBuildingDistrictGroup): string {
-    return group.districtCode ?? 'buildings';
-  }
-
   toDateTimeLabel(value: string): string {
     return new Date(value).toLocaleString();
-  }
-
-  private groupBuildingsByDistrict(
-    buildings: readonly EstateBuildingRow[],
-  ): EstateBuildingDistrictGroup[] {
-    const groups: EstateBuildingDistrictGroup[] = [];
-
-    for (const building of buildings) {
-      const districtCode = building.districtCode ?? null;
-      let group = groups.find((entry) => entry.districtCode === districtCode);
-
-      if (!group) {
-        group = {
-          districtCode,
-          buildings: [],
-        };
-        groups.push(group);
-      }
-
-      group.buildings.push(building);
-    }
-
-    return groups;
   }
 
   private acceptsContext(context: PlayerEstatePageContextV3): boolean {

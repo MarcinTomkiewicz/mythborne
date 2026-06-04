@@ -16,13 +16,13 @@ export const SUPABASE_ASSET_IMAGE_TRANSFORMS = {
   background: { width: 1920, quality: 80 },
   card: { width: 800, quality: 80 },
   originCard: { width: 800, quality: 80 },
-  buildingCard: { width: 800, quality: 80 },
+  buildingCard: { width: 1254, quality: 80 },
   paperdoll: { width: 800, quality: 80 },
 } as const satisfies Record<string, SupabaseImageTransformOptions>;
 
 export const SUPABASE_ASSET_IMAGE_DIMENSIONS = {
   originCard: { width: 800, height: 1254 },
-  buildingCard: { width: 800, height: 800 },
+  buildingCard: { width: 1254, height: 1254 },
   paperdoll: { width: 800, height: 1200 },
 } as const satisfies Record<string, SupabaseImageDimensions>;
 

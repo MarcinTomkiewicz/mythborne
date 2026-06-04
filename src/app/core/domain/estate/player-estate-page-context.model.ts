@@ -81,6 +81,7 @@ export interface EstateRuntimeState {
   recent_jobs_json: EstateBuildingJob[];
   resources_json: EstateResourceRow[];
   buildings_json: EstateBuildingRow[];
+  building_groups_json: EstateBuildingGroupRow[];
   attack_protection_active?: boolean;
   attack_protection_expires_at?: string;
   attack_protection_source_entity_type?: string;
@@ -145,9 +146,16 @@ export interface EstateBuildingRow {
   requirementFailuresJson: EstateRequirementRow[];
 }
 
-export interface EstateBuildingDistrictGroup {
-  districtCode: string | null;
-  buildings: EstateBuildingRow[];
+export interface EstateBuildingGroupRow {
+  groupKey: string;
+  districtCode?: string;
+  districtLabel?: string;
+  groupTitle: string;
+  displayLabel: string;
+  sortOrder?: number;
+  isCurrentEstateDistrict?: boolean;
+  buildingCount: number;
+  buildingsJson: EstateBuildingRow[];
 }
 
 export interface EstateResourceCostRow {
