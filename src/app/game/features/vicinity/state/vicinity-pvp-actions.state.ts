@@ -1,4 +1,5 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
+import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
 import {
   PvpActionStartResult,
   PvpTargetCandidate,
@@ -9,15 +10,15 @@ import {
   PendingPvpAction,
   PvpStartActionKind,
 } from '../../../../core/types/vicinity.types';
-import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
 import { getErrorMessage } from '../../../../core/utils/error-message';
-import { formatPendingDurationLabel } from '../../../../core/utils/pending-timer';
 import { createRequestId } from '../../../../core/utils/request-id';
+import { VicinityRangeState } from './vicinity-range.state';
 
 @Injectable()
 export class VicinityPvpActionsState {
   private readonly activeHero = inject(ActiveHero);
   private readonly playerPvp = inject(PlayerPvp);
+  private readonly range = inject(VicinityRangeState);
   private requestId = 0;
 
   readonly error = signal<string | null>(null);
@@ -54,7 +55,7 @@ export class VicinityPvpActionsState {
     this.success.set(null);
 
     if (!requestContextKey) {
-      this.error.set('Brak aktywnego bohatera dla akcji PvP.');
+      this.error.set(this.range.copyJson()?.page.errorLabel ?? null);
       return;
     }
 
@@ -71,12 +72,7 @@ export class VicinityPvpActionsState {
           return;
         }
 
-        const travelTimeLabel = formatPendingDurationLabel(result.travelTimeSeconds);
-        this.success.set(
-          actionKind === 'attack'
-            ? `Atak rozpoczęty. Dotarcie za ${travelTimeLabel}.`
-            : `Szpiegowanie rozpoczęte. Dotarcie za ${travelTimeLabel}.`,
-        );
+        this.success.set(null);
         refreshAfterStart(result);
         this.clearPendingAction(actionKind, targetHeroId);
       },
@@ -88,9 +84,7 @@ export class VicinityPvpActionsState {
 
         this.error.set(getErrorMessage(
           error,
-          actionKind === 'attack'
-            ? 'Nie udało się rozpocząć ataku.'
-            : 'Nie udało się rozpocząć szpiegowania.',
+          this.range.copyJson()?.page.errorLabel ?? '',
         ));
         this.clearPendingAction(actionKind, targetHeroId);
       },

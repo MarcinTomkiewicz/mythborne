@@ -3,8 +3,7 @@ import type { VicinityRowActionConfig } from '../types/vicinity.types';
 export const VICINITY_ROW_ACTION_CONFIGS: readonly VicinityRowActionConfig[] = [
   {
     kind: 'spy',
-    icon: 'pi pi-eye',
-    label: 'Szpieguj',
+    icon: 'pi pi-spy',
     severity: 'secondary',
     availability: 'spy',
     primaryWhenAvailable: true,
@@ -12,15 +11,13 @@ export const VICINITY_ROW_ACTION_CONFIGS: readonly VicinityRowActionConfig[] = [
   {
     kind: 'attack',
     icon: 'pi pi-bolt',
-    label: 'Atak',
     severity: 'danger',
     availability: 'attack',
     primaryWhenAvailable: true,
   },
   {
     kind: 'siege',
-    icon: 'pi pi-building',
-    label: 'Oblężenie',
+    icon: 'pi pi-siege',
     severity: 'secondary',
     availability: 'never',
     primaryWhenAvailable: false,

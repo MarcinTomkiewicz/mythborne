@@ -1,19 +1,29 @@
 <section class="mg-card p-lg w-100">
   <div class="grid-2-1 gap-lg grid-items-center">
     <div class="flex-col gap-xs min-w-0">
-      <p class="small-caps color-muted text-xs mb-0">{{ eyebrowLabel() }}</p>
+      @if (eyebrowLabel(); as eyebrow) {
+        <p class="small-caps color-muted text-xs mb-0">{{ eyebrow }}</p>
+      }
       <h2 class="color-heading text-xl m-0">
         {{ title() }}
       </h2>
+      @if (description(); as pageDescription) {
+        <p class="muted-text mb-0">{{ pageDescription }}</p>
+      }
     </div>
 
-    <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium">
-      @for (row of summaryRows(); track row.key) {
-        <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-          <span class="color-muted small-caps uppercase text-xs">{{ row.label }}</span>
-          <strong class="color-heading text-md">{{ row.value }}</strong>
-        </div>
-      }
-    </aside>
+    @if (summaryRows().length > 0) {
+      <aside
+        class="mg-card p-lg flex-col gap-sm w-100 shadow-premium"
+        [attr.aria-label]="summaryAriaLabel()"
+      >
+        @for (row of summaryRows(); track row.key) {
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">{{ row.label }}</span>
+            <strong class="color-heading text-md">{{ row.value }}</strong>
+          </div>
+        }
+      </aside>
+    }
   </div>
 </section>

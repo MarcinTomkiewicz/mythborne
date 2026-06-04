@@ -1,11 +1,10 @@
-export type VicinityRowActionKind = 'spy' | 'attack' | 'siege';
+export type VicinityRowActionKind = 'spy' | 'attack' | 'siege' | 'claimEstate';
 export type VicinityRowActionAvailability = 'spy' | 'attack' | 'never';
 export type PvpStartActionKind = 'attack' | 'spy';
 
 export interface VicinityRowActionConfig {
   kind: VicinityRowActionKind;
   icon: string;
-  label: string;
   severity: 'danger' | 'secondary';
   availability: VicinityRowActionAvailability;
   primaryWhenAvailable: boolean;
@@ -15,6 +14,7 @@ export interface VicinityRowAction {
   kind: VicinityRowActionKind;
   icon: string;
   label: string;
+  tooltip: string;
   severity: 'danger' | 'secondary';
   disabled: boolean;
   primary: boolean;

@@ -15,10 +15,14 @@ export class VicinityPageState {
   readonly isLoading = this.range.isLoading;
   readonly error = this.range.error;
   readonly currentAddress = this.range.currentAddress;
+  readonly context = this.range.context;
+  readonly copyJson = this.range.copyJson;
+  readonly currentEstate = this.range.currentEstate;
+  readonly estateRuntimeState = this.range.estateRuntimeState;
   readonly districts = this.range.districts;
   readonly vicinityRange = this.range.vicinityRange;
   readonly selectedDistrictCode = this.range.selectedDistrictCode;
-  readonly currentAddressLabel = this.range.currentAddressLabel;
+  readonly currentAddressDisplay = this.range.currentAddressDisplay;
   readonly visibleRows = this.range.visibleRows;
   readonly addressPageLabel = this.range.addressPageLabel;
   readonly addressPageOptions = this.range.addressPageOptions;
@@ -36,9 +40,32 @@ export class VicinityPageState {
   readonly selectedTarget = this.relocation.selectedTarget;
   readonly destructiveConfirmed = this.relocation.destructiveConfirmed;
   readonly canRelocate = this.relocation.canRelocate;
+  readonly errorLabel = computed(() => this.copyJson()?.page.errorLabel ?? '');
+  readonly pageDescription = computed(() => this.copyJson()?.helper.emptyAddressGeneration ?? '');
   readonly currentHeroName = computed(
-    () => this.activeHero.state()?.hero?.name ?? this.activeHero.state()?.heroRow?.name ?? 'Bohater',
+    () => this.activeHero.state()?.hero?.name ?? this.activeHero.state()?.heroRow?.name ?? '',
   );
+  readonly addressListColumnLabels = computed(() => {
+    const copy = this.copyJson();
+
+    return copy
+      ? [
+          copy.labels.address,
+          copy.addressList.columnHero,
+          copy.addressList.columnLevel,
+          copy.addressList.columnAttack,
+          copy.addressList.columnSpy,
+          copy.addressList.columnActions,
+        ]
+      : [];
+  });
+  readonly currentEstateRankValue = computed(() => {
+    const estateRank = this.currentEstate()?.estateRank;
+
+    return typeof estateRank === 'number'
+      ? String(estateRank)
+      : '';
+  });
 
   loadData(): void {
     this.range.loadData();

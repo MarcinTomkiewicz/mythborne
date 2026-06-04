@@ -13,6 +13,9 @@ import {
   PlayerArmorySellItemMessageParts,
   PlayerArmorySellSelectedMessageParts,
 } from '../../../core/domain/item/player-armory-page-context.model';
+import type {
+  StructuredConfirmDialogSegment,
+} from '../../../core/interfaces/structured-confirm-dialog-segment.interface';
 import { GamePageSummaryRow } from '../../../core/interfaces/game-page-summary-row.interface';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
@@ -23,10 +26,7 @@ import { LoadoutPresetManagement } from '../../components/loadout-preset-managem
 import { EquipmentPreview } from '../../../shared/equipment-preview/equipment-preview';
 import { GamePageHeader } from '../../../shared/game-page-header/game-page-header';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
-import {
-  StructuredConfirmDialog,
-  StructuredConfirmDialogSegment,
-} from '../../../shared/structured-confirm-dialog/structured-confirm-dialog';
+import { StructuredConfirmDialog } from '../../../shared/structured-confirm-dialog/structured-confirm-dialog';
 
 const ARMORY_SELL_ITEM_CONFIRMATION_KEY = 'armory-sell-item';
 

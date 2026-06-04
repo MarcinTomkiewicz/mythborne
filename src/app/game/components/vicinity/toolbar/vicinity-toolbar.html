@@ -1,18 +1,24 @@
 <div class="flex-row-between-start flex-wrap gap-md">
   <div class="flex-col gap-xs">
-    <h2 class="color-heading text-lg mb-0">Okolica</h2>
+    <h2 class="color-heading text-lg mb-0">{{ sectionTitle() }}</h2>
     <p class="muted-text mb-0">
-      Adresy w pobliżu twojej posiadłości. Puste działki i zajęte cele są na jednej liście.
+      {{ helperText() }}
     </p>
   </div>
 </div>
 
 <div class="flex-row-end-end flex-wrap gap-md w-100">
-  <div class="flex-row-end-end flex-wrap gap-md" aria-label="Filtry okolicy">
+  <div class="flex-row-end-end flex-wrap gap-md" [attr.aria-label]="districtFilterLabel()">
     <div class="flex-col gap-xs min-w-200">
-      <span class="color-muted small-caps uppercase text-xs">Dzielnica</span>
+      <label
+        class="color-muted small-caps uppercase text-xs"
+        [attr.for]="districtSelectId"
+      >
+        {{ districtFilterLabel() }}
+      </label>
       <p-select
-        styleClass="w-100"
+        [inputId]="districtSelectId"
+        class="w-100"
         [formControl]="selectedDistrictControl()"
         [options]="districtOptions()"
         optionLabel="label"
@@ -21,13 +27,13 @@
     </div>
 
     <label class="flex-col gap-xs min-w-300">
-      <span class="color-muted small-caps uppercase text-xs">Szukaj bohatera lub adresu</span>
+      <span class="color-muted small-caps uppercase text-xs">{{ searchLabel() }}</span>
       <input
         pInputText
         type="search"
         class="w-100"
         [formControl]="searchControl()"
-        placeholder="Szukaj bohatera lub adresu"
+        [placeholder]="searchPlaceholder()"
         autocomplete="off"
         (keydown.enter)="search.emit()"
       />
@@ -37,13 +43,14 @@
     </label>
 
     <p-button
-      label="Szukaj"
+      [label]="searchButtonLabel()"
       severity="secondary"
       [loading]="isSearching()"
       (onClick)="search.emit()"
     />
+
     <p-button
-      label="Moja okolica"
+      [label]="currentVicinityButtonLabel()"
       severity="secondary"
       [disabled]="isMyVicinityDisabled()"
       (onClick)="focusCurrentAddress.emit()"

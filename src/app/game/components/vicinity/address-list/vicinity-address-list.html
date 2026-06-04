@@ -2,9 +2,9 @@
   <p [class]="feedback.className">{{ feedback.message }}</p>
 }
 
-<div class="flex-col gap-xs w-100" role="table" aria-label="Okoliczne posiadłości">
+<div class="flex-col gap-xs w-100" role="table" [attr.aria-label]="tableLabel()">
   <div class="grid-data-list-row gap-sm grid-items-center color-muted small-caps uppercase text-xs px-sm py-xs w-100" role="row">
-    @for (label of columnLabels; track label) {
+    @for (label of columnLabels(); track label) {
       <span>{{ label }}</span>
     }
   </div>
@@ -22,19 +22,25 @@
       (keydown.space)="selectRow.emit(row)"
     >
       <span class="color-heading flex-row-start-center text-center">{{ row.addressLabel }}</span>
-      <span class="flex-col gap-xs">
-        @if (row.occupantLabel) {
-          <span>{{ row.occupantLabel }}</span>
-        }
-        @if (row.detailLabel) {
-          <span class="muted-text text-xs">{{ row.detailLabel }}</span>
+      <span class="flex-col-center-start gap-xs min-h-lines-2">
+        @if (row.kind === 'empty') {
+          <span class="flex-row-start-center min-h-lines-2">{{ row.occupantLabel }}</span>
+        } @else {
+          @if (row.occupantLabel) {
+            <span>{{ row.occupantLabel }}</span>
+          }
+          @if (row.detailLabel) {
+            <span class="muted-text text-xs">{{ row.detailLabel }}</span>
+          } @else {
+            <span class="muted-text text-xs" aria-hidden="true">&nbsp;</span>
+          }
         }
       </span>
       @for (metric of row.metricCells; track metric.key) {
         <span class="flex-row-start-center text-center">{{ metric.value }}</span>
       }
-      <span class="flex-row-start-center text-center">
-        <span class="flex-row-start-center flex-wrap gap-sm">
+      <span class="flex-row-center-center text-center h-100">
+        <span class="flex-row-center-center flex-wrap gap-sm h-100 w-100">
           @if (row.statusIndicatorIcon) {
             <span class="tag-badge tag-badge--danger square-9" [attr.aria-label]="row.statusIndicatorAriaLabel">
               <i [class]="row.statusIndicatorIcon"></i>
@@ -48,8 +54,10 @@
               size="small"
               [outlined]="!action.primary"
               [severity]="action.severity"
-              styleClass="mg-compact-icon-button square-9"
-              [ariaLabel]="action.label"
+              styleClass="mg-compact-icon-button square-9 radius-sm"
+              [ariaLabel]="action.tooltip"
+              [pTooltip]="action.tooltip"
+              tooltipPosition="top"
               [disabled]="action.disabled"
               (onClick)="startAction.emit({ row, actionKind: action.kind }); $event.stopPropagation()"
             />
@@ -58,6 +66,6 @@
       </span>
     </div>
   } @empty {
-    <p class="muted-text mb-0">Brak adresów w bieżącym zakresie.</p>
+    <p class="muted-text mb-0">{{ emptyLabel() }}</p>
   }
 </div>

@@ -4,11 +4,13 @@ import { PVP_TARGETING_SECTION_METADATA_NAMESPACE } from '../../../../core/const
 import { UiMetadataEntryReadModel } from '../../../../core/domain/admin-ui-metadata.model';
 import { PvpUiMetadata } from '../../../../core/services/pvp/pvp-ui-metadata';
 import { getErrorMessage } from '../../../../core/utils/error-message';
+import { VicinityRangeState } from './vicinity-range.state';
 
 @Injectable()
 export class VicinityPvpMetadataState {
   private readonly destroyRef = inject(DestroyRef);
   private readonly pvpUiMetadata = inject(PvpUiMetadata);
+  private readonly range = inject(VicinityRangeState);
 
   readonly entries = signal<UiMetadataEntryReadModel[]>([]);
   readonly error = signal<string | null>(null);
@@ -28,7 +30,7 @@ export class VicinityPvpMetadataState {
         error: (error: unknown) => {
           this.entries.set([]);
           this.error.set(
-            getErrorMessage(error, 'Nie udało się wczytać opisów dostępności PvP.'),
+            getErrorMessage(error, this.range.copyJson()?.page.errorLabel ?? ''),
           );
           this.loaded.set(true);
         },

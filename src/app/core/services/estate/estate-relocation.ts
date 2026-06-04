@@ -13,13 +13,11 @@ import {
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
 import { RelocateHeroEstateRpcRow } from '../../types/estate-relocation-rpc.types';
-import { EstateAddresses } from './estate-addresses';
 
 @Injectable({ providedIn: 'root' })
 export class EstateRelocation {
   private readonly backend = inject(Backend);
   private readonly activeHero = inject(ActiveHero);
-  private readonly estateAddresses = inject(EstateAddresses);
 
   relocateActiveHeroEstate(
     input: EstateRelocationInput,
@@ -34,37 +32,6 @@ export class EstateRelocation {
           .pipe(
             map((rows) =>
               mapRelocateHeroEstateResult(firstRelocateHeroEstateRow(rows)),
-            ),
-            switchMap((result) =>
-              this.activeHero.loadActiveHero().pipe(
-                switchMap((state) => {
-                  const estateId = state?.heroRow?.estate_id ?? null;
-
-                  if (estateId !== result.newEstateId) {
-                    throw new Error(
-                      'Estate relocation invariant failed: active hero was not assigned to the new estate.',
-                    );
-                  }
-
-                  return this.estateAddresses
-                    .getCurrentAddress({
-                      estateId,
-                      heroId: result.heroId,
-                      serverId: result.serverId,
-                    })
-                    .pipe(
-                      map((address) => {
-                        if (!address) {
-                          throw new Error(
-                            'Estate relocation invariant failed: new estate address is not readable for the active hero.',
-                          );
-                        }
-
-                        return result;
-                      }),
-                    );
-                }),
-              ),
             ),
           ),
       ),

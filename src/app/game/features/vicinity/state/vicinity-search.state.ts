@@ -19,7 +19,7 @@ export class VicinitySearchState {
   readonly feedback = signal<string | null>(null);
   readonly districtOptions = computed(() =>
     this.page.districts().map((district) => ({
-      label: `${district.label} (${district.districtCode})`,
+      label: `${district.displayLabel} (${district.districtCode})`,
       value: district.districtCode,
     })),
   );

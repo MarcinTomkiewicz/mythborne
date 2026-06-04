@@ -8,7 +8,9 @@ import { GamePageSummaryRow } from '../../core/interfaces/game-page-summary-row.
   host: { class: 'd-block w-100' },
 })
 export class GamePageHeader {
-  readonly eyebrowLabel = input.required<string>();
+  readonly eyebrowLabel = input<string | null>(null);
   readonly title = input.required<string>();
+  readonly description = input<string | null>(null);
+  readonly summaryAriaLabel = input<string | null>(null);
   readonly summaryRows = input.required<readonly GamePageSummaryRow[]>();
 }

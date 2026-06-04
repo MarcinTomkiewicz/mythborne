@@ -1,6 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
-import { VICINITY_ADDRESS_LIST_COLUMN_LABELS } from '../../../../core/configs/vicinity.config';
+import { TooltipModule } from 'primeng/tooltip';
 import {
   VicinityListRow,
   VicinityRowActionKind,
@@ -9,18 +9,20 @@ import {
 @Component({
   selector: 'app-vicinity-address-list',
   standalone: true,
-  imports: [ButtonModule],
+  imports: [ButtonModule, TooltipModule],
   host: { class: 'd-contents' },
   templateUrl: './vicinity-address-list.html',
 })
 export class VicinityAddressList {
   readonly rows = input.required<readonly VicinityListRow[]>();
+  readonly columnLabels = input.required<readonly string[]>();
+  readonly emptyLabel = input.required<string>();
+  readonly tableLabel = input.required<string>();
   readonly selectedRow = input<VicinityListRow | null>(null);
   readonly pvpError = input<string | null>(null);
   readonly actionError = input<string | null>(null);
   readonly actionSuccess = input<string | null>(null);
   readonly metadataError = input<string | null>(null);
-  readonly columnLabels = VICINITY_ADDRESS_LIST_COLUMN_LABELS;
   readonly feedbackRows = computed(() => [
     {
       message: this.pvpError(),

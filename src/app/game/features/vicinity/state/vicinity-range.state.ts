@@ -1,15 +1,17 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
-import {
-  CurrentEstateAddressReadModel,
-  EstateDistrictCapacityReadModel,
-} from '../../../../core/domain/estate/estate-address.model';
 import { VICINITY_ADDRESS_PAGE_SIZE } from '../../../../core/configs/vicinity.config';
+import { CurrentEstateAddressReadModel } from '../../../../core/domain/estate/estate-address.model';
+import {
+  PlayerVicinityAddressCapacityReadModel,
+  PlayerVicinityPageContextReadModel,
+} from '../../../../core/domain/vicinity/player-vicinity-page-context.model';
 import type {
   VicinityAddressRange,
   VicinityBrowserRangeResult,
   VicinityBrowserSelectionSnapshot,
 } from '../../../../core/types/vicinity.types';
 import { getErrorMessage } from '../../../../core/utils/error-message';
+import { replaceTemplateTokens } from '../../../../core/utils/token-template';
 import {
   createBrowserSelectionSnapshot,
   matchesBrowserSelection,
@@ -23,51 +25,80 @@ export class VicinityRangeState {
 
   readonly isLoading = signal(true);
   readonly error = signal<string | null>(null);
+  readonly context = signal<PlayerVicinityPageContextReadModel | null>(null);
   readonly currentAddress = signal<CurrentEstateAddressReadModel | null>(null);
-  readonly districts = signal<EstateDistrictCapacityReadModel[]>([]);
+  readonly districts = signal<PlayerVicinityAddressCapacityReadModel[]>([]);
   readonly vicinityRange = signal<VicinityAddressRange | null>(null);
   readonly selectedDistrictCode = signal<string | null>(null);
   readonly focusAddressNumber = signal(1);
-  readonly currentAddressLabel = computed(
-    () => this.currentAddress()?.addressLabel ?? 'Niedostępny',
+  readonly copyJson = computed(() => this.context()?.copyJson ?? null);
+  readonly currentAddressDisplay = computed(
+    () => this.currentAddress()?.addressLabel ?? this.copyJson()?.summary.backendDataUnavailableLabel ?? '',
   );
   readonly selectedDistrict = computed(() => {
     const code = this.selectedDistrictCode();
     return this.districts().find((district) => district.districtCode === code) ?? null;
   });
+  readonly currentEstate = computed(() => this.context()?.currentEstate ?? null);
+  readonly estateRuntimeState = computed(() => this.context()?.estateRuntimeState ?? null);
   readonly rows = computed(() => this.vicinityRange()?.rows ?? []);
   readonly visibleRows = computed(() => this.rows());
   readonly addressPageLabel = computed(() => {
     const range = this.vicinityRange();
+    const copy = this.copyJson();
 
-    if (!range) {
-      return 'Strona niedostępna';
+    if (!range || !copy) {
+      return copy?.pagination.pageUnavailableLabel ?? '';
     }
 
-    const pageNumber = Math.floor((range.fromAddressNumber - 1) / VICINITY_ADDRESS_PAGE_SIZE) + 1;
-    const pageCount = Math.max(1, Math.ceil(range.district.addressCapacity / VICINITY_ADDRESS_PAGE_SIZE));
+    const districtStart = range.district.addressNumberStart;
+    const pageNumber =
+      Math.floor((range.fromAddressNumber - districtStart) / VICINITY_ADDRESS_PAGE_SIZE) + 1;
+    const pageCount = Math.max(
+      1,
+      Math.ceil(range.district.addressCapacity / VICINITY_ADDRESS_PAGE_SIZE),
+    );
 
-    return `Strona ${pageNumber} z ${pageCount}`;
+    return replaceTemplateTokens(copy.pagination.pageLabelTemplate, {
+      pageNumber,
+      pageCount,
+    });
   });
   readonly addressPageOptions = computed(() => {
     const total = this.addressPaginatorTotal();
     const pageCount = Math.max(1, Math.ceil(total / VICINITY_ADDRESS_PAGE_SIZE));
+    const copy = this.copyJson();
+    const pageLabelTemplate = copy?.pagination.pageLabelTemplate;
+    const unavailableLabel = copy?.pagination.pageUnavailableLabel ?? '';
 
     return Array.from({ length: pageCount }, (_, index) => ({
-      label: String(index + 1),
+      label: pageLabelTemplate
+        ? replaceTemplateTokens(pageLabelTemplate, {
+            pageNumber: index + 1,
+            pageCount,
+          })
+        : unavailableLabel,
       value: index * VICINITY_ADDRESS_PAGE_SIZE,
     }));
   });
   readonly addressRangeSummary = computed(() => {
     const range = this.vicinityRange();
+    const copy = this.copyJson();
+
+    return range && copy
+      ? replaceTemplateTokens(copy.pagination.rangeSummaryTemplate, {
+          rangeLabel: range.rangeLabel,
+          addressCapacity: range.district.addressCapacity,
+        })
+      : copy?.pagination.rangeUnavailableLabel ?? '';
+  });
+  readonly addressPaginatorFirst = computed(() => {
+    const range = this.vicinityRange();
 
     return range
-      ? `${range.rangeLabel} z ${range.district.addressCapacity}`
-      : 'Zakres niedostępny';
+      ? Math.max(0, range.fromAddressNumber - range.district.addressNumberStart)
+      : 0;
   });
-  readonly addressPaginatorFirst = computed(
-    () => Math.max(0, (this.vicinityRange()?.fromAddressNumber ?? 1) - 1),
-  );
   readonly addressPaginatorTotal = computed(
     () => this.selectedDistrict()?.addressCapacity ?? 0,
   );
@@ -92,9 +123,10 @@ export class VicinityRangeState {
           return;
         }
 
-        this.error.set(getErrorMessage(error, 'Nie udało się wczytać adresów w okolicy.'));
+        this.error.set(getErrorMessage(error, this.copyJson()?.page.errorLabel ?? ''));
         this.vicinityRange.set(null);
         this.currentAddress.set(null);
+        this.context.set(null);
         this.isLoading.set(false);
       },
     });
@@ -104,7 +136,14 @@ export class VicinityRangeState {
     const district = this.districts().find((entry) => entry.districtCode === value);
 
     if (!district) {
-      this.error.set(`Dzielnica posiadłości "${value}" nie jest aktywna.`);
+      const copy = this.copyJson();
+      this.error.set(
+        copy
+          ? replaceTemplateTokens(copy.errors.inactiveDistrictTemplate, {
+              districtCode: value,
+            })
+          : '',
+      );
       return false;
     }
 
@@ -112,7 +151,7 @@ export class VicinityRangeState {
     const focusAddressNumber =
       currentAddress?.districtCode === district.districtCode
         ? currentAddress.addressNumber
-        : 1;
+        : district.addressNumberStart;
 
     this.selectedDistrictCode.set(district.districtCode);
     this.focusAddressNumber.set(focusAddressNumber);
@@ -126,12 +165,14 @@ export class VicinityRangeState {
       (entry) => entry.districtCode === input.districtCode,
     );
 
-    if (!district || !Number.isInteger(input.addressNumber) || input.addressNumber < 1) {
+    if (!district || !Number.isInteger(input.addressNumber)) {
       return false;
     }
 
     this.selectedDistrictCode.set(district.districtCode);
-    this.focusAddressNumber.set(Math.min(input.addressNumber, district.addressCapacity));
+    this.focusAddressNumber.set(
+      clampAddressNumber(input.addressNumber, district),
+    );
     this.reloadSelectedRange();
 
     return true;
@@ -152,10 +193,13 @@ export class VicinityRangeState {
       return false;
     }
 
+    const districtStart = district.addressNumberStart;
     const pageStart =
-      Math.floor((currentAddress.addressNumber - 1) / VICINITY_ADDRESS_PAGE_SIZE)
+      Math.floor(
+        (currentAddress.addressNumber - districtStart) / VICINITY_ADDRESS_PAGE_SIZE,
+      )
       * VICINITY_ADDRESS_PAGE_SIZE
-      + 1;
+      + districtStart;
 
     this.selectedDistrictCode.set(district.districtCode);
     return this.applyAddressPageStart(pageStart);
@@ -163,7 +207,9 @@ export class VicinityRangeState {
 
   changeAddressPage(event: { first?: number | null }): boolean {
     const first = Number.isInteger(event.first) ? Number(event.first) : 0;
-    return this.applyAddressPageStart(first + 1);
+    const districtStart = this.selectedDistrict()?.addressNumberStart ?? 1;
+
+    return this.applyAddressPageStart(districtStart + first);
   }
 
   reloadSelectedRange(): void {
@@ -187,7 +233,7 @@ export class VicinityRangeState {
           return;
         }
 
-        this.error.set(getErrorMessage(error, 'Nie udało się wczytać adresów w okolicy.'));
+        this.error.set(getErrorMessage(error, this.copyJson()?.page.errorLabel ?? ''));
         this.vicinityRange.set(null);
         this.isLoading.set(false);
       },
@@ -201,10 +247,15 @@ export class VicinityRangeState {
       return false;
     }
 
-    const maxStart = Math.max(1, district.addressCapacity - VICINITY_ADDRESS_PAGE_SIZE + 1);
-    const pageStart = Math.min(Math.max(1, fromAddressNumber), maxStart);
+    const districtStart = district.addressNumberStart;
+    const districtEnd = district.addressNumberEnd;
+    const maxStart = Math.max(
+      districtStart,
+      districtEnd - VICINITY_ADDRESS_PAGE_SIZE + 1,
+    );
+    const pageStart = Math.min(Math.max(districtStart, fromAddressNumber), maxStart);
     const focusAddressNumber = Math.min(
-      district.addressCapacity,
+      districtEnd,
       pageStart + Math.floor((VICINITY_ADDRESS_PAGE_SIZE - 1) / 2),
     );
 
@@ -223,6 +274,7 @@ export class VicinityRangeState {
   }
 
   private applyBrowserRangeResult(result: VicinityBrowserRangeResult): void {
+    this.context.set(result.context);
     this.districts.set(result.districts);
     this.selectedDistrictCode.set(result.selectedDistrictCode);
     this.focusAddressNumber.set(result.focusAddressNumber);
@@ -244,4 +296,14 @@ export class VicinityRangeState {
   private isCurrentLoadRequest(requestId: number): boolean {
     return requestId === this.loadRequestId;
   }
+}
+
+function clampAddressNumber(
+  addressNumber: number,
+  district: PlayerVicinityAddressCapacityReadModel,
+): number {
+  return Math.min(
+    Math.max(district.addressNumberStart, addressNumber),
+    district.addressNumberEnd,
+  );
 }

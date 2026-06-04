@@ -22,6 +22,7 @@ import {
   shouldShowActivePvpOffer,
 } from '../../../../core/domain/pvp/pvp-active-action-display.mapper';
 import { VicinitySpyReportState } from './vicinity-spy-report.state';
+import { VicinityRangeState } from './vicinity-range.state';
 
 const ELAPSED_REFRESH_INTERVAL_MS = 5000;
 
@@ -31,6 +32,7 @@ export class VicinityActivePvpActionState {
   private readonly destroyRef = inject(DestroyRef);
   private readonly playerPvp = inject(PlayerPvp);
   private readonly spyReport = inject(VicinitySpyReportState);
+  private readonly range = inject(VicinityRangeState);
   private readonly requests = new RequestToken();
   private readonly nowMs = signal(Date.now());
   private elapsedRefreshKey: string | null = null;
@@ -157,7 +159,7 @@ export class VicinityActivePvpActionState {
       this.activeContextKey = null;
       this.spyReport.clear();
       this.setOffer(null);
-      this.error.set('Brak aktywnego bohatera do wczytania aktywnej akcji PvP.');
+      this.error.set(this.range.copyJson()?.page.errorLabel ?? null);
       this.isLoading.set(false);
       return;
     }
@@ -213,7 +215,7 @@ export class VicinityActivePvpActionState {
           this.setOffer(null);
           this.error.set(pvpActiveActionErrorMessage(
             error,
-            'Nie udało się wczytać aktywnego stanu PvP.',
+            this.range.copyJson()?.page.errorLabel ?? '',
           ));
           this.isLoading.set(false);
         },

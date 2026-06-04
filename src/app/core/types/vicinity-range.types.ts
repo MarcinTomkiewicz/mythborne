@@ -1,8 +1,11 @@
 import type {
   CurrentEstateAddressReadModel,
   EstateAddressIdentity,
-  EstateDistrictCapacityReadModel,
 } from '../domain/estate/estate-address.model';
+import type {
+  PlayerVicinityAddressCapacityReadModel,
+  PlayerVicinityPageContextReadModel,
+} from '../domain/vicinity/player-vicinity-page-context.model';
 
 export type VicinityAddressRowKind = 'self' | 'occupied' | 'empty';
 
@@ -10,10 +13,21 @@ export interface VicinityAddressRow extends EstateAddressIdentity {
   kind: VicinityAddressRowKind;
   isSelectable: boolean;
   occupantLabel: string;
+  districtLabel: string;
+  address: string;
+  displayLabel: string;
+  isOccupied: boolean;
+  isCurrentHeroEstate: boolean;
+  occupancyStatusKey: 'empty' | 'current' | 'occupied' | string;
+  occupancyLabel: string;
+  estateId?: string;
+  serverId?: string;
+  heroId?: string;
+  estateRank?: number;
 }
 
 export interface VicinityAddressRange {
-  district: EstateDistrictCapacityReadModel;
+  district: PlayerVicinityAddressCapacityReadModel;
   focusAddressNumber: number;
   fromAddressNumber: number;
   toAddressNumber: number;
@@ -22,8 +36,9 @@ export interface VicinityAddressRange {
 }
 
 export interface VicinityBrowserRangeResult {
+  context: PlayerVicinityPageContextReadModel;
   currentAddress: CurrentEstateAddressReadModel;
-  districts: EstateDistrictCapacityReadModel[];
+  districts: PlayerVicinityAddressCapacityReadModel[];
   selectedDistrictCode: string;
   focusAddressNumber: number;
   range: VicinityAddressRange;

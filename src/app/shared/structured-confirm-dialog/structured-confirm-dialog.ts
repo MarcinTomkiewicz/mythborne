@@ -1,11 +1,8 @@
 import { Component, input, output } from '@angular/core';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-
-export interface StructuredConfirmDialogSegment {
-  text: string;
-  highlighted: boolean;
-  lineBreakAfter?: boolean;
-}
+import type {
+  StructuredConfirmDialogSegment,
+} from '../../core/interfaces/structured-confirm-dialog-segment.interface';
 
 @Component({
   selector: 'app-structured-confirm-dialog',

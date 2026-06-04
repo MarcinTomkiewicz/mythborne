@@ -1,7 +1,6 @@
-import { Component, DestroyRef, OnInit, computed, effect, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { RouteBackgroundOverride } from '../../../core/services/ui/route-background-override';
 import {
   SUPABASE_ASSET_IMAGE_TRANSFORMS,
@@ -24,10 +23,22 @@ import { VicinitySearchState } from '../../features/vicinity/state/vicinity-sear
 import { VicinitySpyReportState } from '../../features/vicinity/state/vicinity-spy-report.state';
 import { VicinityTargetSearchState } from '../../features/vicinity/state/vicinity-target-search.state';
 import { VicinityVisibleTargetOverlayState } from '../../features/vicinity/state/vicinity-visible-target-overlay.state';
-import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import type {
+  PlayerVicinityCopyReadModel,
+} from '../../../core/domain/vicinity/player-vicinity-page-context.model';
+import type {
+  StructuredConfirmDialogSegment,
+} from '../../../core/interfaces/structured-confirm-dialog-segment.interface';
+import { GamePageHeader } from '../../../shared/game-page-header/game-page-header';
 import { EstateRelocationRunner } from '../../workflows/estate-relocation/estate-relocation-runner';
+import {
+  VicinityListRow,
+  VicinityRowActionKind,
+} from '../../../core/types/vicinity.types';
+import { StructuredConfirmDialog } from '../../../shared/structured-confirm-dialog/structured-confirm-dialog';
 
 const SPY_BACKGROUND_SOURCE = 'vicinity-spy';
+const VICINITY_RELOCATION_CONFIRMATION_KEY = 'vicinity-relocation';
 const SPY_BACKGROUND_IMAGE = supabaseStorageCssImageUrl(
   'backgrounds/spy-background.png',
   SUPABASE_ASSET_IMAGE_TRANSFORMS.background,
@@ -40,8 +51,8 @@ const SPY_BACKGROUND_IMAGE = supabaseStorageCssImageUrl(
     class: 'd-contents min-w-0',
   },
   imports: [
-    ConfirmDialogModule,
-    LoadingOverlay,
+    GamePageHeader,
+    StructuredConfirmDialog,
     VicinityActivePvpActionPanel,
     VicinityAddressList,
     VicinityPagination,
@@ -66,9 +77,9 @@ const SPY_BACKGROUND_IMAGE = supabaseStorageCssImageUrl(
   templateUrl: './vicinity-page.html',
 })
 export class VicinityPage implements OnInit {
-  private readonly confirmationService = inject(ConfirmationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly router = inject(Router);
+  private readonly confirmationService = inject(ConfirmationService);
   private readonly routeBackgroundOverride = inject(RouteBackgroundOverride);
   private navigatedPvpActionId: string | null = null;
   private navigatedSpyReportId: string | null = null;
@@ -82,6 +93,8 @@ export class VicinityPage implements OnInit {
   readonly spyReport = inject(VicinitySpyReportState);
   readonly targetSearch = inject(VicinityTargetSearchState);
   readonly targetOverlay = inject(VicinityVisibleTargetOverlayState);
+  readonly relocationConfirmationSegments =
+    signal<readonly StructuredConfirmDialogSegment[]>([]);
   readonly isScreenLoading = computed(() =>
     this.page.error() === null
     && (
@@ -158,32 +171,58 @@ export class VicinityPage implements OnInit {
     this.metadata.load();
   }
 
-  confirmRelocation(): void {
-    const selected = this.rowsState.selectedRow();
+  clearRelocationConfirmationMessage(): void {
+    this.relocationConfirmationSegments.set([]);
+  }
 
-    if (selected?.kind !== 'empty' || !this.page.selectedTarget()) {
+  handleRowAction(row: VicinityListRow, actionKind: VicinityRowActionKind): void {
+    if (actionKind === 'claimEstate') {
+      this.confirmClaimEstate(row);
       return;
     }
 
+    this.rowsState.startRowAction(row, actionKind);
+  }
+
+  private confirmClaimEstate(row: VicinityListRow): void {
+    const copy = this.page.copyJson()?.relocation;
+
+    if (row.kind !== 'empty' || !copy || this.page.isRelocating()) {
+      return;
+    }
+
+    this.rowsState.selectRow(row);
+
+    if (!this.page.selectedTarget()) {
+      return;
+    }
+
+    this.relocationConfirmationSegments.set(buildRelocationConfirmationSegments(copy));
     this.confirmationService.confirm({
-      header: 'Potwierdź przeprowadzkę',
-      message: (
-        'Przeniesiesz się na wybrany pusty adres. Stara posiadłość zostanie ' +
-        'całkowicie zniszczona i zresetowana: aktywne poziomy, prace oraz postęp ' +
-        'posiadłości nie zostaną zachowane. Nowa posiadłość powstanie w domyślnym ' +
-        'stanie dla wskazanego adresu.'
-      ),
-      acceptLabel: 'Przeprowadź się',
-      rejectLabel: 'Anuluj',
+      key: VICINITY_RELOCATION_CONFIRMATION_KEY,
+      header: copy.confirmTitle,
+      message: copy.confirmMessage,
+      acceptLabel: copy.confirmLabel,
+      rejectLabel: copy.cancelLabel,
       acceptIcon: 'pi pi-check',
       rejectIcon: 'pi pi-times',
-      acceptButtonStyleClass: 'p-button-danger',
-      rejectButtonStyleClass: 'p-button-secondary',
       accept: () => {
         this.page.setDestructiveConfirmed(true);
         this.page.relocate();
       },
+      reject: () => this.page.setDestructiveConfirmed(false),
     });
   }
+}
 
+function buildRelocationConfirmationSegments(
+  copy: PlayerVicinityCopyReadModel['relocation'],
+): StructuredConfirmDialogSegment[] {
+  const parts = copy.confirmMessageParts;
+
+  return [
+    { text: parts.intro, highlighted: false, blankLineAfter: true },
+    { text: `${parts.warningLabel} `, highlighted: true, className: 'error-text' },
+    { text: parts.warningText, highlighted: false },
+  ];
 }

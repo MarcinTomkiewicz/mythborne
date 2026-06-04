@@ -1,6 +1,14 @@
-import { VICINITY_ADDRESS_LIST_METRICS } from '../../../../core/configs/vicinity.config';
+import { VICINITY_ADDRESS_LIST_METRIC_KEYS } from '../../../../core/configs/vicinity.config';
 import { UiMetadataEntryReadModel } from '../../../../core/domain/admin-ui-metadata.model';
 import { PvpTargetCandidate } from '../../../../core/domain/pvp/pvp.model';
+import type {
+  PlayerVicinityCopyReadModel,
+} from '../../../../core/domain/vicinity/player-vicinity-page-context.model';
+import {
+  VicinityAddressRow,
+  VicinityListRow,
+  VicinityListRowKind,
+} from '../../../../core/types/vicinity.types';
 import {
   PvpEligibilityDisplay,
   pvpEligibilityDisplay,
@@ -9,18 +17,19 @@ import {
   formatPendingDurationLabel,
   formatTimeOfDayLabel,
 } from '../../../../core/utils/pending-timer';
+import { replaceTemplateTokens } from '../../../../core/utils/token-template';
 import { toVicinityRowActions } from '../../../../core/utils/vicinity-row-actions.mapper';
-import {
-  VicinityAddressRow,
-  VicinityListRow,
-  VicinityListRowKind,
-} from '../../../../core/types/vicinity.types';
 
 export function toVicinityListRow(
   row: VicinityAddressRow,
   candidate: PvpTargetCandidate | null,
   metadataEntries: readonly UiMetadataEntryReadModel[],
+  copy: PlayerVicinityCopyReadModel['addressList'],
+  labelsCopy: PlayerVicinityCopyReadModel['labels'],
+  summaryCopy: PlayerVicinityCopyReadModel['summary'],
+  selectedTargetCopy: PlayerVicinityCopyReadModel['selectedTarget'],
   selfHeroName?: string,
+  selfProtectionDisplay?: string | null,
 ): VicinityListRow {
   const kind = row.kind === 'self' || row.kind === 'empty'
     ? row.kind
@@ -45,44 +54,72 @@ export function toVicinityListRow(
     : null;
   const isProtected = !!targetCandidate?.underProtection;
   const metricDisplays = {
-    level: targetCandidate ? String(targetCandidate.targetLevel) : '-',
-    attackTravel: travelTimeDisplay(targetCandidate?.attackEligibility.travelTimeSeconds),
-    spyTravel: travelTimeDisplay(targetCandidate?.spyEligibility.travelTimeSeconds),
+    level: targetCandidate ? String(targetCandidate.targetLevel) : copy.metricUnavailableLabel,
+    attackTravel: travelTimeDisplay(
+      targetCandidate?.attackEligibility.travelTimeSeconds,
+      copy.metricUnavailableLabel,
+    ),
+    spyTravel: travelTimeDisplay(
+      targetCandidate?.spyEligibility.travelTimeSeconds,
+      copy.metricUnavailableLabel,
+    ),
   };
   const listRow: VicinityListRow = {
     key: vicinityAddressKey(row.districtCode, row.addressNumber),
     kind,
     addressLabel: row.addressLabel,
     districtCode: row.districtCode,
+    districtLabel: row.districtLabel,
     addressNumber: row.addressNumber,
-    occupantLabel: targetCandidate?.targetDisplayName
-      ?? (row.kind === 'self' ? selfHeroName : null)
-      ?? (row.kind === 'empty' || row.kind === 'self' ? row.occupantLabel : ''),
+    address: row.address,
+    displayLabel: row.displayLabel,
+    isOccupied: row.isOccupied,
+    isCurrentHeroEstate: row.isCurrentHeroEstate,
+    occupancyStatusKey: row.occupancyStatusKey,
+    occupancyLabel: row.occupancyLabel,
+    estateId: row.estateId,
+    serverId: row.serverId,
+    heroId: row.heroId,
+    estateRank: row.estateRank,
+    occupantLabel: row.kind === 'empty'
+      ? labelsCopy.empty
+      : targetCandidate?.targetDisplayName
+        ?? (row.kind === 'self' ? selfHeroName : null)
+        ?? (row.kind === 'self' ? row.occupantLabel : ''),
     candidate: targetCandidate,
     attackDisplay,
     spyDisplay,
-    statusLabel: toRowStatus(kind, targetCandidate),
+    statusLabel: toRowStatus(row, kind, targetCandidate, copy),
     statusIndicatorIcon: isProtected ? 'pi pi-shield' : null,
-    statusIndicatorAriaLabel: isProtected ? 'Cel chroniony' : null,
+    statusIndicatorAriaLabel: isProtected ? copy.protectedTargetAriaLabel : null,
     isDangerState: isProtected,
     detailLabel: '',
     levelDisplay: metricDisplays.level,
     attackTravelDisplay: metricDisplays.attackTravel,
     spyTravelDisplay: metricDisplays.spyTravel,
-    metricCells: VICINITY_ADDRESS_LIST_METRICS.map((metric) => ({
-      key: metric.key,
-      value: metricDisplays[metric.key],
+    metricCells: VICINITY_ADDRESS_LIST_METRIC_KEYS.map((key) => ({
+      key,
+      value: metricDisplays[key],
     })),
     protectionDisplay: null,
     playerSafeAttackReason: playerSafeReason(attackDisplay),
     playerSafeSpyReason: playerSafeReason(spyDisplay),
-    actions: targetCandidate ? toVicinityRowActions(targetCandidate) : [],
+    actions: row.kind === 'empty'
+      ? [claimEstateAction(copy)]
+      : targetCandidate
+        ? toVicinityRowActions(targetCandidate, copy, selectedTargetCopy)
+        : [],
   };
 
   return {
     ...listRow,
-    detailLabel: rowDetailLabel(listRow),
-    protectionDisplay: protectionLabel(listRow),
+    detailLabel: rowDetailLabel(listRow, copy),
+    protectionDisplay: protectionLabel(
+      listRow,
+      copy,
+      summaryCopy,
+      selfProtectionDisplay ?? null,
+    ),
   };
 }
 
@@ -90,25 +127,24 @@ export function vicinityAddressKey(districtCode: string, addressNumber: number):
   return `${districtCode}:${addressNumber}`;
 }
 
-function rowDetailLabel(row: VicinityListRow): string {
-  if (row.kind === 'self') {
-    return 'Brak gildii';
-  }
-
-  if (row.kind === 'empty') {
-    return 'Brak posiadłości bohatera';
+function rowDetailLabel(
+  row: VicinityListRow,
+  copy: PlayerVicinityCopyReadModel['addressList'],
+): string {
+  if (row.kind === 'self' || row.kind === 'empty') {
+    return row.kind === 'self' ? copy.noGuildLabel : '';
   }
 
   if (row.candidate) {
-    return row.candidate.targetGuildDisplayLabel ?? 'Brak gildii';
+    return row.candidate.targetGuildDisplayLabel ?? copy.noGuildLabel;
   }
 
   return '';
 }
 
-function travelTimeDisplay(seconds: number | null | undefined): string {
+function travelTimeDisplay(seconds: number | null | undefined, unavailableLabel: string): string {
   if (typeof seconds !== 'number') {
-    return '-';
+    return unavailableLabel;
   }
 
   return formatPendingDurationLabel(seconds);
@@ -120,20 +156,29 @@ function playerSafeReason(
   return display?.reasonLabel && display.isPlayerSafeReason ? display : null;
 }
 
-function protectionLabel(row: VicinityListRow): string | null {
+function protectionLabel(
+  row: VicinityListRow,
+  copy: PlayerVicinityCopyReadModel['addressList'],
+  summaryCopy: PlayerVicinityCopyReadModel['summary'],
+  selfProtectionDisplay: string | null,
+): string | null {
+  if (row.kind === 'self') {
+    return selfProtectionDisplay;
+  }
+
+  if (row.kind === 'occupied' && !row.candidate) {
+    return summaryCopy.backendDataUnavailableLabel;
+  }
+
   const expiresAt = row.candidate?.protectionExpiresAt;
 
   if (!expiresAt) {
-    return null;
+    return row.kind === 'occupied' ? summaryCopy.noActiveProtectionLabel : null;
   }
 
-  const expiresAtDate = new Date(expiresAt);
-
-  if (Number.isNaN(expiresAtDate.getTime())) {
-    return null;
-  }
-
-  return `do ${formatTimeOfDayLabel(expiresAt)}`;
+  return replaceTemplateTokens(copy.protectionUntilTemplate, {
+    time: formatTimeOfDayLabel(expiresAt),
+  });
 }
 
 function isSameGuildCandidate(candidate: PvpTargetCandidate | null): boolean {
@@ -147,19 +192,17 @@ function isSameGuildCandidate(candidate: PvpTargetCandidate | null): boolean {
 }
 
 function toRowStatus(
+  row: VicinityAddressRow,
   kind: VicinityListRowKind,
   candidate: PvpTargetCandidate | null,
+  copy: PlayerVicinityCopyReadModel['addressList'],
 ): string | null {
-  if (kind === 'self') {
-    return 'Twoja';
-  }
-
-  if (kind === 'empty') {
-    return 'Pusta działka';
+  if (kind === 'self' || kind === 'empty') {
+    return kind === 'self' ? row.occupancyLabel : null;
   }
 
   if (!candidate) {
-    return null;
+    return row.occupancyLabel;
   }
 
   if (candidate.underProtection) {
@@ -167,8 +210,23 @@ function toRowStatus(
   }
 
   if (isSameGuildCandidate(candidate)) {
-    return 'Gildia';
+    return copy.sameGuildLabel;
   }
 
   return null;
+}
+
+function claimEstateAction(
+  copy: PlayerVicinityCopyReadModel['addressList'],
+): VicinityListRow['actions'][number] {
+  return {
+    kind: 'claimEstate',
+    icon: 'pi pi-settle',
+    label: copy.claimEstateLabel,
+    tooltip: copy.claimEstateTooltip,
+    severity: 'secondary',
+    disabled: false,
+    primary: false,
+    pending: false,
+  };
 }

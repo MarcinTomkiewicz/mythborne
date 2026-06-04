@@ -7,9 +7,13 @@
     <p class="mb-0">
       @for (segment of messageSegments(); track $index) {
         @if (segment.highlighted) {
-          <strong class="color-heading">{{ segment.text }}</strong>
+          <strong [class]="segment.className ?? 'color-heading'">{{ segment.text }}</strong>
         } @else {
-          <span>{{ segment.text }}</span>
+          <span [class]="segment.className ?? ''">{{ segment.text }}</span>
+        }
+        @if (segment.blankLineAfter) {
+          <br />
+          <br />
         }
         @if (segment.lineBreakAfter) {
           <br />

@@ -1,10 +1,16 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
+import type {
+  PlayerVicinityCopyReadModel,
+  PlayerVicinityEstateSummaryReadModel,
+} from '../../../../core/domain/vicinity/player-vicinity-page-context.model';
 import {
   PvpStartActionKind,
   VicinityListRow,
   VicinityRowAction,
   VicinityRowActionKind,
 } from '../../../../core/types/vicinity.types';
+import { formatTimeOfDayLabel } from '../../../../core/utils/pending-timer';
+import { replaceTemplateTokens } from '../../../../core/utils/token-template';
 import {
   toVicinityListRow,
   vicinityAddressKey,
@@ -25,6 +31,12 @@ export class VicinityRowsState {
 
   readonly selectedRowKey = signal<string | null>(null);
   readonly rows = computed(() => {
+    const copy = this.page.copyJson();
+
+    if (!copy) {
+      return [];
+    }
+
     const candidatesByAddress = new Map(
       this.overlay.targets().map((candidate) => [
         vicinityAddressKey(
@@ -35,6 +47,10 @@ export class VicinityRowsState {
       ]),
     );
     const metadataEntries = this.metadata.entries();
+    const selfProtectionDisplay = selfCurrentProtectionDisplay(
+      this.page.estateRuntimeState(),
+      copy,
+    );
 
     return this.page.visibleRows().map((row) => {
       const candidate =
@@ -42,7 +58,17 @@ export class VicinityRowsState {
         ?? null;
 
       return this.withActionState(
-        toVicinityListRow(row, candidate, metadataEntries, this.page.currentHeroName()),
+        toVicinityListRow(
+          row,
+          candidate,
+          metadataEntries,
+          copy.addressList,
+          copy.labels,
+          copy.summary,
+          copy.selectedTarget,
+          this.page.currentHeroName(),
+          selfProtectionDisplay,
+        ),
       );
     });
   });
@@ -62,10 +88,21 @@ export class VicinityRowsState {
     if (row.kind === 'empty') {
       this.page.selectRow({
         districtCode: row.districtCode,
+        districtLabel: row.districtLabel,
         addressNumber: row.addressNumber,
+        address: row.address,
         addressLabel: row.addressLabel,
+        displayLabel: row.displayLabel,
         kind: 'empty',
         isSelectable: true,
+        isOccupied: false,
+        isCurrentHeroEstate: false,
+        occupancyStatusKey: row.occupancyStatusKey,
+        occupancyLabel: row.occupancyLabel,
+        estateId: row.estateId,
+        serverId: row.serverId,
+        heroId: row.heroId,
+        estateRank: row.estateRank,
         occupantLabel: row.occupantLabel,
       });
       return;
@@ -74,7 +111,24 @@ export class VicinityRowsState {
     this.page.setDestructiveConfirmed(false);
   }
 
+  focusCurrentAddress(): void {
+    const currentAddress = this.page.currentAddress();
+
+    if (!currentAddress || !this.page.focusCurrentAddress()) {
+      return;
+    }
+
+    this.selectedRowKey.set(
+      vicinityAddressKey(currentAddress.districtCode, currentAddress.addressNumber),
+    );
+  }
+
   startRowAction(row: VicinityListRow, actionKind: VicinityRowActionKind): void {
+    if (actionKind === 'claimEstate') {
+      this.selectRow(row);
+      return;
+    }
+
     const candidate = row.candidate;
     const pvpActionKind = toPvpStartActionKind(actionKind);
 
@@ -140,4 +194,25 @@ function toPvpStartActionKind(
   actionKind: VicinityRowActionKind,
 ): PvpStartActionKind | null {
   return actionKind === 'attack' || actionKind === 'spy' ? actionKind : null;
+}
+
+function selfCurrentProtectionDisplay(
+  runtimeState: PlayerVicinityEstateSummaryReadModel | null,
+  copy: PlayerVicinityCopyReadModel,
+): string {
+  if (!runtimeState) {
+    return copy.summary.backendDataUnavailableLabel;
+  }
+
+  const expiresAt = runtimeState.attackProtectionActive && runtimeState.attackProtectionExpiresAt
+    ? runtimeState.attackProtectionExpiresAt
+    : runtimeState.siegeProtectionActive && runtimeState.siegeProtectionExpiresAt
+      ? runtimeState.siegeProtectionExpiresAt
+      : null;
+
+  return expiresAt
+    ? replaceTemplateTokens(copy.addressList.protectionUntilTemplate, {
+        time: formatTimeOfDayLabel(expiresAt),
+      })
+    : copy.summary.noActiveProtectionLabel;
 }

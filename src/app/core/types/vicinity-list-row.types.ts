@@ -9,7 +9,18 @@ export interface VicinityListRow {
   kind: VicinityListRowKind;
   addressLabel: string;
   districtCode: string;
+  districtLabel: string;
   addressNumber: number;
+  address: string;
+  displayLabel: string;
+  isOccupied: boolean;
+  isCurrentHeroEstate: boolean;
+  occupancyStatusKey: 'empty' | 'current' | 'occupied' | string;
+  occupancyLabel: string;
+  estateId?: string;
+  serverId?: string;
+  heroId?: string;
+  estateRank?: number;
   occupantLabel: string;
   candidate: PvpTargetCandidate | null;
   attackDisplay: PvpEligibilityDisplay | null;

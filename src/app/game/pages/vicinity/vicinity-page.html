@@ -1,113 +1,110 @@
-<app-loading-overlay
-  [visible]="isScreenLoading()"
-  label="Wczytywanie okolicy..."
-  description="Pobieranie adresów i celów PvP w pobliżu twojej posiadłości."
+<app-structured-confirm-dialog
+  key="vicinity-relocation"
+  styleClass="mg-dialog mg-dialog--danger"
+  [messageSegments]="relocationConfirmationSegments()"
+  (hidden)="clearRelocationConfirmationMessage()"
 />
-<p-confirmdialog styleClass="mg-dialog mg-dialog--danger" />
 
 @if (page.error()) {
   <section class="mg-card flex-col gap-sm p-lg">
-    <p class="color-muted small-caps uppercase text-xs mb-0">Błąd</p>
+    <p class="color-muted small-caps uppercase text-xs mb-0">{{ page.errorLabel() }}</p>
     <p class="error-text mb-0">{{ page.error() }}</p>
   </section>
 } @else {
-  <div class="flex-col gap-lg min-w-0">
-    <section class="mg-card p-lg w-100">
-      <div class="grid-2-1 gap-lg w-100 grid-items-center">
-        <div class="flex-col gap-xs">
-          <p class="color-muted small-caps uppercase text-xs mb-0">PvP</p>
-          <h2 class="color-heading text-xl mb-0">Okoliczne posiadłości</h2>
-          <p class="muted-text mb-0">
-            Wybierz przeciwnika z okolicy swojej posiadłości. Czasy dojścia ataku i szpiega
-            pochodzą z zasad dostępności PvP; walka i raport pozostają na osobnych ekranach.
-          </p>
-        </div>
-
-        <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium" aria-label="Podsumowanie okolicy PvP">
-          @for (row of page.headerSummaryRows(); track row.label) {
-            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-              <span class="color-muted small-caps uppercase text-xs">{{ row.label }}</span>
-              <strong class="color-heading text-md">{{ row.value }}</strong>
-            </div>
-          }
-        </aside>
-      </div>
-      @if (page.dailyAttackError()) {
-        <p class="warn-text mb-0 mt-md">{{ page.dailyAttackError() }}</p>
-      }
-      @if (page.estateRuntimeError()) {
-        <p class="warn-text mb-0 mt-md">{{ page.estateRuntimeError() }}</p>
-      }
-    </section>
-
-    <app-vicinity-active-pvp-action-panel
-      [offer]="activePvpAction.visibleOffer()"
-      [timer]="activePvpAction.timer()"
-      [factRows]="activePvpAction.factRows()"
-      [helperText]="activePvpAction.helperText()"
-      [pendingHelperText]="activePvpAction.pendingHelperText()"
-      [isLoading]="activePvpAction.isLoading()"
-      [isTimerReady]="activePvpAction.isTimerReady()"
-      (refresh)="activePvpAction.load()"
-    />
-    @if (activePvpAction.error()) {
-      <p class="warn-text mb-0">{{ activePvpAction.error() }}</p>
-    }
-    @if (spyReport.isPreparingReport()) {
-      <section class="mg-card p-lg flex-col gap-sm w-100">
-        <p class="small-caps color-muted text-xs mb-0">Raport szpiegowania</p>
-        <p class="color-text mb-0">Przygotowujemy raport z zakończonego szpiegowania...</p>
+  @if (page.copyJson(); as copy) {
+    <div class="flex-col gap-lg min-w-0">
+      <section class="flex-col gap-sm w-100">
+        <app-game-page-header
+          [eyebrowLabel]="copy.page.pvpLabel"
+          [title]="copy.sections.vicinity"
+          [description]="page.pageDescription()"
+          [summaryAriaLabel]="copy.page.summaryAriaLabel"
+          [summaryRows]="page.headerSummaryRows()"
+        />
+        @if (page.dailyAttackError()) {
+          <p class="warn-text mb-0">{{ page.dailyAttackError() }}</p>
+        }
+        @if (page.estateRuntimeError()) {
+          <p class="warn-text mb-0">{{ page.estateRuntimeError() }}</p>
+        }
       </section>
-    }
-    @if (spyReport.error()) {
-      <p class="warn-text mb-0">{{ spyReport.error() }}</p>
-    }
 
-    @if (!activePvpAction.hasBlockingAction()) {
-      <section class="grid-3-1 gap-lg w-100">
-        <section class="mg-card flex-col gap-md p-lg min-w-0 w-100">
-          <app-vicinity-toolbar
-            [selectedDistrictControl]="search.selectedDistrictControl"
-            [searchControl]="search.pvpSearchControl"
-            [districtOptions]="search.districtOptions()"
-            [searchFeedback]="search.feedback()"
-            [isSearching]="targetOverlay.isLoading() || targetSearch.isLoading()"
-            [isMyVicinityDisabled]="page.isLoading() || page.isRelocating() || !page.currentAddress()"
-            (search)="search.applySearch()"
-            (focusCurrentAddress)="page.focusCurrentAddress()"
-          />
+      <app-vicinity-active-pvp-action-panel
+        [offer]="activePvpAction.visibleOffer()"
+        [timer]="activePvpAction.timer()"
+        [factRows]="activePvpAction.factRows()"
+        [helperText]="activePvpAction.helperText()"
+        [pendingHelperText]="activePvpAction.pendingHelperText()"
+        [isLoading]="activePvpAction.isLoading()"
+        [isTimerReady]="activePvpAction.isTimerReady()"
+        (refresh)="activePvpAction.load()"
+      />
+      @if (activePvpAction.error()) {
+        <p class="warn-text mb-0">{{ activePvpAction.error() }}</p>
+      }
+      @if (spyReport.error()) {
+        <p class="warn-text mb-0">{{ spyReport.error() }}</p>
+      }
 
-          <app-vicinity-address-list
-            [rows]="rowsState.rows()"
-            [selectedRow]="rowsState.selectedRow()"
-            [pvpError]="targetOverlay.error() ?? targetSearch.error()"
-            [actionError]="actions.error()"
-            [actionSuccess]="actions.success()"
-            [metadataError]="metadata.error()"
-            (selectRow)="rowsState.selectRow($event)"
-            (startAction)="rowsState.startRowAction($event.row, $event.actionKind)"
-          />
+      @if (!activePvpAction.hasBlockingAction()) {
+        <section class="grid-3-1 gap-lg w-100">
+          <section class="mg-card flex-col gap-md p-lg min-w-0 w-100">
+            <app-vicinity-toolbar
+              [selectedDistrictControl]="search.selectedDistrictControl"
+              [searchControl]="search.pvpSearchControl"
+              [districtOptions]="search.districtOptions()"
+              [sectionTitle]="copy.sections.addresses"
+              [helperText]="copy.helper.emptyAddressGeneration"
+              [districtFilterLabel]="copy.filters.district"
+              [currentVicinityButtonLabel]="copy.toolbar.currentVicinityButtonLabel"
+              [searchLabel]="copy.toolbar.searchLabel"
+              [searchPlaceholder]="copy.toolbar.searchPlaceholder"
+              [searchButtonLabel]="copy.toolbar.searchButtonLabel"
+              [searchFeedback]="search.feedback()"
+              [isSearching]="targetOverlay.isLoading() || targetSearch.isLoading()"
+              [isMyVicinityDisabled]="page.isLoading() || page.isRelocating() || !page.currentAddress()"
+              (search)="search.applySearch()"
+              (focusCurrentAddress)="rowsState.focusCurrentAddress()"
+            />
 
-          <app-vicinity-pagination
-            [pageLabel]="page.addressPageLabel()"
-            [rangeSummary]="page.addressRangeSummary()"
-            [pageOptions]="page.addressPageOptions()"
-            [first]="page.addressPaginatorFirst()"
-            [totalRecords]="page.addressPaginatorTotal()"
-            (pageChange)="page.changeAddressPage($event)"
+            <app-vicinity-address-list
+              [rows]="rowsState.rows()"
+              [columnLabels]="page.addressListColumnLabels()"
+              [emptyLabel]="copy.empty.districtAddresses"
+              [tableLabel]="copy.sections.addresses"
+              [selectedRow]="rowsState.selectedRow()"
+              [pvpError]="targetOverlay.error() ?? targetSearch.error()"
+              [actionError]="actions.error()"
+              [actionSuccess]="actions.success()"
+              [metadataError]="metadata.error()"
+              (selectRow)="rowsState.selectRow($event)"
+              (startAction)="handleRowAction($event.row, $event.actionKind)"
+            />
+
+            <app-vicinity-pagination
+              [pageLabel]="page.addressPageLabel()"
+              [rangeSummary]="page.addressRangeSummary()"
+              [navigationLabel]="copy.sections.addresses"
+              [placeholder]="copy.pagination.pageSelectPlaceholder"
+              [pageOptions]="page.addressPageOptions()"
+              [first]="page.addressPaginatorFirst()"
+              [totalRecords]="page.addressPaginatorTotal()"
+              (pageChange)="page.changeAddressPage($event)"
+            />
+          </section>
+
+          <app-vicinity-selected-target-panel
+            [selected]="rowsState.selectedRow()"
+            [labels]="copy.labels"
+            [summaryCopy]="copy.summary"
+            [selectedTargetCopy]="copy.selectedTarget"
+            [addressListCopy]="copy.addressList"
+            [relocationError]="page.relocationError()"
+            [relocationSuccess]="page.relocationSuccess()"
+            (startAction)="handleRowAction($event.row, $event.actionKind)"
           />
         </section>
-
-        <app-vicinity-selected-target-panel
-          [selected]="rowsState.selectedRow()"
-          [hasSelectedTarget]="!!page.selectedTarget()"
-          [isRelocating]="page.isRelocating()"
-          [relocationError]="page.relocationError()"
-          [relocationSuccess]="page.relocationSuccess()"
-          (confirmRelocation)="confirmRelocation()"
-          (startAction)="rowsState.startRowAction($event.row, $event.actionKind)"
-        />
-      </section>
-    }
-  </div>
+      }
+    </div>
+  }
 }

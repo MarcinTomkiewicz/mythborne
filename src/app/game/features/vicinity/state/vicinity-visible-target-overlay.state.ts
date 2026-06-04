@@ -1,9 +1,9 @@
 import { effect, inject, Injectable, signal } from '@angular/core';
+import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
 import { PvpTargetCandidate } from '../../../../core/domain/pvp/pvp.model';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
 import { PvpVisibleAddressTargetOverlayInput } from '../../../../core/types/vicinity.types';
-import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
 import { getErrorMessage } from '../../../../core/utils/error-message';
 import { RequestToken } from '../../../../core/utils/request-token';
 import { VicinityRangeState } from './vicinity-range.state';
@@ -66,7 +66,7 @@ export class VicinityVisibleTargetOverlayState {
 
     if (!requestContextKey) {
       this.targets.set([]);
-      this.error.set('Brak aktywnego bohatera do wczytania celów PvP.');
+      this.error.set(this.range.copyJson()?.page.errorLabel ?? null);
       this.isLoading.set(false);
       this.loaded.set(true);
       return;
@@ -94,7 +94,10 @@ export class VicinityVisibleTargetOverlayState {
         }
 
         this.targets.set([]);
-        this.error.set(getErrorMessage(error, 'Nie udało się wczytać celów PvP w widocznym zakresie.'));
+        this.error.set(getErrorMessage(
+          error,
+          this.range.copyJson()?.page.errorLabel ?? '',
+        ));
         this.isLoading.set(false);
         this.loaded.set(true);
       },

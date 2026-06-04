@@ -1,17 +1,19 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { PvpTargetCandidate } from '../../../../core/domain/pvp/pvp.model';
 import { VICINITY_TARGET_LIMIT } from '../../../../core/configs/vicinity.config';
+import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
+import { PvpTargetCandidate } from '../../../../core/domain/pvp/pvp.model';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
-import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
 import { getErrorMessage } from '../../../../core/utils/error-message';
 import { trimText, trimToNull } from '../../../../core/utils/normalize-text';
 import { RequestToken } from '../../../../core/utils/request-token';
+import { VicinityRangeState } from './vicinity-range.state';
 
 @Injectable()
 export class VicinityTargetSearchState {
   private readonly activeHero = inject(ActiveHero);
   private readonly playerPvp = inject(PlayerPvp);
+  private readonly range = inject(VicinityRangeState);
   private readonly requests = new RequestToken();
 
   readonly isLoading = signal(false);
@@ -29,7 +31,7 @@ export class VicinityTargetSearchState {
 
     if (!requestContextKey) {
       this.candidates.set([]);
-      this.error.set('Brak aktywnego bohatera do wyszukiwania celów PvP.');
+      this.error.set(this.range.copyJson()?.page.errorLabel ?? null);
       this.isLoading.set(false);
       return;
     }
@@ -61,7 +63,10 @@ export class VicinityTargetSearchState {
         }
 
         this.candidates.set([]);
-        this.error.set(getErrorMessage(error, 'Nie udało się wczytać celów PvP.'));
+        this.error.set(getErrorMessage(
+          error,
+          this.range.copyJson()?.page.errorLabel ?? '',
+        ));
         this.isLoading.set(false);
       },
     });

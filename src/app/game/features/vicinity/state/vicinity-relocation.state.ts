@@ -2,7 +2,6 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { EmptyEstateAddressOption } from '../../../../core/domain/estate/estate-address.model';
 import { VicinityAddressRow } from '../../../../core/types/vicinity.types';
 import { EstateRelocationRunner } from '../../../workflows/estate-relocation/estate-relocation-runner';
-import { toEmptyAddressOption } from '../utils/vicinity-address-range';
 
 @Injectable()
 export class VicinityRelocationState {
@@ -60,4 +59,17 @@ export class VicinityRelocationState {
       setDestructiveConfirmed: (value) => this.destructiveConfirmed.set(value),
     });
   }
+}
+
+function toEmptyAddressOption(
+  row: VicinityAddressRow,
+): EmptyEstateAddressOption | null {
+  return row.kind === 'empty'
+    ? {
+        districtCode: row.districtCode,
+        addressNumber: row.addressNumber,
+        addressLabel: row.addressLabel,
+        isOccupied: false,
+      }
+    : null;
 }

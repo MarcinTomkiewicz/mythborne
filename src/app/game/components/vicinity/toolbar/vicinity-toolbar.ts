@@ -18,9 +18,17 @@ import { SelectModule } from 'primeng/select';
   templateUrl: './vicinity-toolbar.html',
 })
 export class VicinityToolbar {
+  readonly districtSelectId = 'vicinity-district-filter';
   readonly selectedDistrictControl = input.required<FormControl<string | null>>();
   readonly searchControl = input.required<FormControl<string>>();
   readonly districtOptions = input.required<SelectItem<string>[]>();
+  readonly sectionTitle = input.required<string>();
+  readonly helperText = input.required<string>();
+  readonly districtFilterLabel = input.required<string>();
+  readonly currentVicinityButtonLabel = input.required<string>();
+  readonly searchLabel = input.required<string>();
+  readonly searchPlaceholder = input.required<string>();
+  readonly searchButtonLabel = input.required<string>();
   readonly searchFeedback = input<string | null>(null);
   readonly isSearching = input(false);
   readonly isMyVicinityDisabled = input(false);
