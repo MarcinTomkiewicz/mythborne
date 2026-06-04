@@ -2,7 +2,7 @@
 
 @if (page.error(); as error) {
   <section class="mg-card flex-col gap-sm p-lg w-100">
-    <p class="mb-0 color-heading">{{ error }}</p>
+    <p class="mb-0 text-danger">{{ error }}</p>
   </section>
 } @else if (page.context(); as context) {
   @let copy = context.copyJson;
@@ -27,45 +27,52 @@
 
       @if (page.activeJob(); as job) {
         <section class="mg-card p-lg w-100">
-          <div class="grid-2-1 gap-lg grid-items-center">
-            <div class="flex-col gap-sm min-w-0">
-              <span class="tag-badge tag-badge--warn w-auto">{{ copy.summary.activeJob }}</span>
-              <h2 class="mg-section__title mg-section__title--sm mb-0">
-                {{ job.buildingName ?? copy.summary.activeJob }}
-                | {{ copy.labels.nextLevel }} {{ job.targetLevel }}
-              </h2>
-              @if (job.startedAt && job.completesAt) {
-                <p class="mb-0 color-heading">
-                  {{ page.toDateTimeLabel(job.startedAt) }} | {{ page.toDateTimeLabel(job.completesAt) }}
-                </p>
-              }
-            </div>
-
-            <div class="flex-col gap-sm w-100">
-              <div class="flex-row-between-center flex-col-sm gap-sm">
-                @if (job.startedAt) {
-                  <span class="color-muted small-caps uppercase text-xs">
-                    {{ page.toDateTimeLabel(job.startedAt) }}
+          <div class="grid-2 gap-lg grid-items-center">
+            <div class="flex-row-start-center flex-col-sm gap-md min-w-0">
+              <span class="image__preview image__preview--square w-px-150 min-w-auto flex-none">
+                @if (page.activeJobBuildingImageUrl(job); as imageUrl) {
+                  <img
+                    [ngSrc]="imageUrl"
+                    [alt]="job.buildingName ?? copy.summary.activeJob"
+                    class="image__preview-image object-fit-contain"
+                    [width]="buildingImageDimensions.width"
+                    [height]="buildingImageDimensions.height"
+                  />
+                } @else {
+                  <span class="flex-col-center-center h-100 w-100">
+                    <i class="pi pi-capitol color-heading" aria-hidden="true"></i>
                   </span>
                 }
-                @if (job.secondsUntilCompletion !== undefined) {
-                  <strong class="color-heading">
-                    {{ page.formatDuration(job.secondsUntilCompletion) }}
-                  </strong>
+              </span>
+
+              <div class="flex-col gap-sm min-w-0">
+                <h2 class="mg-section__title mg-section__title--sm mb-0">
+                  {{ job.buildingName ?? copy.summary.activeJob }}
+                  | {{ copy.labels.nextLevel }} {{ job.targetLevel }}
+                </h2>
+                @if (job.completesAt) {
+                  <p class="mb-0 muted-text">
+                    {{ toDateTimeLabel(job.completesAt) }}
+                  </p>
                 }
               </div>
+            </div>
+
+            <div class="flex-col gap-md w-100">
+              @if (page.activeJobCountdownLabel(job); as countdownLabel) {
+                <strong class="color-heading font-display text-xl text-right">
+                  {{ countdownLabel }}
+                </strong>
+              }
               <app-game-bar
                 [label]="copy.summary.activeJob"
-                [value]="activeJobProgress(job)"
+                [value]="page.activeJobProgress(job)"
                 [max]="100"
                 type="xp"
                 [compact]="true"
+                [showLabel]="false"
+                [showValue]="false"
               />
-              <div class="flex-row-start-center flex-wrap gap-sm">
-                <span class="tag-badge tag-badge--info">
-                  {{ copy.labels.nextLevel }} {{ job.targetLevel }}
-                </span>
-              </div>
             </div>
           </div>
         </section>
@@ -75,7 +82,7 @@
         <div class="flex-row-between-center flex-col-sm gap-sm">
           <div class="flex-col gap-xs">
             <h2 class="color-heading text-lg m-0">
-              {{ estate.building_groups_json.length === 1 ? estate.building_groups_json[0].groupTitle : copy.sections.buildings }}
+              {{ page.buildingSectionHeading(estate, copy) }}
             </h2>
           </div>
         </div>
@@ -184,20 +191,64 @@
                             @for (cost of costRows; track $index) {
                               <div class="flex-row-between-start flex-col-sm gap-sm">
                                 <span class="color-muted min-w-0">{{ cost.displayLabel }}</span>
-                                <strong class="color-heading text-right min-w-0">{{ cost.displayValue }}</strong>
+                                <strong
+                                  class="text-right min-w-0"
+                                  [class.color-heading]="cost.isMet === undefined && !cost.displayTone"
+                                  [class.success-text]="cost.isMet === true || cost.displayTone === 'success'"
+                                  [class.error-text]="cost.isMet === false || cost.displayTone === 'danger'"
+                                >
+                                  {{ cost.displayValue }}
+                                </strong>
                               </div>
+                              @if (cost.failureReasonLabel && cost.missingDisplayValue) {
+                                <div class="flex-row-between-start flex-col-sm gap-sm">
+                                  <span class="error-text min-w-0">{{ cost.failureReasonLabel }}</span>
+                                  <strong class="error-text text-right min-w-0">
+                                    {{ cost.missingDisplayValue }}
+                                  </strong>
+                                </div>
+                              }
                             }
                           </div>
                         }
                       </div>
                     </div>
 
-                    <p-button
-                      [label]="copy.actions.upgrade"
-                      [disabled]="page.isStartingUpgrade(building) || !!page.activeJob() || building.isAtMaxLevel === true || building.isAvailableInEstateDistrict === false || (building.upgradePreviewJson?.meetsRequirements ?? building.meetsRequirements) === false"
-                      [loading]="page.isStartingUpgrade(building)"
-                      (onClick)="page.startBuildingUpgrade(building)"
-                    />
+                    @if (page.activeJob(); as activeCardJob) {
+                      @if (activeCardJob.buildingId === building.buildingId) {
+                        <div class="flex-col gap-sm">
+                          @if (page.activeJobCountdownLabel(activeCardJob); as countdownLabel) {
+                            <div class="flex-row-between-center flex-col-sm gap-sm">
+                              <span class="color-muted small-caps uppercase text-xs">{{ copy.summary.activeJob }}</span>
+                              <strong class="color-heading text-right">{{ countdownLabel }}</strong>
+                            </div>
+                          }
+                          <app-game-bar
+                            [label]="copy.summary.activeJob"
+                            [value]="page.activeJobProgress(activeCardJob)"
+                            [max]="100"
+                            type="xp"
+                            [compact]="true"
+                            [showLabel]="false"
+                            [showValue]="false"
+                          />
+                        </div>
+                      } @else {
+                        <p-button
+                          [label]="copy.actions.upgrade"
+                          [disabled]="page.isStartingUpgrade(building) || !!page.activeJob() || building.isAtMaxLevel === true || building.isAvailableInEstateDistrict === false || (building.upgradePreviewJson?.meetsResourceCosts ?? building.meetsResourceCosts) === false || (building.upgradePreviewJson?.canAffordResourceCosts ?? building.canAffordResourceCosts) === false || (building.upgradePreviewJson?.meetsRequirements ?? building.meetsRequirements) === false"
+                          [loading]="page.isStartingUpgrade(building)"
+                          (onClick)="page.startBuildingUpgrade(building)"
+                        />
+                      }
+                    } @else {
+                      <p-button
+                        [label]="copy.actions.upgrade"
+                        [disabled]="page.isStartingUpgrade(building) || building.isAtMaxLevel === true || building.isAvailableInEstateDistrict === false || (building.upgradePreviewJson?.meetsResourceCosts ?? building.meetsResourceCosts) === false || (building.upgradePreviewJson?.canAffordResourceCosts ?? building.canAffordResourceCosts) === false || (building.upgradePreviewJson?.meetsRequirements ?? building.meetsRequirements) === false"
+                        [loading]="page.isStartingUpgrade(building)"
+                        (onClick)="page.startBuildingUpgrade(building)"
+                      />
+                    }
                   </article>
                 }
               </div>

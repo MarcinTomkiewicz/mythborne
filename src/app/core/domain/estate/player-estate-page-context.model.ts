@@ -141,6 +141,11 @@ export interface EstateBuildingRow {
   bonusesJson: EstateBuildingBonusRow[];
   upgradePreviewJson: EstateUpgradePreview | null;
   meetsRequirements: boolean;
+  meetsResourceCosts?: boolean;
+  canAffordResourceCosts?: boolean;
+  resourceCostCount?: number;
+  unmetResourceCostCount?: number;
+  resourceCostFailuresJson?: EstateResourceCostRow[];
   requirementCount: number;
   unmetCount: number;
   requirementFailuresJson: EstateRequirementRow[];
@@ -164,6 +169,16 @@ export interface EstateResourceCostRow {
   displayLabel: string;
   displayValue: string;
   sortOrder?: number;
+  currentAmount?: number;
+  currentDisplayValue?: string;
+  isMet?: boolean;
+  statusKey?: 'met' | 'not_met' | string;
+  displayTone?: 'success' | 'danger' | string;
+  missingAmount?: number;
+  missingDisplayValue?: string;
+  failureReasonKey?: 'insufficient_resource' | string;
+  failureReasonLabel?: string;
+  valueSource?: string;
 }
 
 export interface EstateRequirementRow {
@@ -228,6 +243,11 @@ export interface EstateUpgradePreview {
   requirementsJson: EstateRequirementRow[];
   bonusesJson: EstateBuildingBonusRow[];
   meetsRequirements: boolean;
+  meetsResourceCosts?: boolean;
+  canAffordResourceCosts?: boolean;
+  resourceCostCount?: number;
+  unmetResourceCostCount?: number;
+  resourceCostFailuresJson?: EstateResourceCostRow[];
   requirementCount: number;
   unmetCount: number;
   failuresJson: EstateRequirementRow[];

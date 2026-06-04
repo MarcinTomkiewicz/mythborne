@@ -1,7 +1,9 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { switchMap } from 'rxjs';
 import {
+  EstateBuildingJob,
   EstateBuildingRow,
+  EstateCopyJson,
+  EstateRuntimeState,
   PlayerEstatePageContextV3,
 } from '../../domain/estate/player-estate-page-context.model';
 import { resolveBuildingImagePath } from '../../domain/building/building-image-paths';
@@ -9,19 +11,23 @@ import { toBuildingDurationLabel } from '../../utils/building-display';
 import { getErrorMessage } from '../../utils/error-message';
 import { ActiveHero } from '../hero/active-hero';
 import { PlayerEstate } from '../estate/player-estate';
+import { ToastService } from '../ui/toast';
+import { MansionActiveJobState } from './mansion-active-job.state';
 import { BuildingJobs } from './building-jobs';
 
 @Injectable()
 export class MansionPageFacade {
+  private readonly activeJobState = inject(MansionActiveJobState);
   private readonly playerEstate = inject(PlayerEstate);
   private readonly activeHero = inject(ActiveHero);
+  private readonly toast = inject(ToastService);
   private readonly buildingJobs = inject(BuildingJobs);
 
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly actionError = signal<string | null>(null);
   readonly context = signal<PlayerEstatePageContextV3 | null>(null);
   readonly startingBuildingId = signal<string | null>(null);
+  readonly settlingActiveJobId = this.activeJobState.settlingActiveJobId;
 
   readonly copyJson = computed(() => this.context()?.copyJson ?? null);
   readonly estateRuntimeState = computed(
@@ -42,6 +48,18 @@ export class MansionPageFacade {
 
   private loadRequestId = 0;
   private actionRequestId = 0;
+
+  constructor() {
+    this.activeJobState.configure({
+      context: this.context.asReadonly(),
+      applyContext: (context) => {
+        this.context.set(context);
+      },
+      acceptsContext: (context) => this.acceptsContext(context),
+      contextKey: (context) => this.contextKey(context),
+      isCurrentContextKey: (contextKey) => this.isCurrentContextKey(contextKey),
+    });
+  }
 
   loadData(): void {
     const requestId = ++this.loadRequestId;
@@ -84,6 +102,8 @@ export class MansionPageFacade {
       || this.startingBuildingId()
       || building.isAtMaxLevel === true
       || building.isAvailableInEstateDistrict === false
+      || (building.upgradePreviewJson?.meetsResourceCosts ?? building.meetsResourceCosts) === false
+      || (building.upgradePreviewJson?.canAffordResourceCosts ?? building.canAffordResourceCosts) === false
       || (building.upgradePreviewJson?.meetsRequirements ?? building.meetsRequirements) === false
     ) {
       return;
@@ -93,16 +113,11 @@ export class MansionPageFacade {
     const contextKey = this.contextKey(context);
 
     this.startingBuildingId.set(building.buildingId);
-    this.actionError.set(null);
 
-    this.activeHero.requireActiveHero().pipe(
-      switchMap((activeHero) =>
-        this.buildingJobs.startHeroEstateBuildingUpgrade({
-          heroId: activeHero.heroId,
-          buildingId: building.buildingId,
-        }),
-      ),
-    ).subscribe({
+    this.buildingJobs.startHeroEstateBuildingUpgrade({
+      heroId: context.hero.id,
+      buildingId: building.buildingId,
+    }).subscribe({
       next: (result) => {
         if (
           requestId !== this.actionRequestId
@@ -134,7 +149,11 @@ export class MansionPageFacade {
         }
 
         const message = getErrorMessage(error, '');
-        this.actionError.set(message || null);
+
+        if (message) {
+          this.toast.show('error', context.copyJson.actions.upgrade, message);
+        }
+
         this.clearStartingBuilding(requestId);
       },
     });
@@ -142,6 +161,14 @@ export class MansionPageFacade {
 
   isStartingUpgrade(building: EstateBuildingRow): boolean {
     return this.startingBuildingId() === building.buildingId;
+  }
+
+  activeJobCountdownLabel(job: EstateBuildingJob): string | null {
+    return this.activeJobState.activeJobCountdownLabel(job);
+  }
+
+  activeJobProgress(job: EstateBuildingJob): number {
+    return this.activeJobState.activeJobProgress(job);
   }
 
   formatDuration(seconds: number): string {
@@ -152,8 +179,16 @@ export class MansionPageFacade {
     return resolveBuildingImagePath(building.buildingKey, building.districtCode ?? null);
   }
 
-  toDateTimeLabel(value: string): string {
-    return new Date(value).toLocaleString();
+  activeJobBuildingImageUrl(job: EstateBuildingJob): string | null {
+    const building = this.buildings().find((entry) => entry.buildingId === job.buildingId);
+
+    return building ? this.buildingImageUrl(building) : null;
+  }
+
+  buildingSectionHeading(estate: EstateRuntimeState, copy: EstateCopyJson): string {
+    return estate.building_groups_json.length === 1
+      ? estate.building_groups_json[0].groupTitle
+      : copy.sections.buildings;
   }
 
   private acceptsContext(context: PlayerEstatePageContextV3): boolean {

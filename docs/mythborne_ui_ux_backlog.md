@@ -8388,6 +8388,10 @@ Pokazać aktywną budowę w estate UI bez sugerowania cancel/claim, jeśli te ak
 - statuses handled:
 - not added intentionally:
 
+**Status:** Accepted on 2026-06-04. UI-ESTATE-3 technical slice keeps the active building job visible as a display-only live timer/progress panel and active-card progress state, moves live timer/progress/finalize retry ownership into route-provided `MansionActiveJobState`, finalizes due jobs through canonical `finalize_hero_estate_building_jobs(...)` using the Estate page context hero id, then reloads `get_player_estate_page_context(p_hero_id)` and the dashboard shell context. The Estate path no longer uses `ActiveHero.loadActiveHero()` or direct `hero` reads, action workflow errors use the existing toast pattern, page-load fatal errors remain inline, Estate runtime row mappers are split by responsibility, DB-owned resource cost status fields remain the affordability source, and no cancel/claim UI, local SCSS or `.spec.ts` changes were added.
+
+**Follow-ups:** fix shared `toBuildingDurationLabel` player-facing `sec` copy from the proper shared/copy source; investigate `get_player_estate_page_context` performance with user-side Network timings if Estate loading remains slow; building requirements, prestige and full disabled-reason UI remain the next Estate task scope.
+
 ## UI-ESTATE-4 / formerly UI-26 — Build action RPC boundary
 
 **Goal:**  
