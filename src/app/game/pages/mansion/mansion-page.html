@@ -121,35 +121,37 @@
                       }
                     </span>
 
-                    <div class="flex-col gap-sm flex-1">
-                      @let preview = building.upgradePreviewJson;
-                      @let bonusRows = preview?.bonusesJson ?? building.bonusesJson;
-                      @let costRows = preview?.resourceCostsJson ?? building.resourceCostsJson;
+                    @let preview = building.upgradePreviewJson;
+                    @let bonusRows = preview?.bonusesJson ?? building.bonusesJson;
+                    @let costRows = preview?.resourceCostsJson ?? building.resourceCostsJson;
+                    @let requirementRows = preview?.requirementsJson ?? building.requirementsJson;
+                    @let requirementFailureRows = preview?.failuresJson ?? building.requirementFailuresJson;
+                    @let displayRequirementRows = requirementRows.length > 0 ? requirementRows : requirementFailureRows;
+                    @let buildTimeSeconds = preview?.buildTimeSeconds;
 
-                      <div class="flex-row-between-start gap-sm">
-                        <div class="flex-col gap-xs min-w-0">
-                          <h3 class="color-heading font-display text-lg m-0">{{ building.buildingName }}</h3>
-                          @if (building.buildingDescription) {
-                            <p class="muted-text mb-0">{{ building.buildingDescription }}</p>
-                          }
-                        </div>
-                      </div>
+                    <div class="flex-col gap-xs w-100 min-w-0">
+                      <h3 class="color-heading font-display text-lg m-0">{{ building.buildingName }}</h3>
+                      @if (building.buildingDescription) {
+                        <p class="muted-text mb-0">{{ building.buildingDescription }}</p>
+                      }
+                    </div>
 
-                      <div class="flex-col gap-sm">
-                        @let buildTimeSeconds = preview?.buildTimeSeconds;
-
-                        <div class="flex-col gap-xs border-bottom pb-sm">
+                    <div class="grid-1-1 gap-lg w-100">
+                      <div class="flex-col gap-sm min-w-0 w-100">
+                        <div class="flex-col gap-xs border-bottom pb-sm w-100">
                           <span class="color-muted small-caps uppercase text-xs">
                             {{ copy.labels.currentLevel }} {{ building.currentLevel }}
                           </span>
-                          <div class="flex-col gap-xs">
+                          <div class="flex-col gap-xs w-100">
                             @for (bonus of building.bonusesJson; track bonus.entityBonusId) {
                               @let bonusLabel = bonus.displayLabel ?? bonus.targetLabel;
-                              <div class="flex-row-between-start flex-col-sm gap-sm">
+                              <div class="mg-data-row w-100">
                                 @if (bonusLabel) {
-                                  <span class="color-muted min-w-0">{{ bonusLabel }}</span>
+                                  <span class="mg-data-row__label min-w-0">{{ bonusLabel }}</span>
                                 }
-                                <strong class="color-heading text-right min-w-0">{{ bonus.displayValue }}</strong>
+                                <strong class="mg-data-row__value color-heading min-w-0">
+                                  {{ bonus.displayValue }}
+                                </strong>
                               </div>
                             } @empty {
                               <span class="muted-text">{{ copy.empty.bonuses }}</span>
@@ -157,18 +159,20 @@
                           </div>
                         </div>
 
-                        <div class="flex-col gap-xs border-bottom pb-sm">
+                        <div class="flex-col gap-xs border-bottom pb-sm w-100">
                           <span class="color-muted small-caps uppercase text-xs">
                             {{ copy.labels.nextLevel }} {{ building.nextLevel }}
                           </span>
-                          <div class="flex-col gap-xs">
+                          <div class="flex-col gap-xs w-100">
                             @for (bonus of bonusRows; track bonus.entityBonusId) {
                               @let bonusLabel = bonus.displayLabel ?? bonus.targetLabel;
-                              <div class="flex-row-between-start flex-col-sm gap-sm">
+                              <div class="mg-data-row w-100">
                                 @if (bonusLabel) {
-                                  <span class="color-muted min-w-0">{{ bonusLabel }}</span>
+                                  <span class="mg-data-row__label min-w-0">{{ bonusLabel }}</span>
                                 }
-                                <strong class="color-heading text-right min-w-0">{{ bonus.nextDisplayValue }}</strong>
+                                <strong class="mg-data-row__value color-heading min-w-0">
+                                  {{ bonus.nextDisplayValue }}
+                                </strong>
                               </div>
                             } @empty {
                               <span class="muted-text">{{ copy.empty.bonuses }}</span>
@@ -177,22 +181,22 @@
                         </div>
 
                         @if (buildTimeSeconds !== undefined) {
-                          <div class="flex-row-between-start flex-col-sm gap-sm border-bottom pb-sm">
-                            <span class="color-muted small-caps uppercase text-xs">{{ copy.labels.buildTime }}</span>
-                            <strong class="color-heading text-right min-w-0">
+                          <div class="mg-data-row w-100">
+                            <span class="mg-data-row__label">{{ copy.labels.buildTime }}</span>
+                            <strong class="mg-data-row__value color-heading min-w-0">
                               {{ page.formatDuration(buildTimeSeconds) }}
                             </strong>
                           </div>
                         }
 
                         @if (costRows.length > 0) {
-                          <div class="flex-col gap-xs">
+                          <div class="flex-col gap-xs w-100">
                             <span class="color-muted small-caps uppercase text-xs">{{ copy.sections.resources }}</span>
                             @for (cost of costRows; track $index) {
-                              <div class="flex-row-between-start flex-col-sm gap-sm">
-                                <span class="color-muted min-w-0">{{ cost.displayLabel }}</span>
+                              <div class="mg-data-row w-100">
+                                <span class="mg-data-row__label min-w-0">{{ cost.displayLabel }}</span>
                                 <strong
-                                  class="text-right min-w-0"
+                                  class="mg-data-row__value min-w-0"
                                   [class.color-heading]="cost.isMet === undefined && !cost.displayTone"
                                   [class.success-text]="cost.isMet === true || cost.displayTone === 'success'"
                                   [class.error-text]="cost.isMet === false || cost.displayTone === 'danger'"
@@ -200,19 +204,47 @@
                                   {{ cost.displayValue }}
                                 </strong>
                               </div>
-                              @if (cost.failureReasonLabel && cost.missingDisplayValue) {
-                                <div class="flex-row-between-start flex-col-sm gap-sm">
-                                  <span class="error-text min-w-0">{{ cost.failureReasonLabel }}</span>
-                                  <strong class="error-text text-right min-w-0">
+                              @if ((cost.isMet === false || cost.displayTone === 'danger') && cost.failureReasonLabel && cost.missingDisplayValue) {
+                                <div class="flex-row-between-start flex-col-sm gap-sm px-sm w-100">
+                                  <span class="error-text text-xs min-w-0">{{ cost.failureReasonLabel }}</span>
+                                  <span class="error-text text-xs text-right min-w-0">
                                     {{ cost.missingDisplayValue }}
-                                  </strong>
+                                  </span>
                                 </div>
                               }
                             }
                           </div>
                         }
                       </div>
-                    </div>
+
+                      @if (displayRequirementRows.length > 0 || copy.empty.requirements) {
+                        <div class="flex-col gap-xs min-w-0 w-100">
+                          @if (copy.sections.requirements) {
+                            <span class="color-muted small-caps uppercase text-xs">
+                              {{ copy.sections.requirements }}
+                            </span>
+                          }
+
+                          @for (requirement of displayRequirementRows; track requirement.entityRequirementId) {
+                            <div class="mg-data-row w-100">
+                              <span class="mg-data-row__label min-w-0">{{ requirement.displayLabel }}</span>
+                              <strong
+                                class="mg-data-row__value min-w-0"
+                                [class.color-heading]="requirement.isMet === undefined && !requirement.displayTone"
+                                [class.success-text]="requirement.isMet === true || requirement.displayTone === 'success'"
+                                [class.error-text]="requirement.isMet === false || requirement.displayTone === 'danger'"
+                              >
+                                {{ requirement.displayValue }}
+                              </strong>
+                            </div>
+                          } @empty {
+                            @if (copy.empty.requirements) {
+                              <span class="muted-text">{{ copy.empty.requirements }}</span>
+                            }
+                          }
+                        </div>
+                      }
+                      </div>
 
                     @if (page.activeJob(); as activeCardJob) {
                       @if (activeCardJob.buildingId === building.buildingId) {
