@@ -8756,6 +8756,8 @@ Required report:
 
 ## UI-TRADE-1 — Auction House page shell and one-item listing browser
 
+Status: accepted/completed in direction 2026-06-05. Accepted scope: DB-owned Auction header copy, four-row DB-owned summary, Auction/Direct Trade navigation without tag badges, and one-item listing rows rendered from `AuctionListingRow` display fields only. Follow-ups: audit shared `app-item-detail-popover` integration before adding Auction item popovers; keep pagination for UI-TRADE-2; avoid raw player-facing `endsInSeconds` unless copy/contract explicitly accepts it.
+
 Goal: build the Auction House browsing screen as a separate page from Direct Trade.
 
 Prototype target:

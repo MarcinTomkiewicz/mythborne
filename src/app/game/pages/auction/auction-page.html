@@ -10,75 +10,167 @@
         [summaryRows]="page.headerSummaryRows()"
       />
 
+      <nav class="mg-card p-sm flex-row-start-center flex-wrap gap-sm w-100">
+        <a class="px-sm py-xs color-text" routerLink="/game/trade">
+          {{ page.directTradeLabel }}
+        </a>
+        <a class="mg-card px-sm py-xs heading-color shadow-premium" routerLink="/game/auction" aria-current="page">
+          {{ page.auctionLabel }}
+        </a>
+      </nav>
+
       @if (page.overview.listingsPage(); as listingsPage) {
-        <section class="mg-card p-lg flex-col gap-md w-100">
-          <h3 class="heading-color text-lg m-0">{{ copy.tabs.browse }}</h3>
+        <div class="grid-2-1 gap-lg grid-items-start">
+          <section class="mg-card p-lg flex-col gap-md w-100 min-w-0">
+            <h3 class="heading-color text-lg m-0">{{ copy.tabs.browse }}</h3>
 
-          @if (listingsPage.activeListings.length === 0) {
-            <p class="color-text mb-0">{{ copy.empty.listings }}</p>
-          } @else {
-            <div class="flex-col gap-md w-100">
-              @for (listing of listingsPage.activeListings; track listing.listingId) {
-                <article
-                  class="flex-col gap-sm w-100 border-bottom pb-md"
-                  [attr.data-status-tone]="listing.statusTone"
-                >
-                  <div class="flex-row-between-start flex-col-sm gap-md w-100">
-                    <div class="flex-col gap-xs min-w-0">
-                      <strong class="heading-color text-lg text-break">
-                        {{ listing.itemDisplayName }}
-                      </strong>
-                      <span class="color-text">{{ listing.auctionModeLabel }}</span>
+            @if (listingsPage.activeListings.length === 0) {
+              <p class="color-text mb-0">{{ copy.empty.listings }}</p>
+            } @else {
+              <div class="flex-col gap-md w-100">
+                @for (listing of listingsPage.activeListings; track listing.listingId) {
+                  <article
+                    class="flex-col gap-md w-100 border-bottom pb-md"
+                    [attr.data-status-tone]="listing.statusTone"
+                  >
+                    <div class="flex-row-between-start flex-col-sm gap-md w-100">
+                      <div class="flex-row-start-center gap-md min-w-0">
+                        @if (listing.itemDisplayCore.displayIconKey) {
+                          <span class="mg-card p-sm flex-row-center-center flex-none">
+                            <i
+                              class="pi pi-{{ listing.itemDisplayCore.displayIconKey }} color-text text-xl"
+                              aria-hidden="true"
+                            ></i>
+                          </span>
+                        }
+
+                        <div class="flex-col gap-xs min-w-0">
+                          <strong class="heading-color text-lg text-break">
+                            {{ listing.itemDisplayName }}
+                          </strong>
+                          <span class="color-text">{{ listing.auctionModeLabel }}</span>
+
+                          <div class="flex-row-start-center flex-wrap gap-xs w-100">
+                            @if (listing.itemDisplayCore.qualityLabel) {
+                              <span class="color-muted text-xs">{{ listing.itemDisplayCore.qualityLabel }}</span>
+                            }
+                            @if (listing.itemDisplayCore.baseTypeLabel) {
+                              <span class="color-muted text-xs">{{ listing.itemDisplayCore.baseTypeLabel }}</span>
+                            }
+                            @if (listing.itemDisplayCore.baseName) {
+                              <span class="color-muted text-xs">{{ listing.itemDisplayCore.baseName }}</span>
+                            }
+                            @if (listing.itemDisplayCore.lifecycleStatusLabel) {
+                              <span class="color-muted text-xs">{{ listing.itemDisplayCore.lifecycleStatusLabel }}</span>
+                            }
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="flex-col gap-xs flex-none text-right">
+                        <strong class="heading-color">{{ listing.statusLabel }}</strong>
+                        @if (listing.primaryPriceLabel) {
+                          @if (listing.primaryPriceDisplayValue) {
+                            <span class="color-muted small-caps uppercase text-xs">
+                              {{ listing.primaryPriceLabel }}
+                            </span>
+                            <strong class="heading-color text-lg">
+                              {{ listing.primaryPriceDisplayValue }}
+                            </strong>
+                          }
+                        }
+                      </div>
                     </div>
-                    <strong class="heading-color text-right">{{ listing.statusLabel }}</strong>
-                  </div>
 
-                  <div class="mg-grid-auto-fit gap-sm w-100">
-                    @if (listing.primaryPriceLabel) {
-                      @if (listing.primaryPriceDisplayValue) {
+                    <div class="mg-grid-auto-fit gap-sm w-100">
+                      @if (listing.currentBidDisplayValue) {
                         <div class="flex-col gap-xs min-w-0">
                           <span class="color-muted small-caps uppercase text-xs">
-                            {{ listing.primaryPriceLabel }}
+                            {{ copy.labels.currentBid }}
                           </span>
-                          <strong class="heading-color">{{ listing.primaryPriceDisplayValue }}</strong>
+                          <strong class="heading-color">{{ listing.currentBidDisplayValue }}</strong>
                         </div>
                       }
-                    }
 
-                    @if (listing.sellerHeroName) {
-                      <div class="flex-col gap-xs min-w-0">
-                        <span class="color-muted small-caps uppercase text-xs">
-                          {{ copy.labels.seller }}
-                        </span>
-                        <strong class="heading-color text-break">{{ listing.sellerHeroName }}</strong>
-                      </div>
-                    }
+                      @if (listing.startingBidDisplayValue) {
+                        <div class="flex-col gap-xs min-w-0">
+                          <span class="color-muted small-caps uppercase text-xs">
+                            {{ copy.labels.startingBid }}
+                          </span>
+                          <strong class="heading-color">{{ listing.startingBidDisplayValue }}</strong>
+                        </div>
+                      }
 
-                    @if (listing.endsInSeconds !== undefined) {
-                      <div class="flex-col gap-xs min-w-0">
-                        <span class="color-muted small-caps uppercase text-xs">
-                          {{ copy.labels.endsIn }}
-                        </span>
-                        <strong class="heading-color">{{ listing.endsInSeconds }}</strong>
-                      </div>
-                    }
+                      @if (listing.buyNowDisplayValue) {
+                        <div class="flex-col gap-xs min-w-0">
+                          <span class="color-muted small-caps uppercase text-xs">
+                            {{ copy.labels.buyNow }}
+                          </span>
+                          <strong class="heading-color">{{ listing.buyNowDisplayValue }}</strong>
+                        </div>
+                      }
 
-                    @if (listing.endsAt) {
-                      <div class="flex-col gap-xs min-w-0">
-                        <span class="color-muted small-caps uppercase text-xs">
-                          {{ copy.labels.endsAt }}
-                        </span>
-                        <time class="heading-color" [attr.datetime]="listing.endsAt">
-                          {{ listing.endsAt }}
-                        </time>
-                      </div>
-                    }
-                  </div>
-                </article>
+                      @if (listing.sellerHeroName) {
+                        <div class="flex-col gap-xs min-w-0">
+                          <span class="color-muted small-caps uppercase text-xs">
+                            {{ copy.labels.seller }}
+                          </span>
+                          <strong class="heading-color text-break">{{ listing.sellerHeroName }}</strong>
+                        </div>
+                      }
+
+                      @if (listing.endsInSeconds !== undefined) {
+                        <div class="flex-col gap-xs min-w-0">
+                          <span class="color-muted small-caps uppercase text-xs">
+                            {{ copy.labels.endsIn }}
+                          </span>
+                          <strong class="heading-color">{{ listing.endsInSeconds }}</strong>
+                        </div>
+                      }
+
+                      @if (listing.endsAt) {
+                        <div class="flex-col gap-xs min-w-0">
+                          <span class="color-muted small-caps uppercase text-xs">
+                            {{ copy.labels.endsAt }}
+                          </span>
+                          <time class="heading-color" [attr.datetime]="listing.endsAt">
+                            {{ listing.endsAt }}
+                          </time>
+                        </div>
+                      }
+                    </div>
+                  </article>
+                }
+              </div>
+            }
+          </section>
+
+          <aside class="mg-card p-lg flex-col gap-md w-100 min-w-0">
+            <div class="flex-col gap-xs">
+              <h3 class="heading-color text-lg m-0">{{ copy.filters.title }}</h3>
+              <p class="muted-text mb-0">{{ copy.filters.helperText }}</p>
+            </div>
+
+            <div class="flex-col gap-xs border-top pt-sm">
+              <span class="color-muted small-caps uppercase text-xs">{{ copy.filters.searchLabel }}</span>
+              <span class="color-text">{{ copy.filters.searchPlaceholder }}</span>
+            </div>
+
+            <div class="flex-col gap-xs border-top pt-sm">
+              <span class="color-muted small-caps uppercase text-xs">{{ copy.filters.modeLabel }}</span>
+              @for (mode of copy.filterOptions.auctionModes; track mode.key) {
+                <strong class="heading-color">{{ mode.label }}</strong>
               }
             </div>
-          }
-        </section>
+
+            <div class="flex-col gap-xs border-top pt-sm">
+              <span class="color-muted small-caps uppercase text-xs">{{ copy.filters.sortLabel }}</span>
+              @for (sortOption of copy.filterOptions.sortOptions; track sortOption.key) {
+                <strong class="heading-color">{{ sortOption.label }}</strong>
+              }
+            </div>
+          </aside>
+        </div>
       }
     </div>
   }
