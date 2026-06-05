@@ -106,14 +106,15 @@
           </div>
         }
 
-        <div class="equipment-preview__figure mg-card flex-row-center-center">
-          <img
-            [ngSrc]="paperdollImageUrl()"
-            [alt]="title()"
-            class="equipment-preview__figure-image"
-            [width]="paperdollDimensions.width"
-            [height]="paperdollDimensions.height"
-          />
+        <div class="equipment-preview__figure mg-card flex-row-center-center overflow-hidden">
+          <span class="equipment-preview__figure-frame d-block h-100 position-relative">
+            <img
+              [ngSrc]="paperdollImageUrl()"
+              [alt]="title()"
+              class="equipment-preview__figure-image object-fit-contain"
+              fill
+            />
+          </span>
         </div>
       </div>
 

@@ -3,7 +3,6 @@ import { Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { ItemDetailPopover } from '../item-detail-popover/item-detail-popover';
-import { SUPABASE_ASSET_IMAGE_DIMENSIONS } from '../../core/config/storage-assets.config';
 import {
   EQUIPMENT_PREVIEW_GROUPS,
   EquipmentPreviewRegion,
@@ -43,7 +42,6 @@ export class EquipmentPreview {
   readonly emptySlotDetail = input('');
   readonly itemDetailCopy = input<ItemDetailPopoverCopy | null>(null);
   readonly paperdollImageUrl = input('/images/warrior.png');
-  readonly paperdollDimensions = SUPABASE_ASSET_IMAGE_DIMENSIONS.paperdoll;
   readonly selectedItemIds = input<readonly string[]>([]);
   readonly selectionActionDisabled = input(false);
   readonly equippedItemToggle = output<EquipmentPreviewSlotRow>();
