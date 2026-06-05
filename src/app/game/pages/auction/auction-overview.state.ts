@@ -1,38 +1,42 @@
 import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs';
+import { forkJoin, finalize } from 'rxjs';
 import {
-  PlayerAuctionListingReadModel,
-  PlayerAuctionOverviewReadModel,
+  AuctionListingsSearchPage,
+  AuctionPageContext,
+  AuctionPageCopy,
 } from '../../../core/domain/trade/player-auction.model';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerAuctions } from '../../../core/services/trade/player-auctions';
 import { RequestToken } from '../../../core/utils/request-token';
-import { auctionListingLabel } from './auction-labels';
-import { AuctionFeedbackState } from './auction-feedback.state';
+
+const AUCTION_FOUNDATION_PAGE_LIMIT = 25;
+const AUCTION_FOUNDATION_PAGE_OFFSET = 0;
 
 @Injectable()
 export class AuctionOverviewState {
   private readonly activeHero = inject(ActiveHero);
   private readonly auctions = inject(PlayerAuctions);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly feedback = inject(AuctionFeedbackState);
   private readonly requestToken = new RequestToken();
 
-  private activeServerId: string | null = null;
   private activeHeroId: string | null = null;
+  private activeServerId: string | null = null;
 
-  readonly overview = signal<PlayerAuctionOverviewReadModel>({
-    listings: [],
-    transactions: [],
-  });
+  readonly copy = signal<AuctionPageCopy | null>(null);
+  readonly context = signal<AuctionPageContext | null>(null);
+  readonly listingsPage = signal<AuctionListingsSearchPage | null>(null);
+  readonly error = signal<unknown>(null);
   readonly isLoading = signal(false);
 
   loadData(): void {
     const token = this.requestToken.next();
 
     this.isLoading.set(true);
-    this.feedback.error.set(null);
+    this.error.set(null);
+    this.copy.set(null);
+    this.context.set(null);
+    this.listingsPage.set(null);
 
     this.activeHero
       .requireActiveHero()
@@ -43,9 +47,9 @@ export class AuctionOverviewState {
             return;
           }
 
-          this.activeServerId = state.serverId;
           this.activeHeroId = state.heroId;
-          this.loadOverview(state.serverId, state.heroId, token);
+          this.activeServerId = state.serverId;
+          this.loadAuctionFoundation(state.heroId, state.serverId, token);
         },
         error: (error: unknown) => {
           if (!this.requestToken.isCurrent(token)) {
@@ -53,45 +57,23 @@ export class AuctionOverviewState {
           }
 
           this.isLoading.set(false);
-          this.feedback.setError(error, 'Failed to load active hero.');
+          this.error.set(error);
         },
       });
   }
 
-  refreshCurrent(): void {
-    const context = this.currentContext();
-
-    if (!context) {
-      return;
-    }
-
-    const token = this.requestToken.next();
-
-    this.isLoading.set(true);
-    this.loadOverview(context.serverId, context.heroId, token);
-  }
-
-  currentContext(): { serverId: string; heroId: string } | null {
-    return this.activeServerId && this.activeHeroId
-      ? { serverId: this.activeServerId, heroId: this.activeHeroId }
-      : null;
-  }
-
-  currentHeroId(): string | null {
-    return this.activeHeroId;
-  }
-
-  isCurrentContext(serverId: string, heroId: string): boolean {
-    return this.activeServerId === serverId && this.activeHeroId === heroId;
-  }
-
-  listingLabel(listing: PlayerAuctionListingReadModel): string {
-    return auctionListingLabel(listing);
-  }
-
-  private loadOverview(serverId: string, heroId: string, token: number): void {
-    this.auctions
-      .getAuctionsForHero({ serverId, heroId })
+  private loadAuctionFoundation(heroId: string, serverId: string, token: number): void {
+    forkJoin({
+      copy: this.auctions.getPageCopy(),
+      context: this.auctions.getPageContext(heroId, serverId),
+      listingsPage: this.auctions.searchListingsPage(
+        heroId,
+        null,
+        {},
+        AUCTION_FOUNDATION_PAGE_LIMIT,
+        AUCTION_FOUNDATION_PAGE_OFFSET,
+      ),
+    })
       .pipe(
         finalize(() => {
           if (this.requestToken.isCurrent(token)) {
@@ -101,24 +83,30 @@ export class AuctionOverviewState {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (overview) => {
-          if (!this.isCurrentRequest(token, serverId, heroId)) {
+        next: (state) => {
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
             return;
           }
 
-          this.overview.set(overview);
+          this.copy.set(state.copy);
+          this.context.set(state.context);
+          this.listingsPage.set(state.listingsPage);
         },
         error: (error: unknown) => {
-          if (!this.isCurrentRequest(token, serverId, heroId)) {
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
             return;
           }
 
-          this.feedback.setError(error, 'Failed to load auctions.');
+          this.error.set(error);
         },
       });
   }
 
-  private isCurrentRequest(token: number, serverId: string, heroId: string): boolean {
-    return this.requestToken.isCurrent(token) && this.isCurrentContext(serverId, heroId);
+  private isCurrentRequest(token: number, heroId: string, serverId: string): boolean {
+    return (
+      this.requestToken.isCurrent(token) &&
+      this.activeHeroId === heroId &&
+      this.activeServerId === serverId
+    );
   }
 }

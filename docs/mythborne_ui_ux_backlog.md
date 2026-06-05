@@ -8586,6 +8586,8 @@ Acceptance:
 
 ## UI-TRADE-1A — Auction split contract reset / foundation
 
+Status: accepted/completed 2026-06-05. Implemented the Auction split-contract foundation from `docs/mythsworn-auction-shape-guide.md`, including split read RPC usage, minimal DB-copy page shell/listing browser and prototype-correct four-row header summary; removed stale legacy Auction UI/spec files instead of preserving old direct-read tests.
+
 Stop using the legacy Auction bootstrap. Replace the current Auction frontend contract with the new split contract from:
 
 `docs/mythsworn-auction-shape-guide.md`

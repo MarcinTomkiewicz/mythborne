@@ -1,24 +1,89 @@
-<div class="flex-col gap-xl min-w-0">
-  <section class="mg-card p-lg w-100">
-    <div class="flex-row-between-center flex-col-sm gap-md">
-      <div class="flex-col gap-xs">
-        <p class="card-legend mb-0">Game</p>
-        <h2 class="mg-section__title mg-section__title--sm mb-0">Auctions</h2>
-        <p class="muted-text mb-0">One-item auctions on the selected server.</p>
-      </div>
-      <span class="tag-badge tag-badge--info">
-        Listings: {{ page.overview.overview().listings.length }}
-      </span>
+<app-loading-overlay [visible]="page.overview.isLoading()" label="" />
+
+@if (page.overview.copy(); as copy) {
+  @if (page.overview.context()) {
+    <div class="flex-col gap-lg min-w-0">
+      <app-game-page-header
+        [eyebrowLabel]="copy.header.eyebrow"
+        [title]="copy.header.title"
+        [description]="copy.header.intro"
+        [summaryRows]="page.headerSummaryRows()"
+      />
+
+      @if (page.overview.listingsPage(); as listingsPage) {
+        <section class="mg-card p-lg flex-col gap-md w-100">
+          <h3 class="heading-color text-lg m-0">{{ copy.tabs.browse }}</h3>
+
+          @if (listingsPage.activeListings.length === 0) {
+            <p class="color-text mb-0">{{ copy.empty.listings }}</p>
+          } @else {
+            <div class="flex-col gap-md w-100">
+              @for (listing of listingsPage.activeListings; track listing.listingId) {
+                <article
+                  class="flex-col gap-sm w-100 border-bottom pb-md"
+                  [attr.data-status-tone]="listing.statusTone"
+                >
+                  <div class="flex-row-between-start flex-col-sm gap-md w-100">
+                    <div class="flex-col gap-xs min-w-0">
+                      <strong class="heading-color text-lg text-break">
+                        {{ listing.itemDisplayName }}
+                      </strong>
+                      <span class="color-text">{{ listing.auctionModeLabel }}</span>
+                    </div>
+                    <strong class="heading-color text-right">{{ listing.statusLabel }}</strong>
+                  </div>
+
+                  <div class="mg-grid-auto-fit gap-sm w-100">
+                    @if (listing.primaryPriceLabel) {
+                      @if (listing.primaryPriceDisplayValue) {
+                        <div class="flex-col gap-xs min-w-0">
+                          <span class="color-muted small-caps uppercase text-xs">
+                            {{ listing.primaryPriceLabel }}
+                          </span>
+                          <strong class="heading-color">{{ listing.primaryPriceDisplayValue }}</strong>
+                        </div>
+                      }
+                    }
+
+                    @if (listing.sellerHeroName) {
+                      <div class="flex-col gap-xs min-w-0">
+                        <span class="color-muted small-caps uppercase text-xs">
+                          {{ copy.labels.seller }}
+                        </span>
+                        <strong class="heading-color text-break">{{ listing.sellerHeroName }}</strong>
+                      </div>
+                    }
+
+                    @if (listing.endsInSeconds !== undefined) {
+                      <div class="flex-col gap-xs min-w-0">
+                        <span class="color-muted small-caps uppercase text-xs">
+                          {{ copy.labels.endsIn }}
+                        </span>
+                        <strong class="heading-color">{{ listing.endsInSeconds }}</strong>
+                      </div>
+                    }
+
+                    @if (listing.endsAt) {
+                      <div class="flex-col gap-xs min-w-0">
+                        <span class="color-muted small-caps uppercase text-xs">
+                          {{ copy.labels.endsAt }}
+                        </span>
+                        <time class="heading-color" [attr.datetime]="listing.endsAt">
+                          {{ listing.endsAt }}
+                        </time>
+                      </div>
+                    }
+                  </div>
+                </article>
+              }
+            </div>
+          }
+        </section>
+      }
     </div>
+  }
+} @else if (page.errorMessage(); as error) {
+  <section class="mg-card p-lg flex-col gap-sm w-100">
+    <p class="warn-text mb-0">{{ error }}</p>
   </section>
-
-  @if (page.feedback.error(); as message) {
-    <p-message severity="error">{{ message }}</p-message>
-  }
-  @if (page.feedback.successMessage(); as message) {
-    <p-message severity="success">{{ message }}</p-message>
-  }
-
-  <app-auction-create-listing-section />
-  <app-auction-listings-section />
-</div>
+}
