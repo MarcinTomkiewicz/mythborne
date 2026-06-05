@@ -8547,6 +8547,8 @@ Verification for every task:
 
 ## UI-TRADE-0 — Trade data contract integration preflight
 
+Status: accepted/completed as no-code preflight on 2026-06-05.
+
 Goal: prepare the frontend boundary for Auction House and Direct Trade without building the full UI yet.
 
 Scope:
