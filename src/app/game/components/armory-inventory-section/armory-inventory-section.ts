@@ -246,7 +246,8 @@ export class ArmoryInventorySection {
   }
 
   canEquipItem(item: PlayerArmoryItemReadModel): boolean {
-    return item.lifecycleStatusKey !== 'scrapped';
+    return item.lifecycleStatusKey === 'active'
+      && item.meetsRequirements === true;
   }
 
   canSellItem(item: PlayerArmoryItemReadModel): boolean {

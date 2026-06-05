@@ -133,7 +133,7 @@
                       </div>
                     }
 
-                    @if (canEquipItem(item) || canSellItem(item)) {
+                    @if (item.lifecycleStatusKey === 'active') {
                       <div
                         class="flex-row-start-center flex-wrap gap-xs border-top pt-xs"
                         (click)="$event.stopPropagation()"
@@ -142,16 +142,14 @@
                         (keydown.enter)="$event.stopPropagation()"
                         (keydown.space)="$event.stopPropagation()"
                       >
-                        @if (canEquipItem(item)) {
-                          <p-button
-                            type="button"
-                            severity="secondary"
-                            size="small"
-                            [label]="equipItemLabel()"
-                            [disabled]="actionDisabled()"
-                            (onClick)="equipItem.emit(item)"
-                          />
-                        }
+                        <p-button
+                          type="button"
+                          severity="secondary"
+                          size="small"
+                          [label]="equipItemLabel()"
+                          [disabled]="actionDisabled() || !canEquipItem(item)"
+                          (onClick)="equipItem.emit(item)"
+                        />
                         @if (canSellItem(item)) {
                           <p-button
                             type="button"

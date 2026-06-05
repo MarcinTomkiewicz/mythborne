@@ -67,8 +67,28 @@ function mapArmoryPageItemRow(
       read(row, 'allowedSlotKeys'),
       'items.allowedSlotKeys',
     ),
+    meetsRequirements: mapMeetsRequirements(row),
     displayCore: mapArmoryItemDisplayCore(row, itemId, itemName),
   };
+}
+
+function mapMeetsRequirements(row: JsonRecord): boolean | null {
+  const directValue = optionalBoolean(read(row, 'meetsRequirements'));
+
+  if (directValue !== null) {
+    return directValue;
+  }
+
+  const requirementPreview = read(row, 'requirementPreview');
+
+  if (requirementPreview === null || requirementPreview === undefined) {
+    return null;
+  }
+
+  return optionalBoolean(read(
+    requiredRecord(requirementPreview, 'items.requirementPreview'),
+    'meetsRequirements',
+  ));
 }
 
 function mapArmoryItemDisplayCore(

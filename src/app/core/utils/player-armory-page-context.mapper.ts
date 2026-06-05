@@ -46,6 +46,14 @@ export function mapPlayerArmoryPageContext(
     requiredArray(read(root, 'items'), 'items'),
     shelves,
   );
+  const equipmentSlots = requiredArray(
+    read(root, 'equipmentSlots'),
+    'equipmentSlots',
+  ).map(mapArmoryEquipmentSlot);
+  const equippedItemIds = new Set(
+    equipmentSlots.flatMap((slot) => slot.itemId ? [slot.itemId] : []),
+  );
+  const inventoryItems = items.filter((item) => !equippedItemIds.has(item.itemId));
 
   return {
     heroId,
@@ -56,12 +64,9 @@ export function mapPlayerArmoryPageContext(
       heroId,
       requiredRecord(read(root, 'visibilityState'), 'visibilityState'),
       shelves,
-      items,
+      inventoryItems,
     ),
-    equipmentSlots: requiredArray(
-      read(root, 'equipmentSlots'),
-      'equipmentSlots',
-    ).map(mapArmoryEquipmentSlot),
+    equipmentSlots,
     loadoutPresets: requiredArray(
       read(root, 'loadoutPresets'),
       'loadoutPresets',

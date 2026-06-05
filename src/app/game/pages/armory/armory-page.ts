@@ -144,7 +144,7 @@ export class ArmoryPage implements OnInit {
   }
 
   equipInventoryItem(item: PlayerArmoryItemReadModel): void {
-    if (this.inventoryActionDisabled() || item.lifecycleStatusKey === 'scrapped') {
+    if (this.inventoryActionDisabled() || !canEquipInventoryItem(item)) {
       return;
     }
 
@@ -165,7 +165,7 @@ export class ArmoryPage implements OnInit {
 
     if (
       selectedItems.length !== itemIds.length
-      || selectedItems.some((item) => item.lifecycleStatusKey === 'scrapped')
+      || selectedItems.some((item) => !canEquipInventoryItem(item))
     ) {
       return;
     }
@@ -538,6 +538,11 @@ function visibleArmoryItemsById(
   return itemIds
     .map((itemId) => visibleItemsById.get(itemId) ?? null)
     .filter((item): item is PlayerArmoryItemReadModel => item !== null);
+}
+
+function canEquipInventoryItem(item: PlayerArmoryItemReadModel): boolean {
+  return item.lifecycleStatusKey === 'active'
+    && item.meetsRequirements === true;
 }
 
 function mapArmoryPageEquipmentPreviewRows(

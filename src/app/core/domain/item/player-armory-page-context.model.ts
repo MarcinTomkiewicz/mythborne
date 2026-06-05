@@ -182,6 +182,7 @@ export interface PlayerArmoryItemReadModel {
   shelfPosition: number;
   shelfName: string | null;
   allowedSlotKeys: string[];
+  meetsRequirements?: boolean | null;
   displayCore: PlayerItemDisplayCore;
 }
 

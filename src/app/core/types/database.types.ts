@@ -15380,6 +15380,10 @@ export type Database = {
         Args: { p_hero_id: string; p_locale_key?: string }
         Returns: Json
       }
+      build_item_detail_popover_bonuses_json: {
+        Args: { p_item_id: string; p_viewer_hero_id: string }
+        Returns: Json
+      }
       build_opponent_combatant_snapshot_for_resolver:
         | {
             Args: {
@@ -15464,6 +15468,18 @@ export type Database = {
           p_suffix_affix_id?: string
         }
         Returns: string
+      }
+      build_trade_item_row: { Args: { p_item_id: string }; Returns: Json }
+      build_trade_offer_row: {
+        Args: { p_hero_id: string; p_offer_id: string }
+        Returns: Json
+      }
+      build_trade_offer_side: {
+        Args: {
+          p_offer_id: string
+          p_side: Database["public"]["Enums"]["player_trade_side"]
+        }
+        Returns: Json
       }
       bulk_equip_hero_items: {
         Args: { p_hero_id: string; p_items_json: Json; p_request_id?: string }
@@ -20083,6 +20099,7 @@ export type Database = {
           set_label: string
         }[]
       }
+      get_item_detail_popover_copy: { Args: never; Returns: Json }
       get_item_effective_requirements: {
         Args: { p_item_id: string }
         Returns: {
@@ -20659,10 +20676,12 @@ export type Database = {
         Args: { p_hero_id: string }
         Returns: Json
       }
-      get_player_item_popover_detail: {
-        Args: { p_hero_id: string; p_item_id: string }
-        Returns: Json
-      }
+      get_player_item_popover_detail:
+        | { Args: { p_hero_id: string; p_item_id: string }; Returns: Json }
+        | {
+            Args: { p_context?: string; p_hero_id: string; p_item_id: string }
+            Returns: Json
+          }
       get_player_page_hero_guard: {
         Args: { p_hero_id: string; p_operation?: string }
         Returns: {
@@ -21030,6 +21049,15 @@ export type Database = {
         }
         Returns: string
       }
+      get_trade_create_context: {
+        Args: {
+          p_hero_id: string
+          p_limit?: number
+          p_offset?: number
+          p_target_hero_id?: string
+        }
+        Returns: Json
+      }
       get_trade_item_similarity_price_stats: {
         Args: {
           p_lookback_days?: number
@@ -21044,6 +21072,12 @@ export type Database = {
           similar_count: number
         }[]
       }
+      get_trade_offers_page: {
+        Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      get_trade_page_context: { Args: { p_hero_id: string }; Returns: Json }
+      get_trade_page_copy: { Args: never; Returns: Json }
       get_trade_transaction_item_character_points_price: {
         Args: { p_transaction_item_id: string }
         Returns: number
@@ -24047,6 +24081,15 @@ export type Database = {
           technical_label: string
           total_count: number
         }[]
+      }
+      search_trade_targets_page: {
+        Args: {
+          p_hero_id: string
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+        }
+        Returns: Json
       }
       search_trade_transaction_targets: {
         Args: { p_limit?: number; p_query: string; p_server_id: string }
