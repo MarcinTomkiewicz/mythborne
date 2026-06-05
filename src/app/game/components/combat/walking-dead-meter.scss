@@ -7,7 +7,6 @@ $wd-lane-grid-step: 1.9rem;
 $wd-lane-grid-line-width: 0.05rem;
 $wd-indicator-width: 0.26rem;
 $wd-indicator-offset: -0.32rem;
-$wd-indicator-transition: left 160ms linear;
 
 .walking-dead-meter {
   @include m.timing-panel-surface;
@@ -50,11 +49,4 @@ $wd-indicator-transition: left 160ms linear;
   @include m.timing-indicator;
   pointer-events: none;
   transform: translateX(-50%);
-  transition: $wd-indicator-transition;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .walking-dead-meter__indicator {
-    transition: none;
-  }
 }

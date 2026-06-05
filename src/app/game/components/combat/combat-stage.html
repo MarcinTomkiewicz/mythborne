@@ -35,6 +35,6 @@
     [rightEmptyTitle]="model.emptyParticipants.rightTitle"
     [rightEmptyText]="model.emptyParticipants.rightText"
     (centerAction)="action.emit($event)"
-    (timingStrike)="timingStrike.emit()"
+    (timingStrike)="timingStrike.emit($event)"
   />
 </article>

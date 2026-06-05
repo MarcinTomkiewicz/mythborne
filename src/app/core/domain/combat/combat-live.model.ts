@@ -53,7 +53,6 @@ export interface CombatTimingManifestReadModel {
   zoneStartPercent: number;
   zoneEndPercent: number;
   zoneWidthPercent: number;
-  speed: number;
   label: string | null;
   luckRng: CombatLuckRngReadModel | null;
   rawJson: Json;

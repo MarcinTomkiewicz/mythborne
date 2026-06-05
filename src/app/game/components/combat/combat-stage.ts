@@ -1,4 +1,5 @@
 import { Component, input, output } from '@angular/core';
+import { CombatTimingStrikeSnapshot } from '../../../core/domain/combat/combat-display.model';
 import { CombatStageViewModel } from '../../../core/domain/combat/combat-stage.model';
 import { CombatSurface } from './combat-surface';
 
@@ -12,5 +13,5 @@ import { CombatSurface } from './combat-surface';
 export class CombatStage {
   readonly stage = input.required<CombatStageViewModel>();
   readonly action = output<string>();
-  readonly timingStrike = output<void>();
+  readonly timingStrike = output<CombatTimingStrikeSnapshot>();
 }

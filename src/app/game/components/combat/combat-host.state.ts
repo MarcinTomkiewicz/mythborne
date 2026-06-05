@@ -2,6 +2,7 @@ import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angul
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, finalize } from 'rxjs';
 import {
+  CombatTimingStrikeSnapshot,
   CombatSurfaceDecisionDeadline,
 } from '../../../core/domain/combat/combat-display.model';
 import {
@@ -13,7 +14,7 @@ import { ActiveHeroPortraitState } from '../../../core/services/hero/active-hero
 import { CombatSessions } from '../../../core/services/combat/combat-sessions';
 import { mergeCombatLiveEvents } from '../../../core/utils/combat-live-mappers';
 import { mapCombatSessionStageView } from '../../../core/utils/combat-stage-display.mapper';
-import { advanceWalkingDeadTimingFrame } from '../../../core/utils/combat-walking-dead';
+import { walkingDeadTimingFrameAt } from '../../../core/utils/combat-walking-dead';
 import { createRequestId } from '../../../core/utils/request-id';
 import { RequestToken } from '../../../core/utils/request-token';
 import {
@@ -37,9 +38,10 @@ export class CombatHostState {
   private readonly contextTitle = signal('');
   private readonly contextLabel = signal('Walka');
   private readonly externalDecisionDeadline = signal<CombatSurfaceDecisionDeadline | null>(null);
-  private walkingTimer: number | null = null;
+  private walkingAnimationFrame: number | null = null;
   private walkingManifestId: string | null = null;
-  private walkingTimerSpeed: number | null = null;
+  private walkingSpeedMultiplier: number | null = null;
+  private walkingAnimationStartedAtMs: number | null = null;
 
   private readonly preview = signal<CombatResolutionPreviewReadModel | null>(null);
   private readonly liveState = signal<CombatLiveStateReadModel | null>(null);
@@ -48,12 +50,14 @@ export class CombatHostState {
   private readonly isAutoResolving = signal(false);
   private readonly isSubmittingAction = signal(false);
   readonly isFinalizingResult = signal(false);
-  private readonly walkingPosition = signal(0);
+  private readonly walkingFrame = signal({
+    manifestId: null as string | null,
+    positionPercent: 0,
+  });
   readonly previewErrorMessage = signal<string | null>(null);
   readonly actionErrorMessage = signal<string | null>(null);
   readonly finalizeErrorMessage = signal<string | null>(null);
   readonly completion = signal<MinigameCompletionEvent | null>(null);
-  private readonly walkingDirection = signal<1 | -1>(1);
   private readonly visibleDecisionDeadline = computed(() =>
     this.liveState() ||
     this.completion() ||
@@ -73,7 +77,7 @@ export class CombatHostState {
     isPreparingSession: this.isPreparingSession(),
     isAutoResolving: this.isAutoResolving(),
     isSubmittingAction: this.isSubmittingAction(),
-    walkingPosition: this.walkingPosition(),
+    walkingPosition: this.walkingFrame().positionPercent,
     canSubmitStrike: this.canSubmitStrike(),
     decisionDeadline: this.visibleDecisionDeadline(),
     activeHeroId: this.activeHero.state()?.heroId ?? null,
@@ -96,7 +100,7 @@ export class CombatHostState {
         return;
       }
 
-      this.startCombatTiming(manifest.manifestId, manifest.speed);
+      this.startCombatTiming(manifest.manifestId, manifest.speedMultiplier);
     });
 
     this.destroyRef.onDestroy(() => {
@@ -122,7 +126,7 @@ export class CombatHostState {
     this.completion.set(null);
   }
 
-  submitCombatStrike(): void {
+  submitCombatStrike(snapshot: CombatTimingStrikeSnapshot): void {
     const state = this.liveState();
     const sourceRef = this.sourceRef();
 
@@ -133,7 +137,12 @@ export class CombatHostState {
     const sessionId = state.sessionId;
     const actionIndex = state.currentActionIndex;
     const manifestId = state.currentTimingManifest?.manifestId ?? null;
-    const positionPercent = this.walkingPosition();
+
+    if (!manifestId || snapshot.manifestId !== manifestId) {
+      return;
+    }
+
+    const positionPercent = snapshot.positionPercent;
     const requestId = createRequestId(
       `combat:${sourceRef.sourceEntityType}:submit-action:${sourceRef.sourceEntityId}`,
     );
@@ -185,8 +194,7 @@ export class CombatHostState {
     this.isAutoResolving.set(false);
     this.isSubmittingAction.set(false);
     this.isFinalizingResult.set(false);
-    this.walkingPosition.set(0);
-    this.walkingDirection.set(1);
+    this.resetWalkingFrame();
     this.stopCombatTiming();
     this.isLoadingPreview.set(true);
 
@@ -385,36 +393,65 @@ export class CombatHostState {
 
   private startCombatTiming(manifestId: string, speed: number): void {
     if (
-      this.walkingTimer !== null &&
+      this.walkingAnimationFrame !== null &&
       this.walkingManifestId === manifestId &&
-      this.walkingTimerSpeed === speed
+      this.walkingSpeedMultiplier === speed
     ) {
       return;
     }
 
     this.stopCombatTiming();
     this.walkingManifestId = manifestId;
-    this.walkingTimerSpeed = speed;
-    this.walkingPosition.set(0);
-    this.walkingDirection.set(1);
-    this.walkingTimer = window.setInterval(() => {
-      const next = advanceWalkingDeadTimingFrame({
-        position: this.walkingPosition(),
-        direction: this.walkingDirection(),
-      }, speed);
-
-      this.walkingPosition.set(next.position);
-      this.walkingDirection.set(next.direction);
-    }, 16);
+    this.walkingSpeedMultiplier = speed;
+    this.walkingAnimationStartedAtMs = null;
+    this.walkingFrame.set({
+      manifestId,
+      positionPercent: 0,
+    });
+    this.walkingAnimationFrame = window.requestAnimationFrame((timestamp) =>
+      this.runWalkingDeadTimingFrame(timestamp),
+    );
   }
 
   private stopCombatTiming(): void {
-    if (this.walkingTimer !== null) {
-      window.clearInterval(this.walkingTimer);
-      this.walkingTimer = null;
+    if (this.walkingAnimationFrame !== null) {
+      window.cancelAnimationFrame(this.walkingAnimationFrame);
+      this.walkingAnimationFrame = null;
     }
 
     this.walkingManifestId = null;
-    this.walkingTimerSpeed = null;
+    this.walkingSpeedMultiplier = null;
+    this.walkingAnimationStartedAtMs = null;
+  }
+
+  private runWalkingDeadTimingFrame(timestamp: number): void {
+    const manifestId = this.walkingManifestId;
+    const speed = this.walkingSpeedMultiplier;
+
+    if (!manifestId || speed === null) {
+      return;
+    }
+
+    if (this.walkingAnimationStartedAtMs === null) {
+      this.walkingAnimationStartedAtMs = timestamp;
+    }
+
+    const elapsedMs = Math.max(0, timestamp - this.walkingAnimationStartedAtMs);
+    const frame = walkingDeadTimingFrameAt(elapsedMs, speed);
+
+    this.walkingFrame.set({
+      manifestId,
+      positionPercent: frame.position,
+    });
+    this.walkingAnimationFrame = window.requestAnimationFrame((nextTimestamp) =>
+      this.runWalkingDeadTimingFrame(nextTimestamp),
+    );
+  }
+
+  private resetWalkingFrame(): void {
+    this.walkingFrame.set({
+      manifestId: null,
+      positionPercent: 0,
+    });
   }
 }

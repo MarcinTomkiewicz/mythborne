@@ -55,12 +55,18 @@ export interface CombatSurfaceAction {
 }
 
 export interface CombatSurfaceTimingMeter {
+  manifestId: string;
   position: number;
   zoneStart: number;
   zoneEnd: number;
   disabled: boolean;
   actionLabel: string;
   actionLoading: boolean;
+}
+
+export interface CombatTimingStrikeSnapshot {
+  manifestId: string;
+  positionPercent: number;
 }
 
 export interface CombatSurfaceDecisionDeadline {

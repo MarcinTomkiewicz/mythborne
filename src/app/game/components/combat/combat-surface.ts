@@ -4,6 +4,7 @@ import {
   CombatDisplayLogGroup,
   CombatDisplayParticipant,
   CombatSurfaceCenterPanel,
+  CombatTimingStrikeSnapshot,
 } from '../../../core/domain/combat/combat-display.model';
 import { CombatLogPanel } from './combat-log-panel';
 import { CombatParticipantCard } from './combat-participant-card';
@@ -31,5 +32,5 @@ export class CombatSurface {
   readonly rightEmptyText = input('Podgląd walki pobiera dane przeciwnika.');
   readonly centerPanel = input<CombatSurfaceCenterPanel | null>(null);
   readonly centerAction = output<string>();
-  readonly timingStrike = output<void>();
+  readonly timingStrike = output<CombatTimingStrikeSnapshot>();
 }

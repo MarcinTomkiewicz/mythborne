@@ -24,22 +24,15 @@
 
         @if (panel.meter) {
           <app-walking-dead-meter
+            [manifestId]="panel.meter.manifestId"
             [position]="panel.meter.position"
             [zoneStart]="panel.meter.zoneStart"
             [zoneEnd]="panel.meter.zoneEnd"
             [disabled]="panel.meter.disabled"
-            (strike)="timingStrike.emit()"
+            [actionLabel]="panel.meter.actionLabel"
+            [actionLoading]="panel.meter.actionLoading"
+            (strike)="timingStrike.emit($event)"
           />
-
-          <div class="flex-row-center-center flex-wrap gap-sm">
-            <p-button
-              type="button"
-              [label]="panel.meter.actionLabel"
-              [loading]="panel.meter.actionLoading"
-              [disabled]="panel.meter.disabled"
-              (onClick)="timingStrike.emit()"
-            />
-          </div>
         } @else {
           @if (panel.decisionDeadline; as deadline) {
             <div class="mg-card p-md flex-col gap-xs text-center w-100">

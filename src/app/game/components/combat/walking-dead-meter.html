@@ -11,18 +11,29 @@
     [disabled]="disabled()"
     (click)="onFieldClick()"
   >
-    <span class="walking-dead-meter__lane d-block w-100 radius-sm" aria-hidden="true">
+    <span #lane class="walking-dead-meter__lane d-block w-100 radius-sm" aria-hidden="true">
       <span
         class="walking-dead-meter__zone"
         [style.left.%]="zoneStart()"
         [style.width.%]="zoneEnd() - zoneStart()"
       ></span>
       <span
+        #indicator
         class="walking-dead-meter__indicator"
         [style.left.%]="position()"
       ></span>
     </span>
   </button>
+
+  <div class="flex-row-center-center flex-wrap gap-sm">
+    <p-button
+      type="button"
+      [label]="actionLabel()"
+      [loading]="actionLoading()"
+      [disabled]="disabled()"
+      (onClick)="onFieldClick()"
+    />
+  </div>
 
   <div class="flex-row-between-center gap-md w-100 color-muted text-xs">
     <span>Za wcześnie</span>

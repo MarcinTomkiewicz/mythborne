@@ -21,7 +21,7 @@ import { CombatHostState } from './combat-host.state';
           <app-combat-stage
             [stage]="stageView"
             (action)="handleStageAction($event)"
-            (timingStrike)="flow.submitCombatStrike()"
+            (timingStrike)="flow.submitCombatStrike($event)"
           />
         }
         @if (flow.isFinalizingResult()) {

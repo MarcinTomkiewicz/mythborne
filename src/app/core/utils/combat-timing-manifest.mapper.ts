@@ -81,7 +81,6 @@ export function mapTimingManifest(value: Json): CombatTimingManifestReadModel | 
     zoneStartPercent,
     zoneEndPercent,
     zoneWidthPercent,
-    speed: Math.max(0, speedMultiplier),
     label: trimToNull(optionalText(read(record, 'label'))),
     luckRng: mapCombatLuckRng(record, zoneWidthPercent),
     rawJson: value,

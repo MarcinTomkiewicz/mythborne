@@ -39,6 +39,7 @@ export function mapLiveCombatCenterPanel(
       helperText: currentActionHelper(input),
       detailText: timingManifestHelper(timing),
       meter: {
+        manifestId: timing.manifestId,
         position: input.timing.walkingPosition,
         zoneStart: input.timing.hitWindow.start,
         zoneEnd: input.timing.hitWindow.end,

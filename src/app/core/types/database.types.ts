@@ -4464,6 +4464,92 @@ export type Database = {
         }
         Relationships: []
       }
+      estate_movement_locks: {
+        Row: {
+          created_at: string
+          created_by_hero_id: string | null
+          ended_at: string | null
+          estate_id: string | null
+          expires_at: string
+          hero_id: string
+          id: string
+          lock_kind: string
+          metadata_json: Json
+          reason: string | null
+          server_id: string
+          source_entity_id: string | null
+          source_entity_type: string | null
+          starts_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_hero_id?: string | null
+          ended_at?: string | null
+          estate_id?: string | null
+          expires_at: string
+          hero_id: string
+          id?: string
+          lock_kind: string
+          metadata_json?: Json
+          reason?: string | null
+          server_id: string
+          source_entity_id?: string | null
+          source_entity_type?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_hero_id?: string | null
+          ended_at?: string | null
+          estate_id?: string | null
+          expires_at?: string
+          hero_id?: string
+          id?: string
+          lock_kind?: string
+          metadata_json?: Json
+          reason?: string | null
+          server_id?: string
+          source_entity_id?: string | null
+          source_entity_type?: string | null
+          starts_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "estate_movement_locks_created_by_hero_id_fkey"
+            columns: ["created_by_hero_id"]
+            isOneToOne: false
+            referencedRelation: "hero"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estate_movement_locks_estate_id_fkey"
+            columns: ["estate_id"]
+            isOneToOne: false
+            referencedRelation: "estates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estate_movement_locks_hero_id_fkey"
+            columns: ["hero_id"]
+            isOneToOne: false
+            referencedRelation: "hero"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "estate_movement_locks_server_id_fkey"
+            columns: ["server_id"]
+            isOneToOne: false
+            referencedRelation: "game_servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       estates: {
         Row: {
           address: string
@@ -14644,6 +14730,30 @@ export type Database = {
           total_points_granted: number
         }[]
       }
+      apply_player_estate_building_group_metadata_json: {
+        Args: { p_building_json: Json; p_default_district_code: string }
+        Returns: Json
+      }
+      apply_player_estate_building_requirement_status_json: {
+        Args: { p_building_json: Json; p_estate_id: string; p_hero_id: string }
+        Returns: Json
+      }
+      apply_player_estate_building_resource_cost_status_json: {
+        Args: { p_building_json: Json; p_hero_id: string }
+        Returns: Json
+      }
+      apply_player_estate_buildings_group_metadata_json: {
+        Args: { p_buildings_json: Json; p_default_district_code: string }
+        Returns: Json
+      }
+      apply_player_estate_buildings_requirement_status_json: {
+        Args: { p_buildings_json: Json; p_estate_id: string; p_hero_id: string }
+        Returns: Json
+      }
+      apply_player_estate_buildings_resource_cost_status_json: {
+        Args: { p_buildings_json: Json; p_hero_id: string }
+        Returns: Json
+      }
       apply_pvp_attack_result_prestige: {
         Args: { p_pvp_attack_result_id: string; p_request_id?: string }
         Returns: {
@@ -14850,6 +14960,10 @@ export type Database = {
       }
       assert_hero_can_use_player_trade_runtime: {
         Args: { p_hero_id: string; p_operation?: string }
+        Returns: undefined
+      }
+      assert_hero_estate_movement_not_locked: {
+        Args: { p_hero_id: string; p_lock_kinds?: string[] }
         Returns: undefined
       }
       assert_hero_meets_building_prestige_requirement: {
@@ -15093,6 +15207,14 @@ export type Database = {
         Args: { p_hero_a: string; p_hero_b: string; p_server_id: string }
         Returns: string
       }
+      build_auction_bid_row: {
+        Args: { p_bid_id: string; p_hero_id: string }
+        Returns: Json
+      }
+      build_auction_listing_row: {
+        Args: { p_hero_id: string; p_listing_id: string }
+        Returns: Json
+      }
       build_combat_attack_log_display_json: {
         Args: {
           p_actor_display_name?: string
@@ -15208,6 +15330,19 @@ export type Database = {
         Args: { p_public_safe?: boolean; p_report_id: string }
         Returns: Json
       }
+      build_hero_building_requirement_status_json: {
+        Args: {
+          p_building_id: string
+          p_estate_id: string
+          p_hero_id: string
+          p_target_level: number
+        }
+        Returns: Json
+      }
+      build_hero_building_resource_cost_status_json: {
+        Args: { p_hero_id: string; p_resource_costs_json: Json }
+        Returns: Json
+      }
       build_hero_combat_preview_snapshot_readonly: {
         Args: {
           p_hero_id: string
@@ -15265,6 +15400,10 @@ export type Database = {
             }
             Returns: Json
           }
+      build_player_estate_building_groups_json: {
+        Args: { p_buildings_json: Json; p_default_district_code: string }
+        Returns: Json
+      }
       build_player_item_display_core_json: {
         Args: { p_item_json: Json }
         Returns: Json
@@ -18107,6 +18246,20 @@ export type Database = {
           rpc_name: string
         }[]
       }
+      get_auction_bids_page: {
+        Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      get_auction_create_context: {
+        Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      get_auction_listings_page: {
+        Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      get_auction_page_context: { Args: { p_hero_id: string }; Returns: Json }
+      get_auction_page_copy: { Args: never; Returns: Json }
       get_balance_formula_assignment_draft_overlay: {
         Args: { p_change_set_id?: string }
         Returns: {
@@ -19152,6 +19305,20 @@ export type Database = {
           set_quality_label: string
           set_quality_multiplier: number
           source_json: Json
+        }[]
+      }
+      get_hero_estate_movement_lock_state: {
+        Args: { p_hero_id: string; p_lock_kinds?: string[] }
+        Returns: {
+          expires_at: string
+          is_locked: boolean
+          lock_id: string
+          lock_kind: string
+          lock_reason: string
+          remaining_seconds: number
+          source_entity_id: string
+          source_entity_type: string
+          starts_at: string
         }[]
       }
       get_hero_estate_runtime_state: {
@@ -20639,6 +20806,10 @@ export type Database = {
           under_protection: boolean
         }[]
       }
+      get_required_global_integer_config_value: {
+        Args: { p_key: string }
+        Returns: number
+      }
       get_requirement_impact_preview: {
         Args: {
           p_entity_id?: string
@@ -21659,6 +21830,37 @@ export type Database = {
           p_locale_key?: string
           p_stat_key: string
         }
+        Returns: string
+      }
+      player_estate_bonus_display_label: {
+        Args: {
+          p_scope_key?: string
+          p_target_key: string
+          p_target_label: string
+        }
+        Returns: string
+      }
+      player_estate_bonus_display_value: {
+        Args: {
+          p_display_mode?: string
+          p_scope_key?: string
+          p_target_key: string
+          p_target_label?: string
+          p_type_key: string
+          p_value: number
+        }
+        Returns: string
+      }
+      player_estate_building_sort_order: {
+        Args: {
+          p_building_key: string
+          p_building_name: string
+          p_fallback_sort_order?: number
+        }
+        Returns: number
+      }
+      player_estate_district_label: {
+        Args: { p_district_code: string }
         Returns: string
       }
       player_item_display_icon_key: {
@@ -23355,6 +23557,16 @@ export type Database = {
           total_count: number
         }[]
       }
+      search_auction_listings_page: {
+        Args: {
+          p_filters?: Json
+          p_hero_id: string
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+        }
+        Returns: Json
+      }
       search_balance_formula_target_targets: {
         Args: { p_limit?: number; p_query: string }
         Returns: {
@@ -24593,6 +24805,42 @@ export type Database = {
           voting_ends_at: string
           voting_starts_at: string
         }[]
+      }
+      start_hero_estate_movement_lock: {
+        Args: {
+          p_duration_seconds: number
+          p_estate_id: string
+          p_hero_id: string
+          p_lock_kind: string
+          p_metadata_json?: Json
+          p_reason?: string
+          p_source_entity_id?: string
+          p_source_entity_type?: string
+        }
+        Returns: {
+          created_at: string
+          created_by_hero_id: string | null
+          ended_at: string | null
+          estate_id: string | null
+          expires_at: string
+          hero_id: string
+          id: string
+          lock_kind: string
+          metadata_json: Json
+          reason: string | null
+          server_id: string
+          source_entity_id: string | null
+          source_entity_type: string | null
+          starts_at: string
+          status: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "estate_movement_locks"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       start_hero_exploration_initial_step_if_needed: {
         Args: { p_exploration_id: string; p_request_id?: string }
