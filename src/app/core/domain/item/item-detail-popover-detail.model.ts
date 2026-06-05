@@ -1,18 +1,19 @@
 import type { Json } from '../../types/database.types';
 import type { PlayerItemDisplayCoreValueDisplay } from './player-item-display-core.model';
 
-export type ItemDetailPopoverDetailContractVersion = 'player_item_popover_detail_v1';
-export type ItemDetailPopoverDisplayTone = 'positive' | 'negative' | 'neutral';
+export type ItemDetailPopoverDetailContractVersion = 'item_detail_popover_detail_v1';
+export type ItemDetailPopoverDisplayTone = string;
 
 // Canonical viewer-authorized item popover payload. It can represent Armory,
 // Trade, Auction, Report or other visible items; it is not owned-player-item specific.
 export interface ItemDetailPopoverDetailReadModel {
   contractVersion: ItemDetailPopoverDetailContractVersion;
+  access: ItemDetailPopoverAccess;
   source: string;
   itemId: string;
-  heroId: string;
+  heroId: string | null;
   displayMeta: ItemDetailPopoverDisplayMeta;
-  valueDisplay: PlayerItemDisplayCoreValueDisplay;
+  valueDisplay: PlayerItemDisplayCoreValueDisplay | null;
   itemStats: ItemDetailPopoverStatRow[];
   modifierRows: ItemDetailPopoverModifierRow[];
   bonuses: ItemDetailPopoverModifierRow[];
@@ -21,28 +22,36 @@ export interface ItemDetailPopoverDetailReadModel {
   requirements: ItemDetailPopoverRequirementRow[];
   requirementsJson: ItemDetailPopoverRequirementRow[];
   requirementStatus: ItemDetailPopoverRequirementStatus;
-  meetsRequirements: boolean;
-  requirementCount: number;
-  unmetCount: number;
+  meetsRequirements: boolean | null;
+  requirementCount: number | null;
+  unmetCount: number | null;
   failuresJson: Json;
   metadata: Json;
+}
+
+export interface ItemDetailPopoverAccess {
+  accessKind: string;
+  sourceContext: string | null;
+  isOwnedByViewer: boolean;
+  isAuctionListing: boolean;
+  isTradeOfferItem: boolean;
 }
 
 export interface ItemDetailPopoverDisplayMeta {
   itemId: string;
   itemName: string;
-  lifecycleStatusKey: string;
-  lifecycleStatusLabel: string;
-  generationQualityKey: string;
+  lifecycleStatusKey: string | null;
+  lifecycleStatusLabel: string | null;
+  generationQualityKey: string | null;
   displayIconKey: string;
-  qualityLabel: string;
-  baseKey: string;
-  baseName: string;
-  baseTypeKey: string;
-  baseTypeLabel: string;
-  drachmaValue: string;
+  qualityLabel: string | null;
+  baseKey: string | null;
+  baseName: string | null;
+  baseTypeKey: string | null;
+  baseTypeLabel: string | null;
+  drachmaValue: string | null;
   allowedSlotLabel: string | null;
-  valueDisplay: PlayerItemDisplayCoreValueDisplay;
+  valueDisplay: PlayerItemDisplayCoreValueDisplay | null;
   equipmentArea: string | null;
   handUsageKey: string | null;
   handUsageLabel: string | null;
@@ -136,7 +145,7 @@ export interface ItemDetailPopoverRequirementRow {
   displayTone: ItemDetailPopoverDisplayTone;
   isMet: boolean;
   displayLabel: string;
-  requiredDisplayValue: string;
+  requiredDisplayValue: string | null;
   currentDisplayValue: string | null;
   missingDisplayValue: string | null;
   failureCompactText: string | null;
@@ -182,9 +191,9 @@ export interface ItemDetailPopoverRequirementCompactDisplay {
 }
 
 export interface ItemDetailPopoverRequirementStatus {
-  meetsRequirements: boolean;
-  requirementCount: number;
-  unmetCount: number;
+  meetsRequirements: boolean | null;
+  requirementCount: number | null;
+  unmetCount: number | null;
   failuresJson: Json;
   checkJson: Json | null;
 }

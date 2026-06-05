@@ -26,7 +26,7 @@ export function itemDetailPopoverViewModel(
       displayMeta.allowedSlotLabel,
     ].filter((label): label is string => Boolean(label)),
     iconClass: `pi pi-${displayMeta.displayIconKey}`,
-    valueDisplay: displayMeta.valueDisplay,
+    valueDisplay: detail.valueDisplay ?? displayMeta.valueDisplay,
     itemStats: detail.itemStats.map((row, index) => ({
       key: `stat-${index}`,
       label: row.label,
@@ -50,7 +50,10 @@ export function itemDetailPopoverViewModel(
       label: row.compactDisplay?.label ?? row.displayLabel,
       requiredValue: row.compactDisplay?.requiredValue ?? row.requiredDisplayValue,
       currentValue: row.isMet === false
-        ? row.compactDisplay?.currentValue ?? row.currentDisplayValue
+        ? row.currentDisplayText
+          ?? row.currentValueLabel
+          ?? row.compactDisplay?.currentValue
+          ?? row.currentDisplayValue
         : null,
       isMet: row.isMet,
       failureReason: null,
@@ -73,8 +76,8 @@ function requirementState(
   detail: ItemDetailPopoverDetailReadModel,
 ): ItemDetailPopoverRequirementState {
   const status = detail.requirementStatus;
-  const count = status.requirementCount;
-  const unmetCount = status.unmetCount;
+  const count = status.requirementCount ?? 0;
+  const unmetCount = status.unmetCount ?? 0;
   const meetsRequirements = status.meetsRequirements;
 
   if (count === 0) {

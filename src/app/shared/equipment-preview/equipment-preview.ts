@@ -12,7 +12,6 @@ import {
   EquipmentPreviewItemDisplay,
   EquipmentPreviewSlotRow,
 } from '../../core/domain/equipment/equipment-preview.model';
-import { ItemDetailPopoverCopy } from '../../core/domain/item/item-detail-popover.model';
 
 @Component({
   selector: 'app-equipment-preview',
@@ -40,7 +39,6 @@ export class EquipmentPreview {
   readonly emptyLabel = input('');
   readonly emptySlotLabel = input('');
   readonly emptySlotDetail = input('');
-  readonly itemDetailCopy = input<ItemDetailPopoverCopy | null>(null);
   readonly paperdollImageUrl = input('/images/warrior.png');
   readonly selectedItemIds = input<readonly string[]>([]);
   readonly selectionActionDisabled = input(false);

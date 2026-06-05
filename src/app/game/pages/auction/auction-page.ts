@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { GamePageHeader } from '../../../shared/game-page-header/game-page-header';
+import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-detail-popover';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { AuctionOverviewState } from './auction-overview.state';
 import { AuctionPageState } from './auction-page.state';
@@ -8,7 +9,7 @@ import { AuctionPageState } from './auction-page.state';
 @Component({
   selector: 'app-auction-page',
   standalone: true,
-  imports: [GamePageHeader, LoadingOverlay, RouterLink],
+  imports: [GamePageHeader, ItemDetailPopover, LoadingOverlay, RouterLink],
   providers: [
     AuctionOverviewState,
     AuctionPageState,

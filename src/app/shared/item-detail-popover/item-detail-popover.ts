@@ -1,15 +1,17 @@
 import { Component, DestroyRef, computed, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { forkJoin } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { Popover } from 'primeng/popover';
 import {
   ItemDetailPopoverCopy,
+  ItemPopoverContextKey,
   ItemDetailPopoverViewModel,
 } from '../../core/domain/item/item-detail-popover.model';
 import { ItemDetailPopoverDetailReadModel } from '../../core/domain/item/item-detail-popover-detail.model';
+import { ItemDetailPopoverCopyReader } from '../../core/services/items/item-detail-popover-copy-reader';
 import { ItemDetailReader } from '../../core/services/items/item-detail-reader';
 import { itemDetailPopoverViewModel } from '../../core/utils/item-detail-popover-mappers';
-import { replaceTemplateTokens } from '../../core/utils/token-template';
 
 @Component({
   selector: 'app-item-detail-popover',
@@ -19,14 +21,17 @@ import { replaceTemplateTokens } from '../../core/utils/token-template';
 })
 export class ItemDetailPopover {
   private readonly reader = inject(ItemDetailReader);
+  private readonly copyReader = inject(ItemDetailPopoverCopyReader);
   private readonly destroyRef = inject(DestroyRef);
   private requestId = 0;
   private hideTimeout: ReturnType<typeof setTimeout> | null = null;
-  private loadingItemId: string | null = null;
+  private loadingItemKey: string | null = null;
 
-  readonly copy = input.required<ItemDetailPopoverCopy>();
+  readonly copy = signal<ItemDetailPopoverCopy | null>(null);
+  readonly loadedItemKey = signal<string | null>(null);
   readonly itemId = input<string | null>(null);
   readonly fallbackName = input<string | null>(null);
+  readonly contextKey = input<ItemPopoverContextKey | null>(null, { alias: 'context' });
   readonly contextSourceLabel = input<string | null>(null);
   readonly capturedAt = input<string | null>(null);
   readonly triggerLabel = input<string | null>(null);
@@ -43,8 +48,12 @@ export class ItemDetailPopover {
     const detail = this.loadedDetail();
     const itemId = this.itemId();
 
-    if (detail && detail.itemId === itemId) {
-      return itemDetailPopoverViewModel(detail, this.context());
+    if (
+      detail
+      && detail.itemId === itemId
+      && this.loadedItemKey() === this.currentItemKey()
+    ) {
+      return itemDetailPopoverViewModel(detail, this.viewContext());
     }
 
     return {
@@ -59,7 +68,7 @@ export class ItemDetailPopover {
       modifierRows: [],
       requirementRows: [],
       requirementState: null,
-      context: this.context(),
+      context: this.viewContext(),
       isLoading: this.status() === 'loading',
       error: this.playerSafeError(),
     };
@@ -112,64 +121,73 @@ export class ItemDetailPopover {
     if (
       this.status() === 'loaded'
       && this.loadedDetail()?.itemId === itemId
+      && this.loadedItemKey() === this.currentItemKey()
     ) {
       return;
     }
 
     if (
       this.status() === 'loading'
-      && this.loadingItemId === itemId
+      && this.loadingItemKey === this.currentItemKey()
     ) {
       return;
     }
 
     if (!itemId?.trim()) {
       this.loadedDetail.set(null);
+      this.loadedItemKey.set(null);
       this.status.set('error');
-      this.error.set(this.copy().unavailableLabel);
-      this.loadingItemId = null;
+      this.error.set(this.copy()?.access.notFound ?? null);
+      this.loadingItemKey = null;
       return;
     }
 
+    const itemKey = this.currentItemKey();
+
     const requestId = ++this.requestId;
-    this.loadingItemId = itemId;
+    this.loadingItemKey = itemKey;
     this.status.set('loading');
     this.error.set(null);
     this.loadedDetail.set(null);
+    this.loadedItemKey.set(null);
 
-    this.reader.readItemDetail(itemId)
+    forkJoin({
+      copy: this.copyReader.readCopy(),
+      detail: this.reader.readItemDetail(itemId, this.contextKey()),
+    })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (detail) => {
-          if (requestId !== this.requestId || itemId !== this.itemId()) {
+        next: ({ copy, detail }) => {
+          if (requestId !== this.requestId || itemKey !== this.currentItemKey()) {
             return;
           }
 
+          this.copy.set(copy);
           this.loadedDetail.set(detail);
+          this.loadedItemKey.set(itemKey);
           this.status.set('loaded');
-          this.loadingItemId = null;
+          this.loadingItemKey = null;
         },
         error: () => {
-          if (requestId !== this.requestId || itemId !== this.itemId()) {
+          if (requestId !== this.requestId || itemKey !== this.currentItemKey()) {
             return;
           }
 
           this.loadedDetail.set(null);
+          this.loadedItemKey.set(null);
           this.status.set('error');
-          this.error.set(this.copy().unavailableLabel);
-          this.loadingItemId = null;
+          this.error.set(this.copy()?.access.notReadable ?? null);
+          this.loadingItemKey = null;
         },
       });
   }
 
   triggerText(): string {
-    return this.triggerLabel() ?? this.copy().triggerLabel;
+    return this.triggerLabel() ?? this.fallbackName() ?? '';
   }
 
   triggerAriaLabel(name: string): string {
-    return replaceTemplateTokens(this.copy().triggerAriaLabelTemplate, {
-      itemName: name,
-    });
+    return this.triggerLabel() ?? name;
   }
 
   private playerSafeError(): string | null {
@@ -177,7 +195,7 @@ export class ItemDetailPopover {
       return null;
     }
 
-    return this.error() ?? this.copy().unavailableLabel;
+    return this.error() ?? this.copy()?.access.notReadable ?? null;
   }
 
   private clearHideTimeout(): void {
@@ -193,12 +211,16 @@ export class ItemDetailPopover {
     ));
   }
 
-  private context() {
+  private viewContext() {
     return {
       kind: 'current' as const,
       label: null,
       capturedAt: this.capturedAt(),
       sourceLabel: this.contextSourceLabel(),
     };
+  }
+
+  private currentItemKey(): string {
+    return `${this.itemId()?.trim() ?? ''}:${this.contextKey() ?? ''}`;
   }
 }

@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { map, Observable, switchMap } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
+import { ItemPopoverContextKey } from '../../domain/item/item-detail-popover.model';
 import { ItemDetailPopoverDetailReadModel } from '../../domain/item/item-detail-popover-detail.model';
 import { Database } from '../../types/database.types';
 import { mapItemDetailPopoverDetail } from '../../utils/item-detail-popover-detail.mapper';
@@ -13,18 +14,23 @@ export class ItemDetailReader {
   private readonly activeHero = inject(ActiveHero);
   private readonly backend = inject(Backend);
 
-  readItemDetail(itemId: string): Observable<ItemDetailPopoverDetailReadModel> {
+  readItemDetail(
+    itemId: string,
+    context: ItemPopoverContextKey | null = null,
+  ): Observable<ItemDetailPopoverDetailReadModel> {
     const normalizedItemId = requiredTrimmedText(
       itemId,
       'itemId',
       'item popover RPC',
     );
+    const normalizedContext = context?.trim() || null;
 
     return this.activeHero.requireActiveHero().pipe(
-      switchMap((context) => {
-        const args: Database['public']['Functions']['get_player_item_popover_detail']['Args'] = {
-          p_hero_id: context.heroId,
+      switchMap((activeHeroContext) => {
+        const args: PlayerItemPopoverDetailRpcArgs = {
+          p_hero_id: activeHeroContext.heroId,
           p_item_id: normalizedItemId,
+          p_context: normalizedContext,
         };
 
         return this.backend.rpc<
@@ -38,3 +44,9 @@ export class ItemDetailReader {
     );
   }
 }
+
+type PlayerItemPopoverDetailRpcArgs = {
+  p_hero_id: string;
+  p_item_id: string;
+  p_context: string | null;
+};

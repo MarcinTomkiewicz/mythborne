@@ -3,7 +3,6 @@ import {
   ArmoryItemSummary,
   EquippedItemSummary,
 } from '../../../core/domain/item/item-equipment.model';
-import { ItemDetailPopoverCopy } from '../../../core/domain/item/item-detail-popover.model';
 import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-detail-popover';
 
 @Component({
@@ -12,9 +11,9 @@ import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-deta
   imports: [ItemDetailPopover],
   template: `
     <app-item-detail-popover
-      [copy]="copy()"
       [itemId]="item().itemId"
       [fallbackName]="itemName()"
+      context="armory"
       [contextSourceLabel]="contextSourceLabel()"
       [buttonTrigger]="buttonTrigger()"
       [triggerFullWidth]="triggerFullWidth()"
@@ -25,7 +24,6 @@ import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-deta
 })
 export class ArmoryItemDetailPopover {
   readonly item = input.required<ArmoryItemSummary | EquippedItemSummary>();
-  readonly copy = input.required<ItemDetailPopoverCopy>();
   readonly guildContextLabel = input<string | null>(null);
   readonly guildContextDetail = input<string | null>(null);
   readonly buttonTrigger = input(true);

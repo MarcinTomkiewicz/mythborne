@@ -1,4 +1,5 @@
 @let detail = item();
+@let popoverCopy = copy();
 
 <span
   class="mg-item-popover-trigger"
@@ -53,26 +54,28 @@
           <div class="color-secondary text-sm font-extrabold">
             {{ detail.valueDisplay.displayLabel }}: {{ detail.valueDisplay.displayValue }}
           </div>
-        } @else if (!detail.isLoading && !detail.error) {
+        } @else if (!detail.isLoading && !detail.error && popoverCopy) {
           <div class="color-secondary text-sm font-extrabold">
-            {{ copy().valueUnavailableLabel }}
+            {{ popoverCopy.empty.value }}
           </div>
         }
       </div>
     </header>
 
     @if (detail.isLoading) {
-      <span class="mg-item-popover__empty color-muted text-sm">{{ copy().loadingLabel }}</span>
+      @if (popoverCopy) {
+        <span class="mg-item-popover__empty color-muted text-sm">{{ popoverCopy.sections.overview }}</span>
+      }
     } @else if (detail.error) {
       <span class="warn-text">{{ detail.error }}</span>
-    } @else {
+    } @else if (popoverCopy) {
       @if (detail.description) {
         <p class="mb-0">{{ detail.description }}</p>
       }
 
       @if (detail.itemStats.length) {
         <section class="mg-item-popover__section flex-col gap-xs w-100 pb-sm">
-          <strong class="mg-item-popover__section-title">{{ copy().sections.itemStats }}</strong>
+          <strong class="mg-item-popover__section-title">{{ popoverCopy.sections.itemStats }}</strong>
           @for (stat of detail.itemStats; track stat.key) {
             <div class="mg-item-popover__row color-text text-sm gap-sm">
               <span class="mg-item-popover__row-code flex-row-center-center">{{ rowCode(stat.label) }}</span>
@@ -99,7 +102,7 @@
       }
 
       <section class="mg-item-popover__section flex-col gap-xs w-100 pb-sm">
-        <strong class="mg-item-popover__section-title">{{ copy().sections.bonuses }}</strong>
+        <strong class="mg-item-popover__section-title">{{ popoverCopy.sections.bonuses }}</strong>
         @for (bonus of detail.modifierRows; track bonus.key) {
           <div class="mg-item-popover__row color-text text-sm gap-sm">
             <span class="mg-item-popover__row-code flex-row-center-center">{{ rowCode(bonus.label) }}</span>
@@ -118,7 +121,7 @@
             </strong>
           </div>
         } @empty {
-          <span class="mg-item-popover__empty color-muted text-sm">{{ copy().empty.noBonuses }}</span>
+          <span class="mg-item-popover__empty color-muted text-sm">{{ popoverCopy.empty.bonuses }}</span>
         }
       </section>
 
@@ -128,7 +131,7 @@
         || detail.requirementState?.kind === 'not_met'
       ) {
       <section class="mg-item-popover__section flex-col gap-xs w-100 pb-sm">
-        <strong class="mg-item-popover__section-title">{{ copy().sections.requirements }}</strong>
+        <strong class="mg-item-popover__section-title">{{ popoverCopy.sections.requirements }}</strong>
         @for (requirement of detail.requirementRows; track requirement.key) {
           <div
             class="mg-item-popover__row color-text text-sm gap-sm"
@@ -139,7 +142,7 @@
             <span class="flex-col gap-xs">
               <span>{{ requirement.label }}</span>
               @if (requirement.currentValue) {
-                <span class="color-muted text-xs font-bold">{{ copy().currentValueLabel }}: {{ requirement.currentValue }}</span>
+                <span class="color-muted text-xs font-bold">{{ requirement.currentValue }}</span>
               }
               @if (requirement.failureReason) {
                 <span class="color-muted text-xs font-bold">{{ requirement.failureReason }}</span>
@@ -153,9 +156,9 @@
           </div>
         } @empty {
           @if (detail.requirementState?.kind === 'met') {
-            <span class="mg-item-popover__empty color-muted text-sm">{{ copy().empty.noRequirements }}</span>
+            <span class="mg-item-popover__empty color-muted text-sm">{{ popoverCopy.empty.requirements }}</span>
           } @else {
-            <span class="mg-item-popover__empty color-muted text-sm">{{ copy().empty.requirementsUnavailable }}</span>
+            <span class="mg-item-popover__empty color-muted text-sm">{{ popoverCopy.empty.requirements }}</span>
           }
         }
       </section>

@@ -15,7 +15,6 @@ import {
   requiredText,
   requiredTextArray,
 } from './json-read';
-import { mapItemDetailPopoverCopy } from './item-detail-popover-copy.mapper';
 
 export function mapArmoryCopyJson(
   value: Json | undefined,
@@ -38,7 +37,6 @@ export function mapArmoryCopyJson(
     loadoutPresets: mapCopyLoadoutPresets(
       requiredRecord(read(copyJson, 'loadoutPresets'), 'copyJson.loadoutPresets'),
     ),
-    itemDetail: mapItemDetailPopoverCopy(read(copyJson, 'itemDetail'), 'copyJson.itemDetail'),
     equipmentPreview: mapCopyEquipmentPreview(
       requiredRecord(read(copyJson, 'equipmentPreview'), 'copyJson.equipmentPreview'),
     ),

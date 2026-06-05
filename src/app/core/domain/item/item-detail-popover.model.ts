@@ -13,12 +13,12 @@ export interface ItemDetailPopoverValueRow {
   valueParts: ItemDetailPopoverValuePart[];
   sourceLabel: string | null;
   isBoosted: boolean;
-  valueTone: 'positive' | 'negative' | 'neutral';
+  valueTone: string;
 }
 
 export interface ItemDetailPopoverValuePart {
   text: string;
-  tone: 'positive' | 'negative' | 'neutral';
+  tone: string;
 }
 
 export interface ItemDetailPopoverRequirementRow {
@@ -43,36 +43,50 @@ export interface ItemDetailPopoverContext {
   sourceLabel: string | null;
 }
 
+export type ItemPopoverContextKey =
+  | 'armory'
+  | 'equipment_preview'
+  | 'auction'
+  | 'trade'
+  | 'exploration'
+  | string;
+
 export interface ItemDetailPopoverCopy {
-  triggerLabel: string;
-  triggerAriaLabelTemplate: string;
-  loadingLabel: string;
-  unavailableLabel: string;
-  itemStatsSectionTitle: string;
-  bonusesSectionTitle: string;
-  noBonusesLabel: string;
-  requirementsSectionTitle: string;
-  currentValueLabel: string;
-  noRequirementsLabel: string;
-  requirementsUnavailableLabel: string;
-  valueUnavailableLabel: string;
-  currentItemContextLabel: string;
-  currentEquippedItemContextLabel: string;
+  contractVersion: 'item_detail_popover_copy_v1';
   sections: ItemDetailPopoverCopySections;
+  labels: ItemDetailPopoverCopyLabels;
   empty: ItemDetailPopoverCopyEmpty;
+  access: ItemDetailPopoverCopyAccess;
 }
 
 export interface ItemDetailPopoverCopySections {
+  overview: string;
   itemStats: string;
   bonuses: string;
   requirements: string;
+  value: string;
+}
+
+export interface ItemDetailPopoverCopyLabels {
+  quality: string;
+  baseType: string;
+  slot: string;
+  handUsage: string;
+  valueInDrachmas: string;
+  status: string;
+  source: string;
 }
 
 export interface ItemDetailPopoverCopyEmpty {
-  noStats: string;
-  noBonuses: string;
-  noRequirements: string;
-  requirementsUnavailable: string;
+  itemStats: string;
+  bonuses: string;
+  requirements: string;
+  value: string;
+}
+
+export interface ItemDetailPopoverCopyAccess {
+  notFound: string;
+  notReadable: string;
 }
 
 export interface ItemDetailPopoverViewModel {

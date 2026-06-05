@@ -83,9 +83,9 @@
                 [cdkDragDisabled]="actionDisabled()"
               >
                 <app-item-detail-popover
-                  [copy]="itemDetailCopy()"
                   [itemId]="item.itemId"
                   [fallbackName]="item.displayCore.itemName"
+                  context="armory"
                   [buttonTrigger]="false"
                   [triggerFullWidth]="true"
                   [triggerTabIndex]="null"

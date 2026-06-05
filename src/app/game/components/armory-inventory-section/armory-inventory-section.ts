@@ -9,9 +9,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import {
-  ItemDetailPopoverCopy,
-} from '../../../core/domain/item/item-detail-popover.model';
-import {
   PlayerArmoryPageCopyFilters,
   PlayerArmoryPageCopyInventory,
   PlayerArmoryPageCopySearch,
@@ -58,7 +55,6 @@ export class ArmoryInventorySection {
   readonly searchCopy = input.required<PlayerArmoryPageCopySearch>();
   readonly filtersCopy = input.required<PlayerArmoryPageCopyFilters>();
   readonly inventoryCopy = input.required<PlayerArmoryPageCopyInventory>();
-  readonly itemDetailCopy = input.required<ItemDetailPopoverCopy>();
   readonly equipItemLabel = input.required<string>();
   readonly bulkEquipItemLabel = input.required<string>();
   readonly bulkSellItemLabel = input.required<string>();

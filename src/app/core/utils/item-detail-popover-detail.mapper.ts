@@ -1,241 +1,200 @@
 import {
+  ItemDetailPopoverAccess,
   ItemDetailPopoverDetailReadModel,
   ItemDetailPopoverDisplayTone,
+  ItemDetailPopoverModifierRow,
+  ItemDetailPopoverRequirementRow,
   ItemDetailPopoverRequirementStatus,
+  ItemDetailPopoverStatRow,
 } from '../domain/item/item-detail-popover-detail.model';
+import { PlayerItemDisplayCoreValueDisplay } from '../domain/item/player-item-display-core.model';
 import { Json } from '../types/database.types';
 import {
   JsonRecord,
   jsonValue,
+  mapJsonArray,
   optionalBoolean,
-  optionalJson,
   optionalNumber,
   optionalText,
   read,
-  requiredArray,
   requiredBoolean,
-  requiredInteger,
   requiredRecord,
   requiredText,
-  requiredTextArray,
 } from './json-read';
 
 export function mapItemDetailPopoverDetail(
   value: Json,
   fieldPath = 'get_player_item_popover_detail',
 ): ItemDetailPopoverDetailReadModel {
-  const detail = requiredRecord(value, fieldPath);
+  const root = requiredRecord(value, fieldPath);
   const contractVersion = requiredText(
-    read(detail, 'contractVersion'),
+    read(root, 'contractVersion'),
     `${fieldPath}.contractVersion`,
   );
 
-  if (contractVersion !== 'player_item_popover_detail_v1') {
-    throw new Error(
-      `${fieldPath}.contractVersion must be player_item_popover_detail_v1.`,
-    );
+  if (contractVersion !== 'item_detail_popover_detail_v1') {
+    throw new Error(`${fieldPath}.contractVersion must be item_detail_popover_detail_v1.`);
   }
 
+  const access = mapAccess(requiredRecord(read(root, 'access'), `${fieldPath}.access`));
+  const itemDetail = requiredRecord(read(root, 'itemDetail'), `${fieldPath}.itemDetail`);
+  const bonusesJson = optionalRecord(read(itemDetail, 'bonuses_json', 'bonusesJson'));
+  const displayMetaSource = optionalRecord(read(itemDetail, 'displayMeta'))
+    ?? optionalRecord(read(bonusesJson, 'displayMeta'));
+  const displayMeta = mapDisplayMeta(
+    displayMetaSource,
+    itemDetail,
+    `${fieldPath}.itemDetail`,
+  );
+  const valueDisplay = mapValueDisplay(
+    read(itemDetail, 'valueDisplay')
+    ?? read(bonusesJson, 'valueDisplay')
+    ?? read(displayMetaSource, 'valueDisplay'),
+  );
+  const requirements = mapRequirementRows(
+    read(bonusesJson, 'requirementsJson')
+    ?? read(bonusesJson, 'requirements')
+    ?? read(itemDetail, 'requirementsJson')
+    ?? read(itemDetail, 'requirements'),
+  );
   const requirementStatus = mapRequirementStatus(
-    read(detail, 'requirementStatus'),
-    `${fieldPath}.requirementStatus`,
+    optionalRecord(read(bonusesJson, 'requirementStatus'))
+    ?? optionalRecord(read(itemDetail, 'requirementStatus')),
+    bonusesJson,
+    itemDetail,
   );
 
   return {
     contractVersion,
-    source: requiredText(read(detail, 'source'), `${fieldPath}.source`),
-    itemId: requiredText(read(detail, 'itemId'), `${fieldPath}.itemId`),
-    heroId: requiredText(read(detail, 'heroId'), `${fieldPath}.heroId`),
-    displayMeta: mapDisplayMeta(
-      read(detail, 'displayMeta'),
-      `${fieldPath}.displayMeta`,
+    access,
+    source: access.accessKind,
+    itemId: requiredText(read(itemDetail, 'item_id', 'itemId'), `${fieldPath}.itemDetail.item_id`),
+    heroId: optionalText(read(itemDetail, 'hero_id', 'heroId')),
+    displayMeta,
+    valueDisplay,
+    itemStats: mapStatRows(read(bonusesJson, 'itemStats')),
+    modifierRows: mapModifierRows(
+      read(bonusesJson, 'displayBonusRows')
+      ?? read(bonusesJson, 'bonusRows')
+      ?? read(bonusesJson, 'bonuses')
+      ?? read(bonusesJson, 'modifierRows'),
     ),
-    valueDisplay: mapRequiredValueDisplay(
-      read(detail, 'valueDisplay'),
-      `${fieldPath}.valueDisplay`,
-    ),
-    itemStats: requiredArray(
-      read(detail, 'itemStats'),
-      `${fieldPath}.itemStats`,
-    ).map((row, index) =>
-      mapStatRow(row, `${fieldPath}.itemStats[${index}]`),
-    ),
-    modifierRows: requiredArray(
-      read(detail, 'modifierRows'),
-      `${fieldPath}.modifierRows`,
-    ).map((row, index) =>
-      mapModifierRow(row, `${fieldPath}.modifierRows[${index}]`),
-    ),
-    bonuses: optionalModifierRows(read(detail, 'bonuses'), `${fieldPath}.bonuses`),
-    bonusRows: optionalModifierRows(
-      read(detail, 'bonusRows'),
-      `${fieldPath}.bonusRows`,
-    ),
-    displayBonusRows: optionalModifierRows(
-      read(detail, 'displayBonusRows'),
-      `${fieldPath}.displayBonusRows`,
-    ),
-    requirements: requiredArray(
-      read(detail, 'requirements'),
-      `${fieldPath}.requirements`,
-    ).map((row, index) =>
-      mapRequirementRow(row, `${fieldPath}.requirements[${index}]`),
-    ),
-    requirementsJson: optionalRequirementRows(
-      read(detail, 'requirementsJson'),
-      `${fieldPath}.requirementsJson`,
-    ),
+    bonuses: mapModifierRows(read(bonusesJson, 'bonuses')),
+    bonusRows: mapModifierRows(read(bonusesJson, 'bonusRows')),
+    displayBonusRows: mapModifierRows(read(bonusesJson, 'displayBonusRows')),
+    requirements,
+    requirementsJson: mapRequirementRows(read(itemDetail, 'requirementsJson')),
     requirementStatus,
-    meetsRequirements: requiredBoolean(
-      read(detail, 'meetsRequirements'),
-      `${fieldPath}.meetsRequirements`,
+    meetsRequirements: requirementStatus.meetsRequirements,
+    requirementCount: requirementStatus.requirementCount,
+    unmetCount: requirementStatus.unmetCount,
+    failuresJson: jsonValue(
+      read(bonusesJson, 'failuresJson')
+      ?? read(itemDetail, 'failuresJson'),
     ),
-    requirementCount: requiredInteger(
-      read(detail, 'requirementCount'),
-      `${fieldPath}.requirementCount`,
-    ),
-    unmetCount: requiredInteger(read(detail, 'unmetCount'), `${fieldPath}.unmetCount`),
-    failuresJson: jsonValue(read(detail, 'failuresJson')),
-    metadata: jsonValue(read(detail, 'metadata')),
+    metadata: jsonValue(read(bonusesJson, 'metadata')),
   };
 }
 
-function mapDisplayMeta(value: Json | undefined, fieldPath: string) {
-  const displayMeta = requiredRecord(value, fieldPath);
-
+function mapAccess(access: JsonRecord): ItemDetailPopoverAccess {
   return {
-    itemId: requiredText(read(displayMeta, 'itemId'), `${fieldPath}.itemId`),
-    itemName: requiredText(read(displayMeta, 'itemName'), `${fieldPath}.itemName`),
-    lifecycleStatusKey: requiredText(
-      read(displayMeta, 'lifecycleStatusKey'),
-      `${fieldPath}.lifecycleStatusKey`,
+    accessKind: requiredText(read(access, 'accessKind'), 'access.accessKind'),
+    sourceContext: optionalText(read(access, 'sourceContext')),
+    isOwnedByViewer: requiredBoolean(read(access, 'isOwnedByViewer'), 'access.isOwnedByViewer'),
+    isAuctionListing: requiredBoolean(read(access, 'isAuctionListing'), 'access.isAuctionListing'),
+    isTradeOfferItem: requiredBoolean(read(access, 'isTradeOfferItem'), 'access.isTradeOfferItem'),
+  };
+}
+
+function mapDisplayMeta(
+  displayMeta: JsonRecord | null,
+  itemDetail: JsonRecord,
+  fieldPath: string,
+) {
+  return {
+    itemId: requiredText(read(itemDetail, 'item_id', 'itemId'), `${fieldPath}.item_id`),
+    itemName: requiredText(
+      read(displayMeta, 'itemName') ?? read(itemDetail, 'item_name', 'itemName'),
+      `${fieldPath}.item_name`,
     ),
-    lifecycleStatusLabel: requiredText(
-      read(displayMeta, 'lifecycleStatusLabel'),
-      `${fieldPath}.lifecycleStatusLabel`,
+    lifecycleStatusKey: optionalText(
+      read(displayMeta, 'lifecycleStatusKey') ?? read(itemDetail, 'item_status', 'itemStatus'),
     ),
-    generationQualityKey: requiredText(
-      read(displayMeta, 'generationQualityKey'),
-      `${fieldPath}.generationQualityKey`,
+    lifecycleStatusLabel: optionalText(read(displayMeta, 'lifecycleStatusLabel')),
+    generationQualityKey: optionalText(
+      read(displayMeta, 'generationQualityKey')
+      ?? read(itemDetail, 'generation_quality_key', 'generationQualityKey'),
     ),
-    displayIconKey: requiredText(
-      read(displayMeta, 'displayIconKey'),
-      `${fieldPath}.displayIconKey`,
+    displayIconKey: optionalText(read(displayMeta, 'displayIconKey')) ?? 'box',
+    qualityLabel: optionalText(read(displayMeta, 'qualityLabel')),
+    baseKey: optionalText(read(displayMeta, 'baseKey') ?? read(itemDetail, 'base_key', 'baseKey')),
+    baseName: optionalText(read(displayMeta, 'baseName') ?? read(itemDetail, 'base_name', 'baseName')),
+    baseTypeKey: optionalText(
+      read(displayMeta, 'baseTypeKey') ?? read(itemDetail, 'base_type_key', 'baseTypeKey'),
     ),
-    qualityLabel: requiredText(read(displayMeta, 'qualityLabel'), `${fieldPath}.qualityLabel`),
-    baseKey: requiredText(read(displayMeta, 'baseKey'), `${fieldPath}.baseKey`),
-    baseName: requiredText(read(displayMeta, 'baseName'), `${fieldPath}.baseName`),
-    baseTypeKey: requiredText(read(displayMeta, 'baseTypeKey'), `${fieldPath}.baseTypeKey`),
-    baseTypeLabel: requiredText(
-      read(displayMeta, 'baseTypeLabel'),
-      `${fieldPath}.baseTypeLabel`,
-    ),
-    drachmaValue: requiredText(read(displayMeta, 'drachmaValue'), `${fieldPath}.drachmaValue`),
+    baseTypeLabel: optionalText(read(displayMeta, 'baseTypeLabel')),
+    drachmaValue: optionalText(read(displayMeta, 'drachmaValue'))
+      ?? textFromNumber(read(itemDetail, 'drachma_value', 'drachmaValue')),
     allowedSlotLabel: optionalText(read(displayMeta, 'allowedSlotLabel')),
-    valueDisplay: mapRequiredValueDisplay(
-      read(displayMeta, 'valueDisplay'),
-      `${fieldPath}.valueDisplay`,
-    ),
+    valueDisplay: mapValueDisplay(read(displayMeta, 'valueDisplay')),
     equipmentArea: optionalText(read(displayMeta, 'equipmentArea')),
     handUsageKey: optionalText(read(displayMeta, 'handUsageKey')),
     handUsageLabel: optionalText(read(displayMeta, 'handUsageLabel')),
     primarySlotKey: optionalText(read(displayMeta, 'primarySlotKey')),
     primarySlotLabel: optionalText(read(displayMeta, 'primarySlotLabel')),
-    allowedSlotKeys: requiredTextArray(
-      read(displayMeta, 'allowedSlotKeys'),
-      `${fieldPath}.allowedSlotKeys`,
-    ),
+    allowedSlotKeys: Array.isArray(read(displayMeta, 'allowedSlotKeys'))
+      ? (read(displayMeta, 'allowedSlotKeys') as Json[])
+          .filter((entry): entry is string => typeof entry === 'string')
+      : [],
   };
 }
 
-function mapRequiredValueDisplay(value: Json | undefined, fieldPath: string) {
-  const record = requiredRecord(value, fieldPath);
-
-  return {
-    displayLabel: requiredText(read(record, 'displayLabel'), `${fieldPath}.displayLabel`),
-    displayValue: requiredText(read(record, 'displayValue'), `${fieldPath}.displayValue`),
-  };
-}
-
-function mapStatRow(row: JsonRecord, fieldPath: string) {
-  const displaySection = requiredText(read(row, 'displaySection'), `${fieldPath}.displaySection`);
-  const isPrimaryItemStat = requiredBoolean(
-    read(row, 'isPrimaryItemStat'),
-    `${fieldPath}.isPrimaryItemStat`,
-  );
-
-  if (displaySection !== 'item_stats') {
-    throw new Error(`${fieldPath}.displaySection must be item_stats.`);
-  }
-
-  if (isPrimaryItemStat !== true) {
-    throw new Error(`${fieldPath}.isPrimaryItemStat must be true.`);
-  }
-
-  return {
-    displaySection: 'item_stats' as const,
-    isPrimaryItemStat: true as const,
-    label: requiredText(read(row, 'label'), `${fieldPath}.label`),
-    displayValue: requiredText(read(row, 'displayValue'), `${fieldPath}.displayValue`),
-    displayTone: displayTone(
-      requiredText(read(row, 'displayTone'), `${fieldPath}.displayTone`),
-      `${fieldPath}.displayTone`,
-    ),
-    statKey: requiredText(read(row, 'statKey'), `${fieldPath}.statKey`),
-    source: optionalText(read(row, 'source')),
-    contract: optionalText(read(row, 'contract')),
-    isMeaningful: optionalBoolean(read(row, 'isMeaningful')),
+function mapStatRows(value: Json | undefined): ItemDetailPopoverStatRow[] {
+  return mapJsonArray(value, (row) => row).map((row, index) => ({
+    displaySection: 'item_stats',
+    isPrimaryItemStat: true,
+    label: requiredText(read(row, 'label'), `itemStats[${index}].label`),
+    displayValue: requiredText(read(row, 'displayValue'), `itemStats[${index}].displayValue`),
+    displayTone: displayTone(read(row, 'displayTone')),
+    statKey: optionalText(read(row, 'statKey')) ?? `stat-${index}`,
+    source: null,
+    contract: null,
+    isMeaningful: null,
     value: optionalNumber(read(row, 'value')),
     minDamage: optionalNumber(read(row, 'minDamage')),
     maxDamage: optionalNumber(read(row, 'maxDamage')),
     rawValue: optionalNumber(read(row, 'rawValue')),
     baseValue: optionalNumber(read(row, 'baseValue')),
-    rawBaseValue: optionalNumber(read(row, 'rawBaseValue')),
+    rawBaseValue: null,
     modifierValue: optionalNumber(read(row, 'modifierValue')),
-    rawMinDamage: optionalNumber(read(row, 'rawMinDamage')),
-    rawMaxDamage: optionalNumber(read(row, 'rawMaxDamage')),
+    rawMinDamage: null,
+    rawMaxDamage: null,
     baseMinDamage: optionalNumber(read(row, 'baseMinDamage')),
     baseMaxDamage: optionalNumber(read(row, 'baseMaxDamage')),
-    rawBaseMinDamage: optionalNumber(read(row, 'rawBaseMinDamage')),
-    rawBaseMaxDamage: optionalNumber(read(row, 'rawBaseMaxDamage')),
+    rawBaseMinDamage: null,
+    rawBaseMaxDamage: null,
     modifierMinDamage: optionalNumber(read(row, 'modifierMinDamage')),
     modifierMaxDamage: optionalNumber(read(row, 'modifierMaxDamage')),
-    modifierDamageTotal: optionalNumber(read(row, 'modifierDamageTotal')),
-    baseDisplayValue: optionalText(read(row, 'baseDisplayValue')),
-    modifierDisplayValue: optionalText(read(row, 'modifierDisplayValue')),
-    damageRangeClamped: optionalBoolean(read(row, 'damageRangeClamped')),
-    baseDamageRangeClamped: optionalBoolean(read(row, 'baseDamageRangeClamped')),
-  };
+    modifierDamageTotal: null,
+    baseDisplayValue: null,
+    modifierDisplayValue: null,
+    damageRangeClamped: null,
+    baseDamageRangeClamped: null,
+  }));
 }
 
-function mapModifierRow(row: JsonRecord, fieldPath: string) {
-  const displaySection = requiredText(read(row, 'displaySection'), `${fieldPath}.displaySection`);
-  const isPrimaryItemStat = requiredBoolean(
-    read(row, 'isPrimaryItemStat'),
-    `${fieldPath}.isPrimaryItemStat`,
-  );
-
-  if (displaySection !== 'bonuses') {
-    throw new Error(`${fieldPath}.displaySection must be bonuses.`);
-  }
-
-  if (isPrimaryItemStat !== false) {
-    throw new Error(`${fieldPath}.isPrimaryItemStat must be false.`);
-  }
-
-  return {
-    displaySection: 'bonuses' as const,
-    isPrimaryItemStat: false as const,
-    rowKind: requiredText(read(row, 'rowKind'), `${fieldPath}.rowKind`),
-    aggregated: requiredBoolean(read(row, 'aggregated'), `${fieldPath}.aggregated`),
-    label: requiredText(read(row, 'label'), `${fieldPath}.label`),
+function mapModifierRows(value: Json | undefined): ItemDetailPopoverModifierRow[] {
+  return mapJsonArray(value, (row) => row).map((row, index) => ({
+    displaySection: 'bonuses',
+    isPrimaryItemStat: false,
+    rowKind: optionalText(read(row, 'rowKind')) ?? 'bonus',
+    aggregated: optionalBoolean(read(row, 'aggregated')) ?? false,
+    label: optionalText(read(row, 'label'))
+      ?? requiredText(read(row, 'targetLabel'), `bonusRows[${index}].targetLabel`),
     targetLabel: optionalText(read(row, 'targetLabel')),
-    targetKey: requiredText(read(row, 'targetKey'), `${fieldPath}.targetKey`),
-    displayValue: requiredText(read(row, 'displayValue'), `${fieldPath}.displayValue`),
-    displayTone: displayTone(
-      requiredText(read(row, 'displayTone'), `${fieldPath}.displayTone`),
-      `${fieldPath}.displayTone`,
-    ),
+    targetKey: optionalText(read(row, 'targetKey')) ?? '',
+    displayValue: requiredText(read(row, 'displayValue'), `bonusRows[${index}].displayValue`),
+    displayTone: displayTone(read(row, 'displayTone')),
     typeKey: optionalText(read(row, 'typeKey')),
     scopeKey: optionalText(read(row, 'scopeKey')),
     valueKind: optionalText(read(row, 'valueKind')),
@@ -243,175 +202,130 @@ function mapModifierRow(row: JsonRecord, fieldPath: string) {
     effectiveValue: optionalNumber(read(row, 'effectiveValue')),
     sortOrder: optionalNumber(read(row, 'sortOrder')),
     sourceCount: optionalNumber(read(row, 'sourceCount')),
-    sourceRows: requiredArray(read(row, 'sourceRows'), `${fieldPath}.sourceRows`)
-      .map((sourceRow, index) =>
-        mapModifierSourceRow(sourceRow, `${fieldPath}.sourceRows[${index}]`),
-      ),
+    sourceRows: [],
     metadata: jsonValue(read(row, 'metadata')),
-  };
+  }));
 }
 
-function mapModifierSourceRow(row: JsonRecord, fieldPath: string) {
-  return {
-    itemId: optionalText(read(row, 'itemId')),
-    label: requiredText(read(row, 'label'), `${fieldPath}.label`),
-    targetLabel: optionalText(read(row, 'targetLabel')),
-    targetKey: requiredText(read(row, 'targetKey'), `${fieldPath}.targetKey`),
-    displayValue: requiredText(read(row, 'displayValue'), `${fieldPath}.displayValue`),
-    displayTone: displayTone(
-      requiredText(read(row, 'displayTone'), `${fieldPath}.displayTone`),
-      `${fieldPath}.displayTone`,
-    ),
-    typeKey: optionalText(read(row, 'typeKey')),
-    valueKind: optionalText(read(row, 'valueKind')),
-    rawValue: optionalNumber(read(row, 'rawValue')),
-    effectiveValue: optionalNumber(read(row, 'effectiveValue')),
-    sourceKey: optionalText(read(row, 'sourceKey')),
-    sourceLabel: optionalText(read(row, 'sourceLabel')),
-    sourceLayer: optionalText(read(row, 'sourceLayer')),
-    entityBonusId: optionalText(read(row, 'entityBonusId')),
-    sourceEntityId: optionalText(read(row, 'sourceEntityId')),
-    sourceEntityType: optionalText(read(row, 'sourceEntityType')),
-    bonusTemplateId: optionalText(read(row, 'bonusTemplateId')),
-    bonusTemplateKey: optionalText(read(row, 'bonusTemplateKey')),
-    bonusTemplateLabel: optionalText(read(row, 'bonusTemplateLabel')),
-    qualityMultiplier: optionalNumber(read(row, 'qualityMultiplier')),
-    qualityScalesValue: optionalBoolean(read(row, 'qualityScalesValue')),
-    sortOrder: optionalNumber(read(row, 'sortOrder')),
-    displayBonusSourceJsonKey: optionalText(read(row, 'displayBonusSourceJsonKey')),
-    metadata: jsonValue(read(row, 'metadata')),
-  };
-}
-
-function mapRequirementRow(row: JsonRecord, fieldPath: string) {
-  const displaySection = requiredText(read(row, 'displaySection'), `${fieldPath}.displaySection`);
-
-  if (displaySection !== 'requirements') {
-    throw new Error(`${fieldPath}.displaySection must be requirements.`);
-  }
-
-  return {
-    displaySection: 'requirements' as const,
-    displayTone: displayTone(
-      requiredText(read(row, 'displayTone'), `${fieldPath}.displayTone`),
-      `${fieldPath}.displayTone`,
-    ),
-    isMet: requiredBoolean(read(row, 'isMet'), `${fieldPath}.isMet`),
-    displayLabel: requiredText(read(row, 'displayLabel'), `${fieldPath}.displayLabel`),
-    requiredDisplayValue: requiredText(
-      read(row, 'requiredDisplayValue'),
-      `${fieldPath}.requiredDisplayValue`,
-    ),
-    currentDisplayValue: optionalText(read(row, 'currentDisplayValue')),
-    missingDisplayValue: optionalText(read(row, 'missingDisplayValue')),
-    failureCompactText: optionalText(read(row, 'failureCompactText')),
-    compactDisplay: mapCompactDisplay(
-      read(row, 'compactDisplay'),
-      `${fieldPath}.compactDisplay`,
-    ),
-    source: optionalText(read(row, 'source')),
-    authority: optionalText(read(row, 'authority')),
-    displayText: requiredText(read(row, 'displayText'), `${fieldPath}.displayText`),
+function mapRequirementRows(value: Json | undefined): ItemDetailPopoverRequirementRow[] {
+  return mapJsonArray(value, (row) => row).map((row, index) => ({
+    displaySection: 'requirements',
+    displayTone: displayTone(read(row, 'displayTone')),
+    isMet: requiredBoolean(read(row, 'isMet'), `requirements[${index}].isMet`),
+    displayLabel: optionalText(read(row, 'displayLabel'))
+      ?? optionalText(read(row, 'displayText'))
+      ?? requiredText(read(row, 'shortDisplayText'), `requirements[${index}].displayLabel`),
+    requiredDisplayValue: optionalText(read(row, 'requiredDisplayValue'))
+      ?? optionalText(read(row, 'requiredValueLabel'))
+      ?? optionalText(read(row, 'requiredDisplayText'))
+      ?? null,
+    currentDisplayValue: optionalText(read(row, 'currentDisplayValue'))
+      ?? optionalText(read(row, 'currentValueLabel'))
+      ?? optionalText(read(row, 'currentDisplayText')),
+    missingDisplayValue: optionalText(read(row, 'missingDisplayValue'))
+      ?? optionalText(read(row, 'missingValueLabel'))
+      ?? optionalText(read(row, 'missingDisplayText')),
+    failureCompactText: optionalText(read(row, 'failureDisplayText'))
+      ?? optionalText(read(row, 'failureReasonLabel')),
+    compactDisplay: mapCompactDisplay(read(row, 'compactDisplay')),
+    source: null,
+    authority: null,
+    displayText: optionalText(read(row, 'displayText'))
+      ?? optionalText(read(row, 'shortDisplayText'))
+      ?? '',
     shortDisplayText: optionalText(read(row, 'shortDisplayText')),
     requiredDisplayText: optionalText(read(row, 'requiredDisplayText')),
     currentDisplayText: optionalText(read(row, 'currentDisplayText')),
     currentValueLabel: optionalText(read(row, 'currentValueLabel')),
-    currentValueRaw: optionalText(read(row, 'currentValueRaw')),
+    currentValueRaw: null,
     requiredValueLabel: optionalText(read(row, 'requiredValueLabel')),
-    requiredValueRaw: optionalText(read(row, 'requiredValueRaw')),
+    requiredValueRaw: null,
     missingValueLabel: optionalText(read(row, 'missingValueLabel')),
-    missingValueRaw: optionalText(read(row, 'missingValueRaw')),
+    missingValueRaw: null,
     missingDisplayText: optionalText(read(row, 'missingDisplayText')),
     failureDisplayText: optionalText(read(row, 'failureDisplayText')),
     failureReasonKey: optionalText(read(row, 'failureReasonKey')),
     failureReasonLabel: optionalText(read(row, 'failureReasonLabel')),
-    requirementDefinitionKey: requiredText(
-      read(row, 'requirementDefinitionKey'),
-      `${fieldPath}.requirementDefinitionKey`,
-    ),
+    requirementDefinitionKey: optionalText(read(row, 'requirementDefinitionKey')) ?? `requirement-${index}`,
     requirementLabel: optionalText(read(row, 'requirementLabel')),
-    requiredStatKey: optionalText(read(row, 'requiredStatKey')),
-    requiredStatLabel: optionalText(read(row, 'requiredStatLabel')),
-    requiredBuildingKey: optionalText(read(row, 'requiredBuildingKey')),
-    requiredDistrictCode: optionalText(read(row, 'requiredDistrictCode')),
-    requiredResourceType: optionalText(read(row, 'requiredResourceType')),
-    requiredResourceLabel: optionalText(read(row, 'requiredResourceLabel')),
+    requiredStatKey: null,
+    requiredStatLabel: null,
+    requiredBuildingKey: null,
+    requiredDistrictCode: null,
+    requiredResourceType: null,
+    requiredResourceLabel: null,
     requiredValue: optionalNumber(read(row, 'requiredValue')),
     currentValue: optionalNumber(read(row, 'currentValue')),
     missingValue: optionalNumber(read(row, 'missingValue')),
-    failureRow: optionalJson(read(row, 'failureRow')),
-    effectiveRequirementRow: optionalJson(read(row, 'effectiveRequirementRow')),
-  };
-}
-
-function mapCompactDisplay(value: Json | undefined, fieldPath: string) {
-  if (value === null || value === undefined) {
-    return null;
-  }
-
-  const compactDisplay = requiredRecord(value, fieldPath);
-
-  return {
-    label: requiredText(read(compactDisplay, 'label'), `${fieldPath}.label`),
-    requiredValue: requiredText(
-      read(compactDisplay, 'requiredValue'),
-      `${fieldPath}.requiredValue`,
-    ),
-    currentValue: optionalText(read(compactDisplay, 'currentValue')),
-    missingValue: optionalText(read(compactDisplay, 'missingValue')),
-    failureText: optionalText(read(compactDisplay, 'failureText')),
-    tone: displayTone(
-      requiredText(read(compactDisplay, 'tone'), `${fieldPath}.tone`),
-      `${fieldPath}.tone`,
-    ),
-  };
+    failureRow: null,
+    effectiveRequirementRow: null,
+  }));
 }
 
 function mapRequirementStatus(
-  value: Json | undefined,
-  fieldPath: string,
+  status: JsonRecord | null,
+  bonusesJson: JsonRecord | null,
+  itemDetail: JsonRecord,
 ): ItemDetailPopoverRequirementStatus {
-  const status = requiredRecord(value, fieldPath);
-
   return {
-    meetsRequirements: requiredBoolean(
-      read(status, 'meetsRequirements'),
-      `${fieldPath}.meetsRequirements`,
+    meetsRequirements: optionalBoolean(read(status, 'meetsRequirements'))
+      ?? optionalBoolean(read(bonusesJson, 'meetsRequirements'))
+      ?? optionalBoolean(read(itemDetail, 'meetsRequirements')),
+    requirementCount: optionalNumber(read(status, 'requirementCount'))
+      ?? optionalNumber(read(bonusesJson, 'requirementCount'))
+      ?? optionalNumber(read(itemDetail, 'requirementCount')),
+    unmetCount: optionalNumber(read(status, 'unmetCount'))
+      ?? optionalNumber(read(bonusesJson, 'unmetCount'))
+      ?? optionalNumber(read(itemDetail, 'unmetCount')),
+    failuresJson: jsonValue(
+      read(status, 'failuresJson')
+      ?? read(bonusesJson, 'failuresJson')
+      ?? read(itemDetail, 'failuresJson'),
     ),
-    requirementCount: requiredInteger(
-      read(status, 'requirementCount'),
-      `${fieldPath}.requirementCount`,
-    ),
-    unmetCount: requiredInteger(read(status, 'unmetCount'), `${fieldPath}.unmetCount`),
-    failuresJson: jsonValue(read(status, 'failuresJson')),
-    checkJson: optionalJson(read(status, 'checkJson')),
+    checkJson: jsonValue(read(status, 'checkJson')),
   };
 }
 
-function optionalModifierRows(value: Json | undefined, fieldPath: string) {
-  if (value === null || value === undefined) {
-    return [];
-  }
+function mapCompactDisplay(value: Json | undefined) {
+  const row = optionalRecord(value);
 
-  return requiredArray(value, fieldPath).map((row, index) =>
-    mapModifierRow(row, `${fieldPath}[${index}]`),
-  );
+  return row
+    ? {
+        label: optionalText(read(row, 'label')) ?? '',
+        requiredValue: optionalText(read(row, 'requiredValue')) ?? '',
+        currentValue: optionalText(read(row, 'currentValue')),
+        missingValue: optionalText(read(row, 'missingValue')),
+        failureText: optionalText(read(row, 'failureText')),
+        tone: displayTone(read(row, 'tone')),
+      }
+    : null;
 }
 
-function optionalRequirementRows(value: Json | undefined, fieldPath: string) {
-  if (value === null || value === undefined) {
-    return [];
-  }
+function mapValueDisplay(value: Json | undefined): PlayerItemDisplayCoreValueDisplay | null {
+  const row = optionalRecord(value);
 
-  return requiredArray(value, fieldPath).map((row, index) =>
-    mapRequirementRow(row, `${fieldPath}[${index}]`),
-  );
+  return row
+    ? {
+        displayLabel: requiredText(read(row, 'displayLabel'), 'valueDisplay.displayLabel'),
+        displayValue: requiredText(read(row, 'displayValue'), 'valueDisplay.displayValue'),
+      }
+    : null;
 }
 
-function displayTone(value: string, fieldPath: string): ItemDetailPopoverDisplayTone {
-  if (value === 'positive' || value === 'negative' || value === 'neutral') {
-    return value;
+function optionalRecord(value: Json | undefined): JsonRecord | null {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? (value as JsonRecord)
+    : null;
+}
+
+function displayTone(value: Json | undefined): ItemDetailPopoverDisplayTone {
+  return optionalText(value) ?? 'neutral';
+}
+
+function textFromNumber(value: Json | undefined): string | null {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
   }
 
-  throw new Error(`${fieldPath} must be positive, negative or neutral.`);
+  return typeof value === 'string' ? value : null;
 }

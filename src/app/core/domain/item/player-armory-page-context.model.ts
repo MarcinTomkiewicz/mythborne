@@ -1,7 +1,6 @@
 import { Json } from '../../types/database.types';
 import { JsonRecord } from '../../utils/json-read';
 import type { EquipmentPreviewCopy } from '../equipment/equipment-preview.model';
-import type { ItemDetailPopoverCopy } from './item-detail-popover.model';
 import type { PlayerItemDisplayCore } from './player-item-display-core.model';
 
 export interface PlayerArmoryPageContextReadModel {
@@ -27,7 +26,6 @@ export interface PlayerArmoryPageCopyReadModel {
   search: PlayerArmoryPageCopySearch;
   inventory: PlayerArmoryPageCopyInventory;
   loadoutPresets: PlayerArmoryPageCopyLoadoutPresets;
-  itemDetail: ItemDetailPopoverCopy;
   equipmentPreview: EquipmentPreviewCopy;
 }
 
