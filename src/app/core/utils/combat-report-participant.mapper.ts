@@ -260,12 +260,24 @@ function statRowsFromJson(value: Json | undefined): StatCardRow[] {
 
   return value.flatMap((entry, index) => {
     const record = jsonRecord(entry);
-    const label = optionalText(read(record, 'label', 'name'));
+    const label = optionalText(read(
+      record,
+      'displayLabel',
+      'display_label',
+      'statLabel',
+      'stat_label',
+      'label',
+      'name',
+    ));
     const rawValue = read(
       record,
       'displayValue',
       'display_value',
       'value',
+      'statValue',
+      'stat_value',
+      'finalValue',
+      'final_value',
     );
     const displayValue = optionalText(rawValue) ??
       (typeof rawValue === 'number' ? String(rawValue) : null);

@@ -7,7 +7,5 @@ export interface ExplorationMinigameReportPointer {
   sourceEntityId: string;
   sourceKind: ExplorationResultSourceKind;
   resultId: string | null;
-  reportId: string | null;
-  reportUnavailable?: boolean;
-  reportUnavailableReason?: 'creation_failed' | 'detail_read_failed';
+  reportId: string;
 }

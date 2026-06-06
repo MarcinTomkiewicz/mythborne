@@ -1,7 +1,7 @@
 import { Component, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { ExplorationReportActionsViewModel } from '../../../core/domain/exploration/exploration-result-display.model';
+import { ReportHandoffActionsViewModel } from '../../../core/domain/reports/report-handoff.model';
 import { ToastService } from '../../../core/services/ui/toast';
 import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/browser-clipboard';
 
@@ -13,11 +13,13 @@ import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/bro
     <section class="mg-card p-lg flex-col gap-sm w-100">
       <p class="small-caps color-muted text-xs m-0">{{ heading() }}</p>
       <div class="flex-row-start-center flex-wrap gap-sm w-100">
-        <p-button
-          [label]="directReportLabel() ?? actions().directReportLabel"
-          icon="pi pi-file"
-          [routerLink]="actions().directReportLink"
-        />
+        @if (actions().directReportLink) {
+          <p-button
+            [label]="directReportLabel() ?? actions().directReportLabel"
+            icon="pi pi-file"
+            [routerLink]="actions().directReportLink"
+          />
+        }
         <p-button
           type="button"
           [label]="publicReportCopyLabel() ?? actions().publicReportCopyLabel"
@@ -29,6 +31,9 @@ import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/bro
           (onClick)="copyPublicReportLink()"
         />
       </div>
+      @if (actions().directReportUnavailableMessage; as message) {
+        <p class="warn-text text-sm m-0">{{ message }}</p>
+      }
       @if (actions().publicReportUnavailableMessage; as message) {
         <p class="warn-text text-sm m-0">{{ message }}</p>
       }
@@ -38,7 +43,7 @@ import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/bro
 })
 export class ReportHandoffActions {
   private readonly toast = inject(ToastService);
-  readonly actions = input.required<ExplorationReportActionsViewModel>();
+  readonly actions = input.required<ReportHandoffActionsViewModel>();
   readonly heading = input('Akcje raportu');
   readonly directReportLabel = input<string | null>(null);
   readonly publicReportCopyLabel = input<string | null>(null);

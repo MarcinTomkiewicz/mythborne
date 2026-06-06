@@ -33,7 +33,7 @@ export function mapCombatAutoResolveResult(
     sourceEntityId: row.source_entity_id,
     combatResultId: row.combat_result_id,
     sourceResultId: row.source_result_id ?? null,
-    gameReportId: row.game_report_id ?? null,
+    gameReportId: row.game_report_id,
     rewardGrantId: row.reward_grant_id ?? null,
   };
 }

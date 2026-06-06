@@ -127,18 +127,16 @@ export function explorationStepResultHasEffectContext(
 
 export function explorationStepDirectReportLink(
   result: HeroExplorationStepResolutionReadModel | null,
-): string {
+): string | null {
   const reportId = explorationStepDirectReportId(result);
 
-  return reportId ? `/game/reports/${reportId}` : '/game/reports';
+  return reportId ? `/game/reports/${reportId}` : null;
 }
 
 export function explorationStepDirectReportLabel(
   result: HeroExplorationStepResolutionReadModel | null,
 ): string {
-  return explorationStepDirectReportId(result)
-    ? 'Otwórz pełny raport'
-    : 'Otwórz centrum raportów';
+  return 'Otwórz pełny raport';
 }
 
 export function explorationStepPublicReportPath(

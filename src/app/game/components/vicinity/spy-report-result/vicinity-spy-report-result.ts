@@ -1,5 +1,5 @@
 import { Component, computed, input } from '@angular/core';
-import { ExplorationReportActionsViewModel } from '../../../../core/domain/exploration/exploration-result-display.model';
+import { ReportHandoffActionsViewModel } from '../../../../core/domain/reports/report-handoff.model';
 import {
   GameReportContextSection,
   GameReportItemReference,
@@ -20,7 +20,7 @@ import { ReportHandoffActions } from '../../report-handoff-actions/report-handof
 })
 export class VicinitySpyReportResult {
   readonly report = input.required<PrivateGameReportDetail>();
-  readonly actions = input.required<ExplorationReportActionsViewModel>();
+  readonly actions = input.required<ReportHandoffActionsViewModel>();
 
   readonly sections = computed(() =>
     [

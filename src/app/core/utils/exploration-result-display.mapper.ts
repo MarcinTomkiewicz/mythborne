@@ -1,6 +1,4 @@
 import {
-  ExplorationOutcomeViewModel,
-  ExplorationReportActionsViewModel,
   ExplorationResultOutcomeTone,
   ExplorationResultSourceInput,
   ExplorationResultSourceKind,
@@ -8,9 +6,7 @@ import {
 } from '../domain/exploration/exploration-result-display.model';
 import { Json } from '../types/database.types';
 import {
-  gameReportDirectReportId,
   gameReportNarrativeLines,
-  gameReportOutcomeTitle,
   gameReportOutcomeToneText,
   gameReportPublicPath,
   gameReportPublicToken,
@@ -34,26 +30,6 @@ export function explorationResultSourceKind(
   return 'unknown';
 }
 
-export function mapExplorationOutcomeView(input: {
-  rawJson: Json | undefined;
-  sourceKind: ExplorationResultSourceKind;
-}): ExplorationOutcomeViewModel {
-  const tone = explorationResultOutcomeTone({
-    rawJson: input.rawJson,
-    sourceKind: input.sourceKind,
-  });
-
-  return {
-    title: explorationResultOutcomeTitle({
-      rawJson: input.rawJson,
-      tone,
-      sourceKind: input.sourceKind,
-    }),
-    tone,
-    narrativeLines: explorationResultNarrativeLines(input.rawJson),
-  };
-}
-
 export function mapExplorationRewardText(input: {
   rewardRawJson: Json | undefined;
   reportRawJson: Json | undefined;
@@ -62,32 +38,6 @@ export function mapExplorationRewardText(input: {
   return {
     heading: explorationRewardHeading(input),
     intro: explorationRewardIntro(input),
-  };
-}
-
-export function mapExplorationReportActions(input: {
-  rawJson: Json | undefined;
-  directReportId?: string | null;
-  publicReportPathFromDetail?: string | null;
-}): ExplorationReportActionsViewModel {
-  const directReportId = input.directReportId ?? explorationDirectReportId(input.rawJson);
-  const directReportLink = directReportId ? `/game/reports/${directReportId}` : '/game/reports';
-  const publicReportPath = explorationPublicReportPath(input.rawJson)
-    ?? input.publicReportPathFromDetail
-    ?? null;
-
-  return {
-    directReportId,
-    directReportLink,
-    directReportLabel: explorationDirectReportLabel(directReportLink),
-    publicReportPath,
-    publicReportCopyLabel: publicReportPath
-      ? 'Kopiuj link do raportu'
-      : 'Link publiczny niedostępny',
-    publicReportCopyDisabled: publicReportPath === null,
-    publicReportUnavailableMessage: publicReportPath === null
-      ? 'Publiczny link raportu nie jest dostępny w bieżącym odczycie raportu.'
-      : null,
   };
 }
 
@@ -117,27 +67,6 @@ export function explorationResultOutcomeTone(input: {
   }
 
   return combatOutcomeTone(input.rawJson, input.sourceKind) ?? 'neutral';
-}
-
-export function explorationResultOutcomeTitle(input: {
-  rawJson: Json | undefined;
-  sourceKind: ExplorationResultSourceKind;
-  tone: ExplorationResultOutcomeTone;
-}): string {
-  return gameReportOutcomeTitle(input.rawJson) ?? explorationOutcomeBannerLabel({
-    tone: input.tone,
-    sourceKind: input.sourceKind,
-  });
-}
-
-export function explorationDirectReportId(rawJson: Json | undefined): string | null {
-  return gameReportDirectReportId(rawJson);
-}
-
-export function explorationDirectReportLabel(link: string): string {
-  return link === '/game/reports'
-    ? 'Otwórz centrum raportów'
-    : 'Otwórz pełny raport';
 }
 
 export function explorationPublicReportPath(rawJson: Json | undefined): string | null {
@@ -184,33 +113,6 @@ export function explorationReportRewardDisplay<
         ),
       }
     : null;
-}
-
-export function explorationOutcomeBannerLabel(input: {
-  tone: ExplorationResultOutcomeTone;
-  sourceKind: ExplorationResultSourceKind;
-}): string {
-  if (input.tone === 'success') {
-    return input.sourceKind === 'encounter'
-      ? 'Walka zakończona zwycięstwem'
-      : 'Próba zakończona sukcesem';
-  }
-
-  if (input.tone === 'danger') {
-    return input.sourceKind === 'encounter'
-      ? 'Walka zakończona porażką'
-      : 'Próba nieudana';
-  }
-
-  if (input.tone === 'warning') {
-    return input.sourceKind === 'encounter'
-      ? 'Walka nierozstrzygnięta'
-      : 'Próba nierozstrzygnięta';
-  }
-
-  return input.sourceKind === 'encounter'
-    ? 'Wynik walki'
-    : 'Wynik próby';
 }
 
 function publicReportPathFromToken(rawJson: Json | undefined): string | null {

@@ -185,7 +185,7 @@ export interface CombatAutoResolveResultReadModel {
   sourceEntityId: string;
   combatResultId: string;
   sourceResultId: string | null;
-  gameReportId: string | null;
+  gameReportId: string;
   rewardGrantId: string | null;
 }
 

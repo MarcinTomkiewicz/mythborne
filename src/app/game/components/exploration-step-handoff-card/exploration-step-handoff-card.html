@@ -73,9 +73,11 @@
     <section class="mg-card p-lg flex-col gap-sm w-100">
       <p class="small-caps color-muted text-xs m-0">Raport</p>
       <div class="flex-row-start-center flex-wrap gap-sm">
-        <a [routerLink]="directReportLink()" class="color-heading text-sm">
-          {{ directReportLabel() }}
-        </a>
+        @if (directReportLink(); as reportLink) {
+          <a [routerLink]="reportLink" class="color-heading text-sm">
+            {{ directReportLabel() }}
+          </a>
+        }
         @if (hasPublicReportLink()) {
           <p-button
             type="button"
