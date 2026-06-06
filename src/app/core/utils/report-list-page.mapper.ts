@@ -6,13 +6,15 @@ import {
 import { Json } from '../types/database.types';
 import {
   JsonRecord,
-  optionalText,
   read,
+  requiredArray,
   requiredBoolean,
+  requiredNullableText,
   requiredNumber,
   requiredRecord,
   requiredText,
 } from './json-read';
+import { mapReportParticipants } from './report-participant-section.mapper';
 
 export function mapReportListPage(value: Json): ReportListPage {
   const root = requiredRecord(value, 'get_report_list_page');
@@ -46,18 +48,21 @@ function requireReportListPageVersion(root: JsonRecord): 'report_list_page_v1' {
 function mapReportListRow(row: JsonRecord, field: string): ReportListRow {
   return {
     reportId: requiredText(read(row, 'reportId'), `${field}.reportId`),
-    publicToken: nullableText(read(row, 'publicToken'), `${field}.publicToken`),
+    publicToken: requiredNullableText(read(row, 'publicToken'), `${field}.publicToken`),
     reportTypeKey: requiredText(read(row, 'reportTypeKey'), `${field}.reportTypeKey`),
     reportTypeLabel: requiredText(read(row, 'reportTypeLabel'), `${field}.reportTypeLabel`),
     title: requiredText(read(row, 'title'), `${field}.title`),
-    summary: nullableText(read(row, 'summary'), `${field}.summary`),
-    sourceEntityType: nullableText(read(row, 'sourceEntityType'), `${field}.sourceEntityType`),
-    sourceEntityId: nullableText(read(row, 'sourceEntityId'), `${field}.sourceEntityId`),
+    summary: requiredNullableText(read(row, 'summary'), `${field}.summary`),
+    sourceEntityType: requiredNullableText(read(row, 'sourceEntityType'), `${field}.sourceEntityType`),
+    sourceEntityId: requiredNullableText(read(row, 'sourceEntityId'), `${field}.sourceEntityId`),
     accessRole: requiredText(read(row, 'accessRole'), `${field}.accessRole`),
     createdAt: requiredText(read(row, 'createdAt'), `${field}.createdAt`),
-    readAt: nullableText(read(row, 'readAt'), `${field}.readAt`),
+    readAt: requiredNullableText(read(row, 'readAt'), `${field}.readAt`),
     isUnread: requiredBoolean(read(row, 'isUnread'), `${field}.isUnread`),
-    participantsJson: requiredJsonArray(read(row, 'participantsJson'), `${field}.participantsJson`),
+    participantsJson: mapReportParticipants(
+      requiredArray(read(row, 'participantsJson'), `${field}.participantsJson`),
+      `${field}.participantsJson`,
+    ),
     itemReferencesCount: requiredNumber(
       read(row, 'itemReferencesCount'),
       `${field}.itemReferencesCount`,
@@ -96,33 +101,7 @@ function mapAppliedFilters(
   filters: JsonRecord,
 ): ReportListPage['appliedFilters'] {
   return {
-    reportTypeKey: nullableText(read(filters, 'reportTypeKey'), 'appliedFilters.reportTypeKey'),
+    reportTypeKey: requiredNullableText(read(filters, 'reportTypeKey'), 'appliedFilters.reportTypeKey'),
     unreadOnly: requiredBoolean(read(filters, 'unreadOnly'), 'appliedFilters.unreadOnly'),
   };
-}
-
-function nullableText(value: Json | undefined, field: string): string | null {
-  if (value === undefined) {
-    throw new Error(`${field} must be present.`);
-  }
-
-  if (value === null) {
-    return null;
-  }
-
-  const text = optionalText(value);
-
-  if (text === null) {
-    throw new Error(`${field} must be a string or null.`);
-  }
-
-  return text;
-}
-
-function requiredJsonArray(value: Json | undefined, field: string): Json[] {
-  if (!Array.isArray(value)) {
-    throw new Error(`${field} must be an array.`);
-  }
-
-  return value;
 }

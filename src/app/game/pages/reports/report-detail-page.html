@@ -64,6 +64,12 @@
           </div>
         </div>
       </section>
+
+      <app-report-detail-sections
+        [report]="detail.report"
+        [sectionLabels]="copy.detail.sections"
+        [emptyLabels]="copy.detail.empty"
+      />
     </div>
   }
 }

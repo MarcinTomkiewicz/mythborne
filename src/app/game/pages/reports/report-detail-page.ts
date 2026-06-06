@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import { ReportDetailSections } from './report-detail-sections';
 import { ReportDetailPageState } from './report-detail-page.state';
 
 @Component({
@@ -8,6 +9,7 @@ import { ReportDetailPageState } from './report-detail-page.state';
   standalone: true,
   imports: [
     LoadingOverlay,
+    ReportDetailSections,
     RouterLink,
   ],
   providers: [ReportDetailPageState],
