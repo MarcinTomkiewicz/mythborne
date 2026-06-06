@@ -15,7 +15,14 @@
   </div>
 
   <div class="flex-col gap-xs min-w-0">
-    <h3 class="color-heading text-md m-0 text-break">{{ report().title }}</h3>
+    <h3 class="m-0">
+      <a
+        class="color-heading text-md text-break"
+        [routerLink]="['/game/reports', report().reportId]"
+      >
+        {{ report().title }}
+      </a>
+    </h3>
     @if (report().summary) {
       <span class="color-muted text-sm text-break">{{ report().summary }}</span>
     }
@@ -36,5 +43,11 @@
     <time class="color-heading text-sm" [attr.datetime]="report().createdAt">
       {{ formatDateTime(report().createdAt) }}
     </time>
+    <a
+      class="mg-chip radius-pill py-xs px-sm text-xs color-muted"
+      [routerLink]="['/game/reports', report().reportId]"
+    >
+      {{ openActionLabel() }}
+    </a>
   </div>
 </article>

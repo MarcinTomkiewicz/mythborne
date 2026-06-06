@@ -8,3 +8,9 @@ export type GetReportListPageRpcArgs =
 
 export type GetReportListPageRpcResult =
   Database['public']['Functions']['get_report_list_page']['Returns'];
+
+export type GetReportDetailRpcArgs =
+  Database['public']['Functions']['get_report_detail']['Args'];
+
+export type GetReportDetailRpcResult =
+  Database['public']['Functions']['get_report_detail']['Returns'];

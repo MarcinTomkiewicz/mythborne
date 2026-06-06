@@ -22,6 +22,7 @@
       @for (report of reports(); track report.reportId) {
         <app-report-list-row
           [report]="report"
+          [openActionLabel]="openActionLabel()"
           [unreadLabel]="unreadLabel()"
           [readLabel]="readLabel()"
           [labels]="labels()"

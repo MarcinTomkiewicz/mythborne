@@ -1,144 +1,69 @@
-<app-loading-overlay
-  [visible]="page.isLoading() && page.error() === null"
-  label="Loading report..."
-  description="Loading the selected game report."
-/>
+<app-loading-overlay [visible]="page.isLoading()" label="" />
 
-@if (page.error() && !page.report()) {
-  <section class="mg-card flex-col gap-sm p-lg w-100">
-    <p class="card-legend mb-0">Error</p>
-    <p class="mb-0 muted-text">{{ page.error() }}</p>
-    <a routerLink="/game/reports" class="tag-badge tag-badge--muted">Back to reports</a>
-  </section>
-} @else if (page.report(); as report) {
-  <div class="flex-col gap-xl w-100">
-    @if (page.isSpyReport()) {
-      <app-pvp-spy-report [report]="report" />
-
-      <section class="mg-card p-lg flex-col gap-md w-100">
-        <p class="small-caps color-muted text-xs m-0">Akcje raportu</p>
-        <div class="flex-row-start-center flex-wrap gap-sm">
-          <p-button
-            label="Wróć do raportów"
-            icon="pi pi-arrow-left"
-            severity="secondary"
-            routerLink="/game/reports"
-          />
-          <p-button
-            label="Publiczny raport"
-            icon="pi pi-external-link"
-            severity="secondary"
-            [routerLink]="['/report', report.publicToken]"
-          />
-          <p-button
-            label="Kopiuj token"
-            icon="pi pi-copy"
-            severity="secondary"
-            (onClick)="page.copyPublicToken()"
-          />
-          <p-button
-            label="Usuń"
-            icon="pi pi-trash"
-            severity="danger"
-            [loading]="page.deletingReportId() === report.reportId"
-            [disabled]="page.deletingReportId() !== null"
-            (onClick)="page.removeReport()"
-          />
-        </div>
-      </section>
-    } @else {
-      <section class="mg-card p-lg w-100">
-        <div class="flex-row-between-center flex-col-sm gap-md">
-          <div class="flex-col gap-xs">
-            <p class="card-legend mb-0">{{ report.reportTypeLabel }}</p>
-            <h2 class="mg-section__title mg-section__title--sm mb-0">{{ report.title }}</h2>
-            @if (report.summary) {
-              <p class="muted-text mb-0">{{ report.summary }}</p>
-            }
-            @if (report.sourceLabel) {
-              <span class="tag-badge tag-badge--muted">{{ report.sourceLabel }}</span>
-            }
-          </div>
-
-          <div class="flex-row-start-center flex-wrap gap-sm">
-            <span class="tag-badge tag-badge--warn">Unread: {{ page.unreadCount() }}</span>
-            @if (report.readState.isUnread || page.isMarkingRead()) {
-              <span class="tag-badge tag-badge--warn">Unread</span>
-            } @else {
-              <span class="tag-badge tag-badge--muted">Read</span>
-            }
-            <a routerLink="/game/reports" class="tag-badge tag-badge--muted">Back</a>
-          </div>
-        </div>
-      </section>
-
-      @if (page.error()) {
-        <section class="mg-card flex-col gap-sm p-lg w-100">
-          <p class="card-legend mb-0">Report action</p>
-          <p class="mb-0 muted-text">{{ page.error() }}</p>
-        </section>
-      }
-
-      <section class="mg-card flex-col gap-md p-lg w-100">
-        <div class="flex-row-between-center flex-col-sm gap-md">
-          <div class="flex-col gap-xs">
-            <p class="card-legend mb-0">
-              {{ page.uiMetadata.sectionTitle(page.uiMetadata.section.pageHeader) }}
-            </p>
-            <p class="muted-text mb-0">
-              {{ page.uiMetadata.sectionText(page.uiMetadata.section.pageHeader) }}
-            </p>
-          </div>
-
-          <div class="flex-row-start-center flex-wrap gap-sm">
-            <span class="tag-badge tag-badge--info">
-              Created {{ page.toDateTimeLabel(report.createdAt) }}
+@if (page.copy(); as copy) {
+  @if (page.detail(); as detail) {
+    <div class="flex-col gap-lg w-100 min-w-0">
+      <section class="mg-card radius-lg p-md flex-col gap-md w-100 min-w-0">
+        <div class="flex-row-between-start flex-wrap gap-md w-100 min-w-0">
+          <div class="flex-col gap-xs min-w-0">
+            <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
+              {{ detail.report.reportTypeLabel }}
             </span>
-            <a
-              class="tag-badge tag-badge--muted"
-              [routerLink]="['/report', report.publicToken]"
-            >
-              Public
-            </a>
-            <p-button
-              label="Copy token"
-              severity="secondary"
-              (onClick)="page.copyPublicToken()"
-            />
-            <p-button
-              label="Remove"
-              severity="danger"
-              [loading]="page.deletingReportId() === report.reportId"
-              [disabled]="page.deletingReportId() !== null"
-              (onClick)="page.removeReport()"
-            />
+            <h2 class="color-heading font-display text-xl m-0 text-break">
+              {{ detail.report.title }}
+            </h2>
+            @if (detail.report.summary) {
+              <p class="color-muted text-sm m-0 text-break">
+                {{ detail.report.summary }}
+              </p>
+            }
+          </div>
+
+          <a
+            class="mg-chip radius-pill py-xs px-sm text-xs color-muted"
+            routerLink="/game/reports"
+          >
+            {{ copy.detail.header.backAction }}
+          </a>
+        </div>
+
+        <div class="flex-col gap-sm w-100 min-w-0">
+          <div class="mg-data-row">
+            <span class="color-muted text-sm">{{ copy.labels.reportType }}</span>
+            <strong class="color-heading text-sm text-right">{{ detail.report.reportTypeLabel }}</strong>
+          </div>
+
+          @if (detail.report.sourceLabel) {
+            <div class="mg-data-row">
+              <span class="color-muted text-sm">{{ copy.labels.source }}</span>
+              <strong class="color-heading text-sm text-right">{{ detail.report.sourceLabel }}</strong>
+            </div>
+          }
+
+          <div class="mg-data-row">
+            <span class="color-muted text-sm">{{ copy.labels.createdAt }}</span>
+            <time class="color-heading text-sm text-right" [attr.datetime]="detail.report.createdAt">
+              {{ page.formatDateTime(detail.report.createdAt) }}
+            </time>
+          </div>
+
+          <div class="mg-data-row">
+            <span class="color-muted text-sm">{{ copy.labels.readState }}</span>
+            <div class="flex-col gap-xs text-right">
+              @if (detail.access.isUnread) {
+                <strong class="color-heading text-sm">{{ copy.reportsCenter.list.unreadLabel }}</strong>
+              } @else {
+                <strong class="color-heading text-sm">{{ copy.reportsCenter.list.readLabel }}</strong>
+              }
+              @if (detail.access.readAt) {
+                <time class="color-muted text-xs" [attr.datetime]="detail.access.readAt">
+                  {{ page.formatDateTime(detail.access.readAt) }}
+                </time>
+              }
+            </div>
           </div>
         </div>
       </section>
-
-      <app-game-report-content
-        [report]="report"
-        [participantsTitle]="page.uiMetadata.sectionTitle(page.uiMetadata.section.participants)"
-        [participantsText]="page.uiMetadata.sectionText(page.uiMetadata.section.participants)"
-        [itemReferencesTitle]="page.uiMetadata.sectionTitle(page.uiMetadata.section.itemReferences)"
-        [itemReferencesText]="page.uiMetadata.sectionText(page.uiMetadata.section.itemReferences)"
-        [combatSectionTitle]="page.uiMetadata.sectionTitle(page.uiMetadata.section.combatSection)"
-        [combatSectionText]="page.uiMetadata.sectionText(page.uiMetadata.section.combatSection)"
-      />
-
-      @if (page.canShowBackendDiagnostics()) {
-        <details class="mg-card p-lg w-100">
-          <summary class="muted-text">Report RPC backend shape</summary>
-          <div class="flex-col gap-xs mt-sm">
-            @for (diagnostic of page.reportBackendDiagnostics(); track diagnostic.label) {
-              <div class="flex-row-between-start flex-col-sm gap-sm">
-                <strong>{{ diagnostic.label }}</strong>
-                <span class="muted-text">{{ diagnostic.value }}</span>
-              </div>
-            }
-          </div>
-        </details>
-      }
-    }
-  </div>
+    </div>
+  }
 }

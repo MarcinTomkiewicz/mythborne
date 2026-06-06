@@ -21,6 +21,7 @@ export class ReportListSection {
   readonly title = input.required<string>();
   readonly emptyTitle = input.required<string>();
   readonly emptyText = input.required<string>();
+  readonly openActionLabel = input.required<string>();
   readonly unreadLabel = input.required<string>();
   readonly readLabel = input.required<string>();
   readonly unreadCount = input.required<number>();

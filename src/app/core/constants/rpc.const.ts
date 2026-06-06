@@ -96,6 +96,7 @@ export const RPC = {
   delete_game_report_for_hero: 'delete_game_report_for_hero',
   get_report_list_page: 'get_report_list_page',
   get_report_page_copy: 'get_report_page_copy',
+  get_report_detail: 'get_report_detail',
   get_hero_game_report_detail: 'get_hero_game_report_detail',
   get_hero_game_report_unread_count: 'get_hero_game_report_unread_count',
   get_hero_game_reports: 'get_hero_game_reports',

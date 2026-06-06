@@ -1,213 +1,159 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
-import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
-import { UiMetadataEntryReadModel } from '../../../core/domain/admin-ui-metadata.model';
-import { PrivateGameReportDetail } from '../../../core/domain/reports/game-report.model';
-import { GameServerKind } from '../../../core/enums/active-server.enum';
-import { GameReports } from '../../../core/services/reports/game-reports';
-import { GameReportUiMetadataService } from '../../../core/services/reports/game-report-ui-metadata';
-import { ActiveServer } from '../../../core/services/server/active-server';
-import { ToastService } from '../../../core/services/ui/toast';
-import { getErrorMessage } from '../../../core/utils/error-message';
-import { ReportDetailUiMetadata } from './reports-ui-metadata';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  PrivateReportDetailPage,
+  ReportPageCopy,
+} from '../../../core/domain/reports/report.model';
+import { ActiveHero } from '../../../core/services/hero/active-hero';
+import { PlayerReports } from '../../../core/services/reports/player-reports';
+import { toDateTimeLabel } from '../../../core/utils/date-display';
+import { RequestToken } from '../../../core/utils/request-token';
 
 @Injectable()
 export class ReportDetailPageState {
-  private readonly activeServer = inject(ActiveServer);
-  private readonly gameReports = inject(GameReports);
-  private readonly uiMetadataService = inject(GameReportUiMetadataService);
-  private readonly toast = inject(ToastService);
-  private readonly router = inject(Router);
-  private loadRequestId = 0;
-  private actionRequestId = 0;
+  private readonly activeHero = inject(ActiveHero);
+  private readonly reports = inject(PlayerReports);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly requestToken = new RequestToken();
 
-  readonly report = signal<PrivateGameReportDetail | null>(null);
-  readonly unreadCount = signal(0);
-  readonly uiMetadataEntries = signal<UiMetadataEntryReadModel[]>([]);
-  readonly uiMetadata = new ReportDetailUiMetadata(() => this.uiMetadataEntries());
-  readonly isLoading = signal(true);
-  readonly isMarkingRead = signal(false);
-  readonly deletingReportId = signal<string | null>(null);
-  readonly error = signal<string | null>(null);
-  readonly canShowBackendDiagnostics = computed(() => {
-    const server = this.activeServer.selectedServer();
-    const access = this.activeServer.access();
+  private activeHeroId: string | null = null;
+  private activeServerId: string | null = null;
 
-    return server?.kind === GameServerKind.Sandbox && access.canAccessSandbox;
-  });
-  readonly isSpyReport = computed(() => {
-    const report = this.report();
-
-    return Boolean(report && (
-      report.reportTypeKey === 'pvp_spy' ||
-      report.spySection?.spyDisplay != null
-    ));
-  });
+  readonly copy = signal<ReportPageCopy | null>(null);
+  readonly detail = signal<PrivateReportDetailPage | null>(null);
+  readonly hasError = signal(false);
+  readonly pendingRequestCount = signal(0);
+  readonly isLoading = computed(() => this.pendingRequestCount() > 0);
 
   loadData(reportId: string): void {
-    const requestId = ++this.loadRequestId;
+    const token = this.requestToken.next();
 
-    this.isLoading.set(true);
-    this.error.set(null);
+    this.copy.set(null);
+    this.detail.set(null);
+    this.hasError.set(false);
+    this.pendingRequestCount.set(1);
 
-    forkJoin({
-      report: this.gameReports.getActiveHeroReportDetail(reportId),
-      unreadCount: this.gameReports.getActiveHeroUnreadCount(),
-      uiMetadataEntries: this.uiMetadataService.getReportDetailEntries(),
-    }).subscribe({
-      next: ({ report, unreadCount, uiMetadataEntries }) => {
-        if (requestId !== this.loadRequestId) {
-          return;
-        }
+    this.activeHero
+      .requireActiveHero()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (state) => {
+          this.finishRequest(token);
 
-        this.report.set(report);
-        this.unreadCount.set(unreadCount);
-        this.uiMetadataEntries.set(uiMetadataEntries);
-        this.isLoading.set(false);
+          if (!this.requestToken.isCurrent(token)) {
+            return;
+          }
 
-        if (report.readState.isUnread) {
-          this.markRead(report.reportId, requestId);
-        }
-      },
-      error: (error: unknown) => {
-        if (requestId !== this.loadRequestId) {
-          return;
-        }
+          this.activeHeroId = state.heroId;
+          this.activeServerId = state.serverId;
+          this.loadReportFoundation(state.heroId, state.serverId, reportId, token);
+        },
+        error: (error: unknown) => {
+          this.finishRequest(token);
 
-        const message = getErrorMessage(error, 'Failed to load game report.');
-        this.error.set(message);
-        this.toast.show('error', 'Report unavailable', message);
-        this.isLoading.set(false);
-      },
-    });
+          if (!this.requestToken.isCurrent(token)) {
+            return;
+          }
+
+          this.hasError.set(true);
+        },
+      });
   }
 
-  removeReport(): void {
-    const report = this.report();
+  formatDateTime(value: string): string {
+    return toDateTimeLabel(value);
+  }
 
-    if (!report || this.deletingReportId()) {
+  private loadReportFoundation(
+    heroId: string,
+    serverId: string,
+    reportId: string,
+    token: number,
+  ): void {
+    this.loadPageCopy(heroId, serverId, token);
+    this.loadDetail(heroId, serverId, reportId, token);
+  }
+
+  private loadPageCopy(heroId: string, serverId: string, token: number): void {
+    this.startRequest(token);
+
+    this.reports.getPageCopy()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (copy) => {
+          this.finishRequest(token);
+
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
+            return;
+          }
+
+          this.copy.set(copy);
+        },
+        error: (error: unknown) => {
+          this.finishRequest(token);
+
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
+            return;
+          }
+
+          this.hasError.set(true);
+        },
+      });
+  }
+
+  private loadDetail(
+    heroId: string,
+    serverId: string,
+    reportId: string,
+    token: number,
+  ): void {
+    this.startRequest(token);
+
+    this.reports.getDetailPage({ heroId, reportId })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (detail) => {
+          this.finishRequest(token);
+
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
+            return;
+          }
+
+          this.detail.set(detail);
+        },
+        error: (error: unknown) => {
+          this.finishRequest(token);
+
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
+            return;
+          }
+
+          this.hasError.set(true);
+        },
+      });
+  }
+
+  private isCurrentRequest(token: number, heroId: string, serverId: string): boolean {
+    return (
+      this.requestToken.isCurrent(token) &&
+      this.activeHeroId === heroId &&
+      this.activeServerId === serverId
+    );
+  }
+
+  private startRequest(token: number): void {
+    if (!this.requestToken.isCurrent(token)) {
       return;
     }
 
-    const requestId = ++this.actionRequestId;
-
-    this.deletingReportId.set(report.reportId);
-    this.error.set(null);
-
-    this.gameReports.deleteActiveHeroReport(report.reportId).subscribe({
-      next: () => {
-        if (requestId !== this.actionRequestId) {
-          return;
-        }
-
-        this.toast.show('success', 'Report removed', `${report.title} was removed.`);
-        this.deletingReportId.set(null);
-        void this.router.navigateByUrl('/game/reports');
-      },
-      error: (error: unknown) => {
-        if (requestId !== this.actionRequestId) {
-          return;
-        }
-
-        const message = getErrorMessage(error, 'Failed to remove game report.');
-        this.error.set(message);
-        this.toast.show('error', 'Report removal failed', message);
-        this.deletingReportId.set(null);
-      },
-    });
+    this.pendingRequestCount.update((count) => count + 1);
   }
 
-  publicShareToken(): string {
-    return this.report()?.publicToken ?? '';
-  }
-
-  copyPublicToken(): void {
-    const token = this.publicShareToken();
-
-    if (!token) {
+  private finishRequest(token: number): void {
+    if (!this.requestToken.isCurrent(token)) {
       return;
     }
 
-    if (!navigator.clipboard) {
-      this.toast.show('info', 'Public token', token);
-      return;
-    }
-
-    void navigator.clipboard.writeText(token)
-      .then(() => this.toast.show('success', 'Public token copied', token))
-      .catch(() => this.toast.show('info', 'Public token', token));
-  }
-
-  toDateTimeLabel(value: string): string {
-    return new Date(value).toLocaleString();
-  }
-
-  reportBackendDiagnostics(): Array<{ label: string; value: string }> {
-    const report = this.report();
-
-    if (!report) {
-      return [];
-    }
-
-    return [
-      { label: 'RPC', value: 'get_hero_game_report_detail' },
-      { label: 'Args', value: JSON.stringify({ p_report_id: report.reportId }) },
-      { label: 'Backend row shape', value: JSON.stringify(report.rawJson) },
-    ];
-  }
-
-  private markRead(reportId: string, loadRequestId: number): void {
-    this.isMarkingRead.set(true);
-
-    this.gameReports.markActiveHeroReportRead(reportId).subscribe({
-      next: (result) => {
-        if (loadRequestId !== this.loadRequestId) {
-          return;
-        }
-
-        const report = this.report();
-
-        if (report?.reportId === result.reportId) {
-          this.report.set({
-            ...report,
-            readState: {
-              accessRole: result.accessRole,
-              readAt: result.readAt,
-              isUnread: result.readAt === null,
-            },
-          });
-        }
-
-        this.refreshUnreadCount(loadRequestId);
-        this.isMarkingRead.set(false);
-      },
-      error: (error: unknown) => {
-        if (loadRequestId !== this.loadRequestId) {
-          return;
-        }
-
-        const message = getErrorMessage(error, 'Failed to mark report read.');
-        this.error.set(message);
-        this.toast.show('error', 'Read state update failed', message);
-        this.isMarkingRead.set(false);
-      },
-    });
-  }
-
-  private refreshUnreadCount(loadRequestId: number): void {
-    this.gameReports.getActiveHeroUnreadCount().subscribe({
-      next: (count) => {
-        if (loadRequestId === this.loadRequestId) {
-          this.unreadCount.set(count);
-        }
-      },
-      error: () => {
-        if (loadRequestId === this.loadRequestId) {
-          const message = 'Unread count refresh failed.';
-          this.error.set(message);
-          this.toast.show('warn', 'Unread count unavailable', message);
-        }
-      },
-    });
+    this.pendingRequestCount.update((count) => Math.max(0, count - 1));
   }
 }

@@ -117,3 +117,37 @@ export interface ReportPagination {
   rangeTemplate: string;
   displayLabel: string;
 }
+
+export interface PrivateReportDetailPage {
+  contractVersion: 'report_detail_v1';
+  access: {
+    visibility: 'private';
+    heroId: string;
+    reportId: string;
+    accessRole: string;
+    isUnread: boolean;
+    readAt: string | null;
+  };
+  report: ReportDetailCore;
+}
+
+export interface ReportDetailCore {
+  publicToken: string | null;
+  reportTypeKey: string;
+  reportTypeLabel: string;
+  reportTypeDescription: string | null;
+  title: string;
+  summary: string | null;
+  sourceLabel: string | null;
+  sourceEntityType: string | null;
+  createdAt: string;
+  participantsJson: Json[];
+  itemReferencesJson: Json[];
+  spySectionJson: Json | null;
+  trialSectionJson: Json | null;
+  encounterSectionJson: Json | null;
+  combatSectionJson: Json | null;
+  rewardSectionJson: Json | null;
+  effectSectionJson: Json | null;
+  relatedReportsJson: Json[];
+}

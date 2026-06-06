@@ -12100,6 +12100,8 @@ Acceptance:
 * Private access state is displayed from payload.
 * Missing detail fields are reported as DB/RPC gaps.
 
+**Status:** Accepted/completed on 2026-06-06 as the canonical private report detail shell. `/game/reports/:reportId` now opens from Reports list rows through a DB-copy-backed `openAction` affordance and loads private report detail through `get_report_detail(p_hero_id, p_report_id)` via `PlayerReports`. The new `report_detail_v1` mapper validates `access.heroId` and `access.reportId` against the requested identity, maps shared `ReportDetailCore`, and renders the shell fields from `ReportPageCopy.detail` plus title, summary, type/source, created time and private read state from `access.isUnread` / `access.readAt`. The old detail page legacy `GameReports` flow, implicit mark-read/remove/share actions, diagnostics and stale detail spec were removed for this route. Section rendering, read/remove workflows and public report routing remain later UI-REPORTS slices.
+
 ---
 
 ## UI-REPORTS-2B — Report detail section renderers
