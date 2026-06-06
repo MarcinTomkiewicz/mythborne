@@ -12023,6 +12023,8 @@ Acceptance:
 * Unsupported search/type/time filters are omitted and reported as contract gaps.
 * Empty filtered state remains DB/copy-backed.
 
+**Status:** Accepted/completed on 2026-06-06 as the Reports Center supported-filter/pagination slice. `/game/reports` now renders the DB-copy-backed unread-only filter, syncs it from `ReportListPage.appliedFilters`, and refreshes the list through `get_report_list_page(...)` with no local filtering/searching/sorting. Pagination uses DB `ReportPagination` fields and `pagination.displayLabel`, with page changes routed through the canonical list RPC. Text search remains omitted because the current list RPC has no `p_query`; report type filtering remains omitted until a DB-backed report type option source exists; prototype-only time filters remain out of scope.
+
 ---
 
 ## UI-REPORTS-1D — Reports Center component split and visual cleanup

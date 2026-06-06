@@ -24,6 +24,31 @@
           </span>
         </div>
 
+        <form
+          class="mg-card radius-lg p-md flex-col gap-sm w-100 min-w-0"
+          [formGroup]="page.filtersForm"
+          (ngSubmit)="page.applyFilters()"
+        >
+          <div class="flex-col gap-xs w-100 min-w-0">
+            <strong class="color-heading">{{ copy.reportsCenter.filters.title }}</strong>
+            <span class="color-muted text-sm">
+              {{ copy.reportsCenter.filters.helperText }}
+            </span>
+          </div>
+
+          <div class="flex-row-start-center gap-sm w-100 min-w-0">
+            <p-checkbox
+              inputId="reports-unread-only"
+              formControlName="unreadOnly"
+              [binary]="true"
+              (onChange)="page.applyFilters()"
+            />
+            <label class="color-heading text-sm" for="reports-unread-only">
+              {{ copy.reportsCenter.filters.unreadOnlyLabel }}
+            </label>
+          </div>
+        </form>
+
         @if (listPage.reports.length === 0) {
           <section class="mg-card radius-lg p-md flex-col gap-xs w-100 min-w-0">
             <strong class="color-heading">{{ copy.reportsCenter.list.emptyTitle }}</strong>
@@ -75,6 +100,16 @@
             }
           </div>
         }
+
+        <nav class="mg-card radius-lg flex-row-between-center flex-wrap gap-md p-md w-100 min-w-0">
+          <strong class="color-heading text-sm">{{ listPage.pagination.displayLabel }}</strong>
+          <p-paginator
+            [first]="listPage.pagination.offset"
+            [rows]="listPage.pagination.limit"
+            [totalRecords]="listPage.pagination.totalCount"
+            (onPageChange)="page.changeReportsPage($event)"
+          />
+        </nav>
       </section>
     }
   </div>
