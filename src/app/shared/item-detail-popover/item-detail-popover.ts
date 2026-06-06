@@ -32,6 +32,8 @@ export class ItemDetailPopover {
   readonly itemId = input<string | null>(null);
   readonly fallbackName = input<string | null>(null);
   readonly contextKey = input<ItemPopoverContextKey | null>(null, { alias: 'context' });
+  readonly publicToken = input<string | null>(null);
+  readonly itemReferenceId = input<string | null>(null);
   readonly contextSourceLabel = input<string | null>(null);
   readonly capturedAt = input<string | null>(null);
   readonly triggerLabel = input<string | null>(null);
@@ -50,7 +52,7 @@ export class ItemDetailPopover {
 
     if (
       detail
-      && detail.itemId === itemId
+      && (!itemId || detail.itemId === itemId)
       && this.loadedItemKey() === this.currentItemKey()
     ) {
       return itemDetailPopoverViewModel(detail, this.viewContext());
@@ -133,7 +135,7 @@ export class ItemDetailPopover {
       return;
     }
 
-    if (!itemId?.trim()) {
+    if (!this.canLoadDetail()) {
       this.loadedDetail.set(null);
       this.loadedItemKey.set(null);
       this.status.set('error');
@@ -153,7 +155,12 @@ export class ItemDetailPopover {
 
     forkJoin({
       copy: this.copyReader.readCopy(),
-      detail: this.reader.readItemDetail(itemId, this.contextKey()),
+      detail: this.reader.readItemDetail(
+        itemId,
+        this.contextKey(),
+        this.publicToken(),
+        this.itemReferenceId(),
+      ),
     })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -221,6 +228,18 @@ export class ItemDetailPopover {
   }
 
   private currentItemKey(): string {
-    return `${this.itemId()?.trim() ?? ''}:${this.contextKey() ?? ''}`;
+    return [
+      this.itemId()?.trim() ?? '',
+      this.contextKey() ?? '',
+      this.publicToken()?.trim() ?? '',
+      this.itemReferenceId()?.trim() ?? '',
+    ].join(':');
+  }
+
+  private canLoadDetail(): boolean {
+    return Boolean(
+      this.itemId()?.trim()
+      || (this.publicToken()?.trim() && this.itemReferenceId()?.trim()),
+    );
   }
 }

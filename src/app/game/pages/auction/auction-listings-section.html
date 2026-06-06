@@ -1,0 +1,55 @@
+<section class="mg-card radius-lg p-md w-100 min-w-0">
+  <div class="mb-md">
+    <div class="flex-row-between-center gap-md">
+      <div>
+        <h2 class="color-heading font-display text-lg m-0">{{ title() }}</h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex-row-between-center flex-wrap gap-md mb-md">
+    <div class="flex-row-start-center flex-wrap gap-xs">
+      <span class="mg-chip radius-pill flex-row-center-center gap-xs py-xs px-sm text-xs color-muted">
+        {{ pagination().displayLabel }}
+      </span>
+    </div>
+    <div class="flex-row-start-center flex-wrap gap-sm">
+      <p-button
+        type="button"
+        [label]="actions().refresh"
+        [disabled]="isLoading()"
+        (onClick)="refresh.emit()"
+      />
+    </div>
+  </div>
+
+  @if (listings().length === 0) {
+    <div class="mg-card radius-lg p-md text-sm lh-15 color-muted">
+      {{ emptyLabel() }}
+    </div>
+  } @else {
+    <div class="flex-col gap-sm w-100 min-w-0">
+      @for (listing of listings(); track listing.listingId) {
+        <app-auction-listing-row
+          [listing]="listing"
+          [actions]="actions()"
+          [labels]="labels()"
+        />
+      }
+    </div>
+  }
+
+  <nav class="mg-card radius-lg flex-row-between-center flex-wrap gap-md mt-md p-md w-100 min-w-0">
+    <div class="flex-col gap-xs text-sm color-muted">
+      <strong class="color-heading">{{ pagination().displayLabel }}</strong>
+    </div>
+    <div>
+      <p-paginator
+        [first]="pagination().offset"
+        [rows]="pagination().limit"
+        [totalRecords]="pagination().totalCount"
+        (onPageChange)="pageChange.emit($event)"
+      />
+    </div>
+  </nav>
+</section>

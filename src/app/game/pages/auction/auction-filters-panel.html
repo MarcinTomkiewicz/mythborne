@@ -1,0 +1,94 @@
+<section class="mg-card radius-lg p-md w-100 min-w-0">
+  <div class="gap-xs mb-md">
+    <h2 class="color-heading font-display text-lg m-0">{{ copy().filters.title }}</h2>
+    <p class="text-sm lh-14 m-0 color-muted">
+      {{ copy().filters.helperText }}
+    </p>
+  </div>
+
+  <form
+    class="flex-col gap-sm w-100 min-w-0"
+    [formGroup]="filterForm()"
+    (ngSubmit)="apply.emit()"
+  >
+    <div class="flex-col gap-xs w-100 min-w-0">
+      <span class="text-xs color-muted small-caps uppercase">
+        {{ copy().filters.searchLabel }}
+      </span>
+      <input
+        pInputText
+        class="radius-pill py-sm px-md w-100"
+        type="search"
+        formControlName="query"
+        [placeholder]="copy().filters.searchPlaceholder"
+        [attr.aria-label]="copy().filters.searchLabel"
+      />
+    </div>
+
+    @if (auctionModeOptions().length > 0) {
+      <div class="flex-col gap-xs w-100 min-w-0">
+        <span class="text-xs color-muted small-caps uppercase">
+          {{ copy().filters.modeLabel }}
+        </span>
+        <p-select
+          class="w-100"
+          formControlName="auctionMode"
+          [options]="auctionModeOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [placeholder]="copy().filters.modeLabel"
+          [ariaLabel]="copy().filters.modeLabel"
+          [showClear]="true"
+          (onChange)="apply.emit()"
+        />
+      </div>
+    }
+
+    @if (baseTypeOptions().length > 0) {
+      <div class="flex-col gap-xs w-100 min-w-0">
+        <span class="text-xs color-muted small-caps uppercase">
+          {{ copy().filters.slotLabel }}
+        </span>
+        <div class="flex-row-start-center flex-wrap gap-sm w-100 min-w-0">
+          @for (option of baseTypeOptions(); track option.value ?? option.label) {
+            <button
+              class="mg-chip radius-pill flex-row-center-center gap-xs py-xs px-sm text-xs color-muted"
+              type="button"
+              [class.border-secondary]="isBaseTypeSelected(option.value)"
+              [attr.aria-pressed]="isBaseTypeSelected(option.value)"
+              (click)="baseTypeSelect.emit(option.value)"
+            >
+              {{ option.label }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+
+    @if (sortOptions().length > 0) {
+      <div class="flex-col gap-xs w-100 min-w-0">
+        <span class="text-xs color-muted small-caps uppercase">
+          {{ copy().filters.sortLabel }}
+        </span>
+        <p-select
+          class="w-100"
+          formControlName="sortKey"
+          [options]="sortOptions()"
+          optionLabel="label"
+          optionValue="value"
+          [placeholder]="copy().filters.sortLabel"
+          [ariaLabel]="copy().filters.sortLabel"
+          (onChange)="apply.emit()"
+        />
+      </div>
+    }
+
+    <div class="flex-row-start-center flex-wrap gap-sm w-100 min-w-0">
+      <p-button
+        type="submit"
+        [label]="copy().filters.searchActionLabel"
+        [disabled]="isLoading()"
+      />
+    </div>
+  </form>
+</section>

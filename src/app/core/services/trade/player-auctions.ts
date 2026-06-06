@@ -70,12 +70,13 @@ export class PlayerAuctions {
     limit: number,
     offset: number,
   ): Observable<AuctionListingsSearchPage> {
+    const normalizedQuery = trimToNull(query);
     const args: SearchAuctionListingsPageRpcArgs = {
       p_hero_id: requiredText(heroId, 'heroId'),
-      p_query: trimToNull(query) ?? undefined,
       p_filters: auctionFiltersJson(filters),
       p_limit: limit,
       p_offset: offset,
+      ...(normalizedQuery ? { p_query: normalizedQuery } : {}),
     };
 
     return this.backend

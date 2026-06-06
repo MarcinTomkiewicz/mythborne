@@ -1,8 +1,8 @@
 # Mythsworn — Auction Shape Guide
 
 Status: DB/RPC consumption guidance for Codex / Reviewer / Frontend  
-Updated: 2026-06-05  
-Scope: player-facing Auction contracts only: page copy, page context, auction listing search, own listings, own bids, create context, action RPCs, row shapes, workflow boundaries and frontend restrictions.
+Updated: 2026-06-06  
+Scope: player-facing Auction contracts only: page copy, page context, auction listing search, own listings, own bids, create context, watch/unwatch, action RPCs, row shapes, workflow boundaries and frontend restrictions.
 
 This guide is **not** a migration and **not** a complete database dump. It is a focused shape/contract guide for implementing and reviewing the Auction UI safely.
 
@@ -12,7 +12,7 @@ This guide is **not** a migration and **not** a complete database dump. It is a 
 
 Auctions are **DB/RPC-owned workflows**.
 
-Use the Auction split contract in this guide. Do **not** use the legacy auction bootstrap for the new auction screen:
+Use the Auction split contract in this guide. The legacy auction bootstrap has been removed; do **not** use:
 
 ```text
 get_player_auction_page_context(...)
@@ -23,6 +23,7 @@ Do **not** direct-read for normal player auction page bootstrap:
 ```text
 player_auction_listings
 player_auction_bids
+player_auction_watches
 player_trade_transactions
 player_trade_transaction_items
 items
@@ -35,6 +36,7 @@ Do **not** direct-write:
 ```text
 player_auction_listings
 player_auction_bids
+player_auction_watches
 player_trade_transactions
 player_trade_transaction_items
 character_point_locks
@@ -70,7 +72,7 @@ Locked auction items must not be treated as normal usable/equippable Armory item
 
 ---
 
-## 1. Function naming decision
+## 1. Canonical Auction split functions
 
 Use simple domain names.
 
@@ -120,7 +122,7 @@ Meaning:
 
 ```text
 get_auction_page_copy
-- page labels, actions, filters, placeholders, empty states and rules only
+- page labels, actions, filters, placeholders, filter options, pagination templates, empty states and rules only
 
 get_auction_page_context
 - lightweight hero-scoped summary and eligibility only
@@ -203,7 +205,7 @@ get_auction_page_copy() returns jsonb
 
 DB-owned copy for the Auction page.
 
-It returns labels, actions, tabs, filter labels/options, empty states and rules. It contains **no hero/runtime data** and **no auction listings**.
+It returns labels, actions, tabs, filter labels/options, pagination templates, empty states and rules. It contains **no hero/runtime data** and **no auction listings**.
 
 ### Shape
 
@@ -220,8 +222,11 @@ interface AuctionPageCopy {
   actions: {
     createAuction: string;
     refresh: string;
+    search: string;
     bid: string;
     buyNow: string;
+    watch: string;
+    unwatch: string;
     cancel: string;
     close: string;
     details: string;
@@ -247,6 +252,7 @@ interface AuctionPageCopy {
     helperText: string;
     searchLabel: string;
     searchPlaceholder: string;
+    searchActionLabel: string;
     slotLabel: string;
     priceLabel: string;
     sortLabel: string;
@@ -263,6 +269,17 @@ interface AuctionPageCopy {
       key: 'newest' | 'ending_soon' | 'price_asc' | 'price_desc';
       label: string;
     }>;
+
+    baseTypeOptions: Array<{
+      key: string | null;
+      label: string;
+    }>;
+  };
+
+  pagination: {
+    rangeTemplate: string;     // "Wyświetlane aukcje {start}–{end} z {total}"
+    bidRangeTemplate: string;  // "Wyświetlane licytacje {start}–{end} z {total}"
+    itemRangeTemplate: string; // "Wyświetlane przedmioty {start}–{end} z {total}"
   };
 
   labels: {
@@ -290,17 +307,41 @@ interface AuctionPageCopy {
 }
 ```
 
-### Current expected labels
+### Current expected labels/options
 
 ```text
 header.title = Aukcje
 actions.createAuction = Utwórz aukcję
+actions.search = Szukaj
 actions.bid = Licytuj
 actions.buyNow = Kup teraz
+actions.watch = Obserwuj
+actions.unwatch = Przestań obserwować
 actions.refresh = Odśwież
+filters.searchActionLabel = Szukaj
 filters.searchPlaceholder = Szukaj przedmiotu albo sprzedawcy
 labels.characterPointsShort = PP
+filterOptions.baseTypeOptions[0] = { key: null, label: "Wszystkie" }
+pagination.rangeTemplate = Wyświetlane aukcje {start}–{end} z {total}
 ```
+
+Current verified base type options include:
+
+```text
+Wszystkie
+Broń jednoręczna
+Broń dwuręczna
+Broń dystansowa
+Hełm
+Pancerz
+Nogawice
+Buty
+Pierścień
+Amulet
+Tarcza
+```
+
+Rules copy must be rendered as-is from DB. Frontend must not rewrite rules locally.
 
 ---
 
@@ -376,17 +417,6 @@ interface AuctionPageContext {
     }>;
   };
 }
-```
-
-### Current Vlad sandbox smoke
-
-```text
-contractVersion = auction_page_context_v1
-summary.availableCharacterPoints = 190
-summary.lockedCharacterPoints = 0
-summary.tradeSlotLimit = 3
-summary.canUseAuction = true
-summary.canCreateAuction = true
 ```
 
 ---
@@ -586,8 +616,6 @@ interface AuctionEligibleItemRow {
 
 Only `active` owned items are eligible. Locked, scrapped or non-owned items must not be listed.
 
-Current Vlad sandbox smoke returned 5 eligible items.
-
 ---
 
 ## 9. Shared pagination
@@ -598,10 +626,25 @@ interface AuctionPagination {
   offset: number;
   totalCount: number;
   hasNextPage: boolean;
+
+  rangeStart: number;
+  rangeEnd: number;
+  rangeTotal: number;
+  rangeTemplate: string;
+  displayLabel: string;
 }
 ```
 
 Use returned pagination. Do not infer total count from current page length.
+
+Examples:
+
+```text
+Wyświetlane aukcje 1–3 z 3
+Wyświetlane aukcje 0–0 z 0
+Wyświetlane licytacje 0–0 z 0
+Wyświetlane przedmioty 1–5 z 5
+```
 
 ---
 
@@ -672,12 +715,44 @@ interface AuctionListingRow {
   buyNowBlockerKey?: string;
   buyNowBlockerLabel?: string;
 
+  watchId: string | null;
+  isWatched: boolean;
+  canWatch: boolean;
+  canUnwatch: boolean;
+  watchBlockerKey: string | null;
+  watchBlockerLabel: string | null;
+
   canCancel: boolean;
   cancelBlockerKey?: string;
   cancelBlockerLabel?: string;
 
   canClose: boolean;
 }
+```
+
+### Watch row semantics
+
+Watch fields are always present on `AuctionListingRow`. `watchBlockerKey` and `watchBlockerLabel` must exist as JSON keys even when their value is `null`.
+
+```text
+Not watched, can watch:
+- watchId = null
+- isWatched = false
+- canWatch = true
+- canUnwatch = false
+- watchBlockerKey = null
+- watchBlockerLabel = null
+
+Watched:
+- watchId = uuid
+- isWatched = true
+- canWatch = false
+- canUnwatch = true
+- watchBlockerKey = already_watched
+- watchBlockerLabel = Już obserwujesz tę aukcję
+
+After unwatch:
+- same as not watched, can watch
 ```
 
 ### Rendering rules
@@ -690,10 +765,11 @@ interface AuctionListingRow {
 - Render current/starting/buy-now prices from display fields.
 - Render primary price from `primaryPriceLabel` + `primaryPriceDisplayValue`.
 - Render next bid minimum from `minNextBidDisplayValue`.
-- Render action buttons only from `canBid`, `canBuyNow`, `canCancel`, `canClose`.
+- Render action buttons only from `canBid`, `canBuyNow`, `canWatch`, `canUnwatch`, `canCancel`, `canClose`.
 - Render disabled reason from matching `*BlockerLabel`.
 - Do not compute action eligibility in Angular.
 - Do not compute next bid in Angular.
+- Do not compute watch state locally.
 - Do not compute whether the auction has ended in Angular except for countdown display based on DB `endsInSeconds` if needed.
 
 ---
@@ -778,7 +854,16 @@ interface ItemDisplayCore {
 }
 ```
 
-Use this only for display. Do not use it as item lifecycle authority.
+Use this only for card/list display. Do not use it as item lifecycle authority.
+
+For full item detail popover, use the shared item popover RPCs:
+
+```text
+item_popover_copy()
+item_popover_detail(...)
+```
+
+Do not create auction-specific item popovers.
 
 ---
 
@@ -903,6 +988,58 @@ On success:
 - releases defensive leftover locks
 ```
 
+### Watch listing
+
+```sql
+watch_auction_listing(
+  p_hero_id uuid,
+  p_auction_listing_id uuid
+) returns uuid
+```
+
+Returns:
+
+```ts
+watchId: string;
+```
+
+Guards / behavior:
+
+```text
+- requires auth.uid()
+- hero must belong to authenticated user
+- listing must exist
+- listing must be on the same server
+- listing must be active
+- listing must not have ended
+- hero cannot watch own listing
+- creates or reactivates player_auction_watches row
+```
+
+### Unwatch listing
+
+```sql
+unwatch_auction_listing(
+  p_hero_id uuid,
+  p_auction_listing_id uuid
+) returns uuid | null
+```
+
+Returns:
+
+```ts
+watchId: string | null;
+```
+
+Behavior:
+
+```text
+- requires auth.uid()
+- hero must belong to authenticated user
+- deactivates active watch row if present
+- returns null if there was no active watch row
+```
+
 ### Cancel listing
 
 ```sql
@@ -985,7 +1122,16 @@ These exist for DB composition only:
 
 ```text
 build_auction_listing_row(...)
+build_auction_listing_row_raw_v1(...)
 build_auction_bid_row(...)
+get_auction_page_copy_raw_v1(...)
+search_auction_listings_page_raw_v1(...)
+get_auction_listings_page_raw_v1(...)
+get_auction_bids_page_raw_v1(...)
+get_auction_create_context_raw_v1(...)
+get_auction_base_type_filter_options(...)
+build_auction_pagination_display(...)
+apply_auction_pagination_display(...)
 hero_can_use_player_trade(...)
 hero_has_free_trade_slot(...)
 get_hero_active_trade_slot_count(...)
@@ -1025,58 +1171,134 @@ Actions:
 - create_player_auction_listing(...)
 - place_player_auction_bid(...)
 - buy_now_player_auction(...)
+- watch_auction_listing(...)
+- unwatch_auction_listing(...)
 - cancel_player_auction_listing(...)
 - close_player_auction_listing(...)
 
 Do not use:
 - get_player_auction_page_context(...)
 - build_auction_listing_row(...)
+- build_auction_listing_row_raw_v1(...)
 - build_auction_bid_row(...)
+- any raw_v1 auction RPC
 
 Return semantics:
 - create auction -> listingId
 - place bid -> bidId
 - buy now -> transactionId
+- watch auction -> watchId
+- unwatch auction -> watchId | null
 - cancel auction -> listingId
 - close auction -> transactionId | null
 
-Do not direct-read or direct-write auction tables, item status, item owner, CP locks, CP ledger, audit or anti-abuse tables.
+Do not direct-read or direct-write auction tables, watch tables, item status, item owner, CP locks, CP ledger, audit or anti-abuse tables.
 
 Do not use drachmas as auction currency.
 Use Character Points / PP only.
 
-Do not compute auction eligibility, next bid, buy-now eligibility, cancel eligibility or close eligibility in Angular.
-Use DB fields canBid/canBuyNow/canCancel/canClose and blocker labels.
+Do not compute auction eligibility, next bid, buy-now eligibility, watch eligibility, cancel eligibility or close eligibility in Angular.
+Use DB fields canBid/canBuyNow/canWatch/canUnwatch/canCancel/canClose and blocker labels.
+
+Use:
+- copy.actions.search / copy.filters.searchActionLabel for search button copy
+- copy.filterOptions.baseTypeOptions for base-type filters
+- payload.pagination.displayLabel for pagination range text
+- copy.rules.rows and copy.rules.notes without local rewrite
 ```
 
 ---
 
 ## 16. Current verified sandbox smoke
 
-For Vlad on sandbox:
+Latest canonical-only verification:
 
 ```text
-get_auction_page_copy.contractVersion = auction_page_copy_v1
+canonicalOnlyOk = true
+legacyGetPlayerAuctionPageContextExists = false
+unexpectedCallableFunctions = []
+missingExpectedFunctions = []
 
-get_auction_page_context.contractVersion = auction_page_context_v1
-summary.canUseAuction = true
-summary.canCreateAuction = true
-summary.tradeSlotLimit = 3
-summary.availableCharacterPoints = 190
-summary.lockedCharacterPoints = 0
+Frontend-callable Auction RPCs are exactly:
+- buy_now_player_auction
+- cancel_player_auction_listing
+- close_player_auction_listing
+- create_player_auction_listing
+- get_auction_bids_page
+- get_auction_create_context
+- get_auction_listings_page
+- get_auction_page_context
+- get_auction_page_copy
+- place_player_auction_bid
+- search_auction_listings_page
+- unwatch_auction_listing
+- watch_auction_listing
 
-search_auction_listings_page.contractVersion = auction_listings_search_page_v1
-activeListings = []
-
-get_auction_listings_page.contractVersion = auction_listings_page_v1
-myListings = []
-
-get_auction_bids_page.contractVersion = auction_bids_page_v1
-myBids = []
-
-get_auction_create_context.contractVersion = auction_create_context_v1
-canCreateAuction = true
-eligibleItems = 5
+No direct anon/authenticated table privileges:
+- player_auction_bids
+- player_auction_listings
+- player_auction_watches
 ```
 
-Empty listing/bid arrays are valid when no auctions exist yet.
+Latest Auction split smoke:
+
+```text
+final_auction_smoke.smokeOk = true
+get_auction_page_copy.contractVersion = auction_page_copy_v1
+get_auction_page_context.contractVersion = auction_page_context_v1
+search_auction_listings_page.contractVersion = auction_listings_search_page_v1
+get_auction_listings_page.contractVersion = auction_listings_page_v1
+get_auction_bids_page.contractVersion = auction_bids_page_v1
+get_auction_create_context.contractVersion = auction_create_context_v1
+
+search_auction_listings_page.rowCount = 3
+search_auction_listings_page.pagination.displayLabel = Wyświetlane aukcje 1–3 z 3
+get_auction_listings_page.pagination.displayLabel = Wyświetlane aukcje 0–0 z 0
+get_auction_bids_page.pagination.displayLabel = Wyświetlane licytacje 0–0 z 0
+get_auction_create_context.pagination.displayLabel = Wyświetlane przedmioty 1–5 z 5
+```
+
+Latest copy/options/rules/watch verification:
+
+```text
+verificationOk = true
+actions.search = Szukaj
+actions.watch = Obserwuj
+actions.unwatch = Przestań obserwować
+filters.searchActionLabel = Szukaj
+filterOptions.baseTypeOptions includes { key: null, label: "Wszystkie" }
+rulesContainTechnicalWords = false
+pagination.rangeTemplate = Wyświetlane aukcje {start}–{end} z {total}
+listingRowHelperClosed = true
+rawListingRowHelperClosed = true
+watchAuthenticatedOnly = true
+unwatchAuthenticatedOnly = true
+watchBlockerKey/watchBlockerLabel keys are present even when null
+```
+
+Latest watch/unwatch smoke:
+
+```text
+watch_smoke_result.status = pass
+
+before watch:
+- isWatched = false
+- canWatch = true
+- canUnwatch = false
+- watchBlockerKey = null
+- watchBlockerLabel = null
+
+after watch:
+- isWatched = true
+- canWatch = false
+- canUnwatch = true
+- watchBlockerKey = already_watched
+- watchBlockerLabel = Już obserwujesz tę aukcję
+
+after unwatch:
+- isWatched = false
+- canWatch = true
+- canUnwatch = false
+- watchBlockerKey = null
+- watchBlockerLabel = null
+```

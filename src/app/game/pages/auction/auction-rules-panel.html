@@ -1,0 +1,18 @@
+@if (rules().rows.length > 0 || rules().notes.length > 0) {
+  <section class="mg-card radius-lg p-md w-100 min-w-0">
+    <div class="gap-xs mb-md">
+      <h2 class="color-heading font-display text-lg m-0">{{ rules().title }}</h2>
+    </div>
+
+    @for (row of rules().rows; track row.label) {
+      <div class="flex-row-between-start gap-md text-sm color-muted">
+        <span>{{ row.label }}</span>
+        <strong class="color-heading text-right">{{ row.value }}</strong>
+      </div>
+    }
+
+    @for (note of rules().notes; track note) {
+      <div class="mg-card radius-lg p-md text-sm lh-15 color-muted">{{ note }}</div>
+    }
+  </section>
+}

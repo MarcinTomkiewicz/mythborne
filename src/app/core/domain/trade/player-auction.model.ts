@@ -28,8 +28,11 @@ export interface AuctionPageCopy {
   actions: {
     createAuction: string;
     refresh: string;
+    search: string;
     bid: string;
     buyNow: string;
+    watch: string;
+    unwatch: string;
     cancel: string;
     close: string;
     details: string;
@@ -52,6 +55,7 @@ export interface AuctionPageCopy {
     helperText: string;
     searchLabel: string;
     searchPlaceholder: string;
+    searchActionLabel: string;
     slotLabel: string;
     priceLabel: string;
     sortLabel: string;
@@ -66,6 +70,15 @@ export interface AuctionPageCopy {
       key: 'newest' | 'ending_soon' | 'price_asc' | 'price_desc';
       label: string;
     }>;
+    baseTypeOptions: Array<{
+      key: string | null;
+      label: string;
+    }>;
+  };
+  pagination: {
+    rangeTemplate: string;
+    bidRangeTemplate: string;
+    itemRangeTemplate: string;
   };
   labels: {
     currentBid: string;
@@ -167,6 +180,11 @@ export interface AuctionPagination {
   offset: number;
   totalCount: number;
   hasNextPage: boolean;
+  rangeStart: number;
+  rangeEnd: number;
+  rangeTotal: number;
+  rangeTemplate: string;
+  displayLabel: string;
 }
 
 export interface AuctionListingRow {
@@ -208,6 +226,12 @@ export interface AuctionListingRow {
   canBuyNow: boolean;
   buyNowBlockerKey?: string;
   buyNowBlockerLabel?: string;
+  watchId: string | null;
+  isWatched: boolean;
+  canWatch: boolean;
+  canUnwatch: boolean;
+  watchBlockerKey: string | null;
+  watchBlockerLabel: string | null;
   canCancel: boolean;
   cancelBlockerKey?: string;
   cancelBlockerLabel?: string;

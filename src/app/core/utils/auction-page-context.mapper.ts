@@ -73,7 +73,7 @@ function validateContextIdentity(
 }
 
 function mapSummary(summary: Record<string, Json | undefined>): AuctionPageContext['summary'] {
-  return withOptionalFields<AuctionPageContext['summary']>({
+  const mappedSummary = withOptionalFields<AuctionPageContext['summary']>({
     characterPoints: requiredNumber(read(summary, 'characterPoints'), 'summary.characterPoints'),
     characterPointsDisplayValue: requiredText(
       read(summary, 'characterPointsDisplayValue'),
@@ -118,6 +118,14 @@ function mapSummary(summary: Record<string, Json | undefined>): AuctionPageConte
     createAuctionBlockerKey: optionalString(summary, 'createAuctionBlockerKey'),
     createAuctionBlockerLabel: optionalString(summary, 'createAuctionBlockerLabel'),
   });
+
+  if (!mappedSummary.canUseAuction && !mappedSummary.createAuctionBlockerLabel) {
+    throw new Error(
+      'get_auction_page_context.summary.createAuctionBlockerLabel is required when canUseAuction is false.',
+    );
+  }
+
+  return mappedSummary;
 }
 
 function mapConstraints(

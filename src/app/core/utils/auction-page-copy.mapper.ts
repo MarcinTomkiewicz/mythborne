@@ -25,6 +25,9 @@ export function mapAuctionPageCopy(value: Json): AuctionPageCopy {
     filterOptions: mapFilterOptions(
       requiredRecord(read(root, 'filterOptions'), 'get_auction_page_copy.filterOptions'),
     ),
+    pagination: mapPagination(
+      requiredRecord(read(root, 'pagination'), 'get_auction_page_copy.pagination'),
+    ),
     labels: mapLabels(requiredRecord(read(root, 'labels'), 'get_auction_page_copy.labels')),
     empty: mapEmpty(requiredRecord(read(root, 'empty'), 'get_auction_page_copy.empty')),
     rules: mapRules(requiredRecord(read(root, 'rules'), 'get_auction_page_copy.rules')),
@@ -43,8 +46,11 @@ function mapActions(actions: Record<string, Json | undefined>): AuctionPageCopy[
   return {
     createAuction: requiredText(read(actions, 'createAuction'), 'actions.createAuction'),
     refresh: requiredText(read(actions, 'refresh'), 'actions.refresh'),
+    search: requiredText(read(actions, 'search'), 'actions.search'),
     bid: requiredText(read(actions, 'bid'), 'actions.bid'),
     buyNow: requiredText(read(actions, 'buyNow'), 'actions.buyNow'),
+    watch: requiredText(read(actions, 'watch'), 'actions.watch'),
+    unwatch: requiredText(read(actions, 'unwatch'), 'actions.unwatch'),
     cancel: requiredText(read(actions, 'cancel'), 'actions.cancel'),
     close: requiredText(read(actions, 'close'), 'actions.close'),
     details: requiredText(read(actions, 'details'), 'actions.details'),
@@ -85,6 +91,10 @@ function mapFilters(filters: Record<string, Json | undefined>): AuctionPageCopy[
       read(filters, 'searchPlaceholder'),
       'filters.searchPlaceholder',
     ),
+    searchActionLabel: requiredText(
+      read(filters, 'searchActionLabel'),
+      'filters.searchActionLabel',
+    ),
     slotLabel: requiredText(read(filters, 'slotLabel'), 'filters.slotLabel'),
     priceLabel: requiredText(read(filters, 'priceLabel'), 'filters.priceLabel'),
     sortLabel: requiredText(read(filters, 'sortLabel'), 'filters.sortLabel'),
@@ -116,6 +126,29 @@ function mapFilterOptions(
       ),
       label: requiredText(read(row, 'label'), `filterOptions.sortOptions[${index}].label`),
     })),
+    baseTypeOptions: requiredRecordArray(
+      read(filterOptions, 'baseTypeOptions'),
+      'filterOptions.baseTypeOptions',
+    ).map((row, index) => ({
+      key: baseTypeOptionKey(row, `filterOptions.baseTypeOptions[${index}].key`),
+      label: requiredText(read(row, 'label'), `filterOptions.baseTypeOptions[${index}].label`),
+    })),
+  };
+}
+
+function mapPagination(
+  pagination: Record<string, Json | undefined>,
+): AuctionPageCopy['pagination'] {
+  return {
+    rangeTemplate: requiredText(read(pagination, 'rangeTemplate'), 'pagination.rangeTemplate'),
+    bidRangeTemplate: requiredText(
+      read(pagination, 'bidRangeTemplate'),
+      'pagination.bidRangeTemplate',
+    ),
+    itemRangeTemplate: requiredText(
+      read(pagination, 'itemRangeTemplate'),
+      'pagination.itemRangeTemplate',
+    ),
   };
 }
 
@@ -135,6 +168,23 @@ function requiredAuctionSortKey(
   }
 
   return key;
+}
+
+function baseTypeOptionKey(
+  row: Record<string, Json | undefined>,
+  field: string,
+): string | null {
+  if (!Object.hasOwn(row, 'key')) {
+    throw new Error(`${field} is required.`);
+  }
+
+  const value = read(row, 'key');
+
+  if (value === null) {
+    return null;
+  }
+
+  return requiredText(value, field);
 }
 
 function mapLabels(labels: Record<string, Json | undefined>): AuctionPageCopy['labels'] {

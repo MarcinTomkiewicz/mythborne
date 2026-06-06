@@ -1,0 +1,154 @@
+<article
+  class="mg-data-row mg-data-row--listing"
+  [attr.data-status-tone]="listing().statusTone"
+>
+  <div
+    class="mg-card square-11 radius-lg flex-row-center-center color-text font-extrabold"
+    aria-hidden="true"
+  >
+    @if (listing().itemDisplayCore.displayIconKey) {
+      <i class="pi pi-{{ listing().itemDisplayCore.displayIconKey }}"></i>
+    } @else {
+      <i class="pi pi-box"></i>
+    }
+  </div>
+
+  <div class="min-w-0">
+    <app-item-detail-popover
+      [itemId]="listing().itemId"
+      [fallbackName]="listing().itemDisplayName"
+      context="auction"
+      [buttonTrigger]="false"
+    >
+      <strong class="d-block text-md color-heading font-extrabold cursor-pointer">
+        {{ listing().itemDisplayName }}
+      </strong>
+    </app-item-detail-popover>
+
+    <small class="flex-row-start-center flex-wrap gap-xs mt-xs text-xs color-muted">
+      @if (listing().itemDisplayCore.baseTypeLabel) {
+        <span>{{ listing().itemDisplayCore.baseTypeLabel }}</span>
+      }
+      @if (listing().itemDisplayCore.handUsageLabel) {
+        <span>{{ listing().itemDisplayCore.handUsageLabel }}</span>
+      }
+      @if (listing().sellerHeroName) {
+        <span>{{ labels().seller }}: {{ listing().sellerHeroName }}</span>
+      }
+      @if (listing().endsInSeconds !== undefined) {
+        <span>
+          {{ labels().endsIn }}
+          {{ formatDuration(listing().endsInSeconds!) }}
+        </span>
+      }
+      @if (listing().endsAt) {
+        <span>
+          {{ labels().endsAt }}
+          <time [attr.datetime]="listing().endsAt">
+            {{ formatDateTime(listing().endsAt!) }}
+          </time>
+        </span>
+      }
+    </small>
+
+    <div class="flex-row-start-center flex-wrap gap-xs mt-sm">
+      <span class="mg-chip radius-pill flex-row-center-center gap-xs py-xs px-sm text-xs color-muted">
+        {{ listing().auctionModeLabel }}
+      </span>
+      <span class="mg-chip radius-pill flex-row-center-center gap-xs py-xs px-sm text-xs color-muted">
+        {{ listing().statusLabel }}
+      </span>
+      @if (listing().itemDisplayCore.qualityLabel) {
+        <span class="mg-chip radius-pill flex-row-center-center gap-xs py-xs px-sm text-xs color-muted">
+          {{ listing().itemDisplayCore.qualityLabel }}
+        </span>
+      }
+      @if (listing().itemDisplayCore.baseName) {
+        <span class="mg-chip radius-pill flex-row-center-center gap-xs py-xs px-sm text-xs color-muted">
+          {{ listing().itemDisplayCore.baseName }}
+        </span>
+      }
+      @if (listing().currentBidDisplayValue) {
+        <span class="mg-chip radius-pill flex-row-center-center gap-xs py-xs px-sm text-xs color-heading font-bold">
+          {{ labels().currentBid }}
+          {{ listing().currentBidDisplayValue }}
+        </span>
+      }
+      @if (listing().startingBidDisplayValue) {
+        <span class="mg-chip radius-pill flex-row-center-center gap-xs py-xs px-sm text-xs color-muted">
+          {{ labels().startingBid }}
+          {{ listing().startingBidDisplayValue }}
+        </span>
+      }
+    </div>
+  </div>
+
+  <div class="flex-col gap-xs text-right flex-none min-w-0">
+    @if (listing().primaryPriceDisplayValue) {
+      <span class="font-display text-lg color-heading">
+        {{ listing().primaryPriceDisplayValue }}
+      </span>
+    }
+    @if (listing().buyNowDisplayValue) {
+      <span class="text-xs color-muted">
+        {{ labels().buyNow }} {{ listing().buyNowDisplayValue }}
+      </span>
+    }
+
+    <div class="flex-row-end-center flex-wrap gap-xs mt-sm">
+      @if (listing().canBid) {
+        <p-button
+          type="button"
+          size="small"
+          [label]="actions().bid"
+          [disabled]="true"
+        />
+      }
+      @if (listing().canBuyNow) {
+        <p-button
+          type="button"
+          size="small"
+          severity="secondary"
+          [label]="actions().buyNow"
+          [disabled]="true"
+        />
+      }
+      @if (listing().canWatch) {
+        <p-button
+          type="button"
+          size="small"
+          severity="secondary"
+          [label]="actions().watch"
+          [disabled]="true"
+        />
+      }
+      @if (listing().canUnwatch) {
+        <p-button
+          type="button"
+          size="small"
+          severity="secondary"
+          [label]="actions().unwatch"
+          [disabled]="true"
+        />
+      }
+      @if (listing().canCancel) {
+        <p-button
+          type="button"
+          size="small"
+          severity="secondary"
+          [label]="actions().cancel"
+          [disabled]="true"
+        />
+      }
+      @if (listing().canClose) {
+        <p-button
+          type="button"
+          size="small"
+          severity="secondary"
+          [label]="actions().close"
+          [disabled]="true"
+        />
+      }
+    </div>
+  </div>
+</article>

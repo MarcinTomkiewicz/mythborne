@@ -2,7 +2,7 @@
 
 @if (page.overview.copy(); as copy) {
   @if (page.overview.context()) {
-    <div class="flex-col gap-lg min-w-0">
+    <div class="flex-col gap-lg w-100 min-w-0">
       <app-game-page-header
         [eyebrowLabel]="copy.header.eyebrow"
         [title]="copy.header.title"
@@ -10,179 +10,41 @@
         [summaryRows]="page.headerSummaryRows()"
       />
 
-      <nav class="mg-card p-sm flex-row-start-center flex-wrap gap-sm w-100">
-        <a class="px-sm py-xs color-text" routerLink="/game/trade">
-          {{ page.directTradeLabel }}
-        </a>
-        <a class="mg-card px-sm py-xs heading-color shadow-premium" routerLink="/game/auction" aria-current="page">
-          {{ page.auctionLabel }}
-        </a>
-      </nav>
+      @if (page.auctionUnavailableMessage(); as unavailableMessage) {
+        <section class="mg-card radius-lg p-md w-100 min-w-0">
+          <p-message severity="warn">{{ unavailableMessage }}</p-message>
+        </section>
+      } @else if (page.overview.listingsPage(); as listingsPage) {
+        <div class="grid-3-1 gap-md grid-items-start w-100 min-w-0">
+          <app-auction-listings-section
+            class="w-100 min-w-0"
+            [title]="copy.tabs.browse"
+            [emptyLabel]="copy.empty.listings"
+            [listings]="listingsPage.activeListings"
+            [pagination]="listingsPage.pagination"
+            [actions]="copy.actions"
+            [labels]="copy.labels"
+            [isLoading]="page.overview.isLoading()"
+            (refresh)="page.applyFilters()"
+            (pageChange)="page.changeListingsPage($event)"
+          />
 
-      @if (page.overview.listingsPage(); as listingsPage) {
-        <div class="grid-2-1 gap-lg grid-items-start">
-          <section class="mg-card p-lg flex-col gap-md w-100 min-w-0">
-            <h3 class="heading-color text-lg m-0">{{ copy.tabs.browse }}</h3>
+          <aside class="flex-col gap-sm w-100 min-w-0">
+            <app-auction-filters-panel
+              [copy]="copy"
+              [filterForm]="page.filterForm"
+              [auctionModeOptions]="page.auctionModeOptions()"
+              [baseTypeOptions]="page.baseTypeOptions()"
+              [sortOptions]="page.sortOptions()"
+              [isLoading]="page.overview.isLoading()"
+              (apply)="page.applyFilters()"
+              (baseTypeSelect)="page.selectBaseType($event)"
+            />
 
-            @if (listingsPage.activeListings.length === 0) {
-              <p class="color-text mb-0">{{ copy.empty.listings }}</p>
-            } @else {
-              <div class="flex-col gap-md w-100">
-                @for (listing of listingsPage.activeListings; track listing.listingId) {
-                  <article
-                    class="flex-col gap-md w-100 border-bottom pb-md"
-                    [attr.data-status-tone]="listing.statusTone"
-                  >
-                    <div class="flex-row-between-start flex-col-sm gap-md w-100">
-                      <div class="flex-row-start-center gap-md min-w-0">
-                        @if (listing.itemDisplayCore.displayIconKey) {
-                          <span class="mg-card p-sm flex-row-center-center flex-none">
-                            <i
-                              class="pi pi-{{ listing.itemDisplayCore.displayIconKey }} color-text text-xl"
-                              aria-hidden="true"
-                            ></i>
-                          </span>
-                        }
-
-                        <div class="flex-col gap-xs min-w-0">
-                          <app-item-detail-popover
-                            [itemId]="listing.itemId"
-                            [fallbackName]="listing.itemDisplayName"
-                            context="auction"
-                            [buttonTrigger]="false"
-                          >
-                            <strong class="heading-color text-lg text-break">
-                              {{ listing.itemDisplayName }}
-                            </strong>
-                          </app-item-detail-popover>
-                          <span class="color-text">{{ listing.auctionModeLabel }}</span>
-
-                          <div class="flex-row-start-center flex-wrap gap-xs w-100">
-                            @if (listing.itemDisplayCore.qualityLabel) {
-                              <span class="color-muted text-xs">{{ listing.itemDisplayCore.qualityLabel }}</span>
-                            }
-                            @if (listing.itemDisplayCore.baseTypeLabel) {
-                              <span class="color-muted text-xs">{{ listing.itemDisplayCore.baseTypeLabel }}</span>
-                            }
-                            @if (listing.itemDisplayCore.baseName) {
-                              <span class="color-muted text-xs">{{ listing.itemDisplayCore.baseName }}</span>
-                            }
-                            @if (listing.itemDisplayCore.lifecycleStatusLabel) {
-                              <span class="color-muted text-xs">{{ listing.itemDisplayCore.lifecycleStatusLabel }}</span>
-                            }
-                          </div>
-                        </div>
-                      </div>
-
-                      <div class="flex-col gap-xs flex-none text-right">
-                        <strong class="heading-color">{{ listing.statusLabel }}</strong>
-                        @if (listing.primaryPriceLabel) {
-                          @if (listing.primaryPriceDisplayValue) {
-                            <span class="color-muted small-caps uppercase text-xs">
-                              {{ listing.primaryPriceLabel }}
-                            </span>
-                            <strong class="heading-color text-lg">
-                              {{ listing.primaryPriceDisplayValue }}
-                            </strong>
-                          }
-                        }
-                      </div>
-                    </div>
-
-                    <div class="mg-grid-auto-fit gap-sm w-100">
-                      @if (listing.currentBidDisplayValue) {
-                        <div class="flex-col gap-xs min-w-0">
-                          <span class="color-muted small-caps uppercase text-xs">
-                            {{ copy.labels.currentBid }}
-                          </span>
-                          <strong class="heading-color">{{ listing.currentBidDisplayValue }}</strong>
-                        </div>
-                      }
-
-                      @if (listing.startingBidDisplayValue) {
-                        <div class="flex-col gap-xs min-w-0">
-                          <span class="color-muted small-caps uppercase text-xs">
-                            {{ copy.labels.startingBid }}
-                          </span>
-                          <strong class="heading-color">{{ listing.startingBidDisplayValue }}</strong>
-                        </div>
-                      }
-
-                      @if (listing.buyNowDisplayValue) {
-                        <div class="flex-col gap-xs min-w-0">
-                          <span class="color-muted small-caps uppercase text-xs">
-                            {{ copy.labels.buyNow }}
-                          </span>
-                          <strong class="heading-color">{{ listing.buyNowDisplayValue }}</strong>
-                        </div>
-                      }
-
-                      @if (listing.sellerHeroName) {
-                        <div class="flex-col gap-xs min-w-0">
-                          <span class="color-muted small-caps uppercase text-xs">
-                            {{ copy.labels.seller }}
-                          </span>
-                          <strong class="heading-color text-break">{{ listing.sellerHeroName }}</strong>
-                        </div>
-                      }
-
-                      @if (listing.endsInSeconds !== undefined) {
-                        <div class="flex-col gap-xs min-w-0">
-                          <span class="color-muted small-caps uppercase text-xs">
-                            {{ copy.labels.endsIn }}
-                          </span>
-                          <strong class="heading-color">{{ listing.endsInSeconds }}</strong>
-                        </div>
-                      }
-
-                      @if (listing.endsAt) {
-                        <div class="flex-col gap-xs min-w-0">
-                          <span class="color-muted small-caps uppercase text-xs">
-                            {{ copy.labels.endsAt }}
-                          </span>
-                          <time class="heading-color" [attr.datetime]="listing.endsAt">
-                            {{ listing.endsAt }}
-                          </time>
-                        </div>
-                      }
-                    </div>
-                  </article>
-                }
-              </div>
-            }
-          </section>
-
-          <aside class="mg-card p-lg flex-col gap-md w-100 min-w-0">
-            <div class="flex-col gap-xs">
-              <h3 class="heading-color text-lg m-0">{{ copy.filters.title }}</h3>
-              <p class="muted-text mb-0">{{ copy.filters.helperText }}</p>
-            </div>
-
-            <div class="flex-col gap-xs border-top pt-sm">
-              <span class="color-muted small-caps uppercase text-xs">{{ copy.filters.searchLabel }}</span>
-              <span class="color-text">{{ copy.filters.searchPlaceholder }}</span>
-            </div>
-
-            <div class="flex-col gap-xs border-top pt-sm">
-              <span class="color-muted small-caps uppercase text-xs">{{ copy.filters.modeLabel }}</span>
-              @for (mode of copy.filterOptions.auctionModes; track mode.key) {
-                <strong class="heading-color">{{ mode.label }}</strong>
-              }
-            </div>
-
-            <div class="flex-col gap-xs border-top pt-sm">
-              <span class="color-muted small-caps uppercase text-xs">{{ copy.filters.sortLabel }}</span>
-              @for (sortOption of copy.filterOptions.sortOptions; track sortOption.key) {
-                <strong class="heading-color">{{ sortOption.label }}</strong>
-              }
-            </div>
+            <app-auction-rules-panel [rules]="copy.rules" />
           </aside>
         </div>
       }
     </div>
   }
-} @else if (page.errorMessage(); as error) {
-  <section class="mg-card p-lg flex-col gap-sm w-100">
-    <p class="warn-text mb-0">{{ error }}</p>
-  </section>
 }

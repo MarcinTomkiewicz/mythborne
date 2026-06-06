@@ -58,6 +58,11 @@ export function mapAuctionPagination(value: Json | undefined, field: string): Au
     offset: requiredNumber(read(record, 'offset'), `${field}.offset`),
     totalCount: requiredNumber(read(record, 'totalCount'), `${field}.totalCount`),
     hasNextPage: requiredBoolean(read(record, 'hasNextPage'), `${field}.hasNextPage`),
+    rangeStart: requiredNumber(read(record, 'rangeStart'), `${field}.rangeStart`),
+    rangeEnd: requiredNumber(read(record, 'rangeEnd'), `${field}.rangeEnd`),
+    rangeTotal: requiredNumber(read(record, 'rangeTotal'), `${field}.rangeTotal`),
+    rangeTemplate: requiredText(read(record, 'rangeTemplate'), `${field}.rangeTemplate`),
+    displayLabel: requiredText(read(record, 'displayLabel'), `${field}.displayLabel`),
   };
 }
 
@@ -104,6 +109,20 @@ export function mapAuctionListingRow(row: JsonRecord, field: string): AuctionLis
     canBuyNow: requiredBoolean(read(row, 'canBuyNow'), `${field}.canBuyNow`),
     buyNowBlockerKey: optionalString(row, 'buyNowBlockerKey'),
     buyNowBlockerLabel: optionalString(row, 'buyNowBlockerLabel'),
+    watchId: requiredNullableString(row, 'watchId', `${field}.watchId`),
+    isWatched: requiredBoolean(read(row, 'isWatched'), `${field}.isWatched`),
+    canWatch: requiredBoolean(read(row, 'canWatch'), `${field}.canWatch`),
+    canUnwatch: requiredBoolean(read(row, 'canUnwatch'), `${field}.canUnwatch`),
+    watchBlockerKey: requiredNullableString(
+      row,
+      'watchBlockerKey',
+      `${field}.watchBlockerKey`,
+    ),
+    watchBlockerLabel: requiredNullableString(
+      row,
+      'watchBlockerLabel',
+      `${field}.watchBlockerLabel`,
+    ),
     canCancel: requiredBoolean(read(row, 'canCancel'), `${field}.canCancel`),
     cancelBlockerKey: optionalString(row, 'cancelBlockerKey'),
     cancelBlockerLabel: optionalString(row, 'cancelBlockerLabel'),
@@ -147,6 +166,24 @@ export function requiredAuctionMode(
 
 export function optionalString(record: JsonRecord, key: string): string | undefined {
   return optionalText(read(record, key)) ?? undefined;
+}
+
+export function requiredNullableString(
+  record: JsonRecord,
+  key: string,
+  field: string,
+): string | null {
+  if (!Object.hasOwn(record, key)) {
+    throw new Error(`${field} is required.`);
+  }
+
+  const value = read(record, key);
+
+  if (value === null) {
+    return null;
+  }
+
+  return requiredText(value, field);
 }
 
 export function optionalNumeric(record: JsonRecord, key: string): number | undefined {

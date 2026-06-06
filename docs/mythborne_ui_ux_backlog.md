@@ -1,7 +1,7 @@
 # Mythsworn — UI/UX Backlog v3
 
 Status: canonical full UI/UX backlog / strict execution contract / implementation hardening edition  
-Updated: 2026-06-04 — UI-ESTATE-1 accepted
+Updated: 2026-06-06 — UI-TRADE-2 accepted
 
 Purpose: make UI/UX implementation promptable for Codex without allowing it to ignore existing utilities, flatten accepted prototype hierarchy, overuse `muted-text`, invent local SCSS systems, or treat accepted prototypes as vague inspiration.
 
@@ -8822,6 +8822,8 @@ Required Codex report:
 
 ## UI-TRADE-2 — Auction filters, summary and pagination behavior
 
+Status: accepted/completed 2026-06-06. Implemented the Auction browse/filter foundation against `docs/mythsworn-auction-shape-guide.md`: search, auction mode, base type and sort filters go through `search_auction_listings_page(...)`, pagination uses DB-owned `AuctionPagination.displayLabel`, timing is formatted for players, item names use the shared item popover with `context="auction"`, Auction access gating prevents listing loads when `canUseAuction=false`, and the browse UI is split into local presentation components (`AuctionListingsSection`, `AuctionListingRow`, `AuctionFiltersPanel`, `AuctionRulesPanel`) without local Auction SCSS. Direct Trade, Watch workflow, My Auctions/My Bids and Create remain out of scope.
+
 Goal: make Auction House filters and pagination functional only where backend/read model supports them.
 
 Scope:
@@ -8876,405 +8878,475 @@ Required Codex report:
 
 ---
 
-## UI-TRADE-3 — Auction item popover and listing item display
+## UI-TRADE-2F — Finish Auction browse filters and pagination
 
-Goal: make every Auction House item display use the same shared item popover/detail pattern as Armory.
+Goal: domknąć aktualny ekran Browse tak, żeby był committable jako podstawa Auction House.
 
 Scope:
 
-* Auction listing item name opens shared item popover.
-* Popover includes:
+* Auction page only.
+* Keep current prototype-style layout and local `auction-page.scss` for now.
+* Search text uses `search_auction_listings_page(...)`.
+* Search text applies on Enter or DB-labeled Search button only.
+* Auction mode and sort apply immediately on select change.
+* Base type filter uses DB-owned `copy.filterOptions.baseTypeOptions`.
+* Base type filter is single-select for now.
+* Render base type options as outlined/segmented buttons or button-like chips, not as a normal dropdown.
+* `key: null` means all / no `baseTypeKey` filter.
+* Pagination uses `pagination.displayLabel`.
+* Rules panel remains DB-driven from `copy.rules.rows` and `copy.rules.notes`.
 
-  * item name
-  * quality/kind/slot
-  * item stats
-  * aggregated bonuses
-  * requirements
-  * drachma value
-* Listing row/card itself shows only compact item metadata needed for browsing.
-* Requirements/equippable status shown as DB-owned badges/status rows.
+Do not:
 
-Rules:
+* no multiselect base-type filter yet;
+* no local hardcoded labels;
+* no Direct Trade files;
+* no DB/RPC changes;
+* no action workflow implementation;
+* no diagnostics;
+* no temporary mapper try/catch.
 
-* Use item snapshot/read model supplied by auction listing.
-* Do not live-recompute item bonuses/requirements in Angular.
-* Do not expose private seller inventory data beyond listing snapshot.
-* Do not create a second item popover implementation.
+Notes:
 
-Acceptance:
+* Multi-select type filtering is a later DB/RPC contract change, because current filter shape is `baseTypeKey?: string`, not `baseTypeKeys?: string[]`.
+* Watch/Unwatch buttons may remain disabled/read-only until the watch workflow task, but must be based only on DB booleans/copy.
 
-* Auction item popover matches Armory detail behavior where possible.
-* Drachma value appears only as item value/detail, not trade price.
-* Missing item detail fields are reported as DB/RPC contract gaps.
+Verification inside task:
 
-Required Codex report:
-
-* shared popover component reused:
-* item snapshot/read model source:
-* missing item detail fields:
-* Armory regression check:
+* tsc/build/diff.
+* Browser smoke: search button works, Enter works, auction mode/sort/base type refresh results, pagination label is DB-owned, no raw seconds/ISO.
 
 ---
 
-## UI-TRADE-4 — Auction actions through canonical RPC/domain paths
+## UI-TRADE-2G — Auction/Trade access gate for missing Trade Routes
 
-Goal: connect supported Auction House actions to canonical RPC/domain workflows.
+Goal: show a clean unavailable state when Auction or Direct Trade is locked behind Trade Routes level 1.
 
 Scope:
 
-* Bid action.
-* Buy now action.
-* Watch action only if backend supports it.
-* Disabled/blocked states from backend/read model.
-* Confirmation where existing pattern requires it.
-* Toast success/error feedback.
-* Refresh listing page context and CP locks after success.
-* Stale guard for active hero/server changes.
-
-Out of scope:
-
-* Create listing flow.
-* My listing management.
-* Anti-abuse admin review.
-* Backend RPC creation unless explicitly scoped.
+* Auction route and Direct Trade route, if both have read-model support.
+* If hero cannot use Auction/Trade, render only a DB-owned unavailable message.
+* Message target: “Aukcje/Handel będą dostępne po wybudowaniu Szlaków Handlowych poziom 1” or equivalent, but it must come from DB/copy.
+* Do not render empty functional lists/forms behind the gate.
+* Do not locally hardcode the message.
 
 Rules:
 
-* No direct writes to auction/item/CP tables.
-* Use only existing auction mutation service/RPC.
-* CP locks/refunds are backend-owned.
-* Do not locally infer whether player can afford action beyond DB-owned state.
+* Use `canUseAuction` / `canUseTrade` or the equivalent page-context fields.
+* If the page context has only boolean but no player-facing blocker label, stop and report DB/copy gap.
+* No local inference from buildings.
+* No direct building table reads.
 
-Acceptance:
+Verification inside task:
 
-* Actions call canonical paths.
-* Success refreshes listing/summary/CP locks.
-* Stale responses ignored.
-* Unsupported actions omitted or disabled with DB-owned reason.
-
-Required Codex report:
-
-* RPC/service used:
-* CP lock refresh source:
-* stale guard:
-* unsupported actions:
+* Smoke with an allowed hero: page still renders normally.
+* Smoke or static fallback with a blocked context: only unavailable message is shown.
 
 ---
 
-## UI-TRADE-5 — Direct Trade page shell and offer builder
+## UI-TRADE-2H — Auction local SCSS cleanup before browse commit
 
-Goal: build the Direct Trade screen as a separate private offer builder.
-
-Prototype target:
-
-* Header: Direct Trade / Offer to selected hero.
-* Summary card: available CP, locked CP, market slots, remaining slots.
-* Target search/select.
-* Two-column offer builder:
-
-  * left: Your offer
-  * right: Target response placeholder
-* Creator can include up to 5 own items + CP.
-* Target response is preview/placeholder only until target answers.
-* Pending offers panel may be present read-only.
+Goal: make the current temporary local Auction SCSS safe enough to commit as temporary debt.
 
 Scope:
 
-* Route/page target: existing Direct Trade route or Trade tab.
-* Target hero search/select from server-scoped read service.
-* Creator item selection from own eligible inventory read model.
-* Creator CP input from CP read model.
-* Target response panel with empty slots.
-* Offer review summary.
-* Shared item popover for selected items.
+* `auction-page.scss` only, plus template class cleanup if needed.
+* Remove dead/unused classes.
+* Keep styles scoped to Auction component.
+* Keep visual parity with accepted current Auction screenshot.
+* Normal `color-heading` is allowed for actual headings.
+* Do not use gold/golden/accent/premium styling unless explicitly requested.
+* Do not move this CSS global yet unless removal is trivial and safe.
 
-Out of scope:
+Do not:
 
-* Target inventory browsing.
-* Requested item/CP UI.
-* Create offer RPC.
-* Response workflow.
-* Auction UI.
+* no visual redesign;
+* no DB/RPC changes;
+* no Direct Trade changes;
+* no action workflows.
 
-Rules:
+Verification inside task:
 
-* Creator cannot request specific items/CP from target during creation.
-* Target response placeholders are not editable by creator.
-* No fake target items.
-* No local CP overspend authority beyond DB/read-model validation state.
+* tsc/build/diff.
+* Browser screenshot still matches current accepted direction.
 
-Acceptance:
+Commit candidate after UI-TRADE-2F + 2G if needed + 2H:
 
-* Direct Trade is clearly separate from Auction House.
-* Target selected/empty states are clear.
-* Creator item slots max 5.
-* CP input visible and read-model-backed.
-* Target response remains placeholder/read-only.
-
-Required Codex report:
-
-* target search source:
-* creator item source:
-* CP source:
-* item eligibility source:
-* local SCSS added:
+* “Auction browse/filter foundation”
+* Include local SCSS as known temporary debt.
 
 ---
 
-## UI-TRADE-6 — Direct Trade pending offers with pagination
+## UI-TRADE-3A — Auction Watch / Unwatch workflow
 
-Goal: show pending direct trade offers as a paged/read-model-backed list.
+Goal: make Obserwuj / Przestań obserwować actually work.
 
 Scope:
 
-* Pending offers list.
-* Total count.
-* Max 5 visible offers per page/panel unless read model supplies different page size.
-* Pagination controls.
-* Offer direction/status:
+* Use `watch_auction_listing(...)`.
+* Use `unwatch_auction_listing(...)`.
+* Buttons render only from:
 
-  * incoming
-  * outgoing
-  * waiting for target
-  * waiting for creator
-  * completed/rejected if included by filter
-* Selected/open offer summary.
-* Incoming empty offer state.
-* Supported actions entry points:
+  * `canWatch`
+  * `canUnwatch`
+  * `copy.actions.watch`
+  * `copy.actions.unwatch`
+  * `watchBlockerLabel`
+* On success, refresh current listings page and summary/context if needed.
+* Ignore stale responses after active hero/server change.
+* No optimistic local toggle unless backend reload confirms it.
 
-  * respond
-  * reject
-  * open/review
-  * cancel only if backend supports it.
+Do not:
 
-Rules:
+* no Bid/BuyNow/Cancel/Close in this task;
+* no local watch state calculation;
+* no direct `player_auction_watches` reads/writes.
 
-* Incoming empty offers must not be shown as consuming target’s market slot unless backend says so.
-* Market slot impact from backend/read model only.
-* No local offer status inference that conflicts with backend.
+Open decision:
 
-Acceptance:
+* Decide separately whether placing a bid automatically watches the listing. Do not infer this in frontend.
 
-* Five visible offers per page/panel.
-* Total pending count visible.
-* Slot impact clear.
-* Empty incoming offer does not visually block slot unless backend says it does.
+---
+
+## UI-TRADE-3B — Auction subnav inside Auction card
+
+Goal: add coherent tab/subnav inside the Auction card area.
+
+Scope:
+
+* Use `get_auction_page_context(...).navigation.tabs` and `copy.tabs`.
+* Render subnav above listing content:
+
+  * Browse / Aukcje
+  * My listings / Moje aukcje
+  * My bids / Moje licytacje
+  * Create / Utwórz aukcję
+* Active tab controls which read-model/page is displayed.
+* Keep Browse as default.
+
+Do not:
+
+* no observed/watched tab unless DB contract adds it;
+* no fake routes;
+* no no-op tabs.
+
+Gap:
+
+* “Obserwowane” needs a backend contract if it is a separate tab/page. Current contract supports watch state/actions on listing rows, but not a watched-list page.
+
+---
+
+## UI-TRADE-3C — My auctions read-only tab
+
+Goal: show auctions listed by the active hero.
+
+Scope:
+
+* Use `get_auction_listings_page(p_hero_id, p_limit, p_offset)`.
+* Render `myListings[]` using the same listing-row/card component/markup pattern as Browse.
+* Use returned `pagination.displayLabel`.
+* Show DB-owned empty state `copy.empty.myListings`.
+
+Do not:
+
+* no edit/cancel workflow here unless already available as read-only disabled action affordance;
+* no direct table reads;
+* no duplicate listing UI component if a small shared local template/component is cleaner.
+
+---
+
+## UI-TRADE-3D — My bids read-only tab
+
+Goal: show bids placed by the active hero.
+
+Scope:
+
+* Use `get_auction_bids_page(p_hero_id, p_limit, p_offset)`.
+* Render bid amount/status from `AuctionBidRow`.
+* If `bid.listing` exists, render nested listing card using the same listing display pattern.
+* Use returned `pagination.displayLabel`.
+* Show DB-owned empty state `copy.empty.myBids`.
+
+Do not:
+
+* no bid cancellation unless a canonical workflow exists and is explicitly scoped;
+* no local bid status reconstruction.
+
+---
+
+## UI-TRADE-3E — Watched auctions contract follow-up
+
+Goal: decide how “Obserwowane” should work.
+
+This is not a frontend coding task until contract exists.
+
+Needed decision/contract:
+
+* Is there a dedicated watched auctions page?
+* Options:
+
+  * add `get_auction_watches_page(...)`,
+  * or add `watchedOnly` filter to `search_auction_listings_page(...)`.
+* Decide whether active bids automatically create watch rows.
+* Decide whether watched listing count appears in navigation.
+
+Frontend rule:
+
+* Do not fake watched-list page from current browse results.
+
+---
+
+## UI-TRADE-4A — Auction create panel shell
+
+Goal: add open/close create-listing panel above the browse list.
+
+Scope:
+
+* Use `get_auction_create_context(...)`.
+* Render panel only when user opens Create tab/action.
+* Show eligible item list from DB.
+* Show DB-owned empty state if no eligible items.
+* Show mode options from DB.
+* No submit yet, or submit disabled until next task.
+
+Do not:
+
+* no local eligible item inference;
+* no create RPC call yet;
+* no direct item reads;
+* no CP lock logic.
+
+---
+
+## UI-TRADE-4B — Auction create form validation and confirmation
+
+Goal: make the create panel form coherent before wiring the RPC.
+
+Scope:
+
+* Select exactly one eligible item.
+* Select auction mode.
+* Show starting bid / buy-now inputs according to selected mode.
+* Use DB constraints for minimums and labels.
+* Prepare confirmation dialog using existing project confirm pattern.
+* Confirmation content uses DB-owned item display and entered PP values.
+* If confirmation copy is missing, report DB/copy gap; do not invent local copy.
+
+Do not:
+
+* no create RPC call yet;
+* no fake locks;
+* no local affordability authority.
+
+---
+
+## UI-TRADE-4C — Auction create listing RPC
+
+Goal: wire create listing action.
+
+Scope:
+
+* Call `create_player_auction_listing(...)`.
+* On success refresh:
+
+  * browse listings,
+  * page context/summary,
+  * create context eligible items,
+  * relevant topbar/resources if existing project pattern requires it.
+* Guard stale responses.
+
+Do not:
+
+* no bid/buy/cancel/close;
+* no direct writes;
+* no local lock simulation.
+
+---
+
+## UI-TRADE-5A — Auction Buy Now action
+
+Goal: implement Buy Now from listing rows.
+
+Scope:
+
+* Render enabled Buy Now only when `canBuyNow`.
+* Call `buy_now_player_auction(...)`.
+* Use DB blocker label when blocked.
+* Refresh listings/context/CP state after success.
+* Confirmation if existing UX pattern requires it.
+
+Do not:
+
+* no Bid in this task;
+* no local affordability calculation.
+
+---
+
+## UI-TRADE-5B — Auction Bid action
+
+Goal: implement bidding.
+
+Scope:
+
+* Render enabled Bid only when `canBid`.
+* Use DB `minNextBidDisplayValue` / numeric minimum where available.
+* Player enters bid amount.
+* Call `place_player_auction_bid(...)`.
+* Refresh listings/context/CP state after success.
+
+Do not:
+
+* no local next-bid calculation;
+* no direct CP lock reads/writes.
+
+---
+
+## UI-TRADE-5C — Seller listing actions
+
+Goal: implement seller-side cancel/close where DB allows.
+
+Scope:
+
+* `canCancel` -> `cancel_player_auction_listing(...)`.
+* `canClose` -> `close_player_auction_listing(...)`.
+* Handle `close` returning `transactionId | null`.
+* Refresh listings/context after success.
+
+Do not:
+
+* no local ended-status calculation;
+* no fake cancel when DB blocks it.
+
+---
+
+## UI-TRADE-6A — Direct Trade access gate and shell
+
+Goal: restore Direct Trade screen safely after Auction foundation.
+
+Scope:
+
+* Use new Direct Trade split contract only.
+* If Trade Routes level 1 is missing, show DB-owned unavailable message only.
+* If available, render shell/header/summary.
+* No offer builder logic yet.
+
+Do not:
+
+* no legacy direct table reads;
+* no fake offer UI.
+
+---
+
+## UI-TRADE-6B — Direct Trade target search
+
+Goal: select a target hero for a direct offer.
+
+Scope:
+
+* Use canonical target search RPC/read model.
+* Search/selection state only.
+* Show selected target summary.
+* No item/CP offer composition yet.
+
+---
+
+## UI-TRADE-6C — Direct Trade offer builder shell
+
+Goal: build static creator/target response layout.
+
+Scope:
+
+* Creator side: up to 5 item slots + CP input.
+* Target side: read-only placeholder slots.
+* Use shared item popover for selected items.
+* No create offer RPC yet.
+
+Do not:
+
+* no requested item/CP UI from creator;
+* no target inventory browsing.
+
+---
+
+## UI-TRADE-6D — Direct Trade creator item and CP selection
+
+Goal: make creator side selectable.
+
+Scope:
+
+* Use eligible own inventory/read model.
+* Select up to 5 items.
+* CP input from DB/read model constraints.
+* Validation UI from DB-owned state where available.
+
+Do not:
+
+* no create RPC yet;
+* no local lock simulation.
+
+---
+
+## UI-TRADE-6E — Direct Trade create offer RPC
+
+Goal: submit direct trade offer.
+
+Scope:
+
+* Call canonical create offer RPC.
+* Refresh pending offers, item eligibility, CP/slot summary.
+* Stale guard.
+
+Do not:
+
+* no target response workflow.
+
+---
+
+## UI-TRADE-7A — Direct Trade pending offers list
+
+Goal: show pending direct trade offers.
+
+Scope:
+
+* Paged list from read model.
+* Incoming/outgoing/status labels from DB.
+* No response builder yet.
 * Unsupported actions omitted.
 
-Required Codex report:
-
-* pending offers source:
-* pagination source:
-* slot impact source:
-* unsupported actions omitted:
-
 ---
 
-## UI-TRADE-7 — Trade market slot and CP lock summary
+## UI-TRADE-7B — Direct Trade target response UI
 
-Goal: show market slot budget and CP lock context consistently on Auction and Direct Trade screens.
+Goal: respond to incoming offers.
 
 Scope:
 
-* available CP
-* locked CP
-* active bids
-* active auction listings
-* outgoing direct offers
-* used market slots
-* remaining market slots
-* helper text explaining shared slot budget if copy/read model supplies it
-
-Rules:
-
-* Market slots are shared by outgoing direct offers, active auction listings and active winning bids unless backend says otherwise.
-* Incoming empty offers do not consume the target slot until response with items/CP unless backend says otherwise.
-* Values from trade/CP/market-slot read model only.
-* No hardcoded slot limit.
-
-Acceptance:
-
-* Auction and Direct Trade show consistent CP/slot summary.
-* Values update after trade/auction actions.
-* Missing slot/CP lock source is reported as DB/RPC gap.
-
-Required Codex report:
-
-* market slot source:
-* CP lock source:
-* screens updated:
-* hardcoded values yes/no:
-
----
-
-## UI-TRADE-8 — Direct Trade create offer RPC workflow
-
-Goal: connect Direct Trade offer creation to canonical backend workflow.
-
-Scope:
-
-* Validate:
-
-  * target exists
-  * creator items 0–5
-  * creator CP amount
-  * CP-only-for-CP-only block if backend/read model exposes it
-  * target required
-* Call canonical create direct trade RPC/service.
-* Show toast success/error.
-* Refresh:
-
-  * pending offers
-  * CP locks
-  * item locks/eligible inventory
-  * market slot summary
-* Stale guard for active hero/server/target changes.
-
-Out of scope:
-
-* Target response workflow.
-* Auction create listing.
-* Direct table writes.
-
-Rules:
-
-* Create action only through canonical RPC/service.
-* Backend owns item locks and CP locks.
-* Do not mutate items/CP/trade tables directly.
-* Do not fake successful locks.
-
-Acceptance:
-
-* Invalid drafts cannot submit.
-* Successful create locks creator assets via backend.
-* UI refreshes after success.
-* Stale responses ignored.
-
-Required Codex report:
-
-* create RPC/service:
-* validation source:
-* refresh paths:
-* stale guard:
-
----
-
-## UI-TRADE-9 — Direct Trade target response UI
-
-Goal: implement target-side response UI for incoming direct offers.
-
-Scope:
-
-* Show creator committed offer side from snapshot/read model.
-* Target selects own eligible items 0–5.
-* Target CP amount.
-* Target response preview.
-* Accept/respond/reject actions where backend supports them.
+* Show creator committed side read-only.
+* Target selects own items/CP.
+* Respond/reject where backend supports it.
 * Shared item popovers.
-* Validation.
 
-Out of scope:
+Do not:
 
-* Editing creator side.
-* Viewing creator private inventory beyond committed offer items.
-* Auction UI.
-* Direct table writes.
-
-Rules:
-
-* Creator side is read-only snapshot.
-* Target item source is active hero eligible inventory only.
-* Response actions through canonical RPC/service only.
-* No privacy leaks.
-
-Acceptance:
-
-* Target can understand what creator offered.
-* Target cannot edit creator side.
-* Response uses canonical backend path.
-* Offer refreshes after action.
-
-Required Codex report:
-
-* offer snapshot source:
-* target item source:
-* response RPC/service:
-* privacy boundaries:
+* no privacy leak into creator inventory;
+* no local lock mutation.
 
 ---
 
-## UI-TRADE-10 — Direct Trade offer details and item popover integration
+## UI-TRADE-8 — Shared trade/auction summary consolidation
 
-Goal: ensure every item in Direct Trade uses shared item display/popover consistently.
-
-Scope:
-
-* Builder selected items.
-* Target response items.
-* Pending offer summary items.
-* Historical/completed offer items if read model includes them.
-* Requirements/equippable status.
-* Drachma value in popover/item details only.
-
-Rules:
-
-* Use item snapshot/read model.
-* Do not recompute live item values if snapshot exists.
-* No duplicate item display CSS.
-* No local popover implementation.
-
-Acceptance:
-
-* Item hover/focus detail consistent with Armory and Auction House.
-* Requirements, bonuses and drachma value visible in detail.
-* No CP inherent item value shown as item value.
-
-Required Codex report:
-
-* item popover reused:
-* item data/snapshot source:
-* local CSS avoided:
-* missing fields:
-
----
-
-## UI-TRADE-11 — My auctions / My offers navigation boundary
-
-Goal: make trade subnavigation coherent without implementing unsupported management flows.
+Goal: make Auction and Direct Trade CP/slot summaries consistent.
 
 Scope:
 
-* Subnav between:
+* Reuse shared summary/read model if available.
+* available CP, locked CP, slots used/remaining.
+* Refresh after actions.
 
-  * Direct Trade
-  * Auctions
-  * My offers / My listings
-* If My listings/My offers read model exists, render read-only list shell.
-* If missing, omit route or show DB-backed unavailable state only if copy supports it.
+Do not:
 
-Out of scope:
-
-* Full auction listing creation/edit/cancel.
-* Full offer cancellation if backend lacks RPC.
-* Admin/debug views.
-
-Rules:
-
-* No fake management actions.
-* No no-op buttons.
-* No placeholder routes that look functional.
-
-Acceptance:
-
-* Navigation does not lead to fake UI.
-* Unsupported areas are omitted or clearly backend-blocked.
-* Auction and Direct Trade remain separated.
-
-Required Codex report:
-
-* routes added/changed:
-* unsupported nav omitted:
-* backend gaps:
+* no hardcoded slot limit;
+* no duplicated local summary formulas.
 
 ---
 
@@ -9284,529 +9356,19 @@ Required Codex report:
 2. UI-TRADE-1 — Auction read-only page shell/list.
 3. UI-TRADE-2 — Auction filters/pagination.
 4. UI-TRADE-3 — Auction item popover.
-5. UI-TRADE-4 — Auction actions.
-6. UI-TRADE-5 — Direct Trade builder shell.
-7. UI-TRADE-6 — Pending offers list/pagination.
-8. UI-TRADE-7 — CP/market slot summary.
-9. UI-TRADE-8 — Create direct offer RPC.
-10. UI-TRADE-9 — Target response UI.
-11. UI-TRADE-10 — Direct trade item popover/detail completion.
-12. UI-TRADE-11 — My offers/listings navigation boundary.
+5. UI-TRADE-4 — Auction create-listing panel.
+6. UI-TRADE-5 — Auction actions.
+7. UI-TRADE-6 — Direct Trade builder shell.
+8. UI-TRADE-7 — Pending offers list/pagination.
+9. UI-TRADE-8 — CP/market slot summary.
+10. UI-TRADE-9 — Create direct offer RPC.
+11. UI-TRADE-10 — Target response UI.
+12. UI-TRADE-11 — Direct Trade item popover/detail completion.
+13. UI-TRADE-12 — My offers/listings navigation boundary.
 
 Do not combine more than one task unless explicitly instructed.
 
 Cel: osobne player-facing ekrany Auction House i Direct Trade, zgodne z CP economy, item lock rules, market slot rules i anti-abuse/audit boundaries. Trade UI nie może direct-write item/auction/trade/CP tables.
-
-## UI-TRADE task index
-
-- UI-TRADE-1 / formerly UI-29 — Auction House one-item listing browser
-- UI-TRADE-2 / formerly UI-30 — Auction filters, summary and pagination
-- UI-TRADE-3 / formerly UI-32 — Auction actions through canonical RPC/domain paths
-- UI-TRADE-4 / formerly UI-33 — Direct Trade offer builder
-- UI-TRADE-5 / formerly UI-34 — Direct Trade pending offers with pagination
-- UI-TRADE-6 / formerly UI-35 — Trade market slot summary
-- UI-TRADE-7 / formerly UI-36 — Direct Trade create offer RPC workflow
-- UI-TRADE-8 / formerly UI-37 — Direct Trade target response UI
-- UI-TRADE-9 / formerly UI-38 — Trade item display and popover integration
-
-## UI-TRADE-1 / formerly UI-29 — Auction House one-item listing browser
-
-**Goal:**  
-Zbudować Auction House listing browser jako osobny ekran od Direct Trade. Auction listing pokazuje maksymalnie jeden item i CP-based price/bid actions.
-
-**Scope:**
-- route/page target: existing auction/trade route if present,
-- listing list/table/card pattern per UI-CORE-14 decision,
-- one item per listing,
-- item name with shared item popover,
-- current bid in Character Points,
-- buy now amount in Character Points if available,
-- auction mode: bidding, buy now, bidding with buy now,
-- actions:
-  - bidding listing: Bid, Watch, Buy now if available,
-  - buy-now-only listing: Buy,
-- seller/listing metadata,
-- pagination.
-
-**Out of scope:**
-- Direct Trade builder,
-- bundle/set auctions,
-- drachma pricing for player-to-player trade,
-- create listing flow unless separate task,
-- anti-abuse case UI.
-
-**Data/source rules:**
-- listings from auction read model/service,
-- item display from item snapshot/read model,
-- prices/bids in Character Points only,
-- drachmas may appear only as item inherent/vendor value in popover, not trade price,
-- no direct writes to auction/item/CP tables.
-
-**UI/SCSS rules:**
-- use PrimeNG paginator/table or global list pattern per UI-CORE-14,
-- item hover/focus uses shared popover,
-- actions use shared buttons/action icons,
-- status/requirements as badges/status pills.
-
-**Dependencies/blockers:**
-- if auction read model/service missing, report blocker,
-- if item popover missing, link UI-CORE-6 dependency,
-- if watch action unsupported, omit or mark pending, do not fake.
-
-**Acceptance criteria:**
-- auction and direct trade are visually/route-separated,
-- one item per listing,
-- CP displayed for bid/buy now,
-- no drachma P2P price,
-- actions match auction mode,
-- pagination visible,
-- build passes.
-
-**Verification/smoke:**
-- route smoke,
-- listing render smoke,
-- mode/action smoke for bidding vs buy-now,
-- item popover smoke,
-- build/tsc.
-
-**Required Codex report:**
-- auction read model used:
-- item popover reused:
-- paginator/list pattern:
-- unsupported actions omitted:
-- local SCSS added:
-
-## UI-TRADE-2 / formerly UI-30 — Auction filters, summary and pagination
-
-**Goal:**  
-Dodać wygodne filtrowanie i paginację dla Auction House bez tworzenia niemożliwych filtrów albo fake danych.
-
-**Scope:**
-- filters by item category/slot/kind,
-- equippable / not equippable / requirements warning if read model supports it,
-- auction mode filter,
-- search by item/seller/listing where available,
-- summary cards/chips: available CP, locked CP, active bids, your listings,
-- page controls and current range.
-
-**Out of scope:**
-- advanced market analytics,
-- price history,
-- sorting by hidden item usefulness,
-- local fake counts.
-
-**Data/source rules:**
-- filter options from dictionaries/read models where available,
-- available/locked CP from Character Point read model/locks,
-- active bids/listings from auction service,
-- if read model does not support a filter, do not show it as functional.
-
-**UI/SCSS rules:**
-- filters use PrimeNG/vendor inputs/selects/chips,
-- pagination uses project/PrimeNG paginator pattern if available,
-- no local custom paginator unless justified by UI-CORE-14.
-
-**Dependencies/blockers:**
-- missing pagination in service -> report service dependency,
-- missing CP lock summary -> show only available CP and report gap.
-
-**Acceptance criteria:**
-- filters are functional or clearly omitted,
-- summary values are not hardcoded,
-- pagination shows current range/page,
-- no filter implies unavailable backend behavior,
-- build passes.
-
-**Verification/smoke:**
-- filter change smoke,
-- pagination smoke,
-- empty result smoke,
-- build/tsc.
-
-**Required Codex report:**
-- filters source:
-- CP/lock source:
-- pagination source:
-- filters omitted intentionally:
-
-## UI-TRADE-3 / formerly UI-32 — Auction actions through canonical RPC/domain paths
-
-**Goal:**  
-Podpiąć/wyznaczyć granicę dla Auction House actions przez canonical domain/RPC paths.
-
-**Scope:**
-- bid action,
-- buy now action,
-- watch action only if supported,
-- disabled/blocked states,
-- confirmation where needed,
-- success/error feedback,
-- refresh listing/CP locks after action,
-- stale guard if active hero/server changes.
-
-**Out of scope:**
-- direct table writes,
-- new auction RPCs unless task explicitly includes backend,
-- create listing flow,
-- anti-abuse admin review.
-
-**Data/source rules:**
-- use existing auction mutation service/RPC,
-- CP locks/refunds reflected from backend read model,
-- no direct `items`, `player_auction_*`, `character_point_*` mutations,
-- active hero/server context required.
-
-**UI/SCSS rules:**
-- shared buttons/confirm/toast/messages,
-- error states not muted,
-- no local dialog CSS.
-
-**Dependencies/blockers:**
-- if action RPC missing, report blocker and leave disabled/pending,
-- if watch unsupported, omit.
-
-**Acceptance criteria:**
-- actions call canonical paths,
-- invalid/blocked actions disabled or show backend error cleanly,
-- state refreshes after success,
-- stale responses ignored if context changed,
-- build passes.
-
-**Verification/smoke:**
-- bid smoke if backend/test data available,
-- buy now smoke if available,
-- blocked insufficient CP smoke,
-- build/tsc.
-
-**Required Codex report:**
-- RPC/service used:
-- locks/refunds source:
-- stale guard:
-- unsupported actions:
-
-## UI-TRADE-4 / formerly UI-33 — Direct Trade offer builder
-
-**Goal:**  
-Zbudować Direct Trade offer builder, w którym creator wybiera wyłącznie własne itemy i własne Character Points. Creator nie może żądać konkretnych itemów/CP od targeta.
-
-**Scope:**
-- route/page target: Direct Trade route or Trade route tab,
-- target hero search/select,
-- creator item selection 0–5,
-- creator CP amount,
-- offer note/message,
-- creator side preview,
-- target response placeholder,
-- item popover on selected items,
-- rules/helper panel explaining creator side vs target response,
-- validation: item count, CP amount, target required.
-
-**Out of scope:**
-- target inventory browsing,
-- requested item/CP UI,
-- CP-only-for-CP-only explanation in main UI unless backend error requires it,
-- auction UI,
-- direct writes.
-
-**Data/source rules:**
-- target hero search from server-scoped hero search/read service,
-- creator items from active hero inventory with eligible statuses,
-- creator CP from active hero/CP read model,
-- create action through canonical direct trade RPC/service,
-- no direct write to trade/item/CP tables.
-
-**UI/SCSS rules:**
-- use shared item row/popover,
-- use vendor form inputs/selects,
-- target response panel visibly empty until target answers,
-- no local copied prototype CSS.
-
-**Dependencies/blockers:**
-- missing hero search -> report dependency,
-- missing direct trade create service/RPC -> report blocker,
-- missing item eligibility data -> show safe disabled selection and report gap.
-
-**Acceptance criteria:**
-- no requested item/CP UI exists,
-- target response placeholder is clear,
-- creator can select up to five own eligible items,
-- CP validation prevents overspend,
-- create offer uses canonical workflow,
-- build passes.
-
-**Verification/smoke:**
-- route smoke,
-- target select smoke,
-- item selection count smoke,
-- CP overspend smoke,
-- create smoke if backend data available,
-- build/tsc.
-
-**Required Codex report:**
-- target search source:
-- item eligibility source:
-- CP source:
-- create RPC/service:
-- local SCSS added:
-
-## UI-TRADE-5 / formerly UI-34 — Direct Trade pending offers with pagination
-
-**Goal:**  
-Pokazać pending direct trade offers jako paged list, maksymalnie pięć widocznych na panel/stronę.
-
-**Scope:**
-- pending offers list,
-- total count,
-- page controls,
-- statuses: pending target, pending creator, incoming, expires soon, completed/rejected if included by filter,
-- selected offer detail summary,
-- incoming empty offer state does not block market slot,
-- action entry points where supported: respond, review, cancel own offer if backend supports it.
-
-**Out of scope:**
-- full response builder if handled by UI-TRADE-8,
-- fake cancel if no backend action,
-- auction listings.
-
-**Data/source rules:**
-- offers from direct trade read model/service,
-- market slot blocking from backend/read model if available,
-- incoming empty offers must not be counted as blocking creator’s slot unless backend says otherwise,
-- no local status inference that conflicts with backend.
-
-**UI/SCSS rules:**
-- use shared list/pagination/status patterns,
-- pagination should fit pending panel width,
-- status labels as badges/pills, not muted text.
-
-**Dependencies/blockers:**
-- missing pagination/read model -> report dependency,
-- missing slot impact info -> report limitation.
-
-**Acceptance criteria:**
-- five visible offers per page,
-- total pending count visible,
-- empty incoming offer does not visually block slot,
-- statuses clear,
-- build passes.
-
-**Verification/smoke:**
-- pagination smoke,
-- selected offer smoke,
-- empty incoming offer smoke if data available,
-- build/tsc.
-
-**Required Codex report:**
-- pending offers source:
-- pagination source:
-- slot impact source:
-- local SCSS added:
-
-## UI-TRADE-6 / formerly UI-35 — Trade market slot summary
-
-**Goal:**  
-Pokazać market slot budget i CP lock context w sposób zrozumiały dla gracza.
-
-**Scope:**
-- available CP,
-- locked CP,
-- market slots,
-- remaining slots,
-- helper/tooltip explaining that direct offers, active auction listings and active winning bids share slot budget for now,
-- slot impact in Direct Trade and Auction House screens.
-
-**Out of scope:**
-- building/Trade Routes design changes,
-- changing slot calculation,
-- admin config of slots,
-- fake slot numbers.
-
-**Data/source rules:**
-- slot limit from trade rules/building/runtime read model where available,
-- CP locks from CP lock read model,
-- if slot source missing, report dependency and avoid hardcoded production values.
-
-**UI/SCSS rules:**
-- summary values important, not muted,
-- use shared summary/card/chip patterns,
-- helper copy can be muted/secondary but must be readable.
-
-**Dependencies/blockers:**
-- missing slot read model -> dependency,
-- missing CP lock summary -> partial summary and report gap.
-
-**Acceptance criteria:**
-- summary visible on trade screens,
-- no confusing technical copy in main UI,
-- values sourced or dependency reported,
-- build passes.
-
-**Verification/smoke:**
-- visual smoke,
-- lock/slot values smoke if data available,
-- build/tsc.
-
-**Required Codex report:**
-- market slot source:
-- CP lock source:
-- values hardcoded yes/no:
-- local SCSS added:
-
-## UI-TRADE-7 / formerly UI-36 — Direct Trade create offer RPC workflow
-
-**Goal:**  
-Podpiąć Direct Trade create offer do canonical RPC/service z walidacją, feedbackiem i stale guards.
-
-**Scope:**
-- validate target, items 0–5, CP amount,
-- call direct trade create RPC/service,
-- show success toast and refresh offers/locks/items,
-- show inline/form errors for validation/RPC errors,
-- stale guard for active hero/server/target changes.
-
-**Out of scope:**
-- target response workflow,
-- auction create listing,
-- direct table writes,
-- backend RPC creation unless task explicitly includes backend.
-
-**Data/source rules:**
-- canonical direct trade RPC/service only,
-- item locks/CP locks backend-owned,
-- no direct writes to `items`, trade tables, CP tables,
-- refresh active hero/items/offers after success.
-
-**UI/SCSS rules:**
-- vendor form messages/toasts,
-- no local loading/error CSS if shared pattern exists,
-- important RPC errors not muted.
-
-**Dependencies/blockers:**
-- missing create RPC/service -> blocker,
-- missing lock refresh read model -> report limitation.
-
-**Acceptance criteria:**
-- invalid drafts cannot submit,
-- successful create locks creator assets via backend,
-- stale response guarded,
-- UI refreshes after success,
-- build passes.
-
-**Verification/smoke:**
-- validation smoke,
-- create offer smoke if data available,
-- failure smoke for insufficient CP/ineligible item if available,
-- build/tsc.
-
-**Required Codex report:**
-- create RPC/service:
-- validation rules:
-- refresh paths:
-- stale guard:
-
-## UI-TRADE-8 / formerly UI-37 — Direct Trade target response UI
-
-**Goal:**  
-Zaprojektować/zaimplementować target-side response UI, gdzie target widzi creator side i wybiera własne itemy/CP jako odpowiedź.
-
-**Scope:**
-- show creator committed side from offer snapshot/read model,
-- target selects own eligible items 0–5,
-- target CP amount,
-- accept/respond/reject actions where backend supports them,
-- target response preview,
-- item popovers,
-- validation.
-
-**Out of scope:**
-- target seeing creator private inventory beyond offer,
-- modifying creator side,
-- auction UI,
-- direct table writes.
-
-**Data/source rules:**
-- creator side from direct trade offer snapshot/read model,
-- target items from active hero eligible inventory,
-- response through canonical RPC/service,
-- no access to other hero inventory except committed offer items.
-
-**UI/SCSS rules:**
-- two-side offer layout reusable with builder,
-- item popovers shared,
-- response statuses as badges/pills.
-
-**Dependencies/blockers:**
-- missing response RPC/service -> blocker,
-- missing offer snapshot read model -> dependency.
-
-**Acceptance criteria:**
-- target can understand creator side,
-- target cannot edit creator side,
-- response uses canonical path,
-- no privacy leak,
-- build passes.
-
-**Verification/smoke:**
-- open incoming offer smoke,
-- response validation smoke,
-- accept/reject smoke if backend exists,
-- build/tsc.
-
-**Required Codex report:**
-- offer snapshot source:
-- target item source:
-- response RPC/service:
-- privacy boundaries:
-
-## UI-TRADE-9 / formerly UI-38 — Trade item display and popover integration
-
-**Goal:**  
-Upewnić się, że każdy item w Auction House i Direct Trade korzysta ze shared item display/popover.
-
-**Scope:**
-- Auction listing item,
-- Direct Trade selected/offered item,
-- pending offer item summary,
-- report/trade transaction item if present,
-- requirements/equippable status,
-- drachma value in popover or item row as appropriate.
-
-**Out of scope:**
-- CP item valuation,
-- local tooltip CSS,
-- item generation changes.
-
-**Data/source rules:**
-- item display from item read model/snapshot,
-- historical transaction items use snapshots where available,
-- no live recompute if snapshot exists,
-- no private data leakage.
-
-**UI/SCSS rules:**
-- UI-CORE-6 shared item popover,
-- status/requirements badges,
-- no duplicate per-screen item styling.
-
-**Dependencies/blockers:**
-- missing shared popover -> dependency,
-- missing snapshot data -> report gap and safe fallback.
-
-**Acceptance criteria:**
-- item hover/focus detail consistent across trade screens,
-- requirements, bonuses and drachma value visible,
-- no CP inherent value,
-- build passes.
-
-**Verification/smoke:**
-- item popover smoke in auction and direct trade,
-- not-equippable item smoke if data exists,
-- build/tsc.
-
-**Required Codex report:**
-- item popover reused:
-- item data/snapshot source:
-- local CSS avoided:
-- missing data fields:
 
 ---
 
