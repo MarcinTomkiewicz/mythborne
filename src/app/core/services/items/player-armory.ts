@@ -254,7 +254,7 @@ export class PlayerArmory {
     );
   }
 
-  private getItemRequirementPreview(
+  getItemRequirementPreviewForHero(
     heroId: string,
     itemId: string,
   ): Observable<ArmoryItemDetailReadModel['requirementPreview']> {
@@ -271,6 +271,13 @@ export class PlayerArmory {
         row: firstRpcRow(rows, RPC.get_hero_item_requirement_status),
       })),
     );
+  }
+
+  private getItemRequirementPreview(
+    heroId: string,
+    itemId: string,
+  ): Observable<ArmoryItemDetailReadModel['requirementPreview']> {
+    return this.getItemRequirementPreviewForHero(heroId, itemId);
   }
 }
 
