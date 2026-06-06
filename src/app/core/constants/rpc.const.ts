@@ -56,6 +56,8 @@ export const RPC = {
   get_auction_listings_page: 'get_auction_listings_page',
   get_auction_bids_page: 'get_auction_bids_page',
   get_auction_create_context: 'get_auction_create_context',
+  get_trade_page_copy: 'get_trade_page_copy',
+  get_trade_page_context: 'get_trade_page_context',
   get_player_vicinity_page_context: 'get_player_vicinity_page_context',
   get_start_flow_origin_options: 'get_start_flow_origin_options',
   create_hero_start_flow: 'create_hero_start_flow',

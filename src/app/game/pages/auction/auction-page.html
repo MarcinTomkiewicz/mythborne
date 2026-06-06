@@ -12,7 +12,7 @@
 
       @if (page.auctionUnavailableMessage(); as unavailableMessage) {
         <section class="mg-card radius-lg p-md w-100 min-w-0">
-          <p-message severity="warn">{{ unavailableMessage }}</p-message>
+          <p-message severity="error">{{ unavailableMessage }}</p-message>
         </section>
       } @else if (page.overview.listingsPage(); as listingsPage) {
         <div class="grid-3-1 gap-md grid-items-start w-100 min-w-0">

@@ -1,145 +1,141 @@
-import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs';
-import {
-  DirectTradeOfferReadModel,
-  DirectTradeOverviewReadModel,
-} from '../../../core/domain/trade/direct-trade.model';
+import { TradePageContext, TradePageCopy } from '../../../core/domain/trade/player-trade.model';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
-import { DirectTrades } from '../../../core/services/trade/direct-trades';
-import { SelectOption } from '../../../core/types/select-option.types';
+import { PlayerTrades } from '../../../core/services/trade/player-trades';
 import { RequestToken } from '../../../core/utils/request-token';
-import { TradeFeedbackState } from './trade-feedback.state';
-import { directTradeOfferLabel } from './trade-labels';
 
 @Injectable()
 export class TradeOverviewState {
   private readonly activeHero = inject(ActiveHero);
-  private readonly directTrades = inject(DirectTrades);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly feedback = inject(TradeFeedbackState);
+  private readonly playerTrades = inject(PlayerTrades);
   private readonly requestToken = new RequestToken();
 
-  private activeServerId: string | null = null;
   private activeHeroId: string | null = null;
+  private activeServerId: string | null = null;
 
-  readonly overview = signal<DirectTradeOverviewReadModel>({
-    offers: [],
-    transactions: [],
-  });
-  readonly isLoading = signal(false);
+  readonly copy = signal<TradePageCopy | null>(null);
+  readonly context = signal<TradePageContext | null>(null);
+  readonly error = signal<unknown>(null);
+  readonly pendingRequestCount = signal(0);
+  readonly isLoading = computed(() => this.pendingRequestCount() > 0);
 
   loadData(): void {
     const token = this.requestToken.next();
 
-    this.isLoading.set(true);
-    this.feedback.error.set(null);
+    this.activeHeroId = null;
+    this.activeServerId = null;
+    this.copy.set(null);
+    this.context.set(null);
+    this.error.set(null);
+    this.pendingRequestCount.set(1);
 
     this.activeHero
       .requireActiveHero()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (state) => {
+          this.finishRequest(token);
+
           if (!this.requestToken.isCurrent(token)) {
             return;
           }
 
-          this.activeServerId = state.serverId;
           this.activeHeroId = state.heroId;
-          this.loadOverview(state.serverId, state.heroId, token);
+          this.activeServerId = state.serverId;
+          this.loadPageCopy(state.heroId, state.serverId, token);
+          this.loadPageContext(state.heroId, state.serverId, token);
         },
         error: (error: unknown) => {
+          this.finishRequest(token);
+
           if (!this.requestToken.isCurrent(token)) {
             return;
           }
 
-          this.isLoading.set(false);
-          this.feedback.setError(error, 'Failed to load active hero.');
+          this.error.set(error);
         },
       });
   }
 
-  refreshCurrent(): void {
-    const context = this.currentContext();
+  private loadPageCopy(heroId: string, serverId: string, token: number): void {
+    this.startRequest(token);
 
-    if (!context) {
+    this.playerTrades
+      .getPageCopy()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (copy) => {
+          this.finishRequest(token);
+
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
+            return;
+          }
+
+          this.copy.set(copy);
+        },
+        error: (error: unknown) => {
+          this.finishRequest(token);
+
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
+            return;
+          }
+
+          this.error.set(error);
+        },
+      });
+  }
+
+  private loadPageContext(heroId: string, serverId: string, token: number): void {
+    this.startRequest(token);
+
+    this.playerTrades
+      .getPageContext(heroId, serverId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (context) => {
+          this.finishRequest(token);
+
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
+            return;
+          }
+
+          this.context.set(context);
+        },
+        error: (error: unknown) => {
+          this.finishRequest(token);
+
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
+            return;
+          }
+
+          this.error.set(error);
+        },
+      });
+  }
+
+  private isCurrentRequest(token: number, heroId: string, serverId: string): boolean {
+    return (
+      this.requestToken.isCurrent(token) &&
+      this.activeHeroId === heroId &&
+      this.activeServerId === serverId
+    );
+  }
+
+  private startRequest(token: number): void {
+    if (!this.requestToken.isCurrent(token)) {
       return;
     }
 
-    const token = this.requestToken.next();
-
-    this.isLoading.set(true);
-    this.loadOverview(context.serverId, context.heroId, token);
+    this.pendingRequestCount.update((count) => count + 1);
   }
 
-  currentContext(): { serverId: string; heroId: string } | null {
-    return this.activeServerId && this.activeHeroId
-      ? { serverId: this.activeServerId, heroId: this.activeHeroId }
-      : null;
-  }
+  private finishRequest(token: number): void {
+    if (!this.requestToken.isCurrent(token)) {
+      return;
+    }
 
-  isCurrentContext(serverId: string, heroId: string): boolean {
-    return this.activeServerId === serverId && this.activeHeroId === heroId;
-  }
-
-  currentHeroId(): string | null {
-    return this.activeHeroId;
-  }
-
-  incomingOfferOptions(): SelectOption<string>[] {
-    return this.overview()
-      .offers.filter(
-        (offer) =>
-          offer.status === 'pending_target' && offer.target.heroId === this.activeHeroId,
-      )
-      .map((offer) => ({
-        value: offer.id,
-        label: this.offerLabel(offer),
-      }));
-  }
-
-  offerLabel(offer: DirectTradeOfferReadModel): string {
-    return directTradeOfferLabel(offer, this.activeHeroId);
-  }
-
-  syncIncomingOfferSelection(selectedOfferId: string | null): string | null {
-    const options = this.incomingOfferOptions();
-
-    return selectedOfferId && options.some((option) => option.value === selectedOfferId)
-      ? selectedOfferId
-      : options[0]?.value ?? null;
-  }
-
-  private loadOverview(serverId: string, heroId: string, token: number): void {
-    this.directTrades
-      .getTradesForHero({ serverId, heroId })
-      .pipe(
-        finalize(() => {
-          if (this.requestToken.isCurrent(token)) {
-            this.isLoading.set(false);
-          }
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: (overview) => {
-          if (!this.isCurrentRequest(token, serverId, heroId)) {
-            return;
-          }
-
-          this.overview.set(overview);
-        },
-        error: (error: unknown) => {
-          if (!this.isCurrentRequest(token, serverId, heroId)) {
-            return;
-          }
-
-          this.feedback.setError(error, 'Failed to load direct trades.');
-        },
-      });
-  }
-
-  private isCurrentRequest(token: number, serverId: string, heroId: string): boolean {
-    return this.requestToken.isCurrent(token) && this.isCurrentContext(serverId, heroId);
+    this.pendingRequestCount.update((count) => Math.max(0, count - 1));
   }
 }

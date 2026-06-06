@@ -1,31 +1,25 @@
-<div class="flex-col gap-xl min-w-0">
-  <section class="mg-card p-lg w-100">
-    <div class="flex-row-between-center flex-col-sm gap-md">
-      <div class="flex-col gap-xs">
-        <h2 class="mg-section__title mg-section__title--sm mb-0">Trade</h2>
-        <p class="muted-text mb-0">
-          Private direct trades between heroes on the selected server.
-        </p>
-      </div>
-      <div class="flex-row-start-center flex-wrap gap-sm">
-        <span class="tag-badge tag-badge--info">
-          Active offers: {{ page.overview.overview().offers.length }}
-        </span>
-        <span class="tag-badge tag-badge--muted">
-          History: {{ page.overview.overview().transactions.length }}
-        </span>
-      </div>
+<app-loading-overlay [visible]="page.overview.isLoading()" label="" />
+
+@if (page.overview.copy(); as copy) {
+  @if (page.overview.context()) {
+    <div class="flex-col gap-lg w-100 min-w-0">
+      <app-game-page-header
+        [eyebrowLabel]="copy.header.eyebrow"
+        [title]="copy.header.title"
+        [description]="copy.header.intro"
+        [summaryRows]="page.headerSummaryRows()"
+      />
+
+      @if (page.tradeUnavailableMessage(); as unavailableMessage) {
+        <section class="mg-card radius-lg p-md w-100 min-w-0">
+          <p-message severity="error">
+            @if (page.tradeUnavailableTitle(); as title) {
+              <strong class="d-block color-heading mb-xs">{{ title }}</strong>
+            }
+            <span>{{ unavailableMessage }}</span>
+          </p-message>
+        </section>
+      }
     </div>
-  </section>
-
-  @if (page.feedback.error(); as message) {
-    <p-message severity="error">{{ message }}</p-message>
   }
-  @if (page.feedback.successMessage(); as message) {
-    <p-message severity="success">{{ message }}</p-message>
-  }
-
-  <app-trade-create-offer-section />
-  <app-trade-respond-offer-section />
-  <app-trade-active-offers-section />
-</div>
+}

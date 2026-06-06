@@ -1,8 +1,8 @@
 # Mythsworn — Direct Trade Shape Guide
 
 Status: DB/RPC consumption guidance for Codex / Reviewer / Frontend  
-Updated: 2026-06-05  
-Scope: player-facing Direct Trade contracts only: page copy, page context, target search, pending offers, create context, action RPCs, row shapes, workflow boundaries and frontend restrictions.
+Updated: 2026-06-06  
+Scope: player-facing Direct Trade contracts only: page copy, page context, access gate, target search, pending offers, create context, action RPCs, row shapes, workflow boundaries and frontend restrictions.
 
 This guide is **not** a migration and **not** a complete database dump. It is a focused shape/contract guide for implementing and reviewing the Direct Trade UI safely.
 
@@ -12,13 +12,13 @@ This guide is **not** a migration and **not** a complete database dump. It is a 
 
 Direct Trade is a **DB/RPC-owned workflow**.
 
-Do **not** use the legacy direct-trade bootstrap for the new Direct Trade screen:
+Use the split Direct Trade contract in this guide.
+
+Do **not** use the legacy Direct Trade bootstrap for the new Direct Trade screen:
 
 ```text
 get_player_trade_page_context(...)
 ```
-
-Use the split direct-trade contract in this guide.
 
 Do **not** direct-read for normal player Direct Trade page bootstrap:
 
@@ -30,6 +30,9 @@ player_trade_transaction_items
 items
 character_point_locks
 character_point_ledger
+estate_buildings
+buildings
+estates
 ```
 
 Do **not** direct-write:
@@ -75,11 +78,13 @@ If the Trade Route / Szlak handlowy slot limit is `0`, Direct Trade is unavailab
 ```text
 canUseTrade = false
 canCreateOffer = false
-canSendOffer = false
-eligibleItems = []
+tradeBlockerKey = trade_route_required
+tradeBlockerLabel = Handel bezpośredni odblokujesz po wybudowaniu Szlaku handlowego na poziom 1.
+createOfferBlockerKey = trade_route_required
+createOfferBlockerLabel = Handel bezpośredni odblokujesz po wybudowaniu Szlaku handlowego na poziom 1.
 ```
 
-Frontend should show the DB-owned blocker/copy and must not render the offer builder as usable.
+When `canUseTrade = false`, the frontend should show the DB-owned blocker message and must not render the builder, target search, pending offers or item rows as active UI.
 
 ---
 
@@ -128,10 +133,15 @@ Meaning:
 ```text
 get_trade_page_copy
 - page labels, actions, sections, empty states, blocked states and rules only
+- no hero/runtime data
+- no offers
+- no targets
+- no item rows
 
 get_trade_page_context
 - lightweight hero-scoped summary and eligibility only
 - exactly four header summary fields
+- access gate fields for unavailable trade
 - no offer rows
 - no target search rows
 - no item rows
@@ -272,14 +282,31 @@ interface TradePageCopy {
 header.title = Złóż ofertę wybranemu bohaterowi
 actions.sendOffer = Złóż ofertę
 actions.reset = Resetuj
+actions.respond = Odpowiedz
 summary.activeOffers = Aktywne oferty
+blocked.tradeUnavailableTitle = Handel jest niedostępny
+blocked.tradeUnavailableText = Rozbuduj Szlak handlowy, żeby odblokować handel bezpośredni.
+blocked.noFreeSlotTitle = Brak wolnego slotu
+blocked.noFreeSlotText = Masz już wykorzystane wszystkie sloty handlu i aukcji.
 ```
 
 There is intentionally no `saveDraft` action. No draft workflow exists for this screen.
 
+### Access gate copy source
+
+For the current canonical access gate, use `get_trade_page_context(...)` first, not only `copy.blocked`.
+
+The authoritative unavailable message for missing Trade Route level 1 is:
+
+```text
+tradeBlockerLabel = Handel bezpośredni odblokujesz po wybudowaniu Szlaku handlowego na poziom 1.
+```
+
+`copy.blocked.tradeUnavailableText` may still exist as general page copy, but the context blocker label is the exact DB-owned reason tied to the current hero state.
+
 ---
 
-## 4. Lightweight page context
+## 4. Lightweight page context and access gate
 
 ### RPC
 
@@ -345,8 +372,12 @@ interface TradePageContext {
 
   canUseTrade: boolean;
   canCreateOffer: boolean;
-  createOfferBlockerKey?: string;
-  createOfferBlockerLabel?: string;
+
+  tradeBlockerKey: string | null;
+  tradeBlockerLabel: string | null;
+
+  createOfferBlockerKey?: string | null;
+  createOfferBlockerLabel?: string | null;
 
   constraints: {
     currencyKey: 'character_points';
@@ -358,6 +389,47 @@ interface TradePageContext {
   };
 }
 ```
+
+### Access gate rendering
+
+When:
+
+```ts
+context.canUseTrade === false
+```
+
+render the unavailable state and do not render active builder/list/search content.
+
+Primary blocker source:
+
+```ts
+context.tradeBlockerLabel
+```
+
+Compatibility / create-flow fallback:
+
+```ts
+context.createOfferBlockerLabel
+```
+
+Current missing Trade Route level 1 blocker:
+
+```text
+tradeBlockerKey = trade_route_required
+tradeBlockerLabel = Handel bezpośredni odblokujesz po wybudowaniu Szlaku handlowego na poziom 1.
+createOfferBlockerKey = trade_route_required
+createOfferBlockerLabel = Handel bezpośredni odblokujesz po wybudowaniu Szlaku handlowego na poziom 1.
+```
+
+Suggested UI copy:
+
+```text
+Handel bezpośredni jest niedostępny
+
+Handel bezpośredni odblokujesz po wybudowaniu Szlaku handlowego na poziom 1.
+```
+
+The title may come from `copy.blocked.tradeUnavailableTitle`. The reason/message should come from the page context blocker label.
 
 ### Field semantics
 
@@ -383,16 +455,20 @@ pendingOffers
   and status in ('pending_target', 'pending_creator')
 ```
 
-### Current Vlad sandbox smoke
+### Verified blocked-state smoke
+
+Rollback smoke temporarily set Vlad’s Trade Route to level 0 and rolled back.
+
+Verified output:
 
 ```text
 contractVersion = trade_page_context_v1
-headerSummary.availableCharacterPoints.displayValue = 193
-headerSummary.lockedCharacterPoints.displayValue = 0
-headerSummary.activeOffers.displayValue = 0 / 3
-headerSummary.pendingOffers.displayValue = 0
-canUseTrade = true
-canCreateOffer = true
+canUseTrade = false
+canCreateOffer = false
+tradeBlockerKey = trade_route_required
+tradeBlockerLabel = Handel bezpośredni odblokujesz po wybudowaniu Szlaku handlowego na poziom 1.
+createOfferBlockerKey = trade_route_required
+createOfferBlockerLabel = Handel bezpośredni odblokujesz po wybudowaniu Szlaku handlowego na poziom 1.
 ```
 
 ---
@@ -453,14 +529,7 @@ Rendering rules:
 - Disable/select-block only from `canReceiveOffer`.
 - Show blocker from `blockerLabel`.
 - Do not decide target availability locally from building level or restrictions.
-
-Current Vlad sandbox smoke returned Walford as a same-server target with:
-
-```text
-canReceiveOffer = false
-blockerKey = trade_unavailable
-blockerLabel = Handel wymaga Szlaku handlowego
-```
+- If `get_trade_page_context(...).canUseTrade = false`, do not render target search as active UI.
 
 ---
 
@@ -498,7 +567,7 @@ Only statuses included:
 'pending_target' | 'pending_creator'
 ```
 
-Current Vlad sandbox smoke returned an empty `pendingOffers` array.
+If `get_trade_page_context(...).canUseTrade = false`, do not render pending offers as active UI. The access gate takes precedence.
 
 ---
 
@@ -562,14 +631,7 @@ sendOfferBlockerLabel = Wybierz bohatera
 eligibleItems may be present if the hero can use trade
 ```
 
-Current Vlad sandbox smoke:
-
-```text
-contractVersion = trade_create_context_v1
-canSendOffer = false
-sendOfferBlockerKey = target_required
-eligibleItems = 5
-```
+If `get_trade_page_context(...).canUseTrade = false`, do not render this builder as active UI.
 
 ---
 
@@ -773,6 +835,15 @@ interface ItemDisplayCore {
 
 Use this only for display. Do not use it as item lifecycle authority.
 
+For full item detail popovers, use the shared item popover contract:
+
+```text
+item_popover_copy()
+item_popover_detail(...)
+```
+
+Do not make Direct Trade pass page-local item detail copy into the item popover.
+
 ---
 
 ## 14. Direct Trade action RPCs
@@ -969,6 +1040,9 @@ These exist for DB composition only:
 build_trade_item_row(...)
 build_trade_offer_side(...)
 build_trade_offer_row(...)
+get_trade_page_context_raw_v1(...)
+get_trade_create_context_raw_v1(...)
+build_trade_route_access_blocker_json(...)
 hero_can_use_player_trade(...)
 hero_has_free_trade_slot(...)
 get_hero_active_trade_slot_count(...)
@@ -1011,6 +1085,8 @@ Do not use:
 - build_trade_item_row(...)
 - build_trade_offer_side(...)
 - build_trade_offer_row(...)
+- raw_v1 helpers
+- trade tables directly
 
 Header summary must render exactly four fields:
 - headerSummary.availableCharacterPoints
@@ -1019,6 +1095,14 @@ Header summary must render exactly four fields:
 - headerSummary.pendingOffers
 
 Do not add extra header summary rows.
+
+Access gate:
+- if get_trade_page_context(...).canUseTrade=false:
+  - show tradeBlockerLabel
+  - optionally title from copy.blocked.tradeUnavailableTitle
+  - do not render active builder, target search, eligible items or pending offers
+- do not compute Trade Route level in Angular
+- do not direct-read buildings
 
 No Save Draft action. Do not implement drafts.
 
@@ -1040,9 +1124,9 @@ Use DB fields and blocker labels.
 
 ---
 
-## 17. Current verified sandbox smoke
+## 17. Verified sandbox smoke
 
-For Vlad on sandbox:
+For Vlad on sandbox, normal available state:
 
 ```text
 get_trade_page_copy.contractVersion = trade_page_copy_v1
@@ -1050,23 +1134,47 @@ get_trade_page_copy.contractVersion = trade_page_copy_v1
 get_trade_page_context.contractVersion = trade_page_context_v1
 canUseTrade = true
 canCreateOffer = true
-headerSummary.availableCharacterPoints.displayValue = 193
-headerSummary.lockedCharacterPoints.displayValue = 0
 headerSummary.activeOffers.displayValue = 0 / 3
 headerSummary.pendingOffers.displayValue = 0
+```
 
-search_trade_targets_page.contractVersion = trade_targets_search_page_v1
-targets includes Walford
-Walford.canReceiveOffer = false
-Walford.blockerKey = trade_unavailable
+Rollback access-gate smoke temporarily set Vlad’s Trade Route to level 0 and rolled back:
 
-get_trade_offers_page.contractVersion = trade_offers_page_v1
-pendingOffers = []
+```text
+get_trade_page_context.contractVersion = trade_page_context_v1
+canUseTrade = false
+canCreateOffer = false
+tradeBlockerKey = trade_route_required
+tradeBlockerLabel = Handel bezpośredni odblokujesz po wybudowaniu Szlaku handlowego na poziom 1.
+createOfferBlockerKey = trade_route_required
+createOfferBlockerLabel = Handel bezpośredni odblokujesz po wybudowaniu Szlaku handlowego na poziom 1.
+```
 
-get_trade_create_context.contractVersion = trade_create_context_v1
-canSendOffer = false
-sendOfferBlockerKey = target_required
-eligibleItems = 5
+Full shape smoke for pending offers passed for:
+
+```text
+0 offers
+1 offer
+2 offers
+5 offers
+```
+
+Confirmed:
+
+```text
+headerSummary has exactly:
+- activeOffers
+- availableCharacterPoints
+- lockedCharacterPoints
+- pendingOffers
+
+offer rows include:
+- creatorOffer
+- targetOffer
+- viewerOffer
+- counterpartyOffer
+- canRespond/canConfirm/canCancel/canReject
+- blocker labels when actions are disabled
 ```
 
 Empty pending offers are valid when no offers exist yet.
