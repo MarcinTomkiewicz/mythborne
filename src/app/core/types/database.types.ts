@@ -11092,6 +11092,61 @@ export type Database = {
           },
         ]
       }
+      player_auction_watches: {
+        Row: {
+          created_at: string
+          ended_at: string | null
+          hero_id: string
+          id: string
+          is_active: boolean
+          listing_id: string
+          server_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ended_at?: string | null
+          hero_id: string
+          id?: string
+          is_active?: boolean
+          listing_id: string
+          server_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ended_at?: string | null
+          hero_id?: string
+          id?: string
+          is_active?: boolean
+          listing_id?: string
+          server_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_auction_watches_hero_id_fkey"
+            columns: ["hero_id"]
+            isOneToOne: false
+            referencedRelation: "hero"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_auction_watches_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "player_auction_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_auction_watches_server_id_fkey"
+            columns: ["server_id"]
+            isOneToOne: false
+            referencedRelation: "game_servers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_relationship_declaration_items: {
         Row: {
           created_at: string
@@ -14524,6 +14579,10 @@ export type Database = {
         Args: { p_bonuses_json: Json }
         Returns: Json
       }
+      apply_auction_pagination_display: {
+        Args: { p_payload: Json; p_template: string }
+        Returns: Json
+      }
       apply_balance_formula_assignment_draft_entry: {
         Args: {
           p_actor: string
@@ -15260,7 +15319,20 @@ export type Database = {
         Returns: Json
       }
       build_auction_listing_row: {
+        Args: { p_hero_id: string; p_listing_id: string }
+        Returns: Json
+      }
+      build_auction_listing_row_raw_v1: {
         Args: { p_listing_id: string; p_viewer_hero_id: string }
+        Returns: Json
+      }
+      build_auction_pagination_display: {
+        Args: {
+          p_limit: number
+          p_offset: number
+          p_template: string
+          p_total_count: number
+        }
         Returns: Json
       }
       build_combat_attack_log_display_json: {
@@ -15565,6 +15637,10 @@ export type Database = {
           p_offer_id: string
           p_side: Database["public"]["Enums"]["player_trade_side"]
         }
+        Returns: Json
+      }
+      build_trade_route_access_blocker_json: {
+        Args: { p_surface: string }
         Returns: Json
       }
       bulk_equip_hero_items: {
@@ -18361,7 +18437,12 @@ export type Database = {
           rpc_name: string
         }[]
       }
+      get_auction_base_type_filter_options: { Args: never; Returns: Json }
       get_auction_bids_page: {
+        Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
+      get_auction_bids_page_raw_v1: {
         Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
         Returns: Json
       }
@@ -18369,12 +18450,25 @@ export type Database = {
         Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
         Returns: Json
       }
+      get_auction_create_context_raw_v1: {
+        Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
       get_auction_listings_page: {
         Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
         Returns: Json
       }
+      get_auction_listings_page_raw_v1: {
+        Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
       get_auction_page_context: { Args: { p_hero_id: string }; Returns: Json }
+      get_auction_page_context_raw_v1: {
+        Args: { p_hero_id: string }
+        Returns: Json
+      }
       get_auction_page_copy: { Args: never; Returns: Json }
+      get_auction_page_copy_raw_v1: { Args: never; Returns: Json }
       get_balance_formula_assignment_draft_overlay: {
         Args: { p_change_set_id?: string }
         Returns: {
@@ -20841,6 +20935,10 @@ export type Database = {
           trial_section_json: Json
         }[]
       }
+      get_public_report_detail: {
+        Args: { p_public_token: string }
+        Returns: Json
+      }
       get_pvp_prestige_delta_matrix_entry: {
         Args: {
           p_actor_role: string
@@ -20927,6 +21025,21 @@ export type Database = {
           under_protection: boolean
         }[]
       }
+      get_report_detail: {
+        Args: { p_hero_id: string; p_report_id: string }
+        Returns: Json
+      }
+      get_report_list_page: {
+        Args: {
+          p_hero_id: string
+          p_limit?: number
+          p_offset?: number
+          p_report_type_key?: string
+          p_unread_only?: boolean
+        }
+        Returns: Json
+      }
+      get_report_page_copy: { Args: never; Returns: Json }
       get_required_global_integer_config_value: {
         Args: { p_key: string }
         Returns: number
@@ -21188,6 +21301,10 @@ export type Database = {
         Returns: Json
       }
       get_trade_page_context: { Args: { p_hero_id: string }; Returns: Json }
+      get_trade_page_context_raw_v1: {
+        Args: { p_hero_id: string }
+        Returns: Json
+      }
       get_trade_page_copy: { Args: never; Returns: Json }
       get_trade_transaction_item_character_points_price: {
         Args: { p_transaction_item_id: string }
@@ -21664,6 +21781,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      mark_report_read: {
+        Args: { p_hero_id: string; p_report_id: string }
+        Returns: Json
       }
       materialize_hero_resource: {
         Args: {
@@ -22883,6 +23004,15 @@ export type Database = {
           status_key: string
         }[]
       }
+      remove_report_from_list: {
+        Args: {
+          p_hero_id: string
+          p_reason?: string
+          p_report_id: string
+          p_request_id?: string
+        }
+        Returns: Json
+      }
       rename_hero_armory_shelf: {
         Args: {
           p_hero_id: string
@@ -23730,6 +23860,16 @@ export type Database = {
         }[]
       }
       search_auction_listings_page: {
+        Args: {
+          p_filters?: Json
+          p_hero_id: string
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+        }
+        Returns: Json
+      }
+      search_auction_listings_page_raw_v1: {
         Args: {
           p_filters?: Json
           p_hero_id: string
@@ -25372,6 +25512,10 @@ export type Database = {
         Args: { p_offer_id: string }
         Returns: number
       }
+      unwatch_auction_listing: {
+        Args: { p_auction_listing_id: string; p_hero_id: string }
+        Returns: string
+      }
       update_entity_requirement: {
         Args: {
           p_applies_from_level?: number
@@ -26493,6 +26637,10 @@ export type Database = {
           vote_id: string
           voter_hero_id: string
         }[]
+      }
+      watch_auction_listing: {
+        Args: { p_auction_listing_id: string; p_hero_id: string }
+        Returns: string
       }
       withdraw_guild_armory_item: {
         Args: {

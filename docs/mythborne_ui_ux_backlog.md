@@ -11887,6 +11887,437 @@ Zmniejszyć koszt startowy aplikacji i upewnić się, że publiczny landing `/` 
 
 ---
 
+# UI-REPORTS — Reports Center task plan
+
+## UI-REPORTS-1A — Reports Center canonical bootstrap
+
+Goal: replace the current legacy Reports route bootstrap with the canonical Reports split contract.
+
+Scope:
+
+* Reports route only.
+* Use shared `app-game-page-header`.
+* Use canonical RPCs only:
+
+  * `get_report_page_copy()`
+  * `get_report_list_page(p_hero_id, p_limit, p_offset, p_report_type_key, p_unread_only)`
+* Add strict models/mappers/readers for:
+
+  * `ReportPageCopy`
+  * `ReportListPage`
+  * `ReportListRow`
+  * `ReportPagination`
+* Page header uses `copy.reportsCenter.header`.
+* Do not render fake header summary rows; the Reports contract has no separate page context/header summary RPC.
+* Load the list page as the first DB-backed runtime payload for the route.
+* Remove old hardcoded Reports intro/filter/list copy from the legacy screen.
+
+Rules:
+
+* No direct table reads.
+* No legacy Reports RPCs:
+
+  * `get_hero_game_reports(...)`
+  * `get_hero_game_report_detail(...)`
+  * `get_public_game_report_by_token(...)`
+  * `get_hero_game_report_unread_count(...)`
+  * `mark_game_report_read(...)`
+  * `delete_game_report_for_hero(...)`
+* No `build_game_report_*` helpers.
+* No local hardcoded copy from the prototype.
+* No local SCSS.
+* Do not copy prototype CSS.
+* Use existing global utilities and shared surfaces.
+
+Acceptance:
+
+* `/game/reports` loads from `get_report_page_copy()` and `get_report_list_page(...)`.
+* The route no longer uses legacy report bootstrap.
+* Page header is DB-copy-backed.
+* List payload is available in state for the next slice.
+* Existing report direct-read path is removed from the route.
+
+**Status:** Accepted/completed on 2026-06-06 as the Reports Center canonical bootstrap. `/game/reports` now uses the canonical split Reports contract with `get_report_page_copy()` for DB-owned header/copy and `get_report_list_page(p_hero_id, p_limit, p_offset, p_report_type_key, p_unread_only)` as the first runtime payload. The route no longer uses the legacy `GameReports` bootstrap, local UI metadata copy, local search/filtering or fake header summary rows; strict `ReportPageCopy`, `ReportListPage`, `ReportListRow` and `ReportPagination` models/mappers/readers were added, list row mapper paths include row indices, and the stale legacy `reports-page.state.spec.ts` was removed instead of preserving old behavior. Report rows, filters, pagination behavior, detail routes, actions and notifications remain scoped to later UI-REPORTS slices. Generic route error copy is currently missing from the DB-owned Reports contract, so the bootstrap keeps error state internal/non-rendered rather than adding local fallback copy.
+
+---
+
+## UI-REPORTS-1B — Reports archive read-only list foundation
+
+Goal: render the Reports archive list as DB-backed read-only rows.
+
+Scope:
+
+* Render `ReportListPage.reports`.
+* Render only full gameplay reports, not notifications.
+* Use returned rows, `unreadCount`, pagination and display labels.
+* Use `pagination.displayLabel`; do not compose `1-10 / 93` locally.
+* Use existing `mg-data-row` pattern or add a reusable global variant such as `mg-data-row--report`.
+* Show only list-row fields:
+
+  * title
+  * summary
+  * report type label/key
+  * created date/time if rendered
+  * unread/read state
+  * participants/item count only if present in the row contract.
+
+Rules:
+
+* No local filtering.
+* No local sorting.
+* No fake unread counts.
+* No fake pagination.
+* No live recomputation from combat/trial/trade/exploration/PvP source tables.
+* Report rows are display-only in this slice.
+* Do not render report detail sections from list rows.
+
+Acceptance:
+
+* Report rows are DB/read-model-backed.
+* Empty state uses `copy.reportsCenter.list.emptyTitle` and `emptyText`.
+* Pagination uses DB `ReportPagination`.
+* Row pattern is reusable for selected-detail/public/report lists where appropriate.
+
+---
+
+## UI-REPORTS-1C — Supported list filters and pagination behavior
+
+Goal: wire only the filters currently supported by the Reports list contract.
+
+Scope:
+
+* `unreadOnly` filter, using `copy.reportsCenter.filters.unreadOnlyLabel`.
+* `p_report_type_key` only if a DB-backed report type option source exists.
+* Pagination:
+
+  * limit
+  * offset
+  * total count
+  * display label
+  * next/prev through paginator.
+* Applied filter sync from `ReportListPage.appliedFilters`.
+
+Current contract boundaries:
+
+* `get_report_list_page(...)` supports:
+
+  * `p_report_type_key`
+  * `p_unread_only`
+  * pagination.
+* It does not support text search.
+* `get_report_page_copy()` has search labels, but the list RPC has no `p_query`.
+
+Rules:
+
+* Do not render search input yet.
+* Do not render report type filter unless DB supplies type options or an accepted source.
+* Do not infer type options from the current page rows.
+* Do not locally filter/search/sort reports.
+* Do not add prototype-only filters such as time range unless the contract supports them.
+* Do not fake Clear/Apply labels unless DB copy supplies them.
+
+Acceptance:
+
+* `unreadOnly` refreshes list through `get_report_list_page(...)`.
+* Pagination updates through the canonical list RPC.
+* Unsupported search/type/time filters are omitted and reported as contract gaps.
+* Empty filtered state remains DB/copy-backed.
+
+---
+
+## UI-REPORTS-1D — Reports Center component split and visual cleanup
+
+Goal: keep the Reports route maintainable before adding detail/action workflows.
+
+Scope:
+
+* Split the Reports Center into small presentational components:
+
+  * `ReportListSection`
+  * `ReportListRow`
+  * `ReportFiltersPanel` if filters exist after 1C
+* `ReportsPage` remains an aggregate:
+
+  * loading
+  * active hero context
+  * copy/list loading
+  * header
+  * layout
+* Use global data-row/card/chip utilities.
+* Add reusable global row variant only if required.
+* No local Reports SCSS.
+
+Rules:
+
+* No DB/RPC changes.
+* No detail rendering.
+* No actions.
+* No notifications archive.
+* No public report route.
+* No `.spec.ts` work.
+
+Acceptance:
+
+* Reports page template is short and aggregate-only.
+* Row/list/filter components are reusable for detail/public/notifications only where their contracts match.
+* No local SCSS or prototype CSS remains.
+
+---
+
+## UI-REPORTS-2A — Private report detail route/shell
+
+Goal: open a private durable report using the canonical private detail RPC.
+
+Scope:
+
+* Add private report detail route/panel for `get_report_detail(p_hero_id, p_report_id)`.
+* Use the same `ReportPageCopy.detail` copy.
+* Render:
+
+  * title
+  * summary
+  * type/source labels
+  * createdAt
+  * private access read state from `access.isUnread` / `access.readAt`
+* Render no detailed report sections yet unless a minimal safe section renderer is scoped in the same slice.
+
+Rules:
+
+* Do not mark report as read when loading detail.
+* Do not call legacy `get_hero_game_report_detail(...)`.
+* Do not direct-read `game_reports` or access tables.
+* Do not reconstruct report contents from combat/trial/trade/exploration/PvP live tables.
+* Do not parse metadata as authority if structured section JSON is present.
+
+Acceptance:
+
+* Clicking/opening a report can load private detail.
+* Detail uses `get_report_detail(...)`.
+* Private access state is displayed from payload.
+* Missing detail fields are reported as DB/RPC gaps.
+
+---
+
+## UI-REPORTS-2B — Report detail section renderers
+
+Goal: render durable report sections from the canonical `report` core object.
+
+Scope:
+
+* Render supported sections from `ReportDetailCore`:
+
+  * `participantsJson`
+  * `itemReferencesJson`
+  * `spySectionJson`
+  * `trialSectionJson`
+  * `encounterSectionJson`
+  * `combatSectionJson`
+  * `rewardSectionJson`
+  * `effectSectionJson`
+  * `relatedReportsJson`
+* Use `copy.detail.sections` and `copy.detail.empty`.
+* Section renderer should tolerate `null` section values.
+* Prefer structured display-safe fields returned in section JSON.
+
+Rules:
+
+* Do not recompute combat outcome/stat rows locally.
+* Do not direct-read combat/trial/encounter/PvP source rows.
+* Do not invent missing sections.
+* Do not expose internal IDs unless the section explicitly returns display-safe values.
+* Item references may use shared item popover only through the accepted `item_popover_detail(...)` public/private contract.
+
+Acceptance:
+
+* Detail page can render all section keys safely.
+* Empty/null sections do not break the UI.
+* Public/private-compatible section rendering is possible where payload shape matches.
+
+---
+
+## UI-REPORTS-2C — Report read/remove actions
+
+Goal: wire private report read/remove actions through canonical Reports RPCs.
+
+Scope:
+
+* Mark a single report as read:
+
+  * `mark_report_read(p_hero_id, p_report_id)`
+* Remove a report from the hero’s list:
+
+  * `remove_report_from_list(p_hero_id, p_report_id, p_reason, p_request_id)`
+* Refresh:
+
+  * report list
+  * unread count
+  * selected/detail state if open
+  * shell/topbar counters only if an existing refresh pattern exists.
+
+Rules:
+
+* No direct writes.
+* No local read/remove mutation without backend confirmation.
+* No fake unread counts.
+* Do not call legacy `mark_game_report_read(...)`.
+* Do not call legacy `delete_game_report_for_hero(...)`.
+* Stale responses are ignored after active hero/server changes.
+
+Acceptance:
+
+* Read state persists through backend.
+* Remove action removes the row after backend success.
+* List and unread count refresh after action.
+* Unsupported action UI is omitted.
+
+---
+
+## UI-REPORTS-3A — Public report detail route
+
+Goal: render public report detail through the canonical public report RPC.
+
+Scope:
+
+* Add public report route for:
+
+  * `get_public_report_detail(p_public_token)`
+* Use `get_report_page_copy()` for public copy.
+* Render public not-found/unavailable state from:
+
+  * `access.isAvailable=false`
+  * `access.notFoundLabel`
+  * `copy.publicReport.header.notFoundTitle`
+  * `notFoundText`
+* Render public report core when available.
+
+Rules:
+
+* Do not call legacy `get_public_game_report_by_token(...)`.
+* Public route must not expect:
+
+  * private reportId
+  * heroId
+  * accessRole
+  * readAt
+  * isUnread
+  * account/user ids
+  * audit/anti-abuse/internal row ids.
+* Do not use private read/remove actions in public view.
+* Do not expose private-only section data.
+
+Acceptance:
+
+* Public token route renders available report.
+* Public not-found route renders DB-owned unavailable state.
+* Public report respects public safety boundary.
+
+---
+
+## UI-REPORTS-3B — Gameplay result handoff to private report detail
+
+Goal: route gameplay workflows that return `game_report_id` into the canonical private report renderer.
+
+Scope:
+
+* Update supported handoff points after combat/trial/encounter/spy/PvP workflows.
+* Use returned `game_report_id`.
+* Navigate/open the same private report detail renderer.
+* Remove or avoid duplicate transient report UIs where durable report exists.
+
+Rules:
+
+* Do not build separate post-combat/post-trial/post-encounter/post-spy renderers if `game_report_id` exists.
+* Do not parse workflow metadata for report contents.
+* Do not direct-read report source tables.
+* If a workflow lacks `game_report_id`, report a DB/RPC gap instead of creating a parallel frontend report model.
+
+Acceptance:
+
+* Workflow result opens canonical private detail.
+* Report detail renderer is reused.
+* No duplicate transient report UI remains for durable reports.
+
+---
+
+## UI-REPORTS-3C — Report item references and shared item popovers
+
+Goal: show item references in report detail using the shared item popover boundary.
+
+Scope:
+
+* Render `itemReferencesJson`.
+* Use saved display components when live item detail is not available.
+* Use shared item popover only through:
+
+  * `item_popover_copy()`
+  * `item_popover_detail(...)`
+* Public report item references use public-safe path:
+
+  * `p_public_token`
+  * `p_item_reference_id`
+  * `p_context='public_report'`
+
+Rules:
+
+* Do not direct-read `items` or report item reference tables.
+* Do not pass page-local item detail copy.
+* Do not recompute item stats/bonuses/requirements.
+* Do not expose private item details in public report.
+
+Acceptance:
+
+* Private report item references display safely.
+* Public report item references display safely.
+* Shared popover behavior remains consistent with Armory/Auction.
+
+---
+
+## UI-REPORTS-4A — Topbar bell / shell counter integration
+
+Goal: connect Reports Center state to existing shell/topbar notification affordances.
+
+Scope:
+
+* Refresh unread report counter after:
+
+  * mark read
+  * remove report
+  * opening detail if mark-read action is triggered
+* Use existing shell/topbar read model or a canonical summary RPC if one exists.
+* Link topbar bell/menu to Reports Center or appropriate notification/report page.
+
+Rules:
+
+* No direct report count reads.
+* No local counter aggregation from the current list page unless the shell explicitly consumes that same canonical payload.
+* No notification archive implementation here.
+
+Acceptance:
+
+* Topbar unread count matches Reports Center after refresh.
+* Report actions refresh shell state through accepted pattern.
+
+---
+
+# Notifications follow-up boundary
+
+The current Reports Shape Guide does not define canonical Notifications archive RPCs.
+
+Do not implement Notifications archive inside UI-REPORTS until there is a separate Notifications Shape Guide or an accepted Reports+Notifications contract.
+
+Future notification tasks should be tracked separately, for example:
+
+* UI-NOTIFICATIONS-1A — Notifications archive shell
+* UI-NOTIFICATIONS-1B — Notifications list/pagination
+* UI-NOTIFICATIONS-1C — Notification read actions/topbar refresh
+
+Rules for future notification work:
+
+* Do not mix report rows and notification rows locally.
+* Do not infer notification read state from report state.
+* Do not direct-read notification tables.
+* Do not fake a Notifications tab if no backend contract exists.
+
 # Appendix A — Codex UI task template
 
 ```md

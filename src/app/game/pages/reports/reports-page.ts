@@ -1,10 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
-import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
+import { GamePageHeader } from '../../../shared/game-page-header/game-page-header';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { ReportsPageState } from './reports-page.state';
 
@@ -12,13 +7,8 @@ import { ReportsPageState } from './reports-page.state';
   selector: 'app-reports-page',
   standalone: true,
   imports: [
-    ButtonModule,
-    CheckboxModule,
-    InputTextModule,
+    GamePageHeader,
     LoadingOverlay,
-    ReactiveFormsModule,
-    RouterLink,
-    SelectModule,
   ],
   providers: [ReportsPageState],
   templateUrl: './reports-page.html',

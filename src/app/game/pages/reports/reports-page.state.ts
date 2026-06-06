@@ -1,195 +1,152 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
-import { forkJoin } from 'rxjs';
-import { UiMetadataEntryReadModel } from '../../../core/domain/admin-ui-metadata.model';
-import {
-  GameReportServerFilters,
-  PrivateGameReportListItem,
-} from '../../../core/domain/reports/game-report.model';
-import { GameReports } from '../../../core/services/reports/game-reports';
-import { GameReportUiMetadataService } from '../../../core/services/reports/game-report-ui-metadata';
-import { ToastService } from '../../../core/services/ui/toast';
-import { getErrorMessage } from '../../../core/utils/error-message';
-import { ReportsUiMetadata } from './reports-ui-metadata';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ReportListPage, ReportPageCopy } from '../../../core/domain/reports/report.model';
+import { GamePageSummaryRow } from '../../../core/interfaces/game-page-summary-row.interface';
+import { ActiveHero } from '../../../core/services/hero/active-hero';
+import { PlayerReports } from '../../../core/services/reports/player-reports';
+import { RequestToken } from '../../../core/utils/request-token';
 
-const REPORT_LIMIT = 50;
-
-type ReportsFilterForm = FormGroup<{
-  reportTypeKey: FormControl<string>;
-  unreadOnly: FormControl<boolean>;
-  searchText: FormControl<string>;
-}>;
+const REPORT_LIST_PAGE_LIMIT = 25;
+const REPORT_LIST_PAGE_OFFSET = 0;
 
 @Injectable()
 export class ReportsPageState {
-  private readonly gameReports = inject(GameReports);
-  private readonly uiMetadataService = inject(GameReportUiMetadataService);
-  private readonly toast = inject(ToastService);
-  private loadRequestId = 0;
+  private readonly activeHero = inject(ActiveHero);
+  private readonly reports = inject(PlayerReports);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly requestToken = new RequestToken();
 
-  readonly form: ReportsFilterForm = new FormGroup({
-    reportTypeKey: new FormControl('', { nonNullable: true }),
-    unreadOnly: new FormControl(false, { nonNullable: true }),
-    searchText: new FormControl('', { nonNullable: true }),
-  });
+  private activeHeroId: string | null = null;
+  private activeServerId: string | null = null;
 
-  readonly reports = signal<PrivateGameReportListItem[]>([]);
-  readonly uiMetadataEntries = signal<UiMetadataEntryReadModel[]>([]);
-  readonly uiMetadata = new ReportsUiMetadata(() => this.uiMetadataEntries());
-  readonly unreadCount = signal(0);
-  readonly isLoading = signal(true);
-  readonly deletingReportId = signal<string | null>(null);
-  readonly error = signal<string | null>(null);
-
-  readonly reportTypeOptions = computed(() => {
-    const byKey = new Map<string, string>();
-
-    for (const report of this.reports()) {
-      byKey.set(report.reportTypeKey, report.reportTypeLabel);
-    }
-
-    return Array.from(byKey, ([value, label]) => ({ value, label }))
-      .sort((left, right) => left.label.localeCompare(right.label));
-  });
-  readonly reportTypeFilterOptions = computed(() => [
-    { value: '', label: 'All types' },
-    ...this.reportTypeOptions(),
-  ]);
-
-  readonly visibleReports = computed(() =>
-    filterReportsBySearch(this.reports(), this.form.controls.searchText.value),
-  );
+  readonly copy = signal<ReportPageCopy | null>(null);
+  readonly listPage = signal<ReportListPage | null>(null);
+  readonly hasError = signal(false);
+  readonly pendingRequestCount = signal(0);
+  readonly isLoading = computed(() => this.pendingRequestCount() > 0);
+  readonly headerSummaryRows: readonly GamePageSummaryRow[] = [];
 
   loadData(): void {
-    const requestId = ++this.loadRequestId;
-    const filters = this.serverFilters();
+    const token = this.requestToken.next();
 
-    this.isLoading.set(true);
-    this.error.set(null);
+    this.copy.set(null);
+    this.listPage.set(null);
+    this.hasError.set(false);
+    this.pendingRequestCount.set(1);
 
-    forkJoin({
-      reports: this.gameReports.getActiveHeroReports(filters),
-      unreadCount: this.gameReports.getActiveHeroUnreadCount(),
-      uiMetadataEntries: this.uiMetadataService.getReportsCenterEntries(),
-    }).subscribe({
-      next: ({ reports, unreadCount, uiMetadataEntries }) => {
-        if (requestId !== this.loadRequestId) {
-          return;
-        }
+    this.activeHero
+      .requireActiveHero()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (state) => {
+          this.finishRequest(token);
 
-        this.reports.set(reports);
-        this.uiMetadataEntries.set(uiMetadataEntries);
-        this.unreadCount.set(unreadCount);
-        this.isLoading.set(false);
-      },
-      error: (error: unknown) => {
-        if (requestId !== this.loadRequestId) {
-          return;
-        }
+          if (!this.requestToken.isCurrent(token)) {
+            return;
+          }
 
-        const message = getErrorMessage(error, 'Failed to load game reports.');
-        this.error.set(message);
-        this.toast.show('error', 'Reports unavailable', message);
-        this.isLoading.set(false);
-      },
-    });
+          this.activeHeroId = state.heroId;
+          this.activeServerId = state.serverId;
+          this.loadReportsFoundation(state.heroId, state.serverId, token);
+        },
+        error: (error: unknown) => {
+          this.finishRequest(token);
+
+          if (!this.requestToken.isCurrent(token)) {
+            return;
+          }
+
+          this.hasError.set(true);
+        },
+      });
   }
 
-  applyFilters(): void {
-    this.loadData();
+  private loadReportsFoundation(heroId: string, serverId: string, token: number): void {
+    this.loadPageCopy(heroId, serverId, token);
+    this.loadListPage(heroId, serverId, token);
   }
 
-  clearFilters(): void {
-    this.form.reset({
-      reportTypeKey: '',
+  private loadPageCopy(heroId: string, serverId: string, token: number): void {
+    this.startRequest(token);
+
+    this.reports.getPageCopy()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (copy) => {
+          this.finishRequest(token);
+
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
+            return;
+          }
+
+          this.copy.set(copy);
+        },
+        error: (error: unknown) => {
+          this.finishRequest(token);
+
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
+            return;
+          }
+
+          this.hasError.set(true);
+        },
+      });
+  }
+
+  private loadListPage(heroId: string, serverId: string, token: number): void {
+    this.startRequest(token);
+
+    this.reports.getListPage({
+      heroId,
+      limit: REPORT_LIST_PAGE_LIMIT,
+      offset: REPORT_LIST_PAGE_OFFSET,
+      reportTypeKey: null,
       unreadOnly: false,
-      searchText: '',
-    });
-    this.loadData();
+    })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (listPage) => {
+          this.finishRequest(token);
+
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
+            return;
+          }
+
+          this.listPage.set(listPage);
+        },
+        error: (error: unknown) => {
+          this.finishRequest(token);
+
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
+            return;
+          }
+
+          this.hasError.set(true);
+        },
+      });
   }
 
-  removeReport(report: PrivateGameReportListItem): void {
-    if (this.deletingReportId()) {
+  private isCurrentRequest(token: number, heroId: string, serverId: string): boolean {
+    return (
+      this.requestToken.isCurrent(token) &&
+      this.activeHeroId === heroId &&
+      this.activeServerId === serverId
+    );
+  }
+
+  private startRequest(token: number): void {
+    if (!this.requestToken.isCurrent(token)) {
       return;
     }
 
-    this.deletingReportId.set(report.reportId);
-    this.error.set(null);
-
-    this.gameReports.deleteActiveHeroReport(report.reportId).subscribe({
-      next: () => {
-        this.toast.show('success', 'Report removed', `${report.title} was removed.`);
-        this.deletingReportId.set(null);
-        this.loadData();
-      },
-      error: (error: unknown) => {
-        const message = getErrorMessage(error, 'Failed to remove game report.');
-        this.error.set(message);
-        this.toast.show('error', 'Report removal failed', message);
-        this.deletingReportId.set(null);
-      },
-    });
+    this.pendingRequestCount.update((count) => count + 1);
   }
 
-  publicShareToken(report: PrivateGameReportListItem): string {
-    return report.publicToken;
-  }
-
-  copyPublicToken(report: PrivateGameReportListItem): void {
-    const token = this.publicShareToken(report);
-
-    if (!navigator.clipboard) {
-      this.toast.show('info', 'Public token', token);
+  private finishRequest(token: number): void {
+    if (!this.requestToken.isCurrent(token)) {
       return;
     }
 
-    void navigator.clipboard.writeText(token)
-      .then(() => this.toast.show('success', 'Public token copied', token))
-      .catch(() => this.toast.show('info', 'Public token', token));
+    this.pendingRequestCount.update((count) => Math.max(0, count - 1));
   }
-
-  participantSummary(report: PrivateGameReportListItem): string {
-    if (report.participants.length === 0) {
-      return 'No participants';
-    }
-
-    return report.participants
-      .map((participant) => participant.displayName)
-      .join(', ');
-  }
-
-  toDateTimeLabel(value: string): string {
-    return new Date(value).toLocaleString();
-  }
-
-  private serverFilters(): GameReportServerFilters {
-    return {
-      reportTypeKey: this.form.controls.reportTypeKey.value || null,
-      unreadOnly: this.form.controls.unreadOnly.value,
-      limit: REPORT_LIMIT,
-      offset: 0,
-    };
-  }
-}
-
-function filterReportsBySearch(
-  reports: readonly PrivateGameReportListItem[],
-  rawSearchText: string,
-): PrivateGameReportListItem[] {
-  const searchText = rawSearchText.trim().toLowerCase();
-
-  if (!searchText) {
-    return [...reports];
-  }
-
-  return reports.filter((report) => {
-    const values = [
-      report.title,
-      report.summary,
-      report.reportTypeLabel,
-      ...report.participants.map((participant) => participant.displayName),
-    ];
-
-    return values.some((value) => value?.toLowerCase().includes(searchText));
-  });
 }

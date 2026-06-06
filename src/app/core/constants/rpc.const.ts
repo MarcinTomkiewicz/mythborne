@@ -94,6 +94,8 @@ export const RPC = {
   get_hero_estate_runtime_state: 'get_hero_estate_runtime_state',
   start_estate_building_upgrade: 'start_estate_building_upgrade',
   delete_game_report_for_hero: 'delete_game_report_for_hero',
+  get_report_list_page: 'get_report_list_page',
+  get_report_page_copy: 'get_report_page_copy',
   get_hero_game_report_detail: 'get_hero_game_report_detail',
   get_hero_game_report_unread_count: 'get_hero_game_report_unread_count',
   get_hero_game_reports: 'get_hero_game_reports',
