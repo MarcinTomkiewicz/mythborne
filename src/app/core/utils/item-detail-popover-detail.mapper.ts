@@ -24,7 +24,7 @@ import {
 
 export function mapItemDetailPopoverDetail(
   value: Json,
-  fieldPath = 'get_player_item_popover_detail',
+  fieldPath = 'item_popover_detail',
 ): ItemDetailPopoverDetailReadModel {
   const root = requiredRecord(value, fieldPath);
   const contractVersion = requiredText(

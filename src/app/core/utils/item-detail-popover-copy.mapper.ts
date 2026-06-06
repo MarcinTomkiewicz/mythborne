@@ -8,7 +8,7 @@ import {
 
 export function mapItemDetailPopoverCopy(
   value: Json | undefined,
-  fieldPath = 'get_item_detail_popover_copy',
+  fieldPath = 'item_popover_copy',
 ): ItemDetailPopoverCopy {
   const itemDetail = requiredRecord(value, fieldPath);
   const contractVersion = requiredText(

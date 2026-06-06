@@ -49,6 +49,7 @@ export type ItemPopoverContextKey =
   | 'auction'
   | 'trade'
   | 'exploration'
+  | 'public_report'
   | string;
 
 export interface ItemDetailPopoverCopy {

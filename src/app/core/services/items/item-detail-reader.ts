@@ -3,9 +3,12 @@ import { map, Observable, switchMap } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import { ItemPopoverContextKey } from '../../domain/item/item-detail-popover.model';
 import { ItemDetailPopoverDetailReadModel } from '../../domain/item/item-detail-popover-detail.model';
-import { Database } from '../../types/database.types';
+import {
+  ItemPopoverDetailRpcArgs,
+  ItemPopoverDetailRpcResult,
+} from '../../types/item-popover-rpc.types';
 import { mapItemDetailPopoverDetail } from '../../utils/item-detail-popover-detail.mapper';
-import { requiredTrimmedText } from '../../utils/normalize-text';
+import { requiredTrimmedText, trimToNull } from '../../utils/normalize-text';
 import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
 
@@ -15,28 +18,51 @@ export class ItemDetailReader {
   private readonly backend = inject(Backend);
 
   readItemDetail(
-    itemId: string,
+    itemId: string | null,
     context: ItemPopoverContextKey | null = null,
+    publicToken: string | null = null,
+    itemReferenceId: string | null = null,
   ): Observable<ItemDetailPopoverDetailReadModel> {
-    const normalizedItemId = requiredTrimmedText(
-      itemId,
+    const normalizedItemId = trimToNull(itemId);
+    const normalizedContext = context?.trim() || null;
+    const normalizedPublicToken = trimToNull(publicToken);
+    const normalizedItemReferenceId = trimToNull(itemReferenceId);
+
+    if (normalizedPublicToken && normalizedItemReferenceId) {
+      const args: ItemPopoverDetailRpcArgs = {
+        p_hero_id: null,
+        p_item_id: null,
+        p_context: normalizedContext ?? 'public_report',
+        p_public_token: normalizedPublicToken,
+        p_item_reference_id: normalizedItemReferenceId,
+      };
+
+      return this.backend.rpc<ItemPopoverDetailRpcResult>(
+        RPC.item_popover_detail,
+        args,
+      ).pipe(
+        map((detail) => mapItemDetailPopoverDetail(detail)),
+      );
+    }
+
+    const liveItemId = requiredTrimmedText(
+      normalizedItemId,
       'itemId',
       'item popover RPC',
     );
-    const normalizedContext = context?.trim() || null;
 
     return this.activeHero.requireActiveHero().pipe(
       switchMap((activeHeroContext) => {
-        const args: PlayerItemPopoverDetailRpcArgs = {
+        const args: ItemPopoverDetailRpcArgs = {
           p_hero_id: activeHeroContext.heroId,
-          p_item_id: normalizedItemId,
+          p_item_id: liveItemId,
           p_context: normalizedContext,
+          p_public_token: null,
+          p_item_reference_id: null,
         };
 
-        return this.backend.rpc<
-          Database['public']['Functions']['get_player_item_popover_detail']['Returns']
-        >(
-          RPC.get_player_item_popover_detail,
+        return this.backend.rpc<ItemPopoverDetailRpcResult>(
+          RPC.item_popover_detail,
           args,
         );
       }),
@@ -44,9 +70,3 @@ export class ItemDetailReader {
     );
   }
 }
-
-type PlayerItemPopoverDetailRpcArgs = {
-  p_hero_id: string;
-  p_item_id: string;
-  p_context: string | null;
-};

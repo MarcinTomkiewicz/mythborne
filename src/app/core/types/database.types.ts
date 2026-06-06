@@ -14698,6 +14698,18 @@ export type Database = {
         }
         Returns: number
       }
+      apply_item_detail_popover_item_stats_filter: {
+        Args: { p_response: Json }
+        Returns: Json
+      }
+      apply_item_detail_popover_requirement_current_text: {
+        Args: { p_response: Json }
+        Returns: Json
+      }
+      apply_item_detail_popover_requirement_status: {
+        Args: { p_item_id: string; p_response: Json; p_viewer_hero_id: string }
+        Returns: Json
+      }
       apply_item_generation_bucket_profile_draft_entry: {
         Args: {
           p_actor: string
@@ -15088,6 +15100,38 @@ export type Database = {
           skipped_count: number
         }[]
       }
+      auction_bid_status_label: {
+        Args: {
+          p_status: Database["public"]["Enums"]["player_auction_bid_status"]
+        }
+        Returns: string
+      }
+      auction_bid_status_tone: {
+        Args: {
+          p_status: Database["public"]["Enums"]["player_auction_bid_status"]
+        }
+        Returns: string
+      }
+      auction_character_points_display: {
+        Args: { p_amount: number }
+        Returns: string
+      }
+      auction_mode_label: {
+        Args: { p_mode: Database["public"]["Enums"]["player_auction_mode"] }
+        Returns: string
+      }
+      auction_pagination_json: {
+        Args: { p_limit: number; p_offset: number; p_total_count: number }
+        Returns: Json
+      }
+      auction_status_label: {
+        Args: { p_status: Database["public"]["Enums"]["player_auction_status"] }
+        Returns: string
+      }
+      auction_status_tone: {
+        Args: { p_status: Database["public"]["Enums"]["player_auction_status"] }
+        Returns: string
+      }
       auto_resolve_combat_session: {
         Args: {
           p_request_id?: string
@@ -15208,11 +15252,15 @@ export type Database = {
         Returns: string
       }
       build_auction_bid_row: {
-        Args: { p_bid_id: string; p_hero_id: string }
+        Args: { p_bid_id: string; p_viewer_hero_id: string }
+        Returns: Json
+      }
+      build_auction_item_display_core: {
+        Args: { p_item_id: string }
         Returns: Json
       }
       build_auction_listing_row: {
-        Args: { p_hero_id: string; p_listing_id: string }
+        Args: { p_listing_id: string; p_viewer_hero_id: string }
         Returns: Json
       }
       build_combat_attack_log_display_json: {
@@ -15381,6 +15429,44 @@ export type Database = {
         Returns: Json
       }
       build_item_detail_popover_bonuses_json: {
+        Args: { p_item_id: string; p_viewer_hero_id: string }
+        Returns: Json
+      }
+      build_item_detail_popover_component_detail: {
+        Args: {
+          p_access: Json
+          p_base_id: string
+          p_created_at: string
+          p_item_id: string
+          p_item_name: string
+          p_item_status: string
+          p_owner_hero_id: string
+          p_owner_hero_name: string
+          p_prefix_affix_id: string
+          p_quality_key: string
+          p_report_item_reference_id: string
+          p_server_id: string
+          p_suffix_affix_id: string
+          p_viewer_hero_id: string
+        }
+        Returns: Json
+      }
+      build_item_detail_popover_component_requirement_status: {
+        Args: {
+          p_base_id: string
+          p_prefix_affix_id: string
+          p_quality_key: string
+          p_suffix_affix_id: string
+          p_viewer_hero_id: string
+        }
+        Returns: Json
+      }
+      build_item_detail_popover_copy_payload: { Args: never; Returns: Json }
+      build_item_detail_popover_live_detail: {
+        Args: { p_context?: string; p_hero_id: string; p_item_id: string }
+        Returns: Json
+      }
+      build_item_detail_popover_requirement_status_json: {
         Args: { p_item_id: string; p_viewer_hero_id: string }
         Returns: Json
       }
@@ -15943,6 +16029,15 @@ export type Database = {
           status: string
           success: boolean
         }[]
+      }
+      compose_generated_item_name: {
+        Args: {
+          p_base_id: string
+          p_prefix_affix_id: string
+          p_quality_key: string
+          p_suffix_affix_id: string
+        }
+        Returns: string
       }
       compose_item_generation_display_name: {
         Args: {
@@ -17640,6 +17735,10 @@ export type Database = {
       }
       filter_item_detail_player_modifier_rows: {
         Args: { p_base_type_key: string; p_bonuses_json: Json }
+        Returns: Json
+      }
+      filter_item_detail_popover_item_stats_rows: {
+        Args: { p_rows: Json }
         Returns: Json
       }
       filter_player_facing_item_stats_json: {
@@ -20099,7 +20198,16 @@ export type Database = {
           set_label: string
         }[]
       }
-      get_item_detail_popover_copy: { Args: never; Returns: Json }
+      get_item_detail_popover_raw_v1: {
+        Args: {
+          p_context?: string
+          p_hero_id?: string
+          p_item_id?: string
+          p_item_reference_id?: string
+          p_public_token?: string
+        }
+        Returns: Json
+      }
       get_item_effective_requirements: {
         Args: { p_item_id: string }
         Returns: {
@@ -20652,10 +20760,6 @@ export type Database = {
         Args: { p_hero_id: string }
         Returns: Json
       }
-      get_player_auction_page_context: {
-        Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
-        Returns: Json
-      }
       get_player_dashboard_copy_json: { Args: never; Returns: Json }
       get_player_dashboard_page_context: {
         Args: { p_hero_id: string }
@@ -20676,12 +20780,10 @@ export type Database = {
         Args: { p_hero_id: string }
         Returns: Json
       }
-      get_player_item_popover_detail:
-        | { Args: { p_hero_id: string; p_item_id: string }; Returns: Json }
-        | {
-            Args: { p_context?: string; p_hero_id: string; p_item_id: string }
-            Returns: Json
-          }
+      get_player_item_popover_detail_raw_v1: {
+        Args: { p_context?: string; p_hero_id: string; p_item_id: string }
+        Returns: Json
+      }
       get_player_page_hero_guard: {
         Args: { p_hero_id: string; p_operation?: string }
         Returns: {
@@ -21058,6 +21160,15 @@ export type Database = {
         }
         Returns: Json
       }
+      get_trade_create_context_raw_v1: {
+        Args: {
+          p_hero_id: string
+          p_limit?: number
+          p_offset?: number
+          p_target_hero_id?: string
+        }
+        Returns: Json
+      }
       get_trade_item_similarity_price_stats: {
         Args: {
           p_lookback_days?: number
@@ -21381,6 +21492,21 @@ export type Database = {
         Args: { p_affix_id: string; p_base_type_key: string }
         Returns: boolean
       }
+      item_detail_popover_current_display_text: {
+        Args: { p_value: string }
+        Returns: string
+      }
+      item_popover_copy: { Args: never; Returns: Json }
+      item_popover_detail: {
+        Args: {
+          p_context?: string
+          p_hero_id?: string
+          p_item_id?: string
+          p_item_reference_id?: string
+          p_public_token?: string
+        }
+        Returns: Json
+      }
       kick_guild_member: {
         Args: {
           p_actor_hero_id: string
@@ -21646,6 +21772,18 @@ export type Database = {
       }
       normalize_hero_attack_plan_dashboard_source_rows: {
         Args: { p_payload: Json }
+        Returns: Json
+      }
+      normalize_item_detail_popover_item_detail_current_text: {
+        Args: { p_item_detail: Json }
+        Returns: Json
+      }
+      normalize_item_detail_popover_requirement_row_current_text: {
+        Args: { p_requirement_row: Json }
+        Returns: Json
+      }
+      normalize_item_detail_popover_requirement_rows_current_text: {
+        Args: { p_requirement_rows: Json }
         Returns: Json
       }
       normalize_locale_key: { Args: { p_locale_key: string }; Returns: string }
