@@ -10,107 +10,25 @@
     />
 
     @if (page.listPage(); as listPage) {
-      <section class="mg-card radius-lg p-md flex-col gap-sm w-100 min-w-0">
-        <div class="flex-row-between-center flex-wrap gap-md w-100 min-w-0">
-          <div class="flex-col gap-xs min-w-0">
-            <h2 class="color-heading font-display text-lg m-0">
-              {{ copy.reportsCenter.list.title }}
-            </h2>
-            <span class="color-muted text-sm">{{ listPage.pagination.displayLabel }}</span>
-          </div>
+      <app-report-filters-panel
+        [filters]="copy.reportsCenter.filters"
+        [filterForm]="page.filtersForm"
+        (apply)="page.applyFilters()"
+      />
 
-          <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
-            {{ copy.reportsCenter.list.unreadLabel }} {{ listPage.unreadCount }}
-          </span>
-        </div>
-
-        <form
-          class="mg-card radius-lg p-md flex-col gap-sm w-100 min-w-0"
-          [formGroup]="page.filtersForm"
-          (ngSubmit)="page.applyFilters()"
-        >
-          <div class="flex-col gap-xs w-100 min-w-0">
-            <strong class="color-heading">{{ copy.reportsCenter.filters.title }}</strong>
-            <span class="color-muted text-sm">
-              {{ copy.reportsCenter.filters.helperText }}
-            </span>
-          </div>
-
-          <div class="flex-row-start-center gap-sm w-100 min-w-0">
-            <p-checkbox
-              inputId="reports-unread-only"
-              formControlName="unreadOnly"
-              [binary]="true"
-              (onChange)="page.applyFilters()"
-            />
-            <label class="color-heading text-sm" for="reports-unread-only">
-              {{ copy.reportsCenter.filters.unreadOnlyLabel }}
-            </label>
-          </div>
-        </form>
-
-        @if (listPage.reports.length === 0) {
-          <section class="mg-card radius-lg p-md flex-col gap-xs w-100 min-w-0">
-            <strong class="color-heading">{{ copy.reportsCenter.list.emptyTitle }}</strong>
-            <span class="color-muted text-sm">{{ copy.reportsCenter.list.emptyText }}</span>
-          </section>
-        } @else {
-          <div class="flex-col gap-sm w-100 min-w-0">
-            @for (report of listPage.reports; track report.reportId) {
-              <article class="mg-data-row mg-data-row--listing">
-                <div class="flex-col gap-xs flex-none">
-                  <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
-                    {{ report.reportTypeLabel }}
-                  </span>
-                  @if (report.isUnread) {
-                    <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
-                      {{ copy.reportsCenter.list.unreadLabel }}
-                    </span>
-                  } @else {
-                    <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
-                      {{ copy.reportsCenter.list.readLabel }}
-                    </span>
-                  }
-                </div>
-
-                <div class="flex-col gap-xs min-w-0">
-                  <h3 class="color-heading text-md m-0 text-break">{{ report.title }}</h3>
-                  @if (report.summary) {
-                    <span class="color-muted text-sm text-break">{{ report.summary }}</span>
-                  }
-                  <div class="flex-row-start-center flex-wrap gap-sm w-100 min-w-0">
-                    <span class="flex-row-start-center gap-xs color-muted text-xs">
-                      <span>{{ copy.labels.participants }}</span>
-                      <strong class="color-heading">{{ report.participantsJson.length }}</strong>
-                    </span>
-                    <span class="flex-row-start-center gap-xs color-muted text-xs">
-                      <span>{{ copy.detail.sections.itemReferences }}</span>
-                      <strong class="color-heading">{{ report.itemReferencesCount }}</strong>
-                    </span>
-                  </div>
-                </div>
-
-                <div class="flex-col gap-xs text-right flex-none">
-                  <span class="color-muted text-xs">{{ copy.labels.createdAt }}</span>
-                  <time class="color-heading text-sm" [attr.datetime]="report.createdAt">
-                    {{ page.formatDateTime(report.createdAt) }}
-                  </time>
-                </div>
-              </article>
-            }
-          </div>
-        }
-
-        <nav class="mg-card radius-lg flex-row-between-center flex-wrap gap-md p-md w-100 min-w-0">
-          <strong class="color-heading text-sm">{{ listPage.pagination.displayLabel }}</strong>
-          <p-paginator
-            [first]="listPage.pagination.offset"
-            [rows]="listPage.pagination.limit"
-            [totalRecords]="listPage.pagination.totalCount"
-            (onPageChange)="page.changeReportsPage($event)"
-          />
-        </nav>
-      </section>
+      <app-report-list-section
+        [title]="copy.reportsCenter.list.title"
+        [emptyTitle]="copy.reportsCenter.list.emptyTitle"
+        [emptyText]="copy.reportsCenter.list.emptyText"
+        [unreadLabel]="copy.reportsCenter.list.unreadLabel"
+        [readLabel]="copy.reportsCenter.list.readLabel"
+        [unreadCount]="listPage.unreadCount"
+        [reports]="listPage.reports"
+        [pagination]="listPage.pagination"
+        [labels]="copy.labels"
+        [detailSections]="copy.detail.sections"
+        (pageChange)="page.changeReportsPage($event)"
+      />
     }
   </div>
 }

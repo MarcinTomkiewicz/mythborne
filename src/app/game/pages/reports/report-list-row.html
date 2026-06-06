@@ -1,0 +1,40 @@
+<article class="mg-data-row mg-data-row--listing">
+  <div class="flex-col gap-xs flex-none">
+    <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
+      {{ report().reportTypeLabel }}
+    </span>
+    @if (report().isUnread) {
+      <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
+        {{ unreadLabel() }}
+      </span>
+    } @else {
+      <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
+        {{ readLabel() }}
+      </span>
+    }
+  </div>
+
+  <div class="flex-col gap-xs min-w-0">
+    <h3 class="color-heading text-md m-0 text-break">{{ report().title }}</h3>
+    @if (report().summary) {
+      <span class="color-muted text-sm text-break">{{ report().summary }}</span>
+    }
+    <div class="flex-row-start-center flex-wrap gap-sm w-100 min-w-0">
+      <span class="flex-row-start-center gap-xs color-muted text-xs">
+        <span>{{ labels().participants }}</span>
+        <strong class="color-heading">{{ report().participantsJson.length }}</strong>
+      </span>
+      <span class="flex-row-start-center gap-xs color-muted text-xs">
+        <span>{{ detailSections().itemReferences }}</span>
+        <strong class="color-heading">{{ report().itemReferencesCount }}</strong>
+      </span>
+    </div>
+  </div>
+
+  <div class="flex-col gap-xs text-right flex-none">
+    <span class="color-muted text-xs">{{ labels().createdAt }}</span>
+    <time class="color-heading text-sm" [attr.datetime]="report().createdAt">
+      {{ formatDateTime(report().createdAt) }}
+    </time>
+  </div>
+</article>

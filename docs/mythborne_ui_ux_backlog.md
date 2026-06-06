@@ -12064,6 +12064,8 @@ Acceptance:
 * Row/list/filter components are reusable for detail/public/notifications only where their contracts match.
 * No local SCSS or prototype CSS remains.
 
+**Status:** Accepted/completed on 2026-06-06 as the Reports Center component split and visual cleanup slice. `/game/reports` now keeps `ReportsPage` as an aggregate for loading, header and layout, while read-only list rendering lives in local standalone `ReportListSection`, `ReportListRow` and `ReportFiltersPanel` components. The split keeps the existing canonical Reports list/filter behavior, uses global `mg-card`, `mg-chip` and `mg-data-row mg-data-row--listing` utilities, adds no local Reports SCSS, and does not introduce detail rendering, actions, notifications or public report routing.
+
 ---
 
 ## UI-REPORTS-2A — Private report detail route/shell

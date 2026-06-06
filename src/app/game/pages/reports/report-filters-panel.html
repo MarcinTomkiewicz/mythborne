@@ -1,0 +1,24 @@
+<form
+  class="mg-card radius-lg p-md flex-col gap-sm w-100 min-w-0"
+  [formGroup]="filterForm()"
+  (ngSubmit)="apply.emit()"
+>
+  <div class="flex-col gap-xs w-100 min-w-0">
+    <strong class="color-heading">{{ filters().title }}</strong>
+    <span class="color-muted text-sm">
+      {{ filters().helperText }}
+    </span>
+  </div>
+
+  <div class="flex-row-start-center gap-sm w-100 min-w-0">
+    <p-checkbox
+      inputId="reports-unread-only"
+      formControlName="unreadOnly"
+      [binary]="true"
+      (onChange)="apply.emit()"
+    />
+    <label class="color-heading text-sm" for="reports-unread-only">
+      {{ filters().unreadOnlyLabel }}
+    </label>
+  </div>
+</form>

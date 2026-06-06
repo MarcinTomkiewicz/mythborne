@@ -5,7 +5,6 @@ import { ReportListPage, ReportPageCopy } from '../../../core/domain/reports/rep
 import { GamePageSummaryRow } from '../../../core/interfaces/game-page-summary-row.interface';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
-import { toDateTimeLabel } from '../../../core/utils/date-display';
 import { RequestToken } from '../../../core/utils/request-token';
 
 const REPORT_LIST_PAGE_LIMIT = 25;
@@ -69,10 +68,6 @@ export class ReportsPageState {
           this.hasError.set(true);
         },
       });
-  }
-
-  formatDateTime(value: string): string {
-    return toDateTimeLabel(value);
   }
 
   applyFilters(): void {
