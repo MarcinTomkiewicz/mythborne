@@ -31,6 +31,12 @@ export function mapNullableReportSection<T>(
     : mapper(record, field);
 }
 
+export function presentReportSection<TSection extends object>(
+  section: TSection | ReportMissingSection | null | undefined,
+): TSection | null {
+  return section && !('missing' in section) ? section : null;
+}
+
 function mapMissingSection(record: JsonRecord, field: string): ReportMissingSection {
   return {
     missing: true,

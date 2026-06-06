@@ -105,6 +105,7 @@ export interface ReportCombatParticipantStatRow {
 }
 
 export interface ReportCombatParticipantRow {
+  heroId: string | null;
   side: string;
   sideLabel: string;
   participantKind: string;

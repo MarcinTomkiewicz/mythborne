@@ -1,0 +1,69 @@
+<div class="flex-col gap-lg w-100">
+  @if (view().outcomeBanner; as outcome) {
+    <app-outcome-report-layout
+      [label]="label()"
+      statusLabel=""
+      [title]="outcome.title"
+      [titleTone]="outcome.tone"
+      description=""
+      iconClass="pi pi-shield"
+    />
+  }
+
+  @if (view().narrativeLines.length) {
+    <section class="mg-card p-lg flex-col gap-md w-100">
+      @for (line of view().narrativeLines; track line) {
+        <p class="color-text text-md lh-16 m-0">{{ line }}</p>
+      }
+    </section>
+  }
+
+  @if (view().combatStage; as stage) {
+    <app-combat-stage [stage]="stage" />
+  }
+
+  @for (section of view().sections; track section.key) {
+    <section class="mg-card p-lg flex-col gap-md w-100">
+      <div class="flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs">
+          <p class="small-caps color-muted text-xs m-0">{{ section.title }}</p>
+          @if (section.summary) {
+            <p class="color-text text-md lh-16 m-0">{{ section.summary }}</p>
+          }
+        </div>
+        @if (section.chips.length) {
+          <div class="flex-row-end-center flex-wrap gap-xs">
+            @for (chip of section.chips; track chip) {
+              <span class="tag-badge tag-badge--muted">{{ chip }}</span>
+            }
+          </div>
+        }
+      </div>
+
+      @for (line of section.lines; track line) {
+        <p class="color-text text-md lh-16 m-0">{{ line }}</p>
+      }
+    </section>
+  }
+
+  @if (view().rewardResult; as reward) {
+    <section class="mg-card p-lg flex-col gap-sm w-100">
+      <p class="small-caps color-muted text-xs m-0">{{ reward.title }}</p>
+      <p class="color-text text-md lh-16 m-0">
+        @for (segment of reward.segments; track $index) {
+          @if (segment.isHighlighted) {
+            <strong class="color-heading">{{ segment.text }}</strong>
+          } @else {
+            <span>{{ segment.text }}</span>
+          }
+        }
+      </p>
+    </section>
+  }
+
+  <app-report-handoff-actions
+    [actions]="view().actions"
+    [directReportLabel]="directReportLabel()"
+    [publicReportCopyLabel]="publicReportCopyLabel()"
+  />
+</div>

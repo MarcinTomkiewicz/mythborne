@@ -46,6 +46,7 @@ export function mapCombatSection(record: JsonRecord, field: string): ReportComba
 
 function mapCombatParticipant(row: JsonRecord, field: string): ReportCombatParticipantRow {
   return {
+    heroId: optionalNullableText(read(row, 'heroId', 'hero_id'), `${field}.heroId`),
     side: requiredText(read(row, 'side'), `${field}.side`),
     sideLabel: requiredText(read(row, 'sideLabel'), `${field}.sideLabel`),
     participantKind: requiredText(read(row, 'participantKind'), `${field}.participantKind`),

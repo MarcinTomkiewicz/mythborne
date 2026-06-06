@@ -1,4 +1,16 @@
+import type { CombatStageViewModel } from '../combat/combat-stage.model';
+import type { ReportHandoffActionsViewModel } from './report-handoff.model';
+
 export type ReportDetailPreviewOutcomeTone = 'success' | 'danger' | 'warning' | 'neutral';
+
+export interface ReportDetailPreviewView {
+  outcomeBanner: ReportDetailPreviewOutcomeBanner | null;
+  combatStage: CombatStageViewModel | null;
+  narrativeLines: readonly string[];
+  sections: readonly ReportDetailPreviewSection[];
+  rewardResult: ReportDetailPreviewRewardResult | null;
+  actions: ReportHandoffActionsViewModel;
+}
 
 export interface ReportDetailPreviewSection {
   key: string;
@@ -15,13 +27,10 @@ export interface ReportDetailPreviewOutcomeBanner {
 
 export interface ReportDetailPreviewRewardResult {
   title: string;
-  summary: string | null;
-  entries: readonly ReportDetailPreviewRewardEntry[];
+  segments: readonly ReportDetailPreviewRewardTextSegment[];
 }
 
-export interface ReportDetailPreviewRewardEntry {
-  key: string;
-  title: string;
-  summary: string | null;
-  value: string | null;
+export interface ReportDetailPreviewRewardTextSegment {
+  text: string;
+  isHighlighted: boolean;
 }
