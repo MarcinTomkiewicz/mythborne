@@ -1,4 +1,5 @@
 import { Json } from '../../types/database.types';
+import { KeyLabel } from '../common/key-label.model';
 import {
   ReportContentKind as CanonicalReportContentKind,
   ReportDomainKey as CanonicalReportDomainKey,
@@ -26,8 +27,8 @@ export interface ReportsCenterListRowV2 {
   reportDomainKey: CanonicalReportDomainKey | string;
   contentKind: CanonicalReportContentKind | string;
   resultKind: string | null;
-  source: ReportsCenterKeyLabel;
-  eventType: ReportsCenterKeyLabel;
+  source: KeyLabel;
+  eventType: KeyLabel;
   title: string;
   summary: string | null;
   createdAt: string;
@@ -45,14 +46,14 @@ export interface ReportsCenterPreviewV1 {
   reportId: string;
   title: string;
   summary: string | null;
-  source: ReportsCenterKeyLabel;
-  eventType: ReportsCenterKeyLabel;
+  source: KeyLabel;
+  eventType: KeyLabel;
   reportDate: ReportsCenterReportDateV1;
   outcomeStatus: ReportsCenterOutcomeStatusV1;
   opponentTarget: ReportsCenterOpponentTargetV1;
   address: ReportsCenterAddressV1;
   combat: ReportsCenterCombatPreviewV1;
-  reward: ReportsCenterRewardPreviewV1;
+  reward: ReportsCenterPreviewRewardV1;
   access: ReportsCenterAccessPreviewV1;
   publicAccess: ReportsCenterPublicAccessV1;
   marker: ReportsCenterMarkerV1;
@@ -127,11 +128,6 @@ export interface MarkAllReportsReadResultV1 {
   filters: ReportsCenterAppliedFiltersV1;
 }
 
-export interface ReportsCenterKeyLabel {
-  key: string;
-  label: string;
-}
-
 export interface ReportsCenterReportDateV1 {
   value: string;
   displayValue: string | null;
@@ -160,10 +156,35 @@ export interface ReportsCenterCombatPreviewV1 {
   attackCount: number;
 }
 
-export interface ReportsCenterRewardPreviewV1 {
+export interface ReportsCenterPreviewRewardV1 {
   summary: string | null;
   entryCount: number;
+  entriesPreview: ReportsCenterPreviewRewardEntryV1[];
   resourcesSummary: string | null;
+  resources: {
+    summary: string | null;
+    rows: ReportsCenterPreviewResourceRowV1[];
+  };
+}
+
+export interface ReportsCenterPreviewRewardEntryV1 {
+  kind: string | null;
+  label: string | null;
+  displayValue: string;
+  amount: number | null;
+  amountDisplay: string | null;
+  resourceType: string | null;
+  sourceKind: string | null;
+}
+
+export interface ReportsCenterPreviewResourceRowV1 {
+  resourceType: string | null;
+  label: string | null;
+  displayValue: string;
+  amount: number | null;
+  gainAmount: number | null;
+  lossAmount: number | null;
+  sinkAmount: number | null;
 }
 
 export interface ReportsCenterAccessPreviewV1 {

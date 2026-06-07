@@ -7,10 +7,14 @@ import {
   ReportsCenterAppliedFiltersV1,
   ReportsCenterPageContextV2,
 } from '../../../core/domain/reports/reports-center.model';
-import { GamePageSummaryRow } from '../../../core/interfaces/game-page-summary-row.interface';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
+import {
+  nonNegativeIntegerOrNull,
+  positiveIntegerOrNull,
+} from '../../../core/utils/number-guards';
 import { createRequestId } from '../../../core/utils/request-id';
+import { mapReportsCenterHeaderSummaryRows } from '../../../core/utils/reports-center-header-summary.mapper';
 import { RequestToken } from '../../../core/utils/request-token';
 
 const REPORTS_CENTER_PAGE_LIMIT = 12;
@@ -41,8 +45,6 @@ export class ReportsPageState {
   readonly context = signal<ReportsCenterPageContextV2 | null>(null);
   readonly selectedReportId = signal<string | null>(null);
   readonly hasError = signal(false);
-  readonly pageCopyLoadMs = signal<number | null>(null);
-  readonly reportsCenterContextLoadMs = signal<number | null>(null);
   readonly pendingRequestCount = signal(0);
   readonly isLoading = computed(() => this.pendingRequestCount() > 0);
   readonly selectedRow = computed(() => {
@@ -53,32 +55,9 @@ export class ReportsPageState {
   readonly selectedPreview = computed(() =>
     this.selectedRow()?.preview ?? this.context()?.selectedPreview ?? null,
   );
-  readonly headerSummaryRows = computed<readonly GamePageSummaryRow[]>(() => {
-    const summary = this.context()?.summary;
-
-    if (!summary) {
-      return [];
-    }
-
-    return [
-      {
-        key: 'totalReports',
-        label: summary.totalReports.label,
-        value: summary.totalReports.value,
-      },
-      {
-        key: 'unreadReports',
-        label: summary.unreadReports.label,
-        value: summary.unreadReports.value,
-      },
-      {
-        key: 'latestReport',
-        label: summary.latestReport.label,
-        value: summary.latestReport.title ?? summary.latestReport.fallbackLabel,
-        route: summary.latestReport.privatePath ?? undefined,
-      },
-    ];
-  });
+  readonly headerSummaryRows = computed(() =>
+    mapReportsCenterHeaderSummaryRows(this.context()?.summary),
+  );
 
   loadData(): void {
     const token = this.beginRequestToken();
@@ -87,8 +66,6 @@ export class ReportsPageState {
     this.context.set(null);
     this.selectedReportId.set(null);
     this.hasError.set(false);
-    this.pageCopyLoadMs.set(null);
-    this.reportsCenterContextLoadMs.set(null);
     this.listLimit = REPORTS_CENTER_PAGE_LIMIT;
     this.listOffset = REPORTS_CENTER_PAGE_OFFSET;
     this.filtersForm.setValue({
@@ -139,8 +116,8 @@ export class ReportsPageState {
       return;
     }
 
-    this.listLimit = positiveInteger(input.rows) ?? this.listLimit;
-    this.listOffset = nonNegativeInteger(input.first) ?? REPORTS_CENTER_PAGE_OFFSET;
+    this.listLimit = positiveIntegerOrNull(input.rows) ?? this.listLimit;
+    this.listOffset = nonNegativeIntegerOrNull(input.first) ?? REPORTS_CENTER_PAGE_OFFSET;
     this.loadCurrentPage();
   }
 
@@ -220,8 +197,6 @@ export class ReportsPageState {
   private loadPageCopy(heroId: string, serverId: string, token: number): void {
     this.startRequest();
 
-    const startedAt = performance.now();
-
     this.reports.getPageCopy()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -233,7 +208,6 @@ export class ReportsPageState {
             return;
           }
 
-          this.recordPageCopyTiming(startedAt);
           this.copy.set(copy);
         },
         error: () => {
@@ -241,7 +215,6 @@ export class ReportsPageState {
             return;
           }
 
-          this.recordPageCopyTiming(startedAt);
           this.hasError.set(true);
         },
       });
@@ -251,7 +224,6 @@ export class ReportsPageState {
     this.startRequest();
 
     const filters = this.currentFilters();
-    const startedAt = performance.now();
 
     this.reports.getReportsCenterPageContext({
       heroId,
@@ -272,7 +244,6 @@ export class ReportsPageState {
             return;
           }
 
-          this.recordReportsCenterContextTiming(startedAt);
           this.context.set(context);
           this.syncAppliedFilters(context.filters.applied);
           this.syncSelectedReport(context);
@@ -282,7 +253,6 @@ export class ReportsPageState {
             return;
           }
 
-          this.recordReportsCenterContextTiming(startedAt);
           this.hasError.set(true);
         },
       });
@@ -339,36 +309,4 @@ export class ReportsPageState {
   private finishRequest(): void {
     this.pendingRequestCount.update((count) => Math.max(0, count - 1));
   }
-
-  private recordPageCopyTiming(startedAt: number): void {
-    const durationMs = elapsedMs(startedAt);
-
-    this.pageCopyLoadMs.set(durationMs);
-    // Temporary user-side smoke instrumentation for Reports Center RPC timings.
-    console.debug('Reports Center get_report_page_copy duration', { durationMs });
-  }
-
-  private recordReportsCenterContextTiming(startedAt: number): void {
-    const durationMs = elapsedMs(startedAt);
-
-    this.reportsCenterContextLoadMs.set(durationMs);
-    // Temporary user-side smoke instrumentation for Reports Center RPC timings.
-    console.debug('Reports Center get_reports_center_page_context duration', { durationMs });
-  }
-}
-
-function positiveInteger(value: number | null | undefined): number | null {
-  return typeof value === 'number' && Number.isInteger(value) && value > 0
-    ? value
-    : null;
-}
-
-function nonNegativeInteger(value: number | null | undefined): number | null {
-  return typeof value === 'number' && Number.isInteger(value) && value >= 0
-    ? value
-    : null;
-}
-
-function elapsedMs(startedAt: number): number {
-  return Math.round(performance.now() - startedAt);
 }

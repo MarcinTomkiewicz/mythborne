@@ -1,16 +1,18 @@
+import { KeyLabel } from '../domain/common/key-label.model';
 import {
   ReportsCenterAccessPreviewV1,
   ReportsCenterAddressV1,
   ReportsCenterCombatPreviewV1,
-  ReportsCenterKeyLabel,
   ReportsCenterMarkerV1,
   ReportsCenterOpponentTargetV1,
   ReportsCenterOutcomeStatusV1,
   ReportsCenterPreviewDiagnosticsV1,
+  ReportsCenterPreviewResourceRowV1,
+  ReportsCenterPreviewRewardEntryV1,
+  ReportsCenterPreviewRewardV1,
   ReportsCenterPreviewV1,
   ReportsCenterPublicAccessV1,
   ReportsCenterReportDateV1,
-  ReportsCenterRewardPreviewV1,
 } from '../domain/reports/reports-center.model';
 import { Json } from '../types/database.types';
 import {
@@ -97,7 +99,7 @@ export function mapPreview(record: JsonRecord, field: string): ReportsCenterPrev
   };
 }
 
-export function mapKeyLabel(record: JsonRecord, field: string): ReportsCenterKeyLabel {
+export function mapKeyLabel(record: JsonRecord, field: string): KeyLabel {
   return {
     key: requiredText(read(record, 'key'), `${field}.key`),
     label: requiredText(read(record, 'label'), `${field}.label`),
@@ -155,14 +157,53 @@ function mapCombat(record: JsonRecord, field: string): ReportsCenterCombatPrevie
   };
 }
 
-function mapReward(record: JsonRecord, field: string): ReportsCenterRewardPreviewV1 {
+function mapReward(record: JsonRecord, field: string): ReportsCenterPreviewRewardV1 {
+  const resources = requiredRecord(read(record, 'resources'), `${field}.resources`);
+
   return {
     summary: requiredNullableText(read(record, 'summary'), `${field}.summary`),
     entryCount: requiredNumber(read(record, 'entryCount'), `${field}.entryCount`),
+    entriesPreview: requiredArray(read(record, 'entriesPreview'), `${field}.entriesPreview`)
+      .map((entry, index) => mapRewardEntry(entry, `${field}.entriesPreview[${index}]`)),
     resourcesSummary: requiredNullableText(
       read(record, 'resourcesSummary'),
       `${field}.resourcesSummary`,
     ),
+    resources: {
+      summary: requiredNullableText(read(resources, 'summary'), `${field}.resources.summary`),
+      rows: requiredArray(read(resources, 'rows'), `${field}.resources.rows`)
+        .map((row, index) => mapResourceRow(row, `${field}.resources.rows[${index}]`)),
+    },
+  };
+}
+
+function mapRewardEntry(
+  record: JsonRecord,
+  field: string,
+): ReportsCenterPreviewRewardEntryV1 {
+  return {
+    kind: requiredNullableText(read(record, 'kind'), `${field}.kind`),
+    label: requiredNullableText(read(record, 'label'), `${field}.label`),
+    displayValue: requiredText(read(record, 'displayValue'), `${field}.displayValue`),
+    amount: requiredNullableNumber(read(record, 'amount'), `${field}.amount`),
+    amountDisplay: requiredNullableText(read(record, 'amountDisplay'), `${field}.amountDisplay`),
+    resourceType: requiredNullableText(read(record, 'resourceType'), `${field}.resourceType`),
+    sourceKind: requiredNullableText(read(record, 'sourceKind'), `${field}.sourceKind`),
+  };
+}
+
+function mapResourceRow(
+  record: JsonRecord,
+  field: string,
+): ReportsCenterPreviewResourceRowV1 {
+  return {
+    resourceType: requiredNullableText(read(record, 'resourceType'), `${field}.resourceType`),
+    label: requiredNullableText(read(record, 'label'), `${field}.label`),
+    displayValue: requiredText(read(record, 'displayValue'), `${field}.displayValue`),
+    amount: requiredNullableNumber(read(record, 'amount'), `${field}.amount`),
+    gainAmount: requiredNullableNumber(read(record, 'gainAmount'), `${field}.gainAmount`),
+    lossAmount: requiredNullableNumber(read(record, 'lossAmount'), `${field}.lossAmount`),
+    sinkAmount: requiredNullableNumber(read(record, 'sinkAmount'), `${field}.sinkAmount`),
   };
 }
 

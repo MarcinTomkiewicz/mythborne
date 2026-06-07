@@ -37,6 +37,26 @@
       </div>
     </div>
 
+    @if (preview.reward.entriesPreview.length > 0) {
+      <div class="flex-col gap-xs w-100 min-w-0">
+        <span class="color-muted text-xs">{{ copy().rewardLabel }}</span>
+        <div class="flex-col gap-xs w-100 min-w-0">
+          @for (entry of preview.reward.entriesPreview; track $index) {
+            <strong class="color-heading text-sm text-break">{{ entry.displayValue }}</strong>
+          }
+        </div>
+      </div>
+    } @else if (preview.reward.resources.rows.length > 0) {
+      <div class="flex-col gap-xs w-100 min-w-0">
+        <span class="color-muted text-xs">{{ copy().rewardLabel }}</span>
+        <div class="flex-col gap-xs w-100 min-w-0">
+          @for (row of preview.reward.resources.rows; track $index) {
+            <strong class="color-heading text-sm text-break">{{ row.displayValue }}</strong>
+          }
+        </div>
+      </div>
+    }
+
     <div class="flex-row-start-center flex-wrap gap-sm w-100 min-w-0">
       @if (preview.publicAccess.hasPublicToken && preview.publicAccess.publicPath) {
         <p-button
