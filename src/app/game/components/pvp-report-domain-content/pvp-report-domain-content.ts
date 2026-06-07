@@ -1,7 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import type {
   PrivateReportDetailPage,
-} from '../../../core/domain/reports/report.model';
+} from '../../../core/domain/reports/report-detail.model';
 import { mapReportDetailPreviewView } from '../../../core/utils/report-detail-preview.mapper';
 import { ReportDetailPreviewDisplay } from '../report-detail-preview-card/report-detail-preview-display';
 

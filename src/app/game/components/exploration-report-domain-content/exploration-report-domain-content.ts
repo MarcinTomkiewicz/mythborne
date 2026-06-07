@@ -2,7 +2,7 @@ import { Component, DestroyRef, computed, effect, inject, input, signal } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ExplorationChallengeRewardReadModel } from '../../../core/domain/exploration/exploration-reward.model';
 import type { ExplorationResultSourceKind } from '../../../core/domain/exploration/exploration-result-display.model';
-import { ReportDetailV2 } from '../../../core/domain/reports/report.model';
+import { ReportDetailV2 } from '../../../core/domain/reports/report-detail.model';
 import { HeroExplorationRewards } from '../../../core/services/exploration/hero-exploration-rewards';
 import {
   explorationReportRewardDisplay,

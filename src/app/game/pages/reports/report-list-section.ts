@@ -1,33 +1,29 @@
 import { Component, input, output } from '@angular/core';
 import { PaginatorModule } from 'primeng/paginator';
+import { ReportsCenterListCopy } from '../../../core/domain/reports/reports-center-copy.model';
 import {
-  ReportListRow as ReportListRowModel,
-  ReportPageCopy,
-  ReportPagination,
-} from '../../../core/domain/reports/report.model';
-import { ReportListRow } from './report-list-row';
+  ReportsCenterCountsV1,
+  ReportsCenterListRowV2,
+  ReportsCenterPaginationV1,
+} from '../../../core/domain/reports/reports-center.model';
+import { ReportsCenterListRow } from './report-list-row';
 
 @Component({
   selector: 'app-report-list-section',
   standalone: true,
   imports: [
     PaginatorModule,
-    ReportListRow,
+    ReportsCenterListRow,
   ],
   templateUrl: './report-list-section.html',
   host: { class: 'd-block w-100 min-w-0' },
 })
 export class ReportListSection {
-  readonly title = input.required<string>();
-  readonly emptyTitle = input.required<string>();
-  readonly emptyText = input.required<string>();
-  readonly openActionLabel = input.required<string>();
-  readonly unreadLabel = input.required<string>();
-  readonly readLabel = input.required<string>();
-  readonly unreadCount = input.required<number>();
-  readonly reports = input.required<readonly ReportListRowModel[]>();
-  readonly pagination = input.required<ReportPagination>();
-  readonly labels = input.required<ReportPageCopy['labels']>();
-  readonly detailSections = input.required<ReportPageCopy['detail']['sections']>();
+  readonly copy = input.required<ReportsCenterListCopy>();
+  readonly reports = input.required<readonly ReportsCenterListRowV2[]>();
+  readonly pagination = input.required<ReportsCenterPaginationV1>();
+  readonly counts = input.required<ReportsCenterCountsV1>();
+  readonly selectedReportId = input<string | null>(null);
   readonly pageChange = output<{ first?: number | null; rows?: number | null }>();
+  readonly selectReport = output<string>();
 }

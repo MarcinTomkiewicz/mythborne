@@ -1,6 +1,6 @@
 import { Component, DestroyRef, computed, effect, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import type { PrivateReportDetailPage } from '../../../core/domain/reports/report.model';
+import type { PrivateReportDetailPage } from '../../../core/domain/reports/report-detail.model';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
 import { mapReportDetailPreviewView } from '../../../core/utils/report-detail-preview.mapper';

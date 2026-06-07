@@ -55,3 +55,11 @@ export function optionalTextArray(value: Json | undefined, field: string): strin
 
   return requiredTextArray(value, field);
 }
+
+export function requireJsonArray(value: Json | undefined, field: string): Json[] {
+  if (!Array.isArray(value)) {
+    throw new Error(`${field} must be an array.`);
+  }
+
+  return value;
+}

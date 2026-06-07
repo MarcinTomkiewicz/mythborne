@@ -2,7 +2,7 @@ import type { CombatStageViewModel } from '../domain/combat/combat-stage.model';
 import type {
   PrivateReportDetailPage,
   ReportDetailCore,
-} from '../domain/reports/report.model';
+} from '../domain/reports/report-detail.model';
 import type {
   ReportDetailPreviewOutcomeBanner,
   ReportDetailPreviewOutcomeTone,

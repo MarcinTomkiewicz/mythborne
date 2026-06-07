@@ -1,7 +1,7 @@
-# Mythsworn Reports — Report Detail Domain Context Contract v1
+# Mythsworn Reports — Report Detail Shell + Domain Context Contract v2
 
 Status: **DB/RPC migration applied, frontend contract pending reviewer/Codex handoff**  
-Scope: **Reports detail shell + domain-context routing contract + Reports copy v2**  
+Scope: **Reports detail shell context + domain-context routing contract + Reports copy v2**  
 Out of scope: Reports Center v2 list RPC, `mark_all_reports_read(...)`, domain copy for Exploration/PvP/Combat/Spy/Argonautics, domain renderer implementation.
 
 ## 0. Reviewer handoff summary
@@ -19,17 +19,19 @@ Reports copy must only cover Reports Center list/archive, filters, preview, pagi
 The migration added:
 
 - `build_report_domain_context_json(p_report_id uuid, p_public_safe boolean default false) returns jsonb`
+- `build_report_shell_context_json(p_report_id uuid, p_public_safe boolean default false) returns jsonb`
 - `get_report_detail(p_hero_id uuid, p_report_id uuid) returns jsonb`, now returning `report_detail_v2`
 - `get_public_report_detail(p_public_token text) returns jsonb`, now returning `report_detail_v2`
 - `get_report_page_copy() returns jsonb`, now returning `report_page_copy_v2` with legacy v1 keys preserved
 
-Codex must not call `build_report_domain_context_json(...)` directly. It is internal and not granted to `anon` or `authenticated`. Codex consumes `domainContextJson` through `get_report_detail(...)` and `get_public_report_detail(...)`.
+Codex must not call `build_report_domain_context_json(...)` or `build_report_shell_context_json(...)` directly. Both are internal and not granted to `anon` or `authenticated`. Codex consumes `domainContextJson` and `reportShellContextJson` through `get_report_detail(...)` and `get_public_report_detail(...)`.
 
 ## 1. Hard rules for Codex / Frontend
 
 - Do not render report detail through generic Reports sections such as Participants, Items, Effects, Related Reports, or Rewards when a source-domain renderer owns that content.
 - Do not reconstruct rewards from `rewardSectionJson` or `itemReferencesJson` inside a Reports-specific adapter.
 - Do not translate or repair domain title/summary/narrative locally in Angular.
+- Do not use legacy `report.reportTypeLabel`, `report.title`, `report.summary`, or `report.sourceLabel` for the top report shell/header. Use `reportShellContextJson`.
 - Do not call private hero-owned domain RPCs from public report pages.
 - Do not guess missing source IDs. If `missingContextReason` is non-null in private mode, report a DB/RPC blocker or follow-up.
 - Do not treat public redaction as missing data. Public mode intentionally nulls source IDs.
@@ -41,10 +43,11 @@ Codex must not call `build_report_domain_context_json(...)` directly. It is inte
 
 | RPC | Return | Grants | Purpose |
 |---|---|---|---|
-| `get_report_detail(p_hero_id uuid, p_report_id uuid)` | `jsonb` | `authenticated` | Private report detail. Returns private access state, `domainContextJson`, and report content snapshot. |
-| `get_public_report_detail(p_public_token text)` | `jsonb` | `anon`, `authenticated` | Public report detail. Returns public-safe `domainContextJson`, redacted source IDs, and report content snapshot. |
+| `get_report_detail(p_hero_id uuid, p_report_id uuid)` | `jsonb` | `authenticated` | Private report detail. Returns private access state, `domainContextJson`, `reportShellContextJson`, and report content snapshot. |
+| `get_public_report_detail(p_public_token text)` | `jsonb` | `anon`, `authenticated` | Public report detail. Returns public-safe `domainContextJson`, `reportShellContextJson`, redacted source IDs, and report content snapshot. |
 | `get_report_page_copy()` | `jsonb` | `anon`, `authenticated` | DB-owned copy for Reports Center and report shell. V2 adds new copy while preserving legacy keys. |
 | `build_report_domain_context_json(p_report_id uuid, p_public_safe boolean default false)` | `jsonb` | no frontend grants | Internal helper used by detail RPCs only. |
+| `build_report_shell_context_json(p_report_id uuid, p_public_safe boolean default false)` | `jsonb` | no frontend grants | Internal helper used by detail RPCs only. Builds player-facing shell/header context so frontend does not use legacy report fields as shell copy. |
 
 ## 3. Private report detail RPC
 
@@ -64,6 +67,7 @@ interface ReportDetailV2 {
   contractVersion: 'report_detail_v2';
   access: ReportAccessPrivate;
   domainContextJson: ReportDomainContextV1;
+  reportShellContextJson: ReportShellContextV1;
   report: ReportContentSnapshotV1;
 }
 ```
@@ -106,6 +110,7 @@ interface PublicReportDetailV2Available {
   contractVersion: 'report_detail_v2';
   access: ReportAccessPublicAvailable;
   domainContextJson: ReportDomainContextV1;
+  reportShellContextJson: ReportShellContextV1;
   report: ReportContentSnapshotV1;
 }
 ```
@@ -126,6 +131,7 @@ interface PublicReportDetailV2Unavailable {
   contractVersion: 'report_detail_v2';
   access: ReportAccessPublicUnavailable;
   domainContextJson: null;
+  reportShellContextJson: null;
   report: null;
 }
 ```
@@ -150,7 +156,140 @@ interface ReportAccessPublicUnavailable {
 - Public `domainContextJson.frontendUsage.sourceIdsRedacted` must be `true`.
 - Public renderer must use the returned report snapshot content, not private source-domain RPCs.
 
-## 5. Report content snapshot
+## 5. Report shell context
+
+Located at `payload.reportShellContextJson`.
+
+This object is the source of truth for the top report shell/header. It exists specifically so the frontend does not use legacy `report.reportTypeLabel`, `report.title`, `report.summary`, or `report.sourceLabel` as shell copy.
+
+```ts
+interface ReportShellContextV1 {
+  contractVersion: 'report_shell_context_v1';
+
+  eyebrow: string;
+  title: string;
+  summary: string | null;
+
+  source: ReportShellSource;
+  eventType: ReportShellEventType;
+  reportDate: ReportShellDate;
+
+  legacyReportSnapshot: ReportShellLegacySnapshot;
+  missingShellContextReason: string | null;
+}
+```
+
+### `ReportShellSource`
+
+```ts
+interface ReportShellSource {
+  key:
+    | 'exploration'
+    | 'pvp'
+    | 'spy'
+    | 'combat'
+    | 'trade'
+    | 'auction'
+    | 'siege'
+    | 'argonautics'
+    | 'unknown'
+    | string;
+  label: string;
+}
+```
+
+Meaning:
+
+- `source.label` is the high-level source/domain displayed in the shell, for example `Eksploracja`, `PvP`, `Szpiegowanie`, `Oblężenie`, future `Argonautics`.
+- It is not the same as legacy `report.sourceLabel`.
+
+### `ReportShellEventType`
+
+```ts
+interface ReportShellEventType {
+  key:
+    | 'trial'
+    | 'combat'
+    | 'spy'
+    | 'encounter'
+    | 'resource'
+    | 'buff'
+    | 'debuff'
+    | 'nothing'
+    | 'known_path'
+    | 'backtrack'
+    | 'unknown'
+    | string;
+  label: string;
+}
+```
+
+Meaning:
+
+- `eventType.label` is the concrete kind displayed in the shell, for example `Próba`, `Walka`, `Szpiegowanie`, `Omen`, `Zasadzka`, `Znalezisko`, `Błogosławieństwo`, `Klątwa`.
+- Do not use `report.reportTypeLabel` for this.
+
+### `ReportShellDate`
+
+```ts
+interface ReportShellDate {
+  value: string | null;
+  displayValue: string | null;
+}
+```
+
+Meaning:
+
+- `value` is the underlying report timestamp.
+- `displayValue` is the DB-formatted player-facing date for shell display.
+
+### `ReportShellLegacySnapshot`
+
+```ts
+interface ReportShellLegacySnapshot {
+  reportTypeKey: string | null;
+  sourceEntityType: string | null;
+  title: string | null;
+  summary: string | null;
+  hiddenFromShell: true;
+}
+```
+
+Meaning:
+
+- This exists to make it explicit that legacy report title/summary/type are still part of the persisted report snapshot.
+- New shell/header UI must not display these fields as shell copy when `hiddenFromShell=true`.
+- These fields may remain available for diagnostics and backwards compatibility.
+
+### Shell rendering rules
+
+Use these fields in the top report shell:
+
+```ts
+const shell = payload.reportShellContextJson;
+
+eyebrow = shell.eyebrow;
+title = shell.title;
+summary = shell.summary; // render only when non-null
+sourceValue = shell.source.label;
+eventTypeValue = shell.eventType.label;
+reportDateValue = shell.reportDate.displayValue;
+```
+
+Do not use these legacy fields for the top shell:
+
+```ts
+payload.report.reportTypeLabel;
+payload.report.title;
+payload.report.summary;
+payload.report.sourceLabel;
+payload.access.isUnread;
+payload.access.readAt;
+```
+
+If `reportShellContextJson` is missing in a private report after this migration, treat it as a DB/RPC contract blocker. Do not silently fall back to `Trial report: ...` or `Combat report: ...` in the player-facing shell.
+
+## 6. Report content snapshot
 
 Located at `payload.report`.
 
@@ -191,7 +330,7 @@ interface ReportContentSnapshotV1 {
 - `combatSectionJson` can be passed to existing combat presentation.
 - `rewardSectionJson` can be passed to a domain/shared reward renderer if one owns that exact shape; Reports must not build a new reward adapter.
 
-## 6. Participant snapshot
+## 7. Participant snapshot
 
 Located at `report.participantsJson[]`.
 
@@ -211,7 +350,7 @@ Usage:
 - List/preview may use this as lightweight hint.
 - Full report detail must not render this as a generic Participants section when Combat/PvP/Exploration owns participants.
 
-## 7. Related report snapshot
+## 8. Related report snapshot
 
 Located at `report.relatedReportsJson[]`.
 
@@ -236,7 +375,7 @@ Usage:
 - Reports Center v2 should not promote child combat reports as primary list rows when parent context exists.
 - Full report detail should not render generic Related Reports by default.
 
-## 8. Item reference snapshot
+## 9. Item reference snapshot
 
 Located at `report.itemReferencesJson[]`.
 
@@ -251,7 +390,7 @@ Usage:
 - This is a report snapshot reference, not necessarily full popover-ready item detail.
 - Reports must not build item popovers from this unless a domain/shared item popover contract explicitly supports the exact shape.
 
-## 9. Combat section snapshot
+## 10. Combat section snapshot
 
 Located at `report.combatSectionJson`.
 
@@ -419,7 +558,7 @@ Usage:
 - Reports detail must not implement a second combat renderer.
 - Reports detail must not locally translate combat attacks or outcomes.
 
-## 10. Reward section snapshot
+## 11. Reward section snapshot
 
 Located at `report.rewardSectionJson`.
 
@@ -546,7 +685,7 @@ Usage:
 - Reports copy does not own reward text.
 - Reports detail must not build local reward adapters from this shape unless a domain/shared reward renderer already owns it.
 
-## 11. Opaque source-domain sections
+## 12. Opaque source-domain sections
 
 These fields exist but are not Reports-owned contracts:
 

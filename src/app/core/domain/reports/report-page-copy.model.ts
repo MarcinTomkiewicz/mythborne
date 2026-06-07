@@ -1,6 +1,8 @@
+import { ReportsCenterCopy } from './reports-center-copy.model';
+
 export interface ReportPageCopy {
   contractVersion: 'report_page_copy_v2';
-  reportsCenter: ReportsCenterCopyV2;
+  reportsCenter: ReportsCenterCopy;
   reportShell: ReportShellCopyV2;
   detail: {
     header: {
@@ -50,87 +52,6 @@ export interface ReportPageCopy {
   };
   pagination: {
     rangeTemplate: string;
-  };
-}
-
-export interface ReportsCenterCopyV2 {
-  header: {
-    eyebrow: string;
-    title: string;
-    intro: string;
-  };
-  summary: {
-    totalReportsLabel: string;
-    unreadReportsLabel: string;
-    latestReportLabel: string;
-    latestReportFallback: string;
-    openLatestReportAction: string;
-  };
-  filters: {
-    title: string;
-    helperText: string;
-    searchLabel: string;
-    searchPlaceholder: string;
-    eventTypeLabel: string;
-    readModeLabel: string;
-    timeRangeLabel: string;
-    reportTypeLabel: string;
-    unreadOnlyLabel: string;
-    allTypesLabel: string;
-  };
-  filterOptions: {
-    eventTypes: {
-      all: string;
-      exploration: string;
-      combat: string;
-      spy: string;
-      trade: string;
-      auction: string;
-      siege: string;
-    };
-    readModes: {
-      unreadFirst: string;
-      all: string;
-      unreadOnly: string;
-      readOnly: string;
-    };
-    timeRanges: {
-      last7Days: string;
-      last30Days: string;
-      allTime: string;
-    };
-  };
-  list: {
-    title: string;
-    emptyTitle: string;
-    emptyText: string;
-    openAction: string;
-    removeAction: string;
-    markReadAction: string;
-    unreadLabel: string;
-    readLabel: string;
-    unreadCountTemplate: string;
-    rangeTemplate: string;
-  };
-  preview: {
-    emptyTitle: string;
-    emptyText: string;
-    titleFallback: string;
-    sourceLabel: string;
-    eventTypeLabel: string;
-    reportDateLabel: string;
-    rewardLabel: string;
-    openAction: string;
-    copyLinkAction: string;
-  };
-  actions: {
-    markAllRead: {
-      label: string;
-      disabledTooltip: string;
-      confirmTitle: string;
-      confirmText: string;
-      successText: string;
-    };
   };
 }
 

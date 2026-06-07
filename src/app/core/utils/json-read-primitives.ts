@@ -155,3 +155,24 @@ export function requireLiteral<T extends string>(value: string, expected: T, fie
 
   return expected;
 }
+
+export function requireFalse(
+  value: Json | undefined,
+  field: string,
+): false {
+  const boolean = requiredBoolean(value, field);
+
+  if (boolean !== false) {
+    throw new Error(`${field} must be false.`);
+  }
+
+  return false;
+}
+
+export function requireNull(value: Json | undefined, field: string): null {
+  if (value !== null) {
+    throw new Error(`${field} must be null.`);
+  }
+
+  return null;
+}

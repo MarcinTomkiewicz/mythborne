@@ -1,24 +1,49 @@
 <form
-  class="mg-card radius-lg p-md flex-col gap-sm w-100 min-w-0"
+  class="mg-card radius-lg p-md flex-col gap-md w-100 min-w-0"
   [formGroup]="filterForm()"
   (ngSubmit)="apply.emit()"
 >
   <div class="flex-col gap-xs w-100 min-w-0">
-    <strong class="color-heading">{{ filters().title }}</strong>
-    <span class="color-muted text-sm">
-      {{ filters().helperText }}
-    </span>
+    <strong class="color-heading">{{ copy().title }}</strong>
+    <span class="color-muted text-sm">{{ copy().helperText }}</span>
   </div>
 
-  <div class="flex-row-start-center gap-sm w-100 min-w-0">
-    <p-checkbox
-      inputId="reports-unread-only"
-      formControlName="unreadOnly"
-      [binary]="true"
-      (onChange)="apply.emit()"
-    />
-    <label class="color-heading text-sm" for="reports-unread-only">
-      {{ filters().unreadOnlyLabel }}
-    </label>
+  <div class="flex-row-start-center flex-wrap gap-md w-100 min-w-0">
+    @if (capabilities().search) {
+      <div class="flex-col gap-xs min-w-0">
+        <span class="text-xs color-muted small-caps uppercase">{{ copy().searchLabel }}</span>
+        <input
+          pInputText
+          class="radius-pill py-sm px-md w-100"
+          type="search"
+          formControlName="query"
+          [placeholder]="copy().searchPlaceholder"
+          [attr.aria-label]="copy().searchLabel"
+        />
+      </div>
+    }
+
   </div>
+
+  @for (group of filterGroups; track group.controlName) {
+    @if (isFilterAvailable(group)) {
+      <div class="flex-col gap-xs w-100 min-w-0">
+        <span class="text-xs color-muted small-caps uppercase">{{ filterLabel(group) }}</span>
+        <div class="flex-row-start-center flex-wrap gap-sm w-100 min-w-0">
+          @for (option of filterOptions(group); track option.key) {
+            <button
+              class="mg-chip radius-pill py-xs px-sm text-xs color-muted"
+              type="button"
+              [class.border-secondary]="isFilterSelected(group, option.key)"
+              [attr.aria-pressed]="isFilterSelected(group, option.key)"
+              [disabled]="!option.enabled || isLoading()"
+              (click)="selectFilter(group, option.key)"
+            >
+              {{ option.label }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+  }
 </form>

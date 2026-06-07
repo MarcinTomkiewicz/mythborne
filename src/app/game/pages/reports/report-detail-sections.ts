@@ -3,8 +3,8 @@ import { ButtonModule } from 'primeng/button';
 import type {
   PrivateReportDetailPage,
   ReportDetailV2,
-  ReportShellCopyV2,
-} from '../../../core/domain/reports/report.model';
+} from '../../../core/domain/reports/report-detail.model';
+import type { ReportShellCopyV2 } from '../../../core/domain/reports/report-page-copy.model';
 import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/browser-clipboard';
 import { mapCanonicalReportCombatStageView } from '../../../core/utils/combat-report-display.mapper';
 import { publicReportPathFromToken } from '../../../core/utils/public-report-path';

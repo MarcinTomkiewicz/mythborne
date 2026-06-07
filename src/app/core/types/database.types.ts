@@ -4852,6 +4852,108 @@ export type Database = {
         }
         Relationships: []
       }
+      exploration_result_copy_variants: {
+        Row: {
+          copy_key: string
+          copy_version: string
+          created_at: string
+          eligibility_json: Json
+          id: string
+          is_active: boolean
+          locale: string
+          metadata_json: Json
+          narrative_template: string
+          result_kind: string
+          sort_order: number
+          title: string
+          title_tone: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          copy_key: string
+          copy_version?: string
+          created_at?: string
+          eligibility_json?: Json
+          id?: string
+          is_active?: boolean
+          locale?: string
+          metadata_json?: Json
+          narrative_template: string
+          result_kind: string
+          sort_order?: number
+          title: string
+          title_tone?: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          copy_key?: string
+          copy_version?: string
+          created_at?: string
+          eligibility_json?: Json
+          id?: string
+          is_active?: boolean
+          locale?: string
+          metadata_json?: Json
+          narrative_template?: string
+          result_kind?: string
+          sort_order?: number
+          title?: string
+          title_tone?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: []
+      }
+      exploration_trial_patron_forms: {
+        Row: {
+          accepted_offering_verb_past: string
+          created_at: string
+          failure_word_default: string
+          laugh_verb_past: string
+          manual_trial_key: string | null
+          metadata_json: Json
+          patron_key: string
+          patron_label: string
+          rejected_offering_verb_past: string
+          trial_key: string
+          trial_title: string
+          trial_title_dative: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_offering_verb_past: string
+          created_at?: string
+          failure_word_default?: string
+          laugh_verb_past: string
+          manual_trial_key?: string | null
+          metadata_json?: Json
+          patron_key: string
+          patron_label: string
+          rejected_offering_verb_past: string
+          trial_key: string
+          trial_title: string
+          trial_title_dative: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_offering_verb_past?: string
+          created_at?: string
+          failure_word_default?: string
+          laugh_verb_past?: string
+          manual_trial_key?: string | null
+          metadata_json?: Json
+          patron_key?: string
+          patron_label?: string
+          rejected_offering_verb_past?: string
+          trial_key?: string
+          trial_title?: string
+          trial_title_dative?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       game_report_hero_access: {
         Row: {
           access_role: Database["public"]["Enums"]["game_report_access_role"]
@@ -15395,6 +15497,24 @@ export type Database = {
         Args: { p_effect_definition_id: string; p_public_safe?: boolean }
         Returns: Json
       }
+      build_exploration_effect_rich_text_json: {
+        Args: { p_effect_section_json: Json }
+        Returns: Json
+      }
+      build_exploration_result_narrative_json: {
+        Args: {
+          p_effect_section_json?: Json
+          p_public_safe?: boolean
+          p_reward_section_json?: Json
+          p_section_json: Json
+          p_source_kind: string
+        }
+        Returns: Json
+      }
+      build_exploration_reward_rich_text_json: {
+        Args: { p_reward_section_json: Json }
+        Returns: Json
+      }
       build_exploration_trial_detail_by_stat_json: {
         Args: {
           p_auto_result_preview_json: Json
@@ -15414,7 +15534,15 @@ export type Database = {
         Args: { p_public_safe?: boolean; p_report_id: string }
         Returns: Json
       }
+      build_game_report_effect_section_json_base: {
+        Args: { p_public_safe?: boolean; p_report_id: string }
+        Returns: Json
+      }
       build_game_report_encounter_section_json: {
+        Args: { p_public_safe?: boolean; p_report_id: string }
+        Returns: Json
+      }
+      build_game_report_encounter_section_json_base: {
         Args: { p_public_safe?: boolean; p_report_id: string }
         Returns: Json
       }
@@ -15447,6 +15575,10 @@ export type Database = {
         Returns: Json
       }
       build_game_report_trial_section_json: {
+        Args: { p_public_safe?: boolean; p_report_id: string }
+        Returns: Json
+      }
+      build_game_report_trial_section_json_base: {
         Args: { p_public_safe?: boolean; p_report_id: string }
         Returns: Json
       }
@@ -15617,6 +15749,10 @@ export type Database = {
         Args: { p_hero_id: string }
         Returns: Json
       }
+      build_report_domain_context_json: {
+        Args: { p_public_safe?: boolean; p_report_id: string }
+        Returns: Json
+      }
       build_report_item_display_name: {
         Args: {
           p_base_id: string
@@ -15626,6 +15762,19 @@ export type Database = {
           p_suffix_affix_id?: string
         }
         Returns: string
+      }
+      build_report_shell_context_json: {
+        Args: { p_public_safe?: boolean; p_report_id: string }
+        Returns: Json
+      }
+      build_reports_center_report_preview_json: {
+        Args: {
+          p_access_role?: Database["public"]["Enums"]["game_report_access_role"]
+          p_hero_id?: string
+          p_read_at?: string
+          p_report_id: string
+        }
+        Returns: Json
       }
       build_trade_item_row: { Args: { p_item_id: string }; Returns: Json }
       build_trade_offer_row: {
@@ -17656,6 +17805,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      ensure_server_membership_for_user: {
+        Args: { p_reason?: string; p_server_id: string; p_user_id: string }
+        Returns: string
+      }
       equip_hero_item: {
         Args: {
           p_hero_id: string
@@ -18084,12 +18237,20 @@ export type Database = {
         Args: { p_seconds: number }
         Returns: string
       }
+      format_exploration_effect_entry_text: {
+        Args: { p_effect: Json }
+        Returns: string
+      }
       format_exploration_item_count_display: {
         Args: { p_max_count: number; p_min_count: number }
         Returns: string
       }
       format_exploration_percent_display: {
         Args: { p_value: number }
+        Returns: string
+      }
+      format_exploration_reward_entry_text: {
+        Args: { p_entry: Json }
         Returns: string
       }
       format_item_stat_numeric_display: {
@@ -18133,6 +18294,10 @@ export type Database = {
           p_requirement_definition_key: string
         }
         Returns: Json
+      }
+      format_polish_count: {
+        Args: { p_amount: number; p_few: string; p_many: string; p_one: string }
+        Returns: string
       }
       format_start_flow_bonus_value: {
         Args: { p_target_label: string; p_type_key: string; p_value: number }
@@ -18952,6 +19117,10 @@ export type Database = {
       get_exploration_manual_resolution_seconds: {
         Args: never
         Returns: number
+      }
+      get_exploration_result_copy_variant_by_key: {
+        Args: { p_copy_key: string; p_locale?: string }
+        Returns: Json
       }
       get_exploration_reward_execution_diagnostic: {
         Args: { p_challenge_attempt_id: string }
@@ -20874,6 +21043,10 @@ export type Database = {
         Args: { p_hero_id: string }
         Returns: Json
       }
+      get_player_exploration_result_copy: {
+        Args: { p_locale?: string }
+        Returns: Json
+      }
       get_player_item_popover_detail_raw_v1: {
         Args: { p_context?: string; p_hero_id: string; p_item_id: string }
         Returns: Json
@@ -21040,6 +21213,52 @@ export type Database = {
         Returns: Json
       }
       get_report_page_copy: { Args: never; Returns: Json }
+      get_reports_center_filtered_report_rows: {
+        Args: {
+          p_hero_id: string
+          p_include_child_reports?: boolean
+          p_query?: string
+          p_read_mode_key?: string
+          p_report_area_key?: string
+          p_time_range_key?: string
+        }
+        Returns: {
+          access_role: Database["public"]["Enums"]["game_report_access_role"]
+          content_kind: string
+          created_at: string
+          domain_context_json: Json
+          event_type_key: string
+          event_type_label: string
+          is_child_combat_report: boolean
+          is_unread: boolean
+          legacy_summary: string
+          legacy_title: string
+          public_token: string
+          read_at: string
+          report_domain_key: string
+          report_id: string
+          report_type_key: string
+          result_kind: string
+          shell_context_json: Json
+          source_display_label: string
+          source_entity_id: string
+          source_entity_type: string
+          source_key: string
+          source_label: string
+        }[]
+      }
+      get_reports_center_page_context: {
+        Args: {
+          p_hero_id: string
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_read_mode_key?: string
+          p_report_area_key?: string
+          p_time_range_key?: string
+        }
+        Returns: Json
+      }
       get_required_global_integer_config_value: {
         Args: { p_key: string }
         Returns: number
@@ -21624,6 +21843,10 @@ export type Database = {
         }
         Returns: Json
       }
+      join_exploration_rich_text_items: {
+        Args: { p_items: Json }
+        Returns: Json
+      }
       kick_guild_member: {
         Args: {
           p_actor_hero_id: string
@@ -21698,6 +21921,17 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      mark_all_reports_read: {
+        Args: {
+          p_hero_id: string
+          p_query?: string
+          p_read_mode_key?: string
+          p_report_area_key?: string
+          p_request_id?: string
+          p_time_range_key?: string
+        }
+        Returns: Json
       }
       mark_combat_live_session_completed_if_terminal: {
         Args: {
@@ -23045,6 +23279,15 @@ export type Database = {
           updated_at: string
         }[]
       }
+      render_exploration_rich_text_template: {
+        Args: {
+          p_highlight_tokens?: string[]
+          p_rich_tokens?: Json
+          p_template: string
+          p_tokens?: Json
+        }
+        Returns: Json
+      }
       reorder_entity_requirements: {
         Args: {
           p_entity_id: string
@@ -23514,6 +23757,10 @@ export type Database = {
           status: string
           success_count: number
         }[]
+      }
+      safe_jsonb_numeric: {
+        Args: { p_json: Json; p_key: string }
+        Returns: number
       }
       sanitize_player_armory_equipment_slot_json: {
         Args: { p_slot_json: Json }
@@ -24448,6 +24695,15 @@ export type Database = {
           server_key: string
           server_name: string
         }[]
+      }
+      select_exploration_result_copy_variant: {
+        Args: {
+          p_eligibility_json?: Json
+          p_locale?: string
+          p_result_kind: string
+          p_seed?: string
+        }
+        Returns: Json
       }
       server_config_value_source_for_scope: {
         Args: {

@@ -10,7 +10,7 @@ import {
   ReportDomainContextV1,
   ReportDomainFrontendUsage,
   SpyReportDomainContext,
-} from '../domain/reports/report.model';
+} from '../domain/reports/report-detail.model';
 import { Json } from '../types/database.types';
 import {
   JsonRecord,

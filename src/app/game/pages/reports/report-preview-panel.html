@@ -1,0 +1,55 @@
+<aside class="mg-card radius-lg p-md flex-col gap-md w-100 min-w-0">
+  @if (preview(); as preview) {
+    <div class="flex-row-between-start gap-md w-100 min-w-0">
+      <div class="flex-col gap-xs min-w-0">
+        <span class="mg-chip radius-pill py-xs px-sm text-xs color-heading">
+          {{ preview.marker.markerLabel }}
+        </span>
+        <h2 class="color-heading font-display text-lg m-0 text-break">
+          {{ preview.title || copy().titleFallback }}
+        </h2>
+      </div>
+
+      <a
+        class="mg-chip radius-pill py-xs px-sm text-xs color-muted flex-none"
+        [routerLink]="preview.publicAccess.privatePath"
+      >
+        {{ copy().openAction }}
+      </a>
+    </div>
+
+    <div class="flex-col gap-sm w-100 min-w-0">
+      <div class="mg-data-row gap-sm">
+        <span class="color-muted text-xs">{{ copy().sourceLabel }}</span>
+        <strong class="color-heading text-sm">{{ preview.source.label }}</strong>
+      </div>
+
+      <div class="mg-data-row gap-sm">
+        <span class="color-muted text-xs">{{ copy().eventTypeLabel }}</span>
+        <strong class="color-heading text-sm">{{ preview.eventType.label }}</strong>
+      </div>
+
+      <div class="mg-data-row gap-sm">
+        <span class="color-muted text-xs">{{ copy().reportDateLabel }}</span>
+        <time class="color-heading text-sm" [attr.datetime]="preview.reportDate.value">
+          {{ preview.reportDate.displayValue ?? preview.reportDate.value }}
+        </time>
+      </div>
+    </div>
+
+    <div class="flex-row-start-center flex-wrap gap-sm w-100 min-w-0">
+      @if (preview.publicAccess.hasPublicToken && preview.publicAccess.publicPath) {
+        <p-button
+          type="button"
+          [label]="copy().copyLinkAction"
+          (click)="copyPublicLink(preview.publicAccess.publicPath)"
+        />
+      }
+    </div>
+  } @else {
+    <div class="flex-col gap-xs w-100 min-w-0">
+      <strong class="color-heading">{{ copy().emptyTitle }}</strong>
+      <span class="color-muted text-sm">{{ copy().emptyText }}</span>
+    </div>
+  }
+</aside>

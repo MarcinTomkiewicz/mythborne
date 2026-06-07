@@ -4,24 +4,30 @@ import { RPC } from '../../constants/rpc.const';
 import {
   PrivateReportDetailPage,
   PublicReportDetailV2,
-  ReportListPage,
-  ReportPageCopy,
-} from '../../domain/reports/report.model';
+} from '../../domain/reports/report-detail.model';
+import { ReportPageCopy } from '../../domain/reports/report-page-copy.model';
+import {
+  MarkAllReportsReadResultV1,
+  ReportsCenterPageContextV2,
+} from '../../domain/reports/reports-center.model';
 import {
   GetPublicReportDetailRpcArgs,
   GetPublicReportDetailRpcResult,
   GetReportDetailRpcArgs,
   GetReportDetailRpcResult,
-  GetReportListPageRpcArgs,
-  GetReportListPageRpcResult,
   GetReportPageCopyRpcResult,
+  GetReportsCenterPageContextRpcArgs,
+  GetReportsCenterPageContextRpcResult,
+  MarkAllReportsReadRpcArgs,
+  MarkAllReportsReadRpcResult,
 } from '../../types/report-rpc.types';
 import {
   mapPublicReportDetailPage,
   mapReportDetailPage,
 } from '../../utils/report-detail-page.mapper';
-import { mapReportListPage } from '../../utils/report-list-page.mapper';
 import { mapReportPageCopy } from '../../utils/report-page-copy.mapper';
+import { mapMarkAllReportsReadResult } from '../../utils/reports-center-actions.mapper';
+import { mapReportsCenterPageContext } from '../../utils/reports-center-page-context.mapper';
 import { Backend } from '../backend/backend';
 
 @Injectable({ providedIn: 'root' })
@@ -36,29 +42,55 @@ export class PlayerReports {
     );
   }
 
-  getListPage(input: {
+  getReportsCenterPageContext(input: {
     heroId: string;
     limit: number;
     offset: number;
-    reportTypeKey: string | null;
-    unreadOnly: boolean;
-  }): Observable<ReportListPage> {
-    const args: GetReportListPageRpcArgs = {
+    query: string | null;
+    reportAreaKey: string | null;
+    readModeKey: string;
+    timeRangeKey: string;
+  }): Observable<ReportsCenterPageContextV2> {
+    const args: GetReportsCenterPageContextRpcArgs = {
       p_hero_id: input.heroId,
       p_limit: input.limit,
       p_offset: input.offset,
-      p_unread_only: input.unreadOnly,
+      p_query: input.query ?? undefined,
+      p_report_area_key: input.reportAreaKey ?? undefined,
+      p_read_mode_key: input.readModeKey,
+      p_time_range_key: input.timeRangeKey,
     };
 
-    if (input.reportTypeKey) {
-      args.p_report_type_key = input.reportTypeKey;
-    }
-
-    return this.backend.rpc<GetReportListPageRpcResult>(
-      RPC.get_report_list_page,
+    return this.backend.rpc<GetReportsCenterPageContextRpcResult>(
+      RPC.get_reports_center_page_context,
       args,
     ).pipe(
-      map(mapReportListPage),
+      map(mapReportsCenterPageContext),
+    );
+  }
+
+  markAllReportsRead(input: {
+    heroId: string;
+    query: string | null;
+    reportAreaKey: string | null;
+    readModeKey: string;
+    timeRangeKey: string;
+    requestId: string | null;
+  }): Observable<MarkAllReportsReadResultV1> {
+    const args: MarkAllReportsReadRpcArgs = {
+      p_hero_id: input.heroId,
+      p_query: input.query ?? undefined,
+      p_report_area_key: input.reportAreaKey ?? undefined,
+      p_read_mode_key: input.readModeKey,
+      p_time_range_key: input.timeRangeKey,
+      p_request_id: input.requestId ?? undefined,
+    };
+
+    return this.backend.rpc<MarkAllReportsReadRpcResult>(
+      RPC.mark_all_reports_read,
+      args,
+    ).pipe(
+      map(mapMarkAllReportsReadResult),
     );
   }
 

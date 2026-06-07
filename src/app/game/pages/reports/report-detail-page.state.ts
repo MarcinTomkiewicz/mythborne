@@ -1,9 +1,7 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-  PrivateReportDetailPage,
-  ReportPageCopy,
-} from '../../../core/domain/reports/report.model';
+import { PrivateReportDetailPage } from '../../../core/domain/reports/report-detail.model';
+import { ReportPageCopy } from '../../../core/domain/reports/report-page-copy.model';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
 import { toDateTimeLabel } from '../../../core/utils/date-display';

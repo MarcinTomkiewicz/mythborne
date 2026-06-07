@@ -1,9 +1,7 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { catchError, forkJoin, of } from 'rxjs';
-import {
-  PublicReportDetailV2,
-  ReportPageCopy,
-} from '../../../core/domain/reports/report.model';
+import { PublicReportDetailV2 } from '../../../core/domain/reports/report-detail.model';
+import { ReportPageCopy } from '../../../core/domain/reports/report-page-copy.model';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
 
 @Injectable()

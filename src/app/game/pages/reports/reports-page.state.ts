@@ -1,14 +1,23 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup } from '@angular/forms';
-import { ReportListPage, ReportPageCopy } from '../../../core/domain/reports/report.model';
+import { finalize } from 'rxjs';
+import { ReportPageCopy } from '../../../core/domain/reports/report-page-copy.model';
+import {
+  ReportsCenterAppliedFiltersV1,
+  ReportsCenterPageContextV2,
+} from '../../../core/domain/reports/reports-center.model';
 import { GamePageSummaryRow } from '../../../core/interfaces/game-page-summary-row.interface';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
+import { createRequestId } from '../../../core/utils/request-id';
 import { RequestToken } from '../../../core/utils/request-token';
 
-const REPORT_LIST_PAGE_LIMIT = 25;
-const REPORT_LIST_PAGE_OFFSET = 0;
+const REPORTS_CENTER_PAGE_LIMIT = 12;
+const REPORTS_CENTER_PAGE_OFFSET = 0;
+const DEFAULT_REPORT_AREA_KEY = 'all';
+const DEFAULT_READ_MODE_KEY = 'unread_first';
+const DEFAULT_TIME_RANGE_KEY = 'last_7_days';
 
 @Injectable()
 export class ReportsPageState {
@@ -19,37 +28,85 @@ export class ReportsPageState {
 
   private activeHeroId: string | null = null;
   private activeServerId: string | null = null;
-  private listLimit = REPORT_LIST_PAGE_LIMIT;
-  private listOffset = REPORT_LIST_PAGE_OFFSET;
+  private listLimit = REPORTS_CENTER_PAGE_LIMIT;
+  private listOffset = REPORTS_CENTER_PAGE_OFFSET;
 
   readonly filtersForm = new FormGroup({
-    unreadOnly: new FormControl(false, { nonNullable: true }),
+    query: new FormControl('', { nonNullable: true }),
+    reportAreaKey: new FormControl(DEFAULT_REPORT_AREA_KEY, { nonNullable: true }),
+    readModeKey: new FormControl(DEFAULT_READ_MODE_KEY, { nonNullable: true }),
+    timeRangeKey: new FormControl(DEFAULT_TIME_RANGE_KEY, { nonNullable: true }),
   });
   readonly copy = signal<ReportPageCopy | null>(null);
-  readonly listPage = signal<ReportListPage | null>(null);
+  readonly context = signal<ReportsCenterPageContextV2 | null>(null);
+  readonly selectedReportId = signal<string | null>(null);
   readonly hasError = signal(false);
+  readonly pageCopyLoadMs = signal<number | null>(null);
+  readonly reportsCenterContextLoadMs = signal<number | null>(null);
   readonly pendingRequestCount = signal(0);
   readonly isLoading = computed(() => this.pendingRequestCount() > 0);
-  readonly headerSummaryRows: readonly GamePageSummaryRow[] = [];
+  readonly selectedRow = computed(() => {
+    const selectedReportId = this.selectedReportId();
+
+    return this.context()?.reports.find((row) => row.reportId === selectedReportId) ?? null;
+  });
+  readonly selectedPreview = computed(() =>
+    this.selectedRow()?.preview ?? this.context()?.selectedPreview ?? null,
+  );
+  readonly headerSummaryRows = computed<readonly GamePageSummaryRow[]>(() => {
+    const summary = this.context()?.summary;
+
+    if (!summary) {
+      return [];
+    }
+
+    return [
+      {
+        key: 'totalReports',
+        label: summary.totalReports.label,
+        value: summary.totalReports.value,
+      },
+      {
+        key: 'unreadReports',
+        label: summary.unreadReports.label,
+        value: summary.unreadReports.value,
+      },
+      {
+        key: 'latestReport',
+        label: summary.latestReport.label,
+        value: summary.latestReport.title ?? summary.latestReport.fallbackLabel,
+        route: summary.latestReport.privatePath ?? undefined,
+      },
+    ];
+  });
 
   loadData(): void {
-    const token = this.requestToken.next();
+    const token = this.beginRequestToken();
 
     this.copy.set(null);
-    this.listPage.set(null);
+    this.context.set(null);
+    this.selectedReportId.set(null);
     this.hasError.set(false);
-    this.pendingRequestCount.set(1);
-    this.listLimit = REPORT_LIST_PAGE_LIMIT;
-    this.listOffset = REPORT_LIST_PAGE_OFFSET;
-    this.filtersForm.setValue({ unreadOnly: false }, { emitEvent: false });
+    this.pageCopyLoadMs.set(null);
+    this.reportsCenterContextLoadMs.set(null);
+    this.listLimit = REPORTS_CENTER_PAGE_LIMIT;
+    this.listOffset = REPORTS_CENTER_PAGE_OFFSET;
+    this.filtersForm.setValue({
+      query: '',
+      reportAreaKey: DEFAULT_REPORT_AREA_KEY,
+      readModeKey: DEFAULT_READ_MODE_KEY,
+      timeRangeKey: DEFAULT_TIME_RANGE_KEY,
+    }, { emitEvent: false });
 
+    this.startRequest();
     this.activeHero
       .requireActiveHero()
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.finishRequest()),
+      )
       .subscribe({
         next: (state) => {
-          this.finishRequest(token);
-
           if (!this.requestToken.isCurrent(token)) {
             return;
           }
@@ -58,9 +115,7 @@ export class ReportsPageState {
           this.activeServerId = state.serverId;
           this.loadReportsFoundation(state.heroId, state.serverId, token);
         },
-        error: (error: unknown) => {
-          this.finishRequest(token);
-
+        error: () => {
           if (!this.requestToken.isCurrent(token)) {
             return;
           }
@@ -75,8 +130,8 @@ export class ReportsPageState {
       return;
     }
 
-    this.listOffset = REPORT_LIST_PAGE_OFFSET;
-    this.loadCurrentListPage();
+    this.listOffset = REPORTS_CENTER_PAGE_OFFSET;
+    this.loadCurrentPage();
   }
 
   changeReportsPage(input: { first?: number | null; rows?: number | null }): void {
@@ -85,88 +140,184 @@ export class ReportsPageState {
     }
 
     this.listLimit = positiveInteger(input.rows) ?? this.listLimit;
-    this.listOffset = nonNegativeInteger(input.first) ?? REPORT_LIST_PAGE_OFFSET;
-    this.loadCurrentListPage();
+    this.listOffset = nonNegativeInteger(input.first) ?? REPORTS_CENTER_PAGE_OFFSET;
+    this.loadCurrentPage();
   }
 
-  private loadReportsFoundation(heroId: string, serverId: string, token: number): void {
-    this.loadPageCopy(heroId, serverId, token);
-    this.loadListPage(heroId, serverId, token);
+  selectReport(reportId: string): void {
+    if (!this.context()?.reports.some((row) => row.reportId === reportId)) {
+      return;
+    }
+
+    this.selectedReportId.set(reportId);
   }
 
-  private loadCurrentListPage(): void {
+  markAllRead(): void {
+    const heroId = this.activeHeroId;
+    const serverId = this.activeServerId;
+    const context = this.context();
+
+    if (
+      !heroId ||
+      !serverId ||
+      !context?.actions.markAllRead.supported ||
+      !context.actions.markAllRead.enabled
+    ) {
+      return;
+    }
+
+    const token = this.beginRequestToken();
+    const filters = this.currentFilters();
+
+    this.hasError.set(false);
+    this.startRequest();
+    this.reports.markAllReportsRead({
+      heroId,
+      query: filters.query,
+      reportAreaKey: filters.reportAreaKey,
+      readModeKey: filters.readModeKey,
+      timeRangeKey: filters.timeRangeKey,
+      requestId: createRequestId('reports-center-mark-all-read'),
+    })
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.finishRequest()),
+      )
+      .subscribe({
+        next: () => {
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
+            return;
+          }
+
+          this.loadReportsCenterPage(heroId, serverId, token);
+        },
+        error: () => {
+          if (!this.isCurrentRequest(token, heroId, serverId)) {
+            return;
+          }
+
+          this.hasError.set(true);
+        },
+      });
+  }
+
+  private loadCurrentPage(): void {
     if (!this.activeHeroId || !this.activeServerId) {
       return;
     }
 
-    const token = this.requestToken.next();
+    const token = this.beginRequestToken();
 
     this.hasError.set(false);
-    this.loadListPage(this.activeHeroId, this.activeServerId, token);
+    this.loadReportsCenterPage(this.activeHeroId, this.activeServerId, token);
+  }
+
+  private loadReportsFoundation(heroId: string, serverId: string, token: number): void {
+    this.loadPageCopy(heroId, serverId, token);
+    this.loadReportsCenterPage(heroId, serverId, token);
   }
 
   private loadPageCopy(heroId: string, serverId: string, token: number): void {
-    this.startRequest(token);
+    this.startRequest();
+
+    const startedAt = performance.now();
 
     this.reports.getPageCopy()
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.finishRequest()),
+      )
       .subscribe({
         next: (copy) => {
-          this.finishRequest(token);
-
           if (!this.isCurrentRequest(token, heroId, serverId)) {
             return;
           }
 
+          this.recordPageCopyTiming(startedAt);
           this.copy.set(copy);
         },
-        error: (error: unknown) => {
-          this.finishRequest(token);
-
+        error: () => {
           if (!this.isCurrentRequest(token, heroId, serverId)) {
             return;
           }
 
+          this.recordPageCopyTiming(startedAt);
           this.hasError.set(true);
         },
       });
   }
 
-  private loadListPage(heroId: string, serverId: string, token: number): void {
-    this.startRequest(token);
+  private loadReportsCenterPage(heroId: string, serverId: string, token: number): void {
+    this.startRequest();
 
-    this.reports.getListPage({
+    const filters = this.currentFilters();
+    const startedAt = performance.now();
+
+    this.reports.getReportsCenterPageContext({
       heroId,
       limit: this.listLimit,
       offset: this.listOffset,
-      reportTypeKey: null,
-      unreadOnly: this.filtersForm.controls.unreadOnly.value,
+      query: filters.query,
+      reportAreaKey: filters.reportAreaKey,
+      readModeKey: filters.readModeKey,
+      timeRangeKey: filters.timeRangeKey,
     })
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.finishRequest()),
+      )
       .subscribe({
-        next: (listPage) => {
-          this.finishRequest(token);
-
+        next: (context) => {
           if (!this.isCurrentRequest(token, heroId, serverId)) {
             return;
           }
 
-          this.listPage.set(listPage);
-          this.filtersForm.setValue(
-            { unreadOnly: listPage.appliedFilters.unreadOnly },
-            { emitEvent: false },
-          );
+          this.recordReportsCenterContextTiming(startedAt);
+          this.context.set(context);
+          this.syncAppliedFilters(context.filters.applied);
+          this.syncSelectedReport(context);
         },
-        error: (error: unknown) => {
-          this.finishRequest(token);
-
+        error: () => {
           if (!this.isCurrentRequest(token, heroId, serverId)) {
             return;
           }
 
+          this.recordReportsCenterContextTiming(startedAt);
           this.hasError.set(true);
         },
       });
+  }
+
+  private syncAppliedFilters(filters: ReportsCenterAppliedFiltersV1): void {
+    this.filtersForm.setValue({
+      query: filters.query ?? '',
+      reportAreaKey: filters.reportAreaKey,
+      readModeKey: filters.readModeKey,
+      timeRangeKey: filters.timeRangeKey,
+    }, { emitEvent: false });
+  }
+
+  private syncSelectedReport(context: ReportsCenterPageContextV2): void {
+    const selectedReportId = this.selectedReportId();
+
+    if (selectedReportId && context.reports.some((row) => row.reportId === selectedReportId)) {
+      return;
+    }
+
+    this.selectedReportId.set(
+      context.selectedPreview?.reportId ?? context.reports[0]?.reportId ?? null,
+    );
+  }
+
+  private currentFilters(): ReportsCenterAppliedFiltersV1 {
+    const query = this.filtersForm.controls.query.value.trim();
+
+    return {
+      query: query ? query : null,
+      reportAreaKey: this.filtersForm.controls.reportAreaKey.value,
+      readModeKey: this.filtersForm.controls.readModeKey.value,
+      timeRangeKey: this.filtersForm.controls.timeRangeKey.value,
+    };
   }
 
   private isCurrentRequest(token: number, heroId: string, serverId: string): boolean {
@@ -177,20 +328,32 @@ export class ReportsPageState {
     );
   }
 
-  private startRequest(token: number): void {
-    if (!this.requestToken.isCurrent(token)) {
-      return;
-    }
+  private beginRequestToken(): number {
+    return this.requestToken.next();
+  }
 
+  private startRequest(): void {
     this.pendingRequestCount.update((count) => count + 1);
   }
 
-  private finishRequest(token: number): void {
-    if (!this.requestToken.isCurrent(token)) {
-      return;
-    }
-
+  private finishRequest(): void {
     this.pendingRequestCount.update((count) => Math.max(0, count - 1));
+  }
+
+  private recordPageCopyTiming(startedAt: number): void {
+    const durationMs = elapsedMs(startedAt);
+
+    this.pageCopyLoadMs.set(durationMs);
+    // Temporary user-side smoke instrumentation for Reports Center RPC timings.
+    console.debug('Reports Center get_report_page_copy duration', { durationMs });
+  }
+
+  private recordReportsCenterContextTiming(startedAt: number): void {
+    const durationMs = elapsedMs(startedAt);
+
+    this.reportsCenterContextLoadMs.set(durationMs);
+    // Temporary user-side smoke instrumentation for Reports Center RPC timings.
+    console.debug('Reports Center get_reports_center_page_context duration', { durationMs });
   }
 }
 
@@ -204,4 +367,8 @@ function nonNegativeInteger(value: number | null | undefined): number | null {
   return typeof value === 'number' && Number.isInteger(value) && value >= 0
     ? value
     : null;
+}
+
+function elapsedMs(startedAt: number): number {
+  return Math.round(performance.now() - startedAt);
 }

@@ -1,35 +1,61 @@
-<app-loading-overlay [visible]="page.isLoading()" label="" />
+<app-loading-overlay [visible]="page.isLoading()" />
 
 @if (page.copy(); as copy) {
-  <div class="flex-col gap-lg w-100 min-w-0">
-    <app-game-page-header
-      [eyebrowLabel]="copy.reportsCenter.header.eyebrow"
-      [title]="copy.reportsCenter.header.title"
-      [description]="copy.reportsCenter.header.intro"
-      [summaryRows]="page.headerSummaryRows"
-    />
+  @if (page.context(); as context) {
+    <div class="flex-col gap-lg w-100 min-w-0">
+      <app-game-page-header
+        [eyebrowLabel]="copy.reportsCenter.header.eyebrow"
+        [title]="copy.reportsCenter.header.title"
+        [description]="copy.reportsCenter.header.intro"
+        [summaryRows]="page.headerSummaryRows()"
+      />
 
-    @if (page.listPage(); as listPage) {
       <app-report-filters-panel
-        [filters]="copy.reportsCenter.filters"
+        [copy]="copy.reportsCenter.filters"
+        [filters]="context.filters"
+        [capabilities]="context.capabilities.filters"
         [filterForm]="page.filtersForm"
+        [isLoading]="page.isLoading()"
         (apply)="page.applyFilters()"
       />
 
-      <app-report-list-section
-        [title]="copy.reportsCenter.list.title"
-        [emptyTitle]="copy.reportsCenter.list.emptyTitle"
-        [emptyText]="copy.reportsCenter.list.emptyText"
-        [openActionLabel]="copy.reportsCenter.list.openAction"
-        [unreadLabel]="copy.reportsCenter.list.unreadLabel"
-        [readLabel]="copy.reportsCenter.list.readLabel"
-        [unreadCount]="listPage.unreadCount"
-        [reports]="listPage.reports"
-        [pagination]="listPage.pagination"
-        [labels]="copy.labels"
-        [detailSections]="copy.detail.sections"
-        (pageChange)="page.changeReportsPage($event)"
-      />
-    }
-  </div>
+      <div class="grid-3-1 gap-md grid-items-start w-100 min-w-0">
+        <app-report-list-section
+          [copy]="copy.reportsCenter.list"
+          [reports]="context.reports"
+          [pagination]="context.pagination"
+          [counts]="context.counts"
+          [selectedReportId]="page.selectedReportId()"
+          (selectReport)="page.selectReport($event)"
+          (pageChange)="page.changeReportsPage($event)"
+        />
+
+        @if (context.capabilities.preview.rightPreview) {
+          <app-report-preview-panel
+            [preview]="page.selectedPreview()"
+            [copy]="copy.reportsCenter.preview"
+          />
+        }
+      </div>
+
+      @if (context.actions.markAllRead.supported) {
+        <section class="mg-card radius-lg p-md flex-row-between-center flex-wrap gap-md w-100 min-w-0">
+          <div class="flex-col gap-xs min-w-0">
+            <strong class="color-heading">{{ copy.reportsCenter.actions.markAllRead.label }}</strong>
+            @if (!context.actions.markAllRead.enabled) {
+              <span class="color-muted text-sm">
+                {{ copy.reportsCenter.actions.markAllRead.disabledTooltip }}
+              </span>
+            }
+          </div>
+          <p-button
+            type="button"
+            [label]="copy.reportsCenter.actions.markAllRead.label"
+            [disabled]="!context.actions.markAllRead.enabled || page.isLoading()"
+            (click)="page.markAllRead()"
+          />
+        </section>
+      }
+    </div>
+  }
 }

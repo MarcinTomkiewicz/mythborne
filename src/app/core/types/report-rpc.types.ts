@@ -3,11 +3,17 @@ import { Database } from './database.types';
 export type GetReportPageCopyRpcResult =
   Database['public']['Functions']['get_report_page_copy']['Returns'];
 
-export type GetReportListPageRpcArgs =
-  Database['public']['Functions']['get_report_list_page']['Args'];
+export type GetReportsCenterPageContextRpcArgs =
+  Database['public']['Functions']['get_reports_center_page_context']['Args'];
 
-export type GetReportListPageRpcResult =
-  Database['public']['Functions']['get_report_list_page']['Returns'];
+export type GetReportsCenterPageContextRpcResult =
+  Database['public']['Functions']['get_reports_center_page_context']['Returns'];
+
+export type MarkAllReportsReadRpcArgs =
+  Database['public']['Functions']['mark_all_reports_read']['Args'];
+
+export type MarkAllReportsReadRpcResult =
+  Database['public']['Functions']['mark_all_reports_read']['Returns'];
 
 export type GetReportDetailRpcArgs =
   Database['public']['Functions']['get_report_detail']['Args'];

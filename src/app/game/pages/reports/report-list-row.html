@@ -1,53 +1,53 @@
-<article class="mg-data-row mg-data-row--listing">
+<article
+  class="mg-data-row mg-data-row--listing cursor-pointer"
+  role="button"
+  tabindex="0"
+  [class.border-secondary]="selected()"
+  [attr.aria-pressed]="selected()"
+  (click)="select()"
+  (keydown)="selectFromKeyboard($event)"
+>
   <div class="flex-col gap-xs flex-none">
-    <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
-      {{ report().reportTypeLabel }}
+    <span class="mg-chip radius-pill py-xs px-sm text-xs color-heading">
+      {{ report().marker.markerLabel }}
     </span>
     @if (report().isUnread) {
       <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
-        {{ unreadLabel() }}
-      </span>
-    } @else {
-      <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
-        {{ readLabel() }}
+        {{ copy().unreadLabel }}
       </span>
     }
   </div>
 
   <div class="flex-col gap-xs min-w-0">
     <h3 class="m-0">
-      <a
-        class="color-heading text-md text-break"
-        [routerLink]="['/game/reports', report().reportId]"
+      <button
+        class="bg-transparent border-0 p-0 color-heading text-md text-break text-left cursor-pointer"
+        type="button"
+        (click)="$event.stopPropagation(); select()"
       >
         {{ report().title }}
-      </a>
+      </button>
     </h3>
-    @if (report().summary) {
-      <span class="color-muted text-sm text-break">{{ report().summary }}</span>
-    }
     <div class="flex-row-start-center flex-wrap gap-sm w-100 min-w-0">
-      <span class="flex-row-start-center gap-xs color-muted text-xs">
-        <span>{{ labels().participants }}</span>
-        <strong class="color-heading">{{ report().participantsJson.length }}</strong>
+      <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
+        {{ report().source.label }}
       </span>
-      <span class="flex-row-start-center gap-xs color-muted text-xs">
-        <span>{{ detailSections().itemReferences }}</span>
-        <strong class="color-heading">{{ report().itemReferencesCount }}</strong>
+      <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
+        {{ report().eventType.label }}
       </span>
     </div>
   </div>
 
   <div class="flex-col gap-xs text-right flex-none">
-    <span class="color-muted text-xs">{{ labels().createdAt }}</span>
-    <time class="color-heading text-sm" [attr.datetime]="report().createdAt">
-      {{ formatDateTime(report().createdAt) }}
+    <time class="color-heading text-sm" [attr.datetime]="report().reportDate.value">
+      {{ report().reportDate.displayValue ?? report().reportDate.value }}
     </time>
     <a
       class="mg-chip radius-pill py-xs px-sm text-xs color-muted"
-      [routerLink]="['/game/reports', report().reportId]"
+      [routerLink]="report().preview.publicAccess.privatePath"
+      (click)="$event.stopPropagation()"
     >
-      {{ openActionLabel() }}
+      {{ copy().openAction }}
     </a>
   </div>
 </article>
