@@ -61,9 +61,11 @@
     </section>
   }
 
-  <app-report-handoff-actions
-    [actions]="view().actions"
-    [directReportLabel]="directReportLabel()"
-    [publicReportCopyLabel]="publicReportCopyLabel()"
-  />
+  @if (showActions()) {
+    <app-report-handoff-actions
+      [actions]="view().actions"
+      [directReportLabel]="directReportLabel()"
+      [publicReportCopyLabel]="publicReportCopyLabel()"
+    />
+  }
 </div>

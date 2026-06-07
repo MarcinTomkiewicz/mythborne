@@ -1,6 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
-import {
+import type {
+  PrivateReportDetailPage,
   ReportDetailV2,
   ReportShellCopyV2,
 } from '../../../core/domain/reports/report.model';
@@ -9,6 +10,7 @@ import { mapCanonicalReportCombatStageView } from '../../../core/utils/combat-re
 import { publicReportPathFromToken } from '../../../core/utils/public-report-path';
 import { CombatStage } from '../../components/combat/combat-stage';
 import { ExplorationReportDomainContent } from '../../components/exploration-report-domain-content/exploration-report-domain-content';
+import { PvpReportDomainContent } from '../../components/pvp-report-domain-content/pvp-report-domain-content';
 
 @Component({
   selector: 'app-report-detail-sections',
@@ -17,6 +19,7 @@ import { ExplorationReportDomainContent } from '../../components/exploration-rep
     ButtonModule,
     CombatStage,
     ExplorationReportDomainContent,
+    PvpReportDomainContent,
   ],
   templateUrl: './report-detail-sections.html',
   host: { class: 'd-block w-100 min-w-0' },
@@ -35,8 +38,26 @@ export class ReportDetailSections {
       !context.frontendUsage.sourceIdsRedacted &&
       context.missingContextReason === null;
   });
+  readonly isPrivatePvpCombat = computed(() => {
+    const context = this.context();
+    const pvp = context.pvp;
+
+    return this.detail().access.visibility === 'private' &&
+      context.reportDomainKey === 'pvp' &&
+      context.contentKind === 'pvp_combat' &&
+      context.frontendUsage.canUsePrivateDomainReads &&
+      !context.frontendUsage.sourceIdsRedacted &&
+      context.missingContextReason === null &&
+      pvp?.sourceKind === 'pvp_attack' &&
+      !!pvp.pvpAttackResultId;
+  });
+  readonly privatePvpCombatDetail = computed(() =>
+    this.isPrivatePvpCombat()
+      ? this.detail() as PrivateReportDetailPage
+      : null,
+  );
   readonly combatStage = computed(() =>
-    this.isPrivateExploration()
+    this.isPrivateExploration() || this.privatePvpCombatDetail()
       ? null
       : mapCanonicalReportCombatStageView(this.detail().report, {
           activeHeroId: this.activeHeroId(),

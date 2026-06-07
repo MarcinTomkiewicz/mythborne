@@ -20,4 +20,5 @@ export class ReportDetailPreviewDisplay {
   readonly view = input.required<ReportDetailPreviewView>();
   readonly directReportLabel = input<string | null>(null);
   readonly publicReportCopyLabel = input<string | null>(null);
+  readonly showActions = input(true);
 }
