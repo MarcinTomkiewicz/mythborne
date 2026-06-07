@@ -3,17 +3,23 @@ import { map, Observable } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
   PrivateReportDetailPage,
+  PublicReportDetailV2,
   ReportListPage,
   ReportPageCopy,
 } from '../../domain/reports/report.model';
 import {
+  GetPublicReportDetailRpcArgs,
+  GetPublicReportDetailRpcResult,
   GetReportDetailRpcArgs,
   GetReportDetailRpcResult,
   GetReportListPageRpcArgs,
   GetReportListPageRpcResult,
   GetReportPageCopyRpcResult,
 } from '../../types/report-rpc.types';
-import { mapReportDetailPage } from '../../utils/report-detail-page.mapper';
+import {
+  mapPublicReportDetailPage,
+  mapReportDetailPage,
+} from '../../utils/report-detail-page.mapper';
 import { mapReportListPage } from '../../utils/report-list-page.mapper';
 import { mapReportPageCopy } from '../../utils/report-page-copy.mapper';
 import { Backend } from '../backend/backend';
@@ -75,6 +81,19 @@ export class PlayerReports {
           reportId: input.reportId,
         }),
       ),
+    );
+  }
+
+  getPublicDetailPage(publicToken: string): Observable<PublicReportDetailV2> {
+    const args: GetPublicReportDetailRpcArgs = {
+      p_public_token: publicToken,
+    };
+
+    return this.backend.rpc<GetPublicReportDetailRpcResult>(
+      RPC.get_public_report_detail,
+      args,
+    ).pipe(
+      map(mapPublicReportDetailPage),
     );
   }
 }

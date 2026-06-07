@@ -1,86 +1,34 @@
-<div class="flex-col min-h-full">
-  <header class="mg-card flex-row-between-center flex-col-sm gap-md py-md px-lg">
-    <h1 class="mg-section__title mg-section__title--sm mg-section__title--no-margin">
-      Mythsworn
-    </h1>
-    <a routerLink="/" class="tag-badge tag-badge--muted">Start</a>
-  </header>
+<main class="py-lg w-100">
+  <app-loading-overlay [visible]="page.isLoading()" />
 
-  <main class="py-lg w-100" [class.mg-container]="!page.isSpyReport()">
-    <app-loading-overlay
-      [visible]="page.isLoading() && !page.isNotFound()"
-      label="Loading report..."
-      description="Loading the public game report."
-    />
+  @if (page.copy(); as copy) {
+    @if (page.detail(); as detail) {
+      @if (detail.report) {
+        <div class="mg-container flex-col gap-lg w-100 min-w-0">
+          <app-game-page-header
+            [eyebrowLabel]="detail.report.reportTypeLabel"
+            [title]="detail.report.title || copy.reportShell.public.titleFallback"
+            [description]="detail.report.summary"
+            [summaryRows]="headerSummaryRows()"
+          />
 
-    @if (page.isNotFound()) {
-      <section class="mg-card flex-col gap-sm p-lg w-100">
-        <p class="card-legend m-0">
-          {{ page.uiMetadata.sectionTitle(page.uiMetadata.section.notFound) }}
-        </p>
-        <p class="m-0 muted-text">
-          {{ page.uiMetadata.sectionText(page.uiMetadata.section.notFound) }}
-        </p>
-      </section>
-    } @else if (page.report(); as report) {
-      <div class="flex-col gap-xl w-100">
-        @if (page.isSpyReport()) {
-          <app-pvp-spy-report [report]="report" />
-
-          <section class="mg-card p-lg flex-col gap-md w-100">
-            <p class="small-caps color-muted text-xs m-0">Akcje raportu</p>
-            <div class="flex-row-start-center flex-wrap gap-sm">
-              <p-button
-                label="Start"
-                icon="pi pi-home"
-                severity="secondary"
-                routerLink="/"
-              />
-            </div>
-          </section>
-        } @else {
-        <section class="mg-card p-lg w-100">
-          <div class="flex-row-between-center flex-col-sm gap-md">
-            <div class="flex-col gap-xs">
-              <p class="card-legend m-0">{{ report.reportTypeLabel }}</p>
-              <h2 class="mg-section__title mg-section__title--sm m-0">{{ report.title }}</h2>
-              @if (report.summary) {
-                <p class="muted-text m-0">{{ report.summary }}</p>
-              }
-              @if (report.sourceLabel) {
-                <span class="tag-badge tag-badge--muted">{{ report.sourceLabel }}</span>
-              }
-            </div>
-
-            <div class="flex-row-start-center flex-wrap gap-sm">
-              <span class="tag-badge tag-badge--info">
-                Created {{ page.toDateTimeLabel(report.createdAt) }}
-              </span>
-              <span class="tag-badge tag-badge--muted">{{ report.sourceEntityType }}</span>
-            </div>
-          </div>
+          <app-report-detail-sections
+            [detail]="detail"
+            [shellCopy]="copy.reportShell"
+          />
+        </div>
+      } @else {
+        <section class="mg-container mg-card flex-col gap-sm p-lg w-100">
+          <h1 class="color-heading text-xl m-0">{{ copy.reportShell.public.notFoundTitle }}</h1>
+          <p class="color-text text-md lh-16 m-0">{{ copy.reportShell.public.notFoundText }}</p>
+          <p-button
+            [label]="copy.reportShell.header.backAction"
+            icon="pi pi-home"
+            severity="secondary"
+            routerLink="/"
+          />
         </section>
-
-        <section class="mg-card flex-col gap-md p-lg w-100">
-          <p class="card-legend m-0">
-            {{ page.uiMetadata.sectionTitle(page.uiMetadata.section.pageHeader) }}
-          </p>
-          <p class="muted-text m-0">
-            {{ page.uiMetadata.sectionText(page.uiMetadata.section.pageHeader) }}
-          </p>
-        </section>
-
-        <app-game-report-content
-          [report]="report"
-          [participantsTitle]="page.uiMetadata.sectionTitle(page.uiMetadata.section.participants)"
-          [participantsText]="page.uiMetadata.sectionText(page.uiMetadata.section.participants)"
-          [itemReferencesTitle]="page.uiMetadata.sectionTitle(page.uiMetadata.section.itemReferences)"
-          [itemReferencesText]="page.uiMetadata.sectionText(page.uiMetadata.section.itemReferences)"
-          [combatSectionTitle]="page.uiMetadata.sectionTitle(page.uiMetadata.section.combatSection)"
-          [combatSectionText]="page.uiMetadata.sectionText(page.uiMetadata.section.combatSection)"
-        />
-        }
-      </div>
+      }
     }
-  </main>
-</div>
+  }
+</main>

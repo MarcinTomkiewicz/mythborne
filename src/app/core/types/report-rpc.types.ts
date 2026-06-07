@@ -14,3 +14,9 @@ export type GetReportDetailRpcArgs =
 
 export type GetReportDetailRpcResult =
   Database['public']['Functions']['get_report_detail']['Returns'];
+
+export type GetPublicReportDetailRpcArgs =
+  Database['public']['Functions']['get_public_report_detail']['Args'];
+
+export type GetPublicReportDetailRpcResult =
+  Database['public']['Functions']['get_public_report_detail']['Returns'];

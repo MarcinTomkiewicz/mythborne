@@ -11,10 +11,9 @@
       />
 
       <app-report-detail-sections
-        [report]="detail.report"
-        [reportId]="detail.access.reportId"
+        [detail]="detail"
         [activeHeroId]="detail.access.heroId"
-        [shareActionLabel]="copy.detail.header.shareAction"
+        [shellCopy]="copy.reportShell"
       />
     </div>
   }

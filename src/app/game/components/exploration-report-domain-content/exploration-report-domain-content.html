@@ -1,0 +1,10 @@
+@if (reportId(); as id) {
+  <app-exploration-report-result-content
+    [reportId]="id"
+    [reportLabel]="detail().report.reportTypeLabel"
+    [rewardText]="rewardText()"
+    [isLoadingReward]="isLoadingReward()"
+    [rewardDisplay]="rewardDisplay()"
+    [rewardUnavailableMessage]="null"
+  />
+}

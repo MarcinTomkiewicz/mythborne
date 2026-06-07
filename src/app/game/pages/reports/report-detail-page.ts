@@ -31,32 +31,25 @@ export class ReportDetailPage implements OnInit {
     return [
       {
         key: 'reportType',
-        label: copy.labels.reportType,
+        label: copy.reportShell.meta.eventTypeLabel,
         value: detail.report.reportTypeLabel,
       },
       ...(detail.report.sourceLabel
         ? [{
           key: 'source',
-          label: copy.labels.source,
+          label: copy.reportShell.meta.sourceLabel,
           value: detail.report.sourceLabel,
         }]
         : []),
       {
         key: 'createdAt',
-        label: copy.labels.createdAt,
+        label: copy.reportShell.meta.reportDateLabel,
         value: this.page.formatDateTime(detail.report.createdAt),
-      },
-      {
-        key: 'readState',
-        label: copy.labels.readState,
-        value: detail.access.isUnread
-          ? copy.reportsCenter.list.unreadLabel
-          : copy.reportsCenter.list.readLabel,
       },
       {
         key: 'reportsCenter',
         label: copy.reportsCenter.header.title,
-        value: copy.detail.header.backAction,
+        value: copy.reportShell.header.backAction,
         route: '/game/reports',
       },
     ];

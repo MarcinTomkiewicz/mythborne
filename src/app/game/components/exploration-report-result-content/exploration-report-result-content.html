@@ -1,0 +1,50 @@
+<div class="flex-col gap-lg w-100">
+  @if (reportLabel(); as label) {
+    <app-report-detail-preview-card
+      [reportId]="reportId()"
+      [label]="label"
+    />
+  } @else {
+    <app-report-detail-preview-card
+      [reportId]="reportId()"
+    />
+  }
+
+  @if (isLoadingReward() || rewardDisplay() || rewardUnavailableMessage()) {
+    <section class="mg-card p-lg flex-col gap-sm w-100">
+      <p class="small-caps color-muted text-xs m-0">{{ rewardText().heading }}</p>
+
+      @if (isLoadingReward()) {
+      } @else if (rewardDisplay(); as reward) {
+        @if (reward.entries.length || reward.items.length) {
+          <p class="color-text text-md lh-16 m-0">{{ rewardText().intro }}</p>
+          <p class="color-text text-md lh-16 m-0">
+            @for (entry of reward.entries; track entry.id) {
+              @if (entryAmount(entry) !== null) {
+                <strong class="color-heading">{{ entryAmount(entry) }}</strong>
+                {{ entryName(entry) }}
+              } @else {
+                {{ entryName(entry) }}
+              }@if (!$last || reward.items.length) {, }
+            }
+            @for (item of reward.items; track item.id) {
+              <app-item-detail-popover
+                [itemId]="item.id"
+                [fallbackName]="itemLabel(item)"
+                context="exploration"
+                [buttonTrigger]="false"
+              >
+                <strong class="color-heading">{{ itemLabel(item) }}</strong>
+              </app-item-detail-popover>@if (!$last) {, }
+            }
+            .
+          </p>
+        } @else if (reward.emptyMessage) {
+          <p class="color-text text-md lh-16 m-0">{{ reward.emptyMessage }}</p>
+        }
+      } @else if (rewardUnavailableMessage(); as message) {
+        <p class="color-text text-md lh-16 m-0">{{ message }}</p>
+      }
+    </section>
+  }
+</div>

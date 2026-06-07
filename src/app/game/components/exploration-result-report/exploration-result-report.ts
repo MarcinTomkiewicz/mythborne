@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import type { ExplorationResultSourceKind } from '../../../core/domain/exploration/exploration-result-display.model';
-import { Json } from '../../../core/types/database.types';
+import type { Json } from '../../../core/types/database.types';
 import {
   explorationReportRewardDisplay,
   explorationResultSourceKind,
@@ -9,15 +9,13 @@ import {
 import { ExplorationMinigameHandoffState } from '../../pages/exploration/exploration-minigame-handoff.state';
 import { ExplorationPageState } from '../../pages/exploration/exploration-page.state';
 import { ExplorationRewardState } from '../../pages/exploration/exploration-reward.state';
-import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-detail-popover';
-import { ReportDetailPreviewCard } from '../report-detail-preview-card/report-detail-preview-card';
+import { ExplorationReportResultContent } from '../exploration-report-result-content/exploration-report-result-content';
 
 @Component({
   selector: 'app-exploration-result-report',
   standalone: true,
   imports: [
-    ItemDetailPopover,
-    ReportDetailPreviewCard,
+    ExplorationReportResultContent,
   ],
   templateUrl: './exploration-result-report.html',
   host: { class: 'd-block w-100' },
