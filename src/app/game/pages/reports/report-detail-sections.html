@@ -1,58 +1,32 @@
-<div class="flex-col gap-md w-100 min-w-0">
-  @for (section of sections(); track section.key) {
-    <section class="mg-card radius-lg p-md flex-col gap-md w-100 min-w-0">
-      <div class="flex-col gap-xs w-100 min-w-0">
-        <h3 class="color-heading font-display text-lg m-0">{{ section.title }}</h3>
-      </div>
+<div class="flex-col gap-lg w-100 min-w-0">
+  @if (combatStage(); as combat) {
+    <app-combat-surface
+      [ariaLabel]="combat.ariaLabel"
+      [leftParticipant]="combat.leftParticipant"
+      [rightParticipant]="combat.rightParticipant"
+      [centerPanel]="combat.centerPanel"
+      [logGroups]="combat.log.groups"
+      [showLog]="combat.log.show"
+      [logTitle]="combat.log.title"
+      [logSubtitle]="combat.log.subtitle"
+      [logEmptyText]="combat.log.emptyText"
+      [leftEmptyTitle]="combat.emptyParticipants.leftTitle"
+      [leftEmptyText]="combat.emptyParticipants.leftText"
+      [rightEmptyTitle]="combat.emptyParticipants.rightTitle"
+      [rightEmptyText]="combat.emptyParticipants.rightText"
+    />
 
-      @if (section.emptyLabel) {
-        <div class="mg-card radius-lg p-md text-sm lh-15 color-muted">
-          {{ section.emptyLabel }}
-        </div>
-      } @else {
-        <div class="flex-col gap-sm w-100 min-w-0">
-          @for (entry of section.entries; track entry.key) {
-            <article class="mg-card radius-lg p-md flex-col gap-sm w-100 min-w-0">
-              @if (entry.title) {
-                <strong class="color-heading text-md text-break">{{ entry.title }}</strong>
-              }
-
-              @if (entry.description) {
-                <p class="color-muted text-sm lh-15 m-0 text-break">{{ entry.description }}</p>
-              }
-
-              @if (entry.chips.length > 0) {
-                <div class="flex-row-start-center flex-wrap gap-xs w-100 min-w-0">
-                  @for (chip of entry.chips; track chip) {
-                    <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
-                      {{ chip }}
-                    </span>
-                  }
-                </div>
-              }
-
-              @if (entry.lines.length > 0) {
-                <div class="flex-col gap-xs w-100 min-w-0">
-                  @for (line of entry.lines; track line) {
-                    <p class="color-muted text-sm lh-15 m-0 text-break">{{ line }}</p>
-                  }
-                </div>
-              }
-
-              @if (entry.rows.length > 0) {
-                <div class="flex-col gap-xs w-100 min-w-0">
-                  @for (row of entry.rows; track row.key) {
-                    <div class="mg-data-row">
-                      <span class="color-muted text-sm text-break">{{ row.label }}</span>
-                      <strong class="color-heading text-sm text-right text-break">{{ row.value }}</strong>
-                    </div>
-                  }
-                </div>
-              }
-            </article>
-          }
-        </div>
-      }
-    </section>
+    @if (publicReportPath()) {
+      <section class="mg-card p-lg flex-col gap-sm w-100">
+        <p-button
+          type="button"
+          [label]="shareActionLabel()"
+          icon="pi pi-link"
+          severity="secondary"
+          [text]="true"
+          (onClick)="copyPublicReportLink()"
+        />
+      </section>
+    }
   }
 </div>

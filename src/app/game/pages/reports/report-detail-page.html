@@ -1,74 +1,20 @@
-<app-loading-overlay [visible]="page.isLoading()" label="" />
+<app-loading-overlay [visible]="page.isLoading()" />
 
 @if (page.copy(); as copy) {
   @if (page.detail(); as detail) {
-    <div class="flex-col gap-lg w-100 min-w-0">
-      <section class="mg-card radius-lg p-md flex-col gap-md w-100 min-w-0">
-        <div class="flex-row-between-start flex-wrap gap-md w-100 min-w-0">
-          <div class="flex-col gap-xs min-w-0">
-            <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
-              {{ detail.report.reportTypeLabel }}
-            </span>
-            <h2 class="color-heading font-display text-xl m-0 text-break">
-              {{ detail.report.title }}
-            </h2>
-            @if (detail.report.summary) {
-              <p class="color-muted text-sm m-0 text-break">
-                {{ detail.report.summary }}
-              </p>
-            }
-          </div>
-
-          <a
-            class="mg-chip radius-pill py-xs px-sm text-xs color-muted"
-            routerLink="/game/reports"
-          >
-            {{ copy.detail.header.backAction }}
-          </a>
-        </div>
-
-        <div class="flex-col gap-sm w-100 min-w-0">
-          <div class="mg-data-row">
-            <span class="color-muted text-sm">{{ copy.labels.reportType }}</span>
-            <strong class="color-heading text-sm text-right">{{ detail.report.reportTypeLabel }}</strong>
-          </div>
-
-          @if (detail.report.sourceLabel) {
-            <div class="mg-data-row">
-              <span class="color-muted text-sm">{{ copy.labels.source }}</span>
-              <strong class="color-heading text-sm text-right">{{ detail.report.sourceLabel }}</strong>
-            </div>
-          }
-
-          <div class="mg-data-row">
-            <span class="color-muted text-sm">{{ copy.labels.createdAt }}</span>
-            <time class="color-heading text-sm text-right" [attr.datetime]="detail.report.createdAt">
-              {{ page.formatDateTime(detail.report.createdAt) }}
-            </time>
-          </div>
-
-          <div class="mg-data-row">
-            <span class="color-muted text-sm">{{ copy.labels.readState }}</span>
-            <div class="flex-col gap-xs text-right">
-              @if (detail.access.isUnread) {
-                <strong class="color-heading text-sm">{{ copy.reportsCenter.list.unreadLabel }}</strong>
-              } @else {
-                <strong class="color-heading text-sm">{{ copy.reportsCenter.list.readLabel }}</strong>
-              }
-              @if (detail.access.readAt) {
-                <time class="color-muted text-xs" [attr.datetime]="detail.access.readAt">
-                  {{ page.formatDateTime(detail.access.readAt) }}
-                </time>
-              }
-            </div>
-          </div>
-        </div>
-      </section>
+    <div class="mg-container flex-col gap-lg w-100 min-w-0">
+      <app-game-page-header
+        [eyebrowLabel]="detail.report.reportTypeLabel"
+        [title]="detail.report.title"
+        [description]="detail.report.summary"
+        [summaryRows]="headerSummaryRows()"
+      />
 
       <app-report-detail-sections
         [report]="detail.report"
-        [sectionLabels]="copy.detail.sections"
-        [emptyLabels]="copy.detail.empty"
+        [reportId]="detail.access.reportId"
+        [activeHeroId]="detail.access.heroId"
+        [shareActionLabel]="copy.detail.header.shareAction"
       />
     </div>
   }

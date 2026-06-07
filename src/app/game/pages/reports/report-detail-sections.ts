@@ -1,26 +1,46 @@
 import { Component, computed, input } from '@angular/core';
+import { ButtonModule } from 'primeng/button';
 import {
   ReportDetailCore,
-  ReportPageCopy,
 } from '../../../core/domain/reports/report.model';
-import { buildReportDetailSections } from './report-detail-section-display';
+import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/browser-clipboard';
+import { mapCanonicalReportCombatStageView } from '../../../core/utils/combat-report-display.mapper';
+import { publicReportPathFromToken } from '../../../core/utils/public-report-path';
+import { CombatSurface } from '../../components/combat/combat-surface';
 
 @Component({
   selector: 'app-report-detail-sections',
   standalone: true,
+  imports: [
+    ButtonModule,
+    CombatSurface,
+  ],
   templateUrl: './report-detail-sections.html',
   host: { class: 'd-block w-100 min-w-0' },
 })
 export class ReportDetailSections {
   readonly report = input.required<ReportDetailCore>();
-  readonly sectionLabels = input.required<ReportPageCopy['detail']['sections']>();
-  readonly emptyLabels = input.required<ReportPageCopy['detail']['empty']>();
+  readonly reportId = input.required<string>();
+  readonly activeHeroId = input.required<string>();
+  readonly shareActionLabel = input.required<string>();
 
-  readonly sections = computed(() =>
-    buildReportDetailSections(
-      this.report(),
-      this.sectionLabels(),
-      this.emptyLabels(),
-    ),
+  readonly combatStage = computed(() =>
+    mapCanonicalReportCombatStageView(this.report(), {
+      activeHeroId: this.activeHeroId(),
+      reportId: this.reportId(),
+    }),
   );
+  readonly publicReportPath = computed(() =>
+    publicReportPathFromToken(this.report().publicToken),
+  );
+
+  copyPublicReportLink(): void {
+    const path = this.publicReportPath();
+
+    if (!path) {
+      return;
+    }
+
+    void copyTextToClipboard(absoluteBrowserUrl(path));
+  }
 }
