@@ -10,52 +10,48 @@
         [summaryRows]="page.headerSummaryRows()"
       />
 
-      <app-report-filters-panel
-        [copy]="copy.reportsCenter.filters"
-        [filters]="context.filters"
-        [capabilities]="context.capabilities.filters"
-        [filterForm]="page.filtersForm"
-        [isLoading]="page.isLoading()"
-        (apply)="page.applyFilters()"
-      />
-
-      <div class="grid-3-1 gap-md grid-items-start w-100 min-w-0">
-        <app-report-list-section
-          [copy]="copy.reportsCenter.list"
-          [reports]="context.reports"
-          [pagination]="context.pagination"
-          [counts]="context.counts"
-          [selectedReportId]="page.selectedReportId()"
-          (selectReport)="page.selectReport($event)"
-          (pageChange)="page.changeReportsPage($event)"
-        />
-
-        @if (context.capabilities.preview.rightPreview) {
-          <app-report-preview-panel
-            [preview]="page.selectedPreview()"
-            [copy]="copy.reportsCenter.preview"
-          />
-        }
-      </div>
-
-      @if (context.actions.markAllRead.supported) {
-        <section class="mg-card radius-lg p-md flex-row-between-center flex-wrap gap-md w-100 min-w-0">
+      <section class="mg-card radius-lg p-md flex-col gap-md w-100 min-w-0">
+        <div class="flex-row-between-center flex-wrap gap-md w-100 min-w-0">
           <div class="flex-col gap-xs min-w-0">
-            <strong class="color-heading">{{ copy.reportsCenter.actions.markAllRead.label }}</strong>
-            @if (!context.actions.markAllRead.enabled) {
-              <span class="color-muted text-sm">
-                {{ copy.reportsCenter.actions.markAllRead.disabledTooltip }}
-              </span>
-            }
+            <h2 class="color-heading font-display text-lg m-0">{{ copy.reportsCenter.list.title }}</h2>
+            <span class="color-muted text-sm lh-14">{{ context.pagination.displayLabel }}</span>
           </div>
-          <p-button
-            type="button"
-            [label]="copy.reportsCenter.actions.markAllRead.label"
-            [disabled]="!context.actions.markAllRead.enabled || page.isLoading()"
-            (click)="page.markAllRead()"
+        </div>
+
+        <div class="grid-1-3-1 grid-items-start gap-md w-100 min-w-0">
+          <app-report-filters-panel
+            [copy]="copy.reportsCenter.filters"
+            [filters]="context.filters"
+            [capabilities]="context.capabilities.filters"
+            [filterForm]="page.filtersForm"
+            [isLoading]="page.isLoading()"
+            (apply)="page.applyFilters()"
           />
-        </section>
-      }
+
+          <app-report-list-section
+            [copy]="copy.reportsCenter.list"
+            [reports]="context.reports"
+            [pagination]="context.pagination"
+            [counts]="context.counts"
+            [selectedReportId]="page.selectedReportId()"
+            [markAllReadSupported]="context.actions.markAllRead.supported"
+            [markAllReadEnabled]="context.actions.markAllRead.enabled"
+            [markAllReadLabel]="copy.reportsCenter.actions.markAllRead.label"
+            [markAllReadDisabledTooltip]="copy.reportsCenter.actions.markAllRead.disabledTooltip"
+            [isLoading]="page.isLoading()"
+            (selectReport)="page.selectReport($event)"
+            (pageChange)="page.changeReportsPage($event)"
+            (markAllRead)="page.markAllRead()"
+          />
+
+          @if (context.capabilities.preview.rightPreview) {
+            <app-report-preview-panel
+              [preview]="page.selectedPreview()"
+              [copy]="copy.reportsCenter.preview"
+            />
+          }
+        </div>
+      </section>
     </div>
   }
 }

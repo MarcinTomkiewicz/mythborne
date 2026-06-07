@@ -1,19 +1,23 @@
-<section class="mg-card radius-lg p-md flex-col gap-sm w-100 min-w-0">
-  <div class="flex-row-between-center flex-wrap gap-md w-100 min-w-0">
-    <div class="flex-col gap-xs min-w-0">
-      <h2 class="color-heading font-display text-lg m-0">
-        {{ copy().title }}
-      </h2>
-      <span class="color-muted text-sm">{{ pagination().displayLabel }}</span>
-    </div>
-
-    <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
-      {{ copy().unreadLabel }} {{ counts().matchingUnreadReports }}
-    </span>
+<section class="mg-card p-sm flex-col gap-sm w-100 min-w-0">
+  <div class="flex-row-end-center flex-wrap gap-md w-100 min-w-0">
+    @if (markAllReadSupported()) {
+      <div class="flex-row-end-center flex-wrap gap-sm min-w-0">
+        @if (!markAllReadEnabled()) {
+          <span class="color-muted text-sm">{{ markAllReadDisabledTooltip() }}</span>
+        }
+        <p-button
+          type="button"
+          severity="secondary"
+          [label]="markAllReadLabel()"
+          [disabled]="!markAllReadEnabled() || isLoading()"
+          (click)="markAllRead.emit()"
+        />
+      </div>
+    }
   </div>
 
   @if (reports().length === 0) {
-    <section class="mg-card radius-lg p-md flex-col gap-xs w-100 min-w-0">
+    <section class="mg-card radius-lg p-md flex-col gap-xs lh-15 w-100 min-w-0">
       <strong class="color-heading">{{ copy().emptyTitle }}</strong>
       <span class="color-muted text-sm">{{ copy().emptyText }}</span>
     </section>
@@ -22,7 +26,6 @@
       @for (report of reports(); track report.reportId) {
         <app-report-list-row
           [report]="report"
-          [copy]="copy()"
           [selected]="selectedReportId() === report.reportId"
           (selectReport)="selectReport.emit($event)"
         />
@@ -31,7 +34,7 @@
   }
 
   <nav class="mg-card radius-lg flex-row-between-center flex-wrap gap-md p-md w-100 min-w-0">
-    <strong class="color-heading text-sm">{{ pagination().displayLabel }}</strong>
+    <strong class="color-text text-sm">{{ pagination().displayLabel }}</strong>
     <p-paginator
       [first]="pagination().offset"
       [rows]="pagination().limit"

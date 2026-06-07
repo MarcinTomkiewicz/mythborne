@@ -1,68 +1,52 @@
 <aside class="mg-card radius-lg p-md flex-col gap-md w-100 min-w-0">
   @if (preview(); as preview) {
-    <div class="flex-row-between-start gap-md w-100 min-w-0">
-      <div class="flex-col gap-xs min-w-0">
-        <span class="mg-chip radius-pill py-xs px-sm text-xs color-heading">
-          {{ preview.marker.markerLabel }}
-        </span>
-        <h2 class="color-heading font-display text-lg m-0 text-break">
-          {{ preview.title || copy().titleFallback }}
-        </h2>
-      </div>
-
-      <a
-        class="mg-chip radius-pill py-xs px-sm text-xs color-muted flex-none"
-        [routerLink]="preview.publicAccess.privatePath"
-      >
-        {{ copy().openAction }}
-      </a>
+    <div class="flex-col gap-xs min-w-0">
+      <h2 class="color-heading font-display text-lg lh-12 m-0 text-break">
+        {{ preview.title || copy().titleFallback }}
+      </h2>
     </div>
 
     <div class="flex-col gap-sm w-100 min-w-0">
-      <div class="mg-data-row gap-sm">
-        <span class="color-muted text-xs">{{ copy().sourceLabel }}</span>
-        <strong class="color-heading text-sm">{{ preview.source.label }}</strong>
-      </div>
+      @for (row of previewFactRows(); track row.key) {
+        <div class="mg-data-row">
+          <span class="color-muted text-xs">{{ row.label }}</span>
+          @if (row.datetime) {
+            <time class="color-text text-sm" [attr.datetime]="row.datetime">
+              {{ row.value }}
+            </time>
+          } @else {
+            <strong class="color-text text-sm">{{ row.value }}</strong>
+          }
+        </div>
+      }
 
-      <div class="mg-data-row gap-sm">
-        <span class="color-muted text-xs">{{ copy().eventTypeLabel }}</span>
-        <strong class="color-heading text-sm">{{ preview.eventType.label }}</strong>
-      </div>
-
-      <div class="mg-data-row gap-sm">
-        <span class="color-muted text-xs">{{ copy().reportDateLabel }}</span>
-        <time class="color-heading text-sm" [attr.datetime]="preview.reportDate.value">
-          {{ preview.reportDate.displayValue ?? preview.reportDate.value }}
-        </time>
-      </div>
+      @if (rewardValues().length > 0) {
+        <div class="mg-data-row">
+          <span class="color-muted text-xs">{{ copy().rewardLabel }}</span>
+          <div class="flex-col gap-xs text-right min-w-0">
+            @for (value of rewardValues(); track $index) {
+              <strong class="color-text text-sm text-break">
+                {{ value }}
+              </strong>
+            }
+          </div>
+        </div>
+      }
     </div>
 
-    @if (preview.reward.entriesPreview.length > 0) {
-      <div class="flex-col gap-xs w-100 min-w-0">
-        <span class="color-muted text-xs">{{ copy().rewardLabel }}</span>
-        <div class="flex-col gap-xs w-100 min-w-0">
-          @for (entry of preview.reward.entriesPreview; track $index) {
-            <strong class="color-heading text-sm text-break">{{ entry.displayValue }}</strong>
-          }
-        </div>
-      </div>
-    } @else if (preview.reward.resources.rows.length > 0) {
-      <div class="flex-col gap-xs w-100 min-w-0">
-        <span class="color-muted text-xs">{{ copy().rewardLabel }}</span>
-        <div class="flex-col gap-xs w-100 min-w-0">
-          @for (row of preview.reward.resources.rows; track $index) {
-            <strong class="color-heading text-sm text-break">{{ row.displayValue }}</strong>
-          }
-        </div>
-      </div>
-    }
-
     <div class="flex-row-start-center flex-wrap gap-sm w-100 min-w-0">
+      <p-button
+        [label]="copy().openAction"
+        [routerLink]="preview.publicAccess.privatePath"
+      />
+
       @if (preview.publicAccess.hasPublicToken && preview.publicAccess.publicPath) {
         <p-button
           type="button"
+          severity="secondary"
+          [outlined]="true"
           [label]="copy().copyLinkAction"
-          (click)="copyPublicLink(preview.publicAccess.publicPath)"
+          (onClick)="copyPublicLink(preview.publicAccess.publicPath)"
         />
       }
     </div>

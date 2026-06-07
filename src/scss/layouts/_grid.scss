@@ -85,6 +85,10 @@ $grid-common-patterns: (
     columns: minmax(0, 1fr) minmax(0, 2fr),
     collapse-bp: "md"
   ),
+  "1-3-1": (
+    columns: minmax(18rem, 1fr) minmax(0, 3fr) minmax(20rem, 1fr),
+    collapse-bp: "xl"
+  ),
   "1-2-balanced": (
     columns: minmax(0, 1fr) minmax(0, 2fr),
     balance-bp: "xl",

@@ -17,3 +17,5 @@ export type ReportsCenterFilterCopyLabelKey =
   | 'eventTypeLabel'
   | 'readModeLabel'
   | 'timeRangeLabel';
+
+export type ReportsCenterFilterControlKind = 'badge' | 'select';

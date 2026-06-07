@@ -4,17 +4,17 @@
   (ngSubmit)="apply.emit()"
 >
   <div class="flex-col gap-xs w-100 min-w-0">
-    <strong class="color-heading">{{ copy().title }}</strong>
-    <span class="color-muted text-sm">{{ copy().helperText }}</span>
+    <strong class="color-heading font-display text-lg m-0">{{ copy().title }}</strong>
+    <span class="color-muted text-sm lh-14">{{ copy().helperText }}</span>
   </div>
 
   <div class="flex-row-start-center flex-wrap gap-md w-100 min-w-0">
     @if (capabilities().search) {
-      <div class="flex-col gap-xs min-w-0">
+      <div class="flex-col gap-xs w-100 min-w-0">
         <span class="text-xs color-muted small-caps uppercase">{{ copy().searchLabel }}</span>
         <input
           pInputText
-          class="radius-pill py-sm px-md w-100"
+          class="w-100"
           type="search"
           formControlName="query"
           [placeholder]="copy().searchPlaceholder"
@@ -22,27 +22,43 @@
         />
       </div>
     }
-
   </div>
 
   @for (group of filterGroups; track group.controlName) {
     @if (isFilterAvailable(group)) {
       <div class="flex-col gap-xs w-100 min-w-0">
         <span class="text-xs color-muted small-caps uppercase">{{ filterLabel(group) }}</span>
-        <div class="flex-row-start-center flex-wrap gap-sm w-100 min-w-0">
-          @for (option of filterOptions(group); track option.key) {
-            <button
-              class="mg-chip radius-pill py-xs px-sm text-xs color-muted"
-              type="button"
-              [class.border-secondary]="isFilterSelected(group, option.key)"
-              [attr.aria-pressed]="isFilterSelected(group, option.key)"
-              [disabled]="!option.enabled || isLoading()"
-              (click)="selectFilter(group, option.key)"
-            >
-              {{ option.label }}
-            </button>
-          }
-        </div>
+
+        @if (group.controlKind === 'badge') {
+          <div class="flex-row-start-center flex-wrap gap-sm w-100 min-w-0">
+            @for (option of filterOptions(group); track option.key) {
+              <button
+                class="tag-badge"
+                type="button"
+                [class.tag-badge--heading]="isFilterSelected(group, option.key)"
+                [class.tag-badge--muted]="!isFilterSelected(group, option.key)"
+                [attr.aria-pressed]="isFilterSelected(group, option.key)"
+                [disabled]="!option.enabled || isLoading()"
+                (click)="selectFilter(group, option.key)"
+              >
+                {{ option.label }}
+              </button>
+            }
+          </div>
+        } @else {
+          <p-select
+            class="w-100"
+            [formControlName]="group.controlName"
+            [options]="selectOptions(group)"
+            optionLabel="label"
+            optionValue="key"
+            optionDisabled="disabled"
+            appendTo="body"
+            [disabled]="isLoading()"
+            [attr.aria-label]="filterLabel(group)"
+            (onChange)="changeSelectFilter()"
+          />
+        }
       </div>
     }
   }

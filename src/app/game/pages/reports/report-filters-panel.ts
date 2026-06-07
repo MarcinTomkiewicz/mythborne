@@ -1,6 +1,7 @@
 import { Component, input, output } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
+import { SelectModule } from 'primeng/select';
 import { REPORTS_CENTER_FILTER_GROUPS } from '../../../core/configs/reports-center-filter-groups.config';
 import { ReportsCenterFiltersCopy } from '../../../core/domain/reports/reports-center-copy.model';
 import {
@@ -16,6 +17,7 @@ import { ReportsCenterFilterGroupConfig } from '../../../core/interfaces/reports
   imports: [
     InputTextModule,
     ReactiveFormsModule,
+    SelectModule,
   ],
   templateUrl: './report-filters-panel.html',
   host: { class: 'd-block w-100 min-w-0' },
@@ -35,6 +37,10 @@ export class ReportFiltersPanel {
     this.apply.emit();
   }
 
+  changeSelectFilter(): void {
+    this.apply.emit();
+  }
+
   isFilterSelected(group: ReportsCenterFilterGroupConfig, key: string): boolean {
     return this.filterForm().get(group.controlName)?.value === key;
   }
@@ -45,6 +51,15 @@ export class ReportFiltersPanel {
 
   filterOptions(group: ReportsCenterFilterGroupConfig): readonly ReportsCenterFilterOption[] {
     return this.filters().options[group.optionsKey];
+  }
+
+  selectOptions(
+    group: ReportsCenterFilterGroupConfig,
+  ): (ReportsCenterFilterOption & { disabled: boolean })[] {
+    return this.filterOptions(group).map((option) => ({
+      ...option,
+      disabled: !option.enabled,
+    }));
   }
 
   filterLabel(group: ReportsCenterFilterGroupConfig): string {

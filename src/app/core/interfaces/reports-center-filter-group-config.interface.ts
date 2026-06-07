@@ -1,5 +1,6 @@
 import {
   ReportsCenterFilterCapabilityKey,
+  ReportsCenterFilterControlKind,
   ReportsCenterFilterControlName,
   ReportsCenterFilterCopyLabelKey,
   ReportsCenterFilterOptionsKey,
@@ -7,6 +8,7 @@ import {
 
 export interface ReportsCenterFilterGroupConfig {
   controlName: ReportsCenterFilterControlName;
+  controlKind: ReportsCenterFilterControlKind;
   capabilityKey: ReportsCenterFilterCapabilityKey;
   optionsKey: ReportsCenterFilterOptionsKey;
   copyLabelKey: ReportsCenterFilterCopyLabelKey;

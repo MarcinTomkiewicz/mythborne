@@ -1,5 +1,4 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { ButtonModule } from 'primeng/button';
 import { GamePageHeader } from '../../../shared/game-page-header/game-page-header';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { ReportFiltersPanel } from './report-filters-panel';
@@ -11,7 +10,6 @@ import { ReportsPageState } from './reports-page.state';
   selector: 'app-reports-page',
   standalone: true,
   imports: [
-    ButtonModule,
     GamePageHeader,
     LoadingOverlay,
     ReportFiltersPanel,
@@ -20,6 +18,7 @@ import { ReportsPageState } from './reports-page.state';
   ],
   providers: [ReportsPageState],
   templateUrl: './reports-page.html',
+  host: { class: 'd-block w-100 min-w-0' },
 })
 export class ReportsPage implements OnInit {
   readonly page = inject(ReportsPageState);

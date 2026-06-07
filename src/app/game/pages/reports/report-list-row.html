@@ -1,53 +1,41 @@
 <article
-  class="mg-data-row mg-data-row--listing cursor-pointer"
+  class="mg-data-row mg-data-row--listing mg-card--interactive p-sm cursor-pointer"
   role="button"
   tabindex="0"
-  [class.border-secondary]="selected()"
+  [class.mg-card--selected]="selected()"
   [attr.aria-pressed]="selected()"
   (click)="select()"
   (keydown)="selectFromKeyboard($event)"
 >
-  <div class="flex-col gap-xs flex-none">
-    <span class="mg-chip radius-pill py-xs px-sm text-xs color-heading">
+  <span
+    class="mg-card square-11 radius-lg flex-row-center-center font-extrabold p-0"
+    [class]="markerToneClass()"
+    aria-hidden="true"
+  >
+    @if (hasMarkerIcon()) {
+      <i [class]="markerIconClass()"></i>
+    } @else {
       {{ report().marker.markerLabel }}
-    </span>
-    @if (report().isUnread) {
-      <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
-        {{ copy().unreadLabel }}
-      </span>
     }
-  </div>
+  </span>
 
   <div class="flex-col gap-xs min-w-0">
     <h3 class="m-0">
-      <button
-        class="bg-transparent border-0 p-0 color-heading text-md text-break text-left cursor-pointer"
-        type="button"
-        (click)="$event.stopPropagation(); select()"
-      >
+      <strong class="d-block color-heading text-sm lh-13 text-break font-extrabold">
         {{ report().title }}
-      </button>
+      </strong>
     </h3>
-    <div class="flex-row-start-center flex-wrap gap-sm w-100 min-w-0">
-      <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
-        {{ report().source.label }}
-      </span>
-      <span class="mg-chip radius-pill py-xs px-sm text-xs color-muted">
-        {{ report().eventType.label }}
-      </span>
-    </div>
+    <p class="color-muted text-sm lh-14 m-0 text-break">
+      {{ report().source.label }} &middot; {{ report().eventType.label }}
+    </p>
   </div>
 
-  <div class="flex-col gap-xs text-right flex-none">
-    <time class="color-heading text-sm" [attr.datetime]="report().reportDate.value">
+  <div class="flex-col gap-xs text-right flex-none min-w-0">
+    <time class="color-muted text-xs text-nowrap" [attr.datetime]="report().reportDate.value">
       {{ report().reportDate.displayValue ?? report().reportDate.value }}
     </time>
-    <a
-      class="mg-chip radius-pill py-xs px-sm text-xs color-muted"
-      [routerLink]="report().preview.publicAccess.privatePath"
-      (click)="$event.stopPropagation()"
-    >
-      {{ copy().openAction }}
-    </a>
+    @if (report().isUnread) {
+      <span class="color-heading text-lg lh-1 ml-auto" aria-hidden="true">&bull;</span>
+    }
   </div>
 </article>

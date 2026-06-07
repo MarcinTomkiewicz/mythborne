@@ -40,6 +40,7 @@
 .tag-badge--info    { @include m.badge-variant(v.$color-info,   0.10, 8%); }
 .tag-badge--warn    { @include m.badge-variant(v.$color-warn,   0.12, 10%); }
 .tag-badge--arcane  { @include m.badge-variant(v.$color-arcane, 0.12, 10%); }
+.tag-badge--heading  { @include m.badge-variant(v.$color-secondary, 0.12, 10%); }
 
 .tag-badge--muted {
   color: v.$color-text-muted;
