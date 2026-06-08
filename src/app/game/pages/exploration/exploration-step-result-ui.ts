@@ -19,3 +19,33 @@ export function explorationStepResultNarrativeSnapshot(
     'resolve_hero_exploration_step.metadataJson.resultNarrativeJson',
   );
 }
+
+export function explorationStepTrialManifestationNarrativeSnapshot(
+  result: HeroExplorationStepResolutionReadModel | null,
+): ExplorationResultNarrativeSnapshotV1 | null {
+  if (!result) {
+    return null;
+  }
+
+  const metadata = requiredRecord(result.metadataJson, 'resolve_hero_exploration_step.metadataJson');
+
+  return mapOptionalExplorationResultNarrativeSnapshot(
+    read(metadata, 'trialManifestationNarrativeJson'),
+    'resolve_hero_exploration_step.metadataJson.trialManifestationNarrativeJson',
+  );
+}
+
+export function explorationStepEncounterCombatHandoffNarrativeSnapshot(
+  result: HeroExplorationStepResolutionReadModel | null,
+): ExplorationResultNarrativeSnapshotV1 | null {
+  if (!result) {
+    return null;
+  }
+
+  const metadata = requiredRecord(result.metadataJson, 'resolve_hero_exploration_step.metadataJson');
+
+  return mapOptionalExplorationResultNarrativeSnapshot(
+    read(metadata, 'encounterCombatHandoffNarrativeJson'),
+    'resolve_hero_exploration_step.metadataJson.encounterCombatHandoffNarrativeJson',
+  );
+}

@@ -1,13 +1,53 @@
 @if (challenge.activeChallenge(); as activeChallenge) {
   @if (challenge.hasMinigameChallenge()) {
     @if (activeChallenge.minigameKey && sourceRef(); as sourceRef) {
-      <app-minigame-host
-        [minigameKey]="activeChallenge.minigameKey"
-        [sourceRef]="sourceRef"
-        [contextTitle]="challenge.challengeTitle()"
-        contextLabel="Walka"
-        (completed)="acceptMinigameCompletion($event)"
-      />
+      <div class="flex-col gap-lg w-100">
+        @if (trialManifestationNarrative(); as narrative) {
+          <section class="mg-card p-lg flex-col gap-md w-100">
+            <div class="flex-col gap-xs">
+              @if (narrative.eyebrow) {
+                <p class="small-caps color-muted text-xs m-0">{{ narrative.eyebrow }}</p>
+              }
+              <h2 class="text-xl font-display color-heading m-0">
+                {{ narrative.title }}
+              </h2>
+            </div>
+
+            <p class="color-text text-md lh-16 m-0">
+              <app-rich-text [fragments]="narrative.narrativeRichText" />
+            </p>
+          </section>
+        } @else if (activeChallenge.trialDefinitionId) {
+          <span hidden data-blocked="activeChallenge.trialManifestationNarrativeJson"></span>
+        }
+
+        @if (encounterCombatHandoffNarrative(); as narrative) {
+          <section class="mg-card p-lg flex-col gap-md w-100">
+            <div class="flex-col gap-xs">
+              @if (narrative.eyebrow) {
+                <p class="small-caps color-muted text-xs m-0">{{ narrative.eyebrow }}</p>
+              }
+              <h2 class="text-xl font-display color-heading m-0">
+                {{ narrative.title }}
+              </h2>
+            </div>
+
+            <p class="color-text text-md lh-16 m-0">
+              <app-rich-text [fragments]="narrative.narrativeRichText" />
+            </p>
+          </section>
+        } @else if (activeChallenge.encounterDefinitionId) {
+          <span hidden data-blocked="activeChallenge.encounterCombatHandoffNarrativeJson"></span>
+        }
+
+        <app-minigame-host
+          [minigameKey]="activeChallenge.minigameKey"
+          [sourceRef]="sourceRef"
+          [contextTitle]="challenge.challengeTitle()"
+          contextLabel="Walka"
+          (completed)="acceptMinigameCompletion($event)"
+        />
+      </div>
     }
   } @else {
     <div class="flex-col gap-lg w-100">

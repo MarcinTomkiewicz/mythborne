@@ -1,5 +1,6 @@
 import { Json } from '../../types/database.types';
 import { Row } from '../../types/supabase.types';
+import { ExplorationResultNarrativeSnapshotV1 } from './exploration-result-copy.model';
 import {
   ExplorationSelectedDefinitionReadModel,
   ExplorationStepOutcomeKind,
@@ -256,6 +257,8 @@ export interface HeroExplorationChallengeAttemptReadModel {
   autoResolveChance: number | null;
   autoResolveRoll: number | null;
   autoResolve: HeroExplorationChallengeAutoResolveReadModel;
+  trialManifestationNarrativeJson: ExplorationResultNarrativeSnapshotV1 | null;
+  encounterCombatHandoffNarrativeJson: ExplorationResultNarrativeSnapshotV1 | null;
   detailsJson: Json;
   metadataJson: Json;
   startedAt: string | null;

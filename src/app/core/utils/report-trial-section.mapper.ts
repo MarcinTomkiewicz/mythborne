@@ -1,4 +1,5 @@
 import { ReportTrialSection } from '../domain/reports/report.model';
+import { mapOptionalExplorationResultNarrativeSnapshot } from './exploration-result-copy.mapper';
 import {
   JsonRecord,
   optionalNullableBoolean,
@@ -37,5 +38,13 @@ export function mapTrialSection(record: JsonRecord, field: string): ReportTrialS
     testedStatLabel: optionalNullableText(read(record, 'testedStatLabel'), `${field}.testedStatLabel`),
     createdAt: optionalNullableText(read(record, 'createdAt'), `${field}.createdAt`),
     completedAt: optionalNullableText(read(record, 'completedAt'), `${field}.completedAt`),
+    trialManifestationNarrativeJson: mapOptionalExplorationResultNarrativeSnapshot(
+      read(record, 'trialManifestationNarrativeJson', 'trial_manifestation_narrative_json'),
+      `${field}.trialManifestationNarrativeJson`,
+    ),
+    resultNarrativeJson: mapOptionalExplorationResultNarrativeSnapshot(
+      read(record, 'resultNarrativeJson', 'result_narrative_json'),
+      `${field}.resultNarrativeJson`,
+    ),
   };
 }

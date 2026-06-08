@@ -1,4 +1,7 @@
 import {
+  ExplorationResultNarrativeSnapshotV1,
+} from '../domain/exploration/exploration-result-copy.model';
+import {
   HeroDailyActionCounterReadModel,
   HeroExplorationChallengeAttemptReadModel,
   HeroExplorationDebugEntryReadModel,
@@ -14,6 +17,7 @@ import {
 } from '../domain/exploration/exploration-runtime.model';
 import { Json } from '../types/database.types';
 import { mapHeroExplorationChallengeAutoResolve } from './exploration-challenge-auto-resolve-read-model';
+import { mapOptionalExplorationResultNarrativeSnapshot } from './exploration-result-copy.mapper';
 import { mapHeroExplorationStepRng } from './exploration-rng-read-model';
 import { mapHeroExplorationTrialManifestation } from './exploration-trial-manifestation-read-model';
 import {
@@ -262,6 +266,7 @@ function mapHeroExplorationEffectJson(row: JsonRecord): HeroExplorationEffectRea
 function mapHeroExplorationChallengeAttemptJson(
   row: JsonRecord,
 ): HeroExplorationChallengeAttemptReadModel {
+  const metadataJson = jsonValue(read(row, 'metadataJson', 'metadata_json'));
   const challenge = {
     id: text(read(row, 'id')),
     serverId: text(read(row, 'serverId', 'server_id')),
@@ -287,8 +292,18 @@ function mapHeroExplorationChallengeAttemptJson(
     rewardGrantId: optionalText(read(row, 'rewardGrantId', 'reward_grant_id')),
     autoResolveChance: optionalNumber(read(row, 'autoResolveChance', 'auto_resolve_chance')),
     autoResolveRoll: optionalNumber(read(row, 'autoResolveRoll', 'auto_resolve_roll')),
+    trialManifestationNarrativeJson: mapTrialManifestationNarrativeJson(
+      row,
+      metadataJson,
+      'activeChallenge',
+    ),
+    encounterCombatHandoffNarrativeJson: mapEncounterCombatHandoffNarrativeJson(
+      row,
+      metadataJson,
+      'activeChallenge',
+    ),
     detailsJson: jsonValue(read(row, 'detailsJson', 'details_json')),
-    metadataJson: jsonValue(read(row, 'metadataJson', 'metadata_json')),
+    metadataJson,
     startedAt: optionalText(read(row, 'startedAt', 'started_at')),
     completedAt: optionalText(read(row, 'completedAt', 'completed_at')),
     createdAt: text(read(row, 'createdAt', 'created_at')),
@@ -303,6 +318,72 @@ function mapHeroExplorationChallengeAttemptJson(
     autoResolve: mapHeroExplorationChallengeAutoResolve(challenge),
     manifestation: mapHeroExplorationTrialManifestation(challenge),
   };
+}
+
+function mapTrialManifestationNarrativeJson(
+  row: JsonRecord,
+  metadataJson: Json,
+  field: string,
+): ExplorationResultNarrativeSnapshotV1 | null {
+  const direct = mapOptionalExplorationResultNarrativeSnapshot(
+    read(row, 'trialManifestationNarrativeJson', 'trial_manifestation_narrative_json'),
+    `${field}.trialManifestationNarrativeJson`,
+  );
+
+  if (direct) {
+    return direct;
+  }
+
+  return mapOptionalExplorationResultNarrativeSnapshot(
+    read(jsonRecord(metadataJson), 'trialManifestationNarrativeJson'),
+    `${field}.metadataJson.trialManifestationNarrativeJson`,
+  );
+}
+
+function mapEncounterCombatHandoffNarrativeJson(
+  row: JsonRecord,
+  metadataJson: Json,
+  field: string,
+): ExplorationResultNarrativeSnapshotV1 | null {
+  const direct = mapEncounterCombatHandoffNarrativeCandidate(
+    read(row, 'encounterCombatHandoffNarrativeJson', 'encounter_combat_handoff_narrative_json'),
+    `${field}.encounterCombatHandoffNarrativeJson`,
+  );
+
+  if (direct) {
+    return direct;
+  }
+
+  const result = mapEncounterCombatHandoffNarrativeCandidate(
+    read(row, 'resultNarrativeJson', 'result_narrative_json'),
+    `${field}.resultNarrativeJson`,
+  );
+
+  if (result) {
+    return result;
+  }
+
+  return mapEncounterCombatHandoffNarrativeCandidate(
+    read(jsonRecord(metadataJson), 'resultNarrativeJson'),
+    `${field}.metadataJson.resultNarrativeJson`,
+  );
+}
+
+function mapEncounterCombatHandoffNarrativeCandidate(
+  value: Json | undefined,
+  field: string,
+): ExplorationResultNarrativeSnapshotV1 | null {
+  const narrative = mapOptionalExplorationResultNarrativeSnapshot(value, field);
+
+  if (!narrative) {
+    return null;
+  }
+
+  if (narrative.resultKind !== 'encounter_combat_handoff') {
+    return null;
+  }
+
+  return narrative;
 }
 
 function mapHeroExplorationTestOverrideJson(

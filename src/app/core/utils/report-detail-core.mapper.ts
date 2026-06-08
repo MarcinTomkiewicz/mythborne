@@ -63,7 +63,7 @@ export function mapReportDetailCore(report: JsonRecord): ReportDetailCore {
       mapSpySection,
     ),
     trialSectionJson: mapNullableReportSection(
-      read(report, 'trialSectionJson'),
+      read(report, 'trialSectionJson', 'trial_section_json'),
       'get_report_detail.report.trialSectionJson',
       mapTrialSection,
     ),

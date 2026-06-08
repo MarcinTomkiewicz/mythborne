@@ -1,4 +1,5 @@
 import { ReportEncounterSection } from '../domain/reports/report.model';
+import { mapOptionalExplorationResultNarrativeSnapshot } from './exploration-result-copy.mapper';
 import {
   JsonRecord,
   optionalNullableBoolean,
@@ -32,5 +33,13 @@ export function mapEncounterSection(record: JsonRecord, field: string): ReportEn
     outcomeLabel: requiredText(read(record, 'outcomeLabel'), `${field}.outcomeLabel`),
     narrativeLines: requiredTextArray(read(record, 'narrativeLines'), `${field}.narrativeLines`),
     descriptionLines: requiredTextArray(read(record, 'descriptionLines'), `${field}.descriptionLines`),
+    encounterCombatHandoffNarrativeJson: mapOptionalExplorationResultNarrativeSnapshot(
+      read(record, 'encounterCombatHandoffNarrativeJson'),
+      `${field}.encounterCombatHandoffNarrativeJson`,
+    ),
+    resultNarrativeJson: mapOptionalExplorationResultNarrativeSnapshot(
+      read(record, 'resultNarrativeJson'),
+      `${field}.resultNarrativeJson`,
+    ),
   };
 }

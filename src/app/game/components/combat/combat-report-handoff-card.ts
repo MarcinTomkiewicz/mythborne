@@ -15,7 +15,6 @@ import { ReportDetailPreviewCard } from '../report-detail-preview-card/report-de
         label="Raport walki"
         directReportLabel="Otwórz raport"
         publicReportCopyLabel="Kopiuj link publiczny"
-        [showRewardResult]="true"
       />
     }
   `,

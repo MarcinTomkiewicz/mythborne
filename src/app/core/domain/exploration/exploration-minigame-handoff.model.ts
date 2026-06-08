@@ -1,4 +1,4 @@
-import { ExplorationResultSourceKind } from '../../../core/domain/exploration/exploration-result-display.model';
+export type ExplorationResultSourceKind = 'trial' | 'encounter' | 'unknown';
 
 export interface ExplorationMinigameReportPointer {
   heroId: string;

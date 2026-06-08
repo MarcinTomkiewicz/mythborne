@@ -1,5 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { OutcomeReportLayout } from '../../../shared/outcome-report-layout/outcome-report-layout';
+import { RichText } from '../../../shared/rich-text/rich-text';
 import { ExplorationChallengeDetailsCard } from '../exploration-challenge-details-card/exploration-challenge-details-card';
 import { ExplorationChallengePendingRewardCard } from '../exploration-challenge-pending-reward-card/exploration-challenge-pending-reward-card';
 import { MinigameHost } from '../minigame-host/minigame-host';
@@ -19,6 +20,7 @@ import { ExplorationMinigameHandoffState } from '../../pages/exploration/explora
     ExplorationChallengePendingRewardCard,
     OutcomeReportLayout,
     MinigameHost,
+    RichText,
   ],
   templateUrl: './exploration-active-challenge-report.html',
   host: { class: 'd-block w-100' },
@@ -36,6 +38,14 @@ export class ExplorationActiveChallengeReport {
         }
       : null;
   });
+  readonly encounterCombatHandoffNarrative = computed(() => {
+    const narrative = this.challenge.activeChallenge()?.encounterCombatHandoffNarrativeJson ?? null;
+
+    return narrative?.resultKind === 'encounter_combat_handoff' ? narrative : null;
+  });
+  readonly trialManifestationNarrative = computed(() =>
+    this.challenge.activeChallenge()?.trialManifestationNarrativeJson ?? null
+  );
 
   acceptMinigameCompletion(event: MinigameCompletionEvent): void {
     this.minigameHandoff.acceptMinigameCompletion(event);

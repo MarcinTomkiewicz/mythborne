@@ -207,6 +207,8 @@ export function mapHeroExplorationChallengeAttempt(
     rewardGrantId: row.reward_grant_id,
     autoResolveChance: row.auto_resolve_chance,
     autoResolveRoll: row.auto_resolve_roll,
+    trialManifestationNarrativeJson: null,
+    encounterCombatHandoffNarrativeJson: null,
     detailsJson: row.details_json,
     metadataJson: row.metadata_json,
     startedAt: row.started_at,

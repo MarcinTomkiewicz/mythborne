@@ -1,9 +1,13 @@
 import type { CombatStageViewModel } from '../domain/combat/combat-stage.model';
 import type {
+  ExplorationResultNarrativeSnapshotV1,
+} from '../domain/exploration/exploration-result-copy.model';
+import type {
   PrivateReportDetailPage,
   ReportDetailCore,
 } from '../domain/reports/report-detail.model';
 import type {
+  ReportDetailPreviewExplorationSourceKind,
   ReportDetailPreviewOutcomeBanner,
   ReportDetailPreviewOutcomeTone,
   ReportDetailPreviewSection,
@@ -24,18 +28,134 @@ export function mapReportDetailPreviewView(input: {
   showRewardResult: boolean;
 }): ReportDetailPreviewView {
   const report = input.detail.report;
+  const trialManifestationNarrative = reportTrialManifestationNarrative(report);
+  const encounterCombatHandoffNarrative = reportEncounterCombatHandoffNarrative(report);
+  const explorationResultNarrative = reportExplorationResultNarrative(report);
+  const explorationSourceKind = reportExplorationSourceKind(report);
+  const combatStage = reportCombatStage(input);
+  const isExplorationSource = reportIsExplorationSource({
+    report,
+    reportDomainKey: input.detail.domainContextJson.reportDomainKey,
+    trialManifestationNarrative,
+    encounterCombatHandoffNarrative,
+    explorationResultNarrative,
+  });
 
   return {
-    outcomeBanner: reportOutcomeBanner(report, input.activeHeroId),
-    combatStage: reportCombatStage(input),
-    narrativeLines: reportNarrativeLines(report),
-    sections: reportPreviewSections(report),
-    rewardResult: input.showRewardResult ? requiredReportRewardResult(report) : null,
+    isExplorationSource,
+    explorationSourceKind,
+    trialManifestationNarrative,
+    encounterCombatHandoffNarrative,
+    explorationResultNarrative,
+    missingExplorationNarrativeFields: isExplorationSource
+      ? missingExplorationNarrativeFields({
+          sourceKind: explorationSourceKind,
+          combatStage,
+          trialManifestationNarrative,
+          encounterCombatHandoffNarrative,
+          explorationResultNarrative,
+        })
+      : [],
+    outcomeBanner: isExplorationSource ? null : reportOutcomeBanner(report, input.activeHeroId),
+    combatStage,
+    narrativeLines: isExplorationSource ? [] : reportNarrativeLines(report),
+    sections: isExplorationSource ? [] : reportPreviewSections(report),
+    rewardResult: !isExplorationSource && input.showRewardResult
+      ? requiredReportRewardResult(report)
+      : null,
     actions: mapReportHandoffActions({
       reportId: input.detail.access.reportId,
       publicToken: report.publicToken ?? null,
     }),
   };
+}
+
+function reportExplorationSourceKind(
+  report: ReportDetailCore | null,
+): ReportDetailPreviewExplorationSourceKind | null {
+  if (presentReportSection(report?.trialSectionJson)) {
+    return 'trial';
+  }
+
+  if (presentReportSection(report?.encounterSectionJson)) {
+    return 'encounter';
+  }
+
+  return null;
+}
+
+function reportTrialManifestationNarrative(
+  report: ReportDetailCore | null,
+): ExplorationResultNarrativeSnapshotV1 | null {
+  const trial = presentReportSection(report?.trialSectionJson);
+
+  return trial?.trialManifestationNarrativeJson ?? null;
+}
+
+function reportEncounterCombatHandoffNarrative(
+  report: ReportDetailCore | null,
+): ExplorationResultNarrativeSnapshotV1 | null {
+  const encounter = presentReportSection(report?.encounterSectionJson);
+
+  return encounter?.encounterCombatHandoffNarrativeJson ?? null;
+}
+
+function reportExplorationResultNarrative(
+  report: ReportDetailCore | null,
+): ExplorationResultNarrativeSnapshotV1 | null {
+  const trial = presentReportSection(report?.trialSectionJson);
+  const encounter = presentReportSection(report?.encounterSectionJson);
+
+  return trial?.resultNarrativeJson ?? encounter?.resultNarrativeJson ?? null;
+}
+
+function reportIsExplorationSource(input: {
+  report: ReportDetailCore | null;
+  reportDomainKey: string | null;
+  trialManifestationNarrative: ExplorationResultNarrativeSnapshotV1 | null;
+  encounterCombatHandoffNarrative: ExplorationResultNarrativeSnapshotV1 | null;
+  explorationResultNarrative: ExplorationResultNarrativeSnapshotV1 | null;
+}): boolean {
+  return (
+    input.reportDomainKey === 'exploration' ||
+    input.report?.trialSectionJson !== null && input.report?.trialSectionJson !== undefined ||
+    input.report?.encounterSectionJson !== null && input.report?.encounterSectionJson !== undefined ||
+    Boolean(input.trialManifestationNarrative) ||
+    Boolean(input.encounterCombatHandoffNarrative) ||
+    Boolean(input.explorationResultNarrative)
+  );
+}
+
+function missingExplorationNarrativeFields(input: {
+  sourceKind: ReportDetailPreviewExplorationSourceKind | null;
+  combatStage: CombatStageViewModel | null;
+  trialManifestationNarrative: ExplorationResultNarrativeSnapshotV1 | null;
+  encounterCombatHandoffNarrative: ExplorationResultNarrativeSnapshotV1 | null;
+  explorationResultNarrative: ExplorationResultNarrativeSnapshotV1 | null;
+}): readonly string[] {
+  const missing: string[] = [];
+
+  if (input.sourceKind === 'trial' && !input.explorationResultNarrative) {
+    missing.push('report.trialSectionJson.resultNarrativeJson');
+  }
+
+  if (input.sourceKind === 'encounter' && !input.explorationResultNarrative) {
+    missing.push('report.encounterSectionJson.resultNarrativeJson');
+  }
+
+  if (!input.combatStage) {
+    return missing;
+  }
+
+  if (input.sourceKind === 'trial' && !input.trialManifestationNarrative) {
+    missing.push('report.trialSectionJson.trialManifestationNarrativeJson');
+  }
+
+  if (input.sourceKind === 'encounter' && !input.encounterCombatHandoffNarrative) {
+    missing.push('report.encounterSectionJson.encounterCombatHandoffNarrativeJson');
+  }
+
+  return missing;
 }
 
 function reportCombatStage(input: {

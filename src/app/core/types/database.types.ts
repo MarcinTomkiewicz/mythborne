@@ -15493,12 +15493,24 @@ export type Database = {
         Args: { p_locale_key?: string; p_participant_id: string }
         Returns: Json
       }
+      build_exploration_active_challenge_narratives_json: {
+        Args: { p_challenge_attempt_id: string; p_public_safe?: boolean }
+        Returns: Json
+      }
       build_exploration_effect_definition_display_json: {
         Args: { p_effect_definition_id: string; p_public_safe?: boolean }
         Returns: Json
       }
       build_exploration_effect_rich_text_json: {
         Args: { p_effect_section_json: Json }
+        Returns: Json
+      }
+      build_exploration_encounter_combat_handoff_narrative_json: {
+        Args: { p_encounter_section_json: Json; p_public_safe?: boolean }
+        Returns: Json
+      }
+      build_exploration_report_snapshot_copy_json: {
+        Args: { p_report_id: string }
         Returns: Json
       }
       build_exploration_result_narrative_json: {
@@ -15515,11 +15527,23 @@ export type Database = {
         Args: { p_reward_section_json: Json }
         Returns: Json
       }
+      build_exploration_runtime_step_result_narrative_json: {
+        Args: { p_public_safe?: boolean; p_step_result_json: Json }
+        Returns: Json
+      }
+      build_exploration_runtime_trial_manifestation_narrative_json: {
+        Args: { p_public_safe?: boolean; p_step_result_json: Json }
+        Returns: Json
+      }
       build_exploration_trial_detail_by_stat_json: {
         Args: {
           p_auto_result_preview_json: Json
           p_manifestation_preview_json: Json
         }
+        Returns: Json
+      }
+      build_exploration_trial_manifestation_narrative_json: {
+        Args: { p_public_safe?: boolean; p_trial_section_json: Json }
         Returns: Json
       }
       build_game_report_combat_section_json: {
@@ -15555,6 +15579,10 @@ export type Database = {
         Returns: Json
       }
       build_game_report_reward_section_json_base: {
+        Args: { p_public_safe?: boolean; p_report_id: string }
+        Returns: Json
+      }
+      build_game_report_reward_section_json_raw: {
         Args: { p_public_safe?: boolean; p_report_id: string }
         Returns: Json
       }
@@ -15697,6 +15725,14 @@ export type Database = {
       build_player_estate_building_groups_json: {
         Args: { p_buildings_json: Json; p_default_district_code: string }
         Returns: Json
+      }
+      build_player_facing_reward_entries_json: {
+        Args: { p_entries_json: Json; p_generated_items_json?: Json }
+        Returns: Json
+      }
+      build_player_facing_reward_entries_summary: {
+        Args: { p_entries_json: Json }
+        Returns: string
       }
       build_player_item_display_core_json: {
         Args: { p_item_json: Json }
@@ -16255,6 +16291,26 @@ export type Database = {
           success: boolean
         }[]
       }
+      complete_hero_exploration_challenge_attempt_base: {
+        Args: {
+          p_challenge_attempt_id: string
+          p_completion_mode: string
+          p_details_json?: Json
+          p_performance_rating?: string
+          p_request_id?: string
+          p_score?: number
+          p_success: boolean
+        }
+        Returns: {
+          challenge_attempt_id: string
+          completion_mode: string
+          exploration_status: string
+          remaining_trials: number
+          reward_grant_id: string
+          status: string
+          success: boolean
+        }[]
+      }
       compose_generated_item_name: {
         Args: {
           p_base_id: string
@@ -16616,6 +16672,25 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      create_exploration_combat_encounter_game_report: {
+        Args: {
+          p_challenge_attempt_id: string
+          p_combat_report_id?: string
+          p_reason?: string
+          p_request_id?: string
+        }
+        Returns: {
+          access_rows_touched: number
+          challenge_attempt_id: string
+          combat_report_id: string
+          combat_result_id: string
+          participants_created: number
+          public_token: string
+          report_id: string
+          report_type_key: string
+          server_id: string
+        }[]
       }
       create_game_report_from_combat_result: {
         Args: {
@@ -17974,6 +18049,10 @@ export type Database = {
         Args: { p_rows_json: Json }
         Returns: Json
       }
+      filter_player_facing_reward_entries_json: {
+        Args: { p_entries_json: Json }
+        Returns: Json
+      }
       finalize_combat_source_result: {
         Args: {
           p_request_id?: string
@@ -18006,6 +18085,37 @@ export type Database = {
         }[]
       }
       finalize_combat_source_result_internal: {
+        Args: {
+          p_request_id?: string
+          p_resolution_mode?: string
+          p_session_id: string
+        }
+        Returns: {
+          attacks_created: number
+          combat_result_id: string
+          combat_session_id: string
+          completion_mode: string
+          exploration_status: string
+          final_event_count: number
+          game_report_id: string
+          outcome: Database["public"]["Enums"]["combat_outcome"]
+          outcome_key: string
+          participant_stats_created: number
+          participants_created: number
+          remaining_trials: number
+          report_attacks_count: number
+          reward_grant_id: string
+          runtime_activity_id: string
+          source_entity_id: string
+          source_entity_type: string
+          source_result_id: string
+          source_result_kind: string
+          source_type: Database["public"]["Enums"]["combat_source_type"]
+          status: string
+          success: boolean
+        }[]
+      }
+      finalize_combat_source_result_internal_base: {
         Args: {
           p_request_id?: string
           p_resolution_mode?: string
@@ -19110,6 +19220,49 @@ export type Database = {
           trial_label: string
         }[]
       }
+      get_exploration_challenge_reward_read_model_raw: {
+        Args: { p_challenge_attempt_id: string }
+        Returns: {
+          challenge_attempt_id: string
+          challenge_kind: string
+          challenge_status: string
+          completed_at: string
+          completion_mode: string
+          difficulty_key: string
+          district_code: string
+          encounter_definition_id: string
+          encounter_key: string
+          encounter_kind: string
+          encounter_label: string
+          explanation: string
+          exploration_id: string
+          generated_item_count: number
+          generated_items_json: Json
+          hero_id: string
+          minigame_key: string
+          no_reward_reason_helper_text: string
+          no_reward_reason_key: string
+          no_reward_reason_label: string
+          reward_entries_json: Json
+          reward_entry_count: number
+          reward_grant_id: string
+          reward_grant_status: string
+          reward_granted_at: string
+          reward_profile_id: string
+          reward_profile_key: string
+          reward_profile_label: string
+          reward_status_key: string
+          reward_status_label: string
+          server_id: string
+          started_at: string
+          step_id: string
+          success: boolean
+          tested_stat_key: string
+          trial_definition_id: string
+          trial_key: string
+          trial_label: string
+        }[]
+      }
       get_exploration_difficulty_reward_card_summary: {
         Args: { p_difficulty_key: string; p_hero_id: string }
         Returns: Json
@@ -19156,6 +19309,53 @@ export type Database = {
         Returns: number
       }
       get_exploration_step_reward_read_model: {
+        Args: { p_step_id: string }
+        Returns: {
+          challenge_attempt_id: string
+          challenge_completion_mode: string
+          challenge_kind: string
+          challenge_status: string
+          challenge_success: boolean
+          difficulty_key: string
+          district_code: string
+          encounter_definition_id: string
+          encounter_key: string
+          encounter_kind: string
+          encounter_label: string
+          explanation: string
+          exploration_id: string
+          generated_item_count: number
+          generated_items_json: Json
+          hero_id: string
+          no_reward_reason_helper_text: string
+          no_reward_reason_key: string
+          no_reward_reason_label: string
+          outcome_kind: string
+          resolved_at: string
+          reward_entries_json: Json
+          reward_entry_count: number
+          reward_grant_id: string
+          reward_grant_status: string
+          reward_granted_at: string
+          reward_profile_id: string
+          reward_profile_key: string
+          reward_profile_label: string
+          reward_source_id: string
+          reward_source_kind: string
+          reward_source_label: string
+          reward_status_key: string
+          reward_status_label: string
+          server_id: string
+          started_at: string
+          step_id: string
+          step_kind: string
+          step_status: string
+          trial_definition_id: string
+          trial_key: string
+          trial_label: string
+        }[]
+      }
+      get_exploration_step_reward_read_model_raw: {
         Args: { p_step_id: string }
         Returns: {
           challenge_attempt_id: string
@@ -21041,6 +21241,10 @@ export type Database = {
       get_player_estate_copy_json: { Args: never; Returns: Json }
       get_player_estate_page_context: {
         Args: { p_hero_id: string }
+        Returns: Json
+      }
+      get_player_exploration_difficulty_copy: {
+        Args: { p_locale?: string }
         Returns: Json
       }
       get_player_exploration_result_copy: {
@@ -23102,6 +23306,10 @@ export type Database = {
           status: Database["public"]["Enums"]["item_status"]
         }[]
       }
+      redact_character_points_from_player_facing_json: {
+        Args: { p_json: Json }
+        Returns: Json
+      }
       refresh_anti_abuse_case_signal_stats: {
         Args: { p_case_id: string }
         Returns: undefined
@@ -23494,6 +23702,23 @@ export type Database = {
           trial_dry_step_count: number
         }[]
       }
+      resolve_hero_exploration_step_base: {
+        Args: { p_step_id: string }
+        Returns: {
+          challenge_attempt_id: string
+          current_node_id: string
+          encounter_definition_id: string
+          exploration_id: string
+          metadata_json: Json
+          outcome_kind: string
+          remaining_trials: number
+          status: string
+          step_id: string
+          to_node_id: string
+          trial_definition_id: string
+          trial_dry_step_count: number
+        }[]
+      }
       resolve_hero_pvp_role_health_bonus: {
         Args: { p_hero_id: string; p_role: string }
         Returns: {
@@ -23824,6 +24049,10 @@ export type Database = {
       }
       sanitize_player_estate_upgrade_preview_json: {
         Args: { p_preview_json: Json }
+        Returns: Json
+      }
+      sanitize_player_facing_reward_section_json: {
+        Args: { p_section_json: Json }
         Returns: Json
       }
       save_current_hero_loadout_preset: {

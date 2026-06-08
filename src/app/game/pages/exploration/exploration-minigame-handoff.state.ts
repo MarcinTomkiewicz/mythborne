@@ -1,8 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import type { ExplorationResultSourceKind } from '../../../core/domain/exploration/exploration-result-display.model';
+import {
+  ExplorationMinigameReportPointer,
+  ExplorationResultSourceKind,
+} from '../../../core/domain/exploration/exploration-minigame-handoff.model';
 import type { HeroExplorationChallengeAttemptReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { MinigameCompletionEvent } from '../../components/minigame-host/minigame-host.model';
-import { ExplorationMinigameReportPointer } from './exploration-minigame-handoff.model';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationRewardState } from './exploration-reward.state';
 

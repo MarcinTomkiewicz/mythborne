@@ -1,0 +1,10 @@
+<section
+  [class]="cardClass()"
+>
+  @if (narrative().eyebrow) {
+    <p class="small-caps color-muted text-xs m-0">{{ narrative().eyebrow }}</p>
+  }
+  <h2 class="m-0" [class]="titleToneClass()">
+    {{ narrative().title }}
+  </h2>
+</section>

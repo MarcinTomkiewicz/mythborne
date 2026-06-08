@@ -1,31 +1,80 @@
-@if (resultNarrative(); as narrative) {
+@if (
+  resultNarrative() ||
+  trialManifestationNarrative() ||
+  encounterCombatHandoffNarrative() ||
+  missingResultNarrative() ||
+  missingTrialManifestationNarrative() ||
+  missingEncounterCombatHandoffNarrative()
+) {
   <div class="flex-col gap-lg w-100">
-    <section class="mg-card p-lg flex-col gap-md w-100">
-      <div class="flex-col gap-xs">
-        <p class="small-caps color-muted text-xs m-0">{{ narrative.eyebrow }}</p>
-        <h2
-          class="text-xl font-display m-0"
-          [class.color-heading]="isTitleTone(narrative, 'heading')"
-          [class.font-bold]="isTitleTone(narrative, 'heading')"
-          [class.info-text]="isTitleTone(narrative, 'info')"
-          [class.warn-text]="isTitleTone(narrative, 'warn')"
-          [class.success-text]="isTitleTone(narrative, 'success')"
-          [class.error-text]="isTitleTone(narrative, 'danger')"
-        >
-          {{ narrative.title }}
-        </h2>
-      </div>
+    @if (resultNarrative(); as result) {
+      @if (showsOutcomeStrip(result)) {
+        <app-result-outcome-strip [narrative]="result" />
+      }
+    } @else if (missingResultNarrative()) {
+      <span hidden data-blocked="resolve_hero_exploration_step.metadataJson.resultNarrativeJson"></span>
+    }
 
-      <p class="color-text text-md lh-16 m-0">
-        <app-rich-text [fragments]="narrative.narrativeRichText" />
-      </p>
-    </section>
+    @if (trialManifestationNarrative(); as manifestation) {
+      <section class="mg-card p-lg flex-col gap-md w-100">
+        <div class="flex-col gap-xs">
+          <p class="small-caps color-muted text-xs m-0">{{ manifestation.eyebrow }}</p>
+          <h2 class="text-xl font-display color-heading m-0">
+            {{ manifestation.title }}
+          </h2>
+        </div>
 
-    @if (rewardRichText(); as rewardFragments) {
-      <section class="mg-card p-lg w-100">
         <p class="color-text text-md lh-16 m-0">
-          <app-rich-text [fragments]="rewardFragments" />
+          <app-rich-text [fragments]="manifestation.narrativeRichText" />
         </p>
+      </section>
+    } @else if (missingTrialManifestationNarrative()) {
+      <span hidden data-blocked="resolve_hero_exploration_step.metadataJson.trialManifestationNarrativeJson"></span>
+    }
+
+    @if (encounterCombatHandoffNarrative(); as handoff) {
+      <section class="mg-card p-lg flex-col gap-md w-100">
+        <div class="flex-col gap-xs">
+          <p class="small-caps color-muted text-xs m-0">{{ handoff.eyebrow }}</p>
+          <h2 class="text-xl font-display color-heading m-0">
+            {{ handoff.title }}
+          </h2>
+        </div>
+
+        <p class="color-text text-md lh-16 m-0">
+          <app-rich-text [fragments]="handoff.narrativeRichText" />
+        </p>
+      </section>
+    } @else if (missingEncounterCombatHandoffNarrative()) {
+      <span hidden data-blocked="resolve_hero_exploration_step.metadataJson.encounterCombatHandoffNarrativeJson"></span>
+    }
+
+    @if (resultNarrative(); as result) {
+      <section class="mg-card p-lg flex-col gap-md w-100">
+        @if (!showsOutcomeStrip(result)) {
+          <div class="flex-col gap-xs">
+            <p class="small-caps color-muted text-xs m-0">{{ result.eyebrow }}</p>
+            <h2 class="text-xl font-display color-heading m-0">
+              {{ result.title }}
+            </h2>
+          </div>
+        }
+
+        <p class="color-text text-md lh-16 m-0">
+          <app-rich-text [fragments]="result.narrativeRichText" />
+        </p>
+
+        @if (rewardRichText(); as rewardFragments) {
+          <p class="color-text text-md lh-16 m-0">
+            <app-rich-text [fragments]="rewardFragments" />
+          </p>
+        }
+
+        @if (effectRichText(); as effectFragments) {
+          <p class="color-text text-md lh-16 m-0">
+            <app-rich-text [fragments]="effectFragments" />
+          </p>
+        }
       </section>
     }
   </div>

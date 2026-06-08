@@ -1,9 +1,5 @@
 @if (currentChallengeResult() || minigameReportPointer()) {
   <app-exploration-report-result-content
     [reportId]="reportId()"
-    [rewardText]="rewardText()"
-    [isLoadingReward]="rewardState.isLoadingReward()"
-    [rewardDisplay]="reportRewardDisplay()"
-    [rewardUnavailableMessage]="rewardState.rewardUnavailableMessage()"
   />
 }
