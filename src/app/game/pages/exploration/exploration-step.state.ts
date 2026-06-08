@@ -13,14 +13,6 @@ import { pendingTimerDisplay, pendingTimerHasElapsed } from '../../../core/utils
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
-import {
-  explorationStepEncounterKind,
-  explorationStepReportFallbackLines,
-  explorationStepReportNarrativeLines,
-  explorationStepResultHasEffectContext,
-  explorationStepResultTitle,
-  explorationStepResultTypeLabel,
-} from './exploration-step-result-ui';
 
 @Injectable()
 export class ExplorationStepState {
@@ -68,27 +60,6 @@ export class ExplorationStepState {
       !this.isResolving(),
     );
   });
-  readonly stepResultTitle = computed(() =>
-    explorationStepResultTitle(this.currentStepResult()),
-  );
-  readonly stepResultTypeLabel = computed(() =>
-    explorationStepResultTypeLabel(this.currentStepResult()),
-  );
-  readonly stepResultEncounterKind = computed(() =>
-    explorationStepEncounterKind(this.currentStepResult()),
-  );
-  readonly stepReportTitle = computed(() =>
-    this.reportTitle(this.currentStepResult()),
-  );
-  readonly stepReportNarrativeLines = computed(() =>
-    explorationStepReportNarrativeLines(this.currentStepResult()),
-  );
-  readonly stepReportFallbackLines = computed(() =>
-    explorationStepReportFallbackLines(this.currentStepResult()),
-  );
-  readonly isCurrentStepEffectReport = computed(() =>
-    explorationStepResultHasEffectContext(this.currentStepResult()),
-  );
   readonly isCurrentStepNothing = computed(() =>
     this.currentStepResult()?.outcomeKind === 'nothing' &&
     !this.isCurrentStepTrialNoManifest(),
@@ -177,21 +148,6 @@ export class ExplorationStepState {
       ) &&
       read(metadata, 'trialManifested', 'trial_manifested') === false
     );
-  }
-
-  private reportTitle(result: HeroExplorationStepResolutionReadModel | null): string {
-    const title = this.stepResultTitle();
-    const typeLabel = this.stepResultTypeLabel();
-
-    if (result?.outcomeKind !== 'encounter') {
-      return title;
-    }
-
-    if (!typeLabel || title.includes(typeLabel)) {
-      return title;
-    }
-
-    return `${title}: ${typeLabel}`;
   }
 
   private activeStepTimerDisplayFor(

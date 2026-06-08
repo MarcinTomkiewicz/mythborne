@@ -1,0 +1,16 @@
+@for (fragment of fragments(); track fragmentTrackKey($index, fragment)) {
+  @if (canRenderItemPopover(fragment)) {
+    <app-item-detail-popover
+      [itemId]="popoverItemId(fragment)"
+      [publicToken]="popoverPublicToken()"
+      [itemReferenceId]="itemReferenceId(fragment)"
+      [fallbackName]="itemText(fragment)"
+      [context]="popoverContext()"
+      [buttonTrigger]="false"
+    >
+      <span [class]="fragmentToneClass(fragment)">{{ fragment.text }}</span>
+    </app-item-detail-popover>
+  } @else {
+    <span [class]="fragmentToneClass(fragment)">{{ fragment.text }}</span>
+  }
+}
