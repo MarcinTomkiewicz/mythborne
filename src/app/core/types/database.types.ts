@@ -15722,6 +15722,10 @@ export type Database = {
             }
             Returns: Json
           }
+      build_player_armory_item_requirement_status_json: {
+        Args: { p_hero_id: string; p_item_id: string }
+        Returns: Json
+      }
       build_player_estate_building_groups_json: {
         Args: { p_buildings_json: Json; p_default_district_code: string }
         Returns: Json
@@ -18043,6 +18047,10 @@ export type Database = {
       }
       filter_item_detail_popover_item_stats_rows: {
         Args: { p_rows: Json }
+        Returns: Json
+      }
+      filter_item_detail_primary_item_stats_rows_for_base_type: {
+        Args: { p_base_type_key: string; p_rows: Json }
         Returns: Json
       }
       filter_player_facing_item_stats_json: {
@@ -20661,6 +20669,7 @@ export type Database = {
           set_label: string
         }[]
       }
+      get_item_base_type_key: { Args: { p_item_id: string }; Returns: string }
       get_item_detail_popover_raw_v1: {
         Args: {
           p_context?: string
@@ -21279,6 +21288,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      get_player_topbar_display_contract: {
+        Args: { p_locale?: string }
+        Returns: Json
       }
       get_player_trade_page_context: {
         Args: { p_hero_id: string; p_limit?: number; p_offset?: number }
@@ -22030,6 +22043,14 @@ export type Database = {
       }
       is_item_generation_affix_allowed_for_base_type: {
         Args: { p_affix_id: string; p_base_type_key: string }
+        Returns: boolean
+      }
+      is_item_primary_bonus_target_allowed_for_base_type: {
+        Args: { p_base_type_key: string; p_target_key: string }
+        Returns: boolean
+      }
+      is_item_primary_item_stat_target_allowed_for_base_type: {
+        Args: { p_base_type_key: string; p_target_key: string }
         Returns: boolean
       }
       item_detail_popover_current_display_text: {
