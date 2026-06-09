@@ -1,20 +1,22 @@
 import {
   ExplorationResultNarrativeMetadata,
   ExplorationResultNarrativeSnapshotV1,
-  ExplorationRichTextFragment,
   ExplorationRichTextFragmentKind,
-  ExplorationRichTextTone,
 } from '../domain/exploration/exploration-result-copy.model';
 import { Json } from '../types/database.types';
 import {
   JsonRecord,
   optionalNullableBoolean,
-  optionalNullableNumber,
   optionalNullableText,
   read,
   requiredRecord,
   requiredText,
 } from './json-read';
+import {
+  mapOptionalRichTextFragments,
+  mapRichTextFragments,
+  requireRichTextTone,
+} from './rich-text.mapper';
 
 export function mapOptionalExplorationResultNarrativeSnapshot(
   value: Json | undefined,
@@ -44,11 +46,23 @@ export function mapOptionalExplorationResultNarrativeSnapshot(
       `${field}.titleTone`,
     ),
     narrativePlainText: requiredText(read(record, 'narrativePlainText'), `${field}.narrativePlainText`),
-    narrativeRichText: mapRichTextFragments(read(record, 'narrativeRichText'), `${field}.narrativeRichText`),
+    narrativeRichText: mapRichTextFragments(
+      read(record, 'narrativeRichText'),
+      `${field}.narrativeRichText`,
+      requireRichTextFragmentKind,
+    ),
     rewardPlainText: optionalNullableText(read(record, 'rewardPlainText'), `${field}.rewardPlainText`),
-    rewardRichText: mapOptionalRichTextFragments(read(record, 'rewardRichText'), `${field}.rewardRichText`),
+    rewardRichText: mapOptionalRichTextFragments(
+      read(record, 'rewardRichText'),
+      `${field}.rewardRichText`,
+      requireRichTextFragmentKind,
+    ),
     effectPlainText: optionalNullableText(read(record, 'effectPlainText'), `${field}.effectPlainText`),
-    effectRichText: mapOptionalRichTextFragments(read(record, 'effectRichText'), `${field}.effectRichText`),
+    effectRichText: mapOptionalRichTextFragments(
+      read(record, 'effectRichText'),
+      `${field}.effectRichText`,
+      requireRichTextFragmentKind,
+    ),
     metadata: mapResultNarrativeMetadata(
       requiredRecord(read(record, 'metadata'), `${field}.metadata`),
       `${field}.metadata`,
@@ -70,87 +84,6 @@ function mapResultNarrativeMetadata(
     success: optionalNullableBoolean(read(record, 'success'), `${field}.success`),
     sourceId: optionalNullableText(read(record, 'sourceId'), `${field}.sourceId`),
   };
-}
-
-function mapOptionalRichTextFragments(
-  value: Json | undefined,
-  field: string,
-): ExplorationRichTextFragment[] | null {
-  return value === undefined || value === null
-    ? null
-    : mapRichTextFragments(value, field);
-}
-
-function mapRichTextFragments(
-  value: Json | undefined,
-  field: string,
-): ExplorationRichTextFragment[] {
-  if (!Array.isArray(value)) {
-    throw new Error(`${field} must be an array.`);
-  }
-
-  return value.map((entry, index) =>
-    mapRichTextFragment(requiredRecord(entry, `${field}[${index}]`), `${field}[${index}]`),
-  );
-}
-
-function mapRichTextFragment(
-  record: JsonRecord,
-  field: string,
-): ExplorationRichTextFragment {
-  return {
-    kind: requireRichTextFragmentKind(requiredText(read(record, 'kind'), `${field}.kind`), `${field}.kind`),
-    text: requiredText(read(record, 'text'), `${field}.text`),
-    tone: mapOptionalTone(read(record, 'tone'), `${field}.tone`),
-    token: optionalNullableText(read(record, 'token'), `${field}.token`) ?? undefined,
-    value: optionalNullableNumber(read(record, 'value'), `${field}.value`) ?? undefined,
-    displayValue: optionalNullableText(read(record, 'displayValue'), `${field}.displayValue`) ?? undefined,
-    resourceKey: optionalNullableText(read(record, 'resourceKey'), `${field}.resourceKey`) ?? undefined,
-    statKey: optionalNullableText(read(record, 'statKey'), `${field}.statKey`) ?? undefined,
-    effectKey: optionalNullableText(read(record, 'effectKey'), `${field}.effectKey`) ?? undefined,
-    effectKind: optionalNullableText(read(record, 'effectKind'), `${field}.effectKind`) ?? undefined,
-    itemId: optionalNullableText(read(record, 'itemId'), `${field}.itemId`) ?? undefined,
-    itemName: optionalNullableText(read(record, 'itemName'), `${field}.itemName`) ?? undefined,
-    itemPublicToken: optionalNullableText(read(record, 'itemPublicToken'), `${field}.itemPublicToken`),
-    metadata: mapMetadata(read(record, 'metadata'), `${field}.metadata`),
-  };
-}
-
-function mapMetadata(
-  value: Json | undefined,
-  field: string,
-): Record<string, unknown> | undefined {
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-
-  return requiredRecord(value, field) as Record<string, unknown>;
-}
-
-function mapOptionalTone(
-  value: Json | undefined,
-  field: string,
-): ExplorationRichTextTone | undefined {
-  return value === undefined || value === null
-    ? undefined
-    : requireRichTextTone(requiredText(value, field), field);
-}
-
-function requireRichTextTone(
-  value: string,
-  field: string,
-): ExplorationRichTextTone {
-  if (
-    value === 'heading' ||
-    value === 'info' ||
-    value === 'warn' ||
-    value === 'success' ||
-    value === 'danger'
-  ) {
-    return value;
-  }
-
-  throw new Error(`${field} has unsupported value: ${value}.`);
 }
 
 function requireRichTextFragmentKind(

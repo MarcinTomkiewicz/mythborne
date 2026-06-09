@@ -1,4 +1,5 @@
 import { Component, input, output } from '@angular/core';
+import { ExplorationDifficultyCopy } from '../../../core/domain/game-copy/exploration-difficulty-copy.model';
 import { HeroExplorationDifficultyCardPreview } from '../../../core/domain/exploration/exploration-preview.model';
 import { HeroExplorationStateReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { ExplorationDifficultyPreviewCard } from './exploration-difficulty-preview-card';
@@ -12,6 +13,7 @@ import { ExplorationTrialDetailSection } from './exploration-trial-detail-sectio
   host: { class: 'd-block w-100' },
 })
 export class ExplorationDifficultyPreviewSection {
+  readonly copy = input.required<ExplorationDifficultyCopy>();
   readonly difficulties = input.required<HeroExplorationDifficultyCardPreview[]>();
   readonly selectedDifficulty =
     input<HeroExplorationDifficultyCardPreview | null>(null);
@@ -19,7 +21,6 @@ export class ExplorationDifficultyPreviewSection {
   readonly explorationState = input<HeroExplorationStateReadModel | null>(null);
   readonly isBusy = input(false);
   readonly isStarting = input(false);
-  readonly isLoading = input(false);
   readonly selectDifficulty = output<string>();
   readonly selectedDifficultyAction = output<void>();
 }

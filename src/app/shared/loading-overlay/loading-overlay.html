@@ -3,7 +3,9 @@
     <div class="mg-card flex-col-center-center gap-md p-lg w-100 max-w-350 text-center">
       <p-progress-spinner ariaLabel="Loading" strokeWidth="4" />
       <div class="flex-col-center-center gap-xs">
-        <p class="heading-color mb-0"><strong>{{ label() }}</strong></p>
+        @if (label()) {
+          <p class="heading-color mb-0"><strong>{{ label() }}</strong></p>
+        }
         @if (description()) {
           <p class="muted-text mb-0">{{ description() }}</p>
         }

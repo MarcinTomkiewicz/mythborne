@@ -1,4 +1,19 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import {
+  DestroyRef,
+  Injectable,
+  computed,
+  inject,
+  isDevMode,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs';
+import {
+  ExplorationDifficultyCopy,
+  explorationDifficultyCardCopy,
+} from '../../../core/domain/game-copy/exploration-difficulty-copy.model';
+import { GameCopyService } from '../../../core/services/game-copy/game-copy.service';
+import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationMinigameHandoffState } from './exploration-minigame-handoff.state';
 import { ExplorationMovementState } from './exploration-movement.state';
@@ -11,6 +26,10 @@ import { ExplorationStepState } from './exploration-step.state';
 
 @Injectable()
 export class ExplorationPageState {
+  private readonly copyToken = new RequestToken();
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly gameCopy = inject(GameCopyService);
+
   readonly minigameHandoff = inject(ExplorationMinigameHandoffState);
   readonly overview = inject(ExplorationOverviewState);
   readonly movement = inject(ExplorationMovementState);
@@ -23,6 +42,21 @@ export class ExplorationPageState {
 
   readonly selectedDifficultyCardPreview = computed(() =>
     this.preview.difficultyCardPreview(this.overview.selectedDifficultyKey()),
+  );
+  readonly difficultyCopy = signal<ExplorationDifficultyCopy | null>(null);
+  readonly isDifficultyCopyLoading = signal(false);
+  readonly selectedDifficultyCopy = computed(() => {
+    const copy = this.difficultyCopy();
+    const difficultyKey = this.overview.selectedDifficultyKey();
+
+    return copy && difficultyKey
+      ? explorationDifficultyCardCopy(copy, difficultyKey)
+      : null;
+  });
+  readonly isLoading = computed(() =>
+    this.overview.isLoading()
+    || this.start.isStarting()
+    || this.isDifficultyCopyLoading(),
   );
   readonly difficultyEntryRequested = signal(false);
   readonly runtimeScreenRequested = signal(false);
@@ -70,6 +104,7 @@ export class ExplorationPageState {
   });
 
   loadData(): void {
+    this.loadDifficultyCopy();
     this.overview.loadData();
   }
 
@@ -95,4 +130,41 @@ export class ExplorationPageState {
     this.runtimeScreenRequested.set(false);
   }
 
+  private loadDifficultyCopy(): void {
+    const token = this.copyToken.next();
+
+    this.isDifficultyCopyLoading.set(true);
+    this.difficultyCopy.set(null);
+
+    this.gameCopy
+      .getCopy('player.exploration.difficulty', { locale: 'pl' })
+      .pipe(
+        finalize(() => {
+          if (this.copyToken.isCurrent(token)) {
+            this.isDifficultyCopyLoading.set(false);
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (copy) => {
+          if (!this.copyToken.isCurrent(token)) {
+            return;
+          }
+
+          this.difficultyCopy.set(copy);
+        },
+        error: (error: unknown) => {
+          if (!this.copyToken.isCurrent(token)) {
+            return;
+          }
+
+          if (isDevMode()) {
+            console.error('Exploration difficulty copy load failed.', error);
+          }
+
+          this.difficultyCopy.set(null);
+        },
+      });
+  }
 }

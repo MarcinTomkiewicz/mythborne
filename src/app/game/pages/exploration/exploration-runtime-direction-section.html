@@ -7,16 +7,18 @@
     }
     <app-exploration-direction-board class="d-block w-100" />
     @if (page.canShowDifficultyEntryAction()) {
-      <footer class="mg-card p-sm flex-row-end-center w-100">
-        <p-button
-          type="button"
-          label="Zmień poziom trudności"
-          severity="secondary"
-          size="small"
-          [outlined]="true"
-          (onClick)="page.showDifficultyEntry()"
-        />
-      </footer>
+      @if (page.difficultyCopy(); as copy) {
+        <footer class="mg-card p-sm flex-row-end-center w-100">
+          <p-button
+            type="button"
+            [label]="copy.difficulty.actions.changeDifficulty"
+            severity="secondary"
+            size="small"
+            [outlined]="true"
+            (onClick)="page.showDifficultyEntry()"
+          />
+        </footer>
+      }
     }
   </div>
 }

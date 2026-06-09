@@ -1,56 +1,60 @@
 <div class="flex-col gap-xl min-w-0">
-  <section class="mg-card p-md w-100">
-    <div class="grid-2-1 gap-lg grid-items-center">
-      <div class="flex-col gap-xs">
-        <p class="small-caps color-muted text-xs mb-0">Eksploracja</p>
-        <h2 class="mg-section__title mg-section__title--sm mb-0">
-          Wybierz trudność i prowadź wyprawę
-        </h2>
-        <p class="mg-section__subtitle mg-section__subtitle--no-margin mg-section__subtitle--full">
-          Rozpocznij albo kontynuuj wyprawę aktywnego bohatera.
-        </p>
-      </div>
+  @if (page.difficultyCopy(); as copy) {
+    <section class="mg-card p-md w-100">
+      <div class="grid-2-1 gap-lg grid-items-center">
+        <div class="flex-col gap-xs">
+          <p class="small-caps color-muted text-xs mb-0">{{ copy.header.eyebrow }}</p>
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            {{ copy.header.title }}
+          </h2>
+          <p class="mg-section__subtitle mg-section__subtitle--no-margin mg-section__subtitle--full">
+            {{ copy.header.intro }}
+          </p>
+        </div>
 
-      <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium">
-        <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-          <span class="color-muted small-caps uppercase text-xs">Trudność</span>
-          <strong class="color-heading text-md">
-            @if (page.overview.selectedDifficulty(); as difficulty) {
-              {{ difficulty.difficultyLabel }}
-            } @else if (page.overview.isLoading()) {
-              Ładowanie
-            } @else {
-              Nie wybrano
-            }
-          </strong>
-        </div>
-        <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-          <span class="color-muted small-caps uppercase text-xs">Szacowany wynik auto</span>
-          <strong class="color-text text-md">
-            @if (page.selectedDifficultyCardPreview(); as preview) {
-              {{ preview.autoResultDisplay }}
-            } @else {
-              Ładowanie
-            }
-          </strong>
-        </div>
-        @if (page.overview.state(); as state) {
+        <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium">
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">Próby dzisiaj</span>
-            <strong class="color-heading text-md">{{ page.overview.remainingTrialsLabel() }}</strong>
+            <span class="color-muted small-caps uppercase text-xs">{{ copy.statusPanel.labels.difficulty }}</span>
+            <strong class="color-heading text-md">
+              @if (page.selectedDifficultyCopy(); as difficultyCopy) {
+                {{ difficultyCopy.title }}
+              } @else {
+                {{ copy.statusPanel.emptyValues.noDifficulty }}
+              }
+            </strong>
           </div>
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">Efekt</span>
+            <span class="color-muted small-caps uppercase text-xs">{{ copy.statusPanel.labels.estimatedAutoResult }}</span>
+            <strong class="color-text text-md">
+              @if (page.selectedDifficultyCardPreview(); as preview) {
+                {{ preview.autoResultDisplay }}
+              } @else {
+                {{ copy.statusPanel.emptyValues.noAutoResult }}
+              }
+            </strong>
+          </div>
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">{{ copy.statusPanel.labels.trialsToday }}</span>
+            <strong class="color-heading text-md">
+              @if (page.overview.state()) {
+                {{ page.overview.remainingTrialsLabel() }}
+              } @else {
+                {{ copy.statusPanel.emptyValues.noTrials }}
+              }
+            </strong>
+          </div>
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">{{ copy.statusPanel.labels.activeEffect }}</span>
             @if (page.overview.activeEffectDisplay(); as effect) {
               <strong class="color-text text-md">{{ effect.title }}</strong>
             } @else {
-              <strong class="color-text text-md">Brak aktywnego</strong>
+              <strong class="color-text text-md">{{ copy.statusPanel.emptyValues.noEffect }}</strong>
             }
           </div>
-        }
-      </aside>
-    </div>
-  </section>
+        </aside>
+      </div>
+    </section>
+  }
 
   @if (page.shouldShowRuntimeScreen()) {
     <section class="flex-col gap-sm w-100">
@@ -58,23 +62,22 @@
       <app-exploration-runtime-primary-surface />
       <app-exploration-runtime-direction-section />
     </section>
-  } @else {
+  } @else if (page.difficultyCopy(); as copy) {
     <app-exploration-difficulty-preview-section
+      [copy]="copy"
       [difficulties]="page.preview.difficultyCardPreviews()"
       [selectedDifficulty]="page.selectedDifficultyCardPreview()"
       [selectedDifficultyKey]="page.overview.selectedDifficultyKey()"
       [isBusy]="page.overview.isLoading() || page.start.isStarting()"
       [isStarting]="page.start.isStarting()"
-      [isLoading]="page.overview.isLoading()"
       [explorationState]="page.overview.state()"
       (selectDifficulty)="page.selectDifficulty($event)"
       (selectedDifficultyAction)="page.startSelectedDifficulty()"
     />
   }
-
 </div>
 
 <app-loading-overlay
-  [visible]="page.overview.isLoading() || page.start.isStarting()"
-  [label]="page.start.isStarting() ? 'Rozpoczynanie eksploracji...' : 'Ładowanie eksploracji...'"
+  [visible]="page.isLoading()"
+  label=""
 />

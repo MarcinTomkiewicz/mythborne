@@ -1,5 +1,9 @@
 import { Component, computed, input, output } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
+import {
+  ExplorationDifficultyCopy,
+  explorationDifficultyCardCopy,
+} from '../../../core/domain/game-copy/exploration-difficulty-copy.model';
 import { HeroExplorationDifficultyCardPreview } from '../../../core/domain/exploration/exploration-preview.model';
 import { HeroExplorationStateReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { ExplorationChanceMetricRow } from './exploration-chance-metric-row';
@@ -12,6 +16,7 @@ import { ExplorationChanceMetricRow } from './exploration-chance-metric-row';
   host: { class: 'd-block w-100 h-100' },
 })
 export class ExplorationDifficultyPreviewCard {
+  readonly copy = input.required<ExplorationDifficultyCopy>();
   readonly difficulty = input.required<HeroExplorationDifficultyCardPreview>();
   readonly isSelected = input.required<boolean>();
   readonly isBusy = input(false);
@@ -25,37 +30,23 @@ export class ExplorationDifficultyPreviewCard {
     && this.difficulty().isAvailable
     && !this.isBusy(),
   );
+  readonly cardCopy = computed(() =>
+    explorationDifficultyCardCopy(this.copy(), this.difficulty().difficultyKey),
+  );
 
   readonly actionLabel = computed(() => {
-    const preview = this.difficulty();
+    const actions = this.copy().difficulty.actions;
 
-    if (!preview.isAvailable) {
-      return 'Niedostępne';
-    }
-
-    const state = this.explorationState();
-
-    if (!state) {
-      return this.isBusy() ? 'Ładowanie statusu' : 'Status niedostępny';
-    }
-
-    if (!state.hasExploration) {
-      return 'Rozpocznij eksplorację';
-    }
-
-    return 'Kontynuuj wyprawę';
+    return this.explorationState()?.hasExploration
+      ? actions.continueExploration
+      : actions.startExploration;
   });
 
   readonly actionDisabled = computed(() => {
     const preview = this.difficulty();
-
-    if (!preview.isAvailable) {
-      return true;
-    }
-
     const state = this.explorationState();
 
-    return this.isBusy() || !state;
+    return !preview.isAvailable || this.isBusy() || !state;
   });
 
   selectCard(): void {

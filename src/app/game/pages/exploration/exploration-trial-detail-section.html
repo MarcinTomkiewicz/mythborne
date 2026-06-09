@@ -1,17 +1,22 @@
 @let preview = difficulty();
+@let articleCopy = copy();
+@let trialCopy = articleCopy.trialDetails;
 
 <div class="flex-col gap-sm mt-lg">
   <div class="flex-row-between-center flex-col-sm gap-sm">
     <div class="flex-col gap-xs">
       <h4 class="mg-section__title mg-section__title--xs mb-0">
-        Szczegóły prób według cechy
+        {{ trialCopy.section.title }}
       </h4>
-      <p class="muted-text mb-0">
-        Podgląd manifestacji i automatycznego wyniku dla wybranego poziomu trudności.
+      <p
+        class="muted-text mb-0"
+        [attr.aria-label]="trialCopy.section.descriptionPlainText"
+      >
+        <app-rich-text [fragments]="trialCopy.section.descriptionRichText" />
       </p>
     </div>
     <span class="tag-badge tag-badge--info">
-      {{ preview.difficultyLabel }}
+      {{ trialCopy.labels.selectedDifficulty }}: {{ selectedDifficultyCopy().title }}
     </span>
   </div>
 
@@ -20,27 +25,23 @@
       <article class="mg-card p-md w-100 h-100">
         <div class="flex-col gap-sm w-100 h-100">
           <div class="flex-col gap-xs w-100">
-            <strong>{{ row.statLabel }}</strong>
+            <strong>{{ trialLabel(row.statKey) }}</strong>
           </div>
 
           <div class="flex-col gap-sm w-100">
             <app-exploration-chance-metric-row
-              label="Manifestacja"
+              [label]="trialCopy.labels.manifestation"
               [display]="row.manifestationDisplay"
               [value]="row.manifestationChance"
             />
             <app-exploration-chance-metric-row
-              label="Wynik auto"
+              [label]="trialCopy.labels.autoResult"
               [display]="row.autoResultDisplay"
               [value]="row.autoResultSuccessChance"
             />
           </div>
         </div>
       </article>
-    } @empty {
-      <p class="muted-text mb-0">
-        Szczegóły prób są niedostępne dla wybranego poziomu trudności.
-      </p>
     }
   </div>
 </div>
