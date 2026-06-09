@@ -15648,6 +15648,14 @@ export type Database = {
             }
             Returns: Json
           }
+      build_hero_exploration_difficulty_trial_completion_rows_json: {
+        Args: { p_difficulty_key: string; p_hero_id: string }
+        Returns: Json
+      }
+      build_hero_exploration_difficulty_unlock_json: {
+        Args: { p_difficulty_key: string; p_hero_id: string }
+        Returns: Json
+      }
       build_hero_exploration_movement_options: {
         Args: { p_exploration_id: string }
         Returns: Json
@@ -18412,6 +18420,19 @@ export type Database = {
           p_requirement_definition_key: string
         }
         Returns: Json
+      }
+      format_player_item_per_level_bonus_display_value: {
+        Args: {
+          p_effective_value: number
+          p_level_interval: number
+          p_target_key: string
+          p_value_kind: string
+        }
+        Returns: string
+      }
+      format_player_item_per_level_interval_text: {
+        Args: { p_level_interval: number }
+        Returns: string
       }
       format_polish_count: {
         Args: { p_amount: number; p_few: string; p_many: string; p_one: string }
@@ -21260,6 +21281,14 @@ export type Database = {
         Args: { p_locale?: string }
         Returns: Json
       }
+      get_player_item_bonus_display_sort_order: {
+        Args: {
+          p_target_key: string
+          p_type_key?: string
+          p_value_kind?: string
+        }
+        Returns: number
+      }
       get_player_item_popover_detail_raw_v1: {
         Args: { p_context?: string; p_hero_id: string; p_item_id: string }
         Returns: Json
@@ -22043,10 +22072,6 @@ export type Database = {
       }
       is_item_generation_affix_allowed_for_base_type: {
         Args: { p_affix_id: string; p_base_type_key: string }
-        Returns: boolean
-      }
-      is_item_primary_bonus_target_allowed_for_base_type: {
-        Args: { p_base_type_key: string; p_target_key: string }
         Returns: boolean
       }
       is_item_primary_item_stat_target_allowed_for_base_type: {

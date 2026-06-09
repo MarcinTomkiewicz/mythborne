@@ -5,6 +5,7 @@ const SEMANTIC_ICON_CLASS_BY_KEY: Readonly<Record<string, string>> = {
   heart: 'pi pi-heart',
   marble: 'pi pi-marble',
   materials: 'pi pi-marble',
+  trial: 'pi pi-trial',
   workforce: 'pi pi-workforce',
 };
 const warnedUnknownSemanticIconKeys = new Set<string>();
@@ -23,6 +24,24 @@ export function semanticIconClass(iconKey: string): string | null {
   }
 
   return iconClass;
+}
+
+export function requiredSemanticIconClass(iconKey: string, field: string): string {
+  const iconClass = semanticIconClass(iconKey);
+
+  if (!iconClass) {
+    throw new Error(`${field} has unsupported semantic icon key: ${iconKey}.`);
+  }
+
+  return iconClass;
+}
+
+export function semanticIconToneClass(tone: 'success' | 'danger'): string {
+  if (tone === 'success') {
+    return 'success-text';
+  }
+
+  return 'error-text';
 }
 
 function warnUnknownSemanticIconKey(iconKey: string): void {

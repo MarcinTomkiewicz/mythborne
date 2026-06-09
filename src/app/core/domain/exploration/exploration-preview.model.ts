@@ -11,6 +11,11 @@ export type ChallengeAutoResolveSuccessChancePreviewRow =
   RpcRow<'preview_challenge_auto_resolve_success_chance'>;
 export type RewardGeneratedItemPreviewRow = RpcRow<'preview_reward_generated_item'>;
 export type TrialOpportunitySimulationRow = RpcRow<'simulate_trial_opportunity_runs'>;
+export type ExplorationDifficultyKey = 'easy' | 'medium' | 'hard';
+export type ExplorationLockedByDifficultyKey = 'easy' | 'medium';
+export type ExplorationTrialIconKey = 'trial';
+export type ExplorationLockedDisplayTone = 'danger';
+export type ExplorationTrialCompletionTone = 'success' | 'danger';
 
 export interface TrialOpportunityCurvePreview {
   difficultyKey: string;
@@ -29,6 +34,7 @@ export interface TrialOpportunityCurvePreview {
 }
 
 export interface HeroExplorationDifficultyCardPreview {
+  cardJson: Json;
   difficultyKey: string;
   difficultyLabel: string;
   difficultyDescription: string;
@@ -46,7 +52,41 @@ export interface HeroExplorationDifficultyCardPreview {
   autoResultDisplay: string;
   autoResultSuccessChance: number;
   rewardItemCountDisplay: string;
+  isUnlocked: boolean;
+  lockedByDifficultyKey: ExplorationLockedByDifficultyKey | null;
+  missingRequiredTrialCount: number;
+  requiredTrialCount: number;
+  lockedDisplay: HeroExplorationDifficultyLockedDisplay | null;
+  trialCompletionRows: HeroExplorationDifficultyTrialCompletion[];
+  unlockPolicy: Json;
   statDetails: HeroExplorationDifficultyStatDetail[];
+}
+
+export interface HeroExplorationDifficultyLockedDisplay {
+  iconKey: ExplorationTrialIconKey;
+  tone: ExplorationLockedDisplayTone;
+  label: string;
+  ariaLabel: string;
+}
+
+export interface HeroExplorationDifficultyTrialCompletion {
+  difficultyKey: ExplorationDifficultyKey;
+  trialDefinitionId: string;
+  trialKey: string;
+  patronKey: null;
+  patronLabel: string | null;
+  statKey: string;
+  statLabel: string;
+  sortOrder: number;
+  isCompleted: boolean;
+  completedAt: string | null;
+  display: HeroExplorationDifficultyTrialCompletionDisplay;
+}
+
+export interface HeroExplorationDifficultyTrialCompletionDisplay {
+  iconKey: ExplorationTrialIconKey;
+  tone: ExplorationTrialCompletionTone;
+  ariaLabel: string;
 }
 
 export interface HeroExplorationDifficultyStatDetail {
@@ -56,6 +96,7 @@ export interface HeroExplorationDifficultyStatDetail {
   manifestationChance: number;
   autoResultDisplay: string;
   autoResultSuccessChance: number;
+  trialCompletion: HeroExplorationDifficultyTrialCompletion;
 }
 
 export interface TrialManifestationChancePreview {

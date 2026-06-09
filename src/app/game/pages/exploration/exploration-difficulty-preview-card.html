@@ -25,38 +25,51 @@
 
     <p class="muted-text mb-0">{{ card.description }}</p>
 
-    <div class="flex-col gap-sm w-100">
-      <div class="flex-row-between-center gap-sm w-100">
-        <span class="color-muted small-caps text-xs">{{ articleCopy.difficulty.metrics.duration }}</span>
-        <strong class="color-heading">{{ preview.stepDurationDisplay }}</strong>
-      </div>
+    @if (preview.isUnlocked) {
+      <div class="flex-col gap-sm w-100">
+        <div class="flex-row-between-center gap-sm w-100">
+          <span class="color-muted small-caps text-xs">{{ articleCopy.difficulty.metrics.duration }}</span>
+          <strong class="color-heading">{{ preview.stepDurationDisplay }}</strong>
+        </div>
 
-      <app-exploration-chance-metric-row
-        [label]="articleCopy.difficulty.metrics.trialChance"
-        [display]="preview.trialOpportunityDisplay"
-        [value]="preview.trialOpportunityChance"
-      />
-      <app-exploration-chance-metric-row
-        [label]="articleCopy.difficulty.metrics.manifestationChance"
-        [display]="preview.manifestationDisplay"
-        [value]="preview.manifestationChance"
-      />
-      <app-exploration-chance-metric-row
-        [label]="articleCopy.difficulty.metrics.autoResolveChance"
-        [display]="preview.autoResultDisplay"
-        [value]="preview.autoResultSuccessChance"
-      />
+        <app-exploration-chance-metric-row
+          [label]="articleCopy.difficulty.metrics.trialChance"
+          [display]="preview.trialOpportunityDisplay"
+          [value]="preview.trialOpportunityChance"
+        />
+        <app-exploration-chance-metric-row
+          [label]="articleCopy.difficulty.metrics.manifestationChance"
+          [display]="preview.manifestationDisplay"
+          [value]="preview.manifestationChance"
+        />
+        <app-exploration-chance-metric-row
+          [label]="articleCopy.difficulty.metrics.autoResolveChance"
+          [display]="preview.autoResultDisplay"
+          [value]="preview.autoResultSuccessChance"
+        />
 
-      <div class="flex-row-between-center gap-sm w-100">
-        <span class="color-muted small-caps text-xs">{{ articleCopy.difficulty.metrics.rewardItems }}</span>
-        <strong class="color-heading">{{ preview.rewardItemCountDisplay }}</strong>
+        <div class="flex-row-between-center gap-sm w-100">
+          <span class="color-muted small-caps text-xs">{{ articleCopy.difficulty.metrics.rewardItems }}</span>
+          <strong class="color-heading">{{ preview.rewardItemCountDisplay }}</strong>
+        </div>
       </div>
-    </div>
+    } @else if (preview.lockedDisplay; as lockedDisplay) {
+      <div class="h-px-150 flex-col-center-center gap-sm w-100 text-center">
+        <i
+          [class]="lockedIconClass(lockedDisplay.iconKey) + ' text-xxl ' + lockedToneClass(lockedDisplay.tone)"
+          [attr.aria-label]="lockedDisplay.ariaLabel"
+          role="img"
+        ></i>
+        <strong [class]="lockedToneClass(lockedDisplay.tone)">
+          {{ lockedDisplay.label }}
+        </strong>
+      </div>
+    }
 
     <div class="flex-1"></div>
 
     <div class="flex-row-start-center min-h-lines-3">
-      @if (selected && preview.isAvailable) {
+      @if (selected && preview.isAvailable && preview.isUnlocked) {
         <p-button
           type="button"
           [label]="actionLabel()"

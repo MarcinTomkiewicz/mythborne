@@ -1,8 +1,14 @@
 import {
   ChallengeAutoResolveSuccessChancePreview,
   ChallengeAutoResolveSuccessChancePreviewRow,
+  ExplorationDifficultyKey,
+  ExplorationLockedByDifficultyKey,
+  ExplorationTrialIconKey,
   HeroExplorationDifficultyCardPreview,
+  HeroExplorationDifficultyLockedDisplay,
   HeroExplorationDifficultyStatDetail,
+  HeroExplorationDifficultyTrialCompletion,
+  HeroExplorationDifficultyTrialCompletionDisplay,
   RewardGeneratedItemPreview,
   RewardGeneratedItemPreviewRow,
   TrialManifestationChancePreview,
@@ -16,12 +22,19 @@ import { GetHeroExplorationDifficultyCardPreviewsRpcRow } from '../types/explora
 import { Json } from '../types/database.types';
 import {
   JsonRecord,
-  mapJsonArray,
   optionalText,
   read,
   readPath,
+  requiredArray,
+  requiredBoolean,
+  requiredNonNegativeInteger,
+  requiredNullableText,
+  requireNull,
+  requiredRecord,
+  requiredText,
 } from './json-read';
 import { trimToNull } from './normalize-text';
+import { requiredSemanticIconClass } from './semantic-icon-class';
 
 export function mapTrialOpportunityCurvePreview(
   row: TrialOpportunityCurvePreviewRow,
@@ -47,8 +60,18 @@ export function mapHeroExplorationDifficultyCardPreview(
   row: GetHeroExplorationDifficultyCardPreviewsRpcRow,
 ): HeroExplorationDifficultyCardPreview {
   const cardJson = row.card_json as Json;
+  const cardJsonRecord = requiredRecord(cardJson, 'difficulty card_json');
+  const isUnlocked = requiredBoolean(
+    read(cardJsonRecord, 'isUnlocked'),
+    'difficulty card_json.isUnlocked',
+  );
+  const lockedDisplay = mapLockedDisplay(read(cardJsonRecord, 'lockedDisplay'));
+  const trialCompletionRows = mapTrialCompletionRows(cardJsonRecord);
+
+  assertUnlockContract(row.difficulty_key, isUnlocked, lockedDisplay);
 
   return {
+    cardJson,
     difficultyKey: row.difficulty_key,
     difficultyLabel: row.difficulty_label,
     difficultyDescription: row.difficulty_description,
@@ -70,7 +93,26 @@ export function mapHeroExplorationDifficultyCardPreview(
       readPath(cardJson, 'rewardProfile', 'itemCount', 'display'),
       'rewardProfile.itemCount.display',
     ),
-    statDetails: mapStatDetails(cardJson),
+    isUnlocked,
+    lockedByDifficultyKey: mapLockedByDifficultyKey(
+      read(cardJsonRecord, 'lockedByDifficultyKey'),
+      'difficulty card_json.lockedByDifficultyKey',
+    ),
+    missingRequiredTrialCount: requiredNonNegativeInteger(
+      read(cardJsonRecord, 'missingRequiredTrialCount'),
+      'difficulty card_json.missingRequiredTrialCount',
+    ),
+    requiredTrialCount: requiredNonNegativeInteger(
+      read(cardJsonRecord, 'requiredTrialCount'),
+      'difficulty card_json.requiredTrialCount',
+    ),
+    lockedDisplay,
+    trialCompletionRows,
+    unlockPolicy: requiredRecord(
+      read(cardJsonRecord, 'unlockPolicy'),
+      'difficulty card_json.unlockPolicy',
+    ) as Json,
+    statDetails: mapStatDetails(cardJson, trialCompletionRows),
   };
 }
 
@@ -98,10 +140,14 @@ export function mapTrialManifestationChancePreview(
   };
 }
 
-function mapStatDetails(cardJson: Json): HeroExplorationDifficultyStatDetail[] {
-  const rows = mapJsonArray(
+function mapStatDetails(
+  cardJson: Json,
+  trialCompletionRows: readonly HeroExplorationDifficultyTrialCompletion[],
+): HeroExplorationDifficultyStatDetail[] {
+  const rows = requiredArray(
     readPath(cardJson, 'trialDetailByStat', 'rows'),
-    (item) => {
+    'difficulty card_json.trialDetailByStat.rows',
+  ).map((item) => {
       const autoResultValue = read(
         item,
         'autoResultSuccessChance',
@@ -136,9 +182,12 @@ function mapStatDetails(cardJson: Json): HeroExplorationDifficultyStatDetail[] {
           'auto_result_display',
         ),
         autoResultSuccessChance: requiredNumberField(autoResultValue, 'autoResultSuccessChance'),
+        trialCompletion: trialCompletionForStat(
+          trialCompletionRows,
+          requiredTextField(item, 'statKey', 'stat_key'),
+        ),
       };
-    },
-  );
+    });
 
   if (rows.length !== 9) {
     throw new Error(
@@ -147,6 +196,190 @@ function mapStatDetails(cardJson: Json): HeroExplorationDifficultyStatDetail[] {
   }
 
   return rows;
+}
+
+function mapTrialCompletionRows(
+  cardJsonRecord: JsonRecord,
+): HeroExplorationDifficultyTrialCompletion[] {
+  const rows = requiredArray(
+    read(cardJsonRecord, 'trialCompletionRows'),
+    'difficulty card_json.trialCompletionRows',
+  ).map(mapTrialCompletionRow);
+
+  if (rows.length !== 9) {
+    throw new Error(
+      `get_hero_exploration_difficulty_card_previews expected 9 trialCompletionRows, received ${rows.length}.`,
+    );
+  }
+
+  return rows;
+}
+
+function mapTrialCompletionRow(
+  record: JsonRecord,
+): HeroExplorationDifficultyTrialCompletion {
+  return {
+    difficultyKey: mapDifficultyKey(
+      requiredText(read(record, 'difficultyKey'), 'trialCompletionRows.difficultyKey'),
+      'trialCompletionRows.difficultyKey',
+    ),
+    trialDefinitionId: requiredText(
+      read(record, 'trialDefinitionId'),
+      'trialCompletionRows.trialDefinitionId',
+    ),
+    trialKey: requiredText(read(record, 'trialKey'), 'trialCompletionRows.trialKey'),
+    patronKey: requireNull(
+      read(record, 'patronKey'),
+      'trialCompletionRows.patronKey',
+    ),
+    patronLabel: requiredNullableText(
+      read(record, 'patronLabel'),
+      'trialCompletionRows.patronLabel',
+    ),
+    statKey: requiredText(read(record, 'statKey'), 'trialCompletionRows.statKey'),
+    statLabel: requiredText(read(record, 'statLabel'), 'trialCompletionRows.statLabel'),
+    sortOrder: requiredNonNegativeInteger(
+      read(record, 'sortOrder'),
+      'trialCompletionRows.sortOrder',
+    ),
+    isCompleted: requiredBoolean(
+      read(record, 'isCompleted'),
+      'trialCompletionRows.isCompleted',
+    ),
+    completedAt: requiredNullableText(
+      read(record, 'completedAt'),
+      'trialCompletionRows.completedAt',
+    ),
+    display: mapTrialCompletionDisplay(
+      requiredRecord(read(record, 'display'), 'trialCompletionRows.display'),
+    ),
+  };
+}
+
+function mapTrialCompletionDisplay(
+  record: JsonRecord,
+): HeroExplorationDifficultyTrialCompletionDisplay {
+  return {
+    iconKey: mapTrialIconKey(
+      requiredText(read(record, 'iconKey'), 'trialCompletionRows.display.iconKey'),
+      'trialCompletionRows.display.iconKey',
+    ),
+    tone: mapTrialCompletionTone(
+      requiredText(read(record, 'tone'), 'trialCompletionRows.display.tone'),
+      'trialCompletionRows.display.tone',
+    ),
+    ariaLabel: requiredText(
+      read(record, 'ariaLabel'),
+      'trialCompletionRows.display.ariaLabel',
+    ),
+  };
+}
+
+function mapLockedDisplay(
+  value: Json | undefined,
+): HeroExplorationDifficultyLockedDisplay | null {
+  if (value === null) {
+    return null;
+  }
+
+  const record = requiredRecord(value, 'difficulty card_json.lockedDisplay');
+
+  return {
+    iconKey: mapTrialIconKey(
+      requiredText(read(record, 'iconKey'), 'lockedDisplay.iconKey'),
+      'lockedDisplay.iconKey',
+    ),
+    tone: mapLockedDisplayTone(
+      requiredText(read(record, 'tone'), 'lockedDisplay.tone'),
+      'lockedDisplay.tone',
+    ),
+    label: requiredText(read(record, 'label'), 'lockedDisplay.label'),
+    ariaLabel: requiredText(read(record, 'ariaLabel'), 'lockedDisplay.ariaLabel'),
+  };
+}
+
+function trialCompletionForStat(
+  rows: readonly HeroExplorationDifficultyTrialCompletion[],
+  statKey: string,
+): HeroExplorationDifficultyTrialCompletion {
+  const row = rows.find((entry) => entry.statKey === statKey);
+
+  if (!row) {
+    throw new Error(
+      `get_hero_exploration_difficulty_card_previews missing trialCompletionRows entry for statKey: ${statKey}.`,
+    );
+  }
+
+  return row;
+}
+
+function assertUnlockContract(
+  difficultyKey: string,
+  isUnlocked: boolean,
+  lockedDisplay: HeroExplorationDifficultyLockedDisplay | null,
+): void {
+  if (difficultyKey === 'easy' && !isUnlocked) {
+    throw new Error('get_hero_exploration_difficulty_card_previews returned locked Easy difficulty.');
+  }
+
+  if (!isUnlocked && !lockedDisplay) {
+    throw new Error(
+      'get_hero_exploration_difficulty_card_previews returned locked difficulty without lockedDisplay.',
+    );
+  }
+}
+
+function mapLockedByDifficultyKey(
+  value: Json | undefined,
+  field: string,
+): ExplorationLockedByDifficultyKey | null {
+  if (value === null) {
+    return null;
+  }
+
+  const key = requiredText(value, field);
+
+  if (key === 'easy' || key === 'medium') {
+    return key;
+  }
+
+  throw new Error(`${field} has unsupported value: ${key}.`);
+}
+
+function mapDifficultyKey(value: string, field: string): ExplorationDifficultyKey {
+  if (value === 'easy' || value === 'medium' || value === 'hard') {
+    return value;
+  }
+
+  throw new Error(`${field} has unsupported value: ${value}.`);
+}
+
+function mapTrialIconKey(value: string, field: string): ExplorationTrialIconKey {
+  if (value !== 'trial') {
+    throw new Error(`${field} has unsupported value: ${value}.`);
+  }
+
+  requiredSemanticIconClass(value, field);
+  return value;
+}
+
+function mapLockedDisplayTone(value: string, field: string): 'danger' {
+  if (value === 'danger') {
+    return value;
+  }
+
+  throw new Error(`${field} has unsupported value: ${value}.`);
+}
+
+function mapTrialCompletionTone(
+  value: string,
+  field: string,
+): 'success' | 'danger' {
+  if (value === 'success' || value === 'danger') {
+    return value;
+  }
+
+  throw new Error(`${field} has unsupported value: ${value}.`);
 }
 
 function requiredTextField(record: JsonRecord, ...keys: string[]): string {

@@ -5,6 +5,10 @@ import {
   explorationDifficultyTrialLabel,
 } from '../../../core/domain/game-copy/exploration-difficulty-copy.model';
 import { HeroExplorationDifficultyCardPreview } from '../../../core/domain/exploration/exploration-preview.model';
+import {
+  requiredSemanticIconClass,
+  semanticIconToneClass,
+} from '../../../core/utils/semantic-icon-class';
 import { RichText } from '../../../shared/rich-text/rich-text';
 import { ExplorationChanceMetricRow } from './exploration-chance-metric-row';
 
@@ -25,5 +29,16 @@ export class ExplorationTrialDetailSection {
 
   trialLabel(statKey: string): string {
     return explorationDifficultyTrialLabel(this.copy(), statKey);
+  }
+
+  trialCompletionIconClass(iconKey: string): string {
+    return requiredSemanticIconClass(
+      iconKey,
+      'trialCompletionRows.display.iconKey',
+    );
+  }
+
+  trialCompletionToneClass(tone: 'success' | 'danger'): string {
+    return semanticIconToneClass(tone);
   }
 }

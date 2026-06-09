@@ -6,6 +6,10 @@ import {
 } from '../../../core/domain/game-copy/exploration-difficulty-copy.model';
 import { HeroExplorationDifficultyCardPreview } from '../../../core/domain/exploration/exploration-preview.model';
 import { HeroExplorationStateReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
+import {
+  requiredSemanticIconClass,
+  semanticIconToneClass,
+} from '../../../core/utils/semantic-icon-class';
 import { ExplorationChanceMetricRow } from './exploration-chance-metric-row';
 
 @Component({
@@ -28,6 +32,7 @@ export class ExplorationDifficultyPreviewCard {
   readonly canSelectCard = computed(() =>
     !this.isSelected()
     && this.difficulty().isAvailable
+    && this.difficulty().isUnlocked
     && !this.isBusy(),
   );
   readonly cardCopy = computed(() =>
@@ -46,8 +51,16 @@ export class ExplorationDifficultyPreviewCard {
     const preview = this.difficulty();
     const state = this.explorationState();
 
-    return !preview.isAvailable || this.isBusy() || !state;
+    return !preview.isAvailable || !preview.isUnlocked || this.isBusy() || !state;
   });
+
+  lockedIconClass(iconKey: string): string {
+    return requiredSemanticIconClass(iconKey, 'lockedDisplay.iconKey');
+  }
+
+  lockedToneClass(tone: 'danger'): string {
+    return semanticIconToneClass(tone);
+  }
 
   selectCard(): void {
     if (this.canSelectCard()) {

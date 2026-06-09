@@ -15,17 +15,23 @@
         <app-rich-text [fragments]="trialCopy.section.descriptionRichText" />
       </p>
     </div>
-    <span class="tag-badge tag-badge--info">
-      {{ trialCopy.labels.selectedDifficulty }}: {{ selectedDifficultyCopy().title }}
-    </span>
   </div>
 
   <div class="mg-grid grid-cols-3 grid-cols-1-md gap-sm w-100">
     @for (row of preview.statDetails; track row.statKey) {
       <article class="mg-card p-md w-100 h-100">
         <div class="flex-col gap-sm w-100 h-100">
-          <div class="flex-col gap-xs w-100">
+          <div class="flex-row-between-start gap-sm w-100">
             <strong>{{ trialLabel(row.statKey) }}</strong>
+            <i
+              [class]="
+                trialCompletionIconClass(row.trialCompletion.display.iconKey) +
+                ' ' +
+                trialCompletionToneClass(row.trialCompletion.display.tone)
+              "
+              [attr.aria-label]="row.trialCompletion.display.ariaLabel"
+              role="img"
+            ></i>
           </div>
 
           <div class="flex-col gap-sm w-100">
