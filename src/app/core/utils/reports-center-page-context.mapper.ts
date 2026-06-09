@@ -1,7 +1,9 @@
 import {
-  ReportsCenterListRowV2,
-  ReportsCenterPageContextV2,
-  ReportsCenterVisibilityPolicyV1,
+  ReportsCenterEventTypeContract,
+  ReportsCenterEventTypeMachine,
+  ReportsCenterListRow,
+  ReportsCenterPageContext,
+  ReportsCenterVisibilityPolicy,
 } from '../domain/reports/reports-center.model';
 import { Json } from '../types/database.types';
 import {
@@ -15,6 +17,7 @@ import {
   requiredRecord,
   requiredText,
   requireLiteral,
+  requiredTextArray,
 } from './json-read';
 import {
   mapActions,
@@ -22,11 +25,11 @@ import {
 } from './reports-center-actions.mapper';
 import { mapFilters } from './reports-center-filters.mapper';
 import {
-  mapKeyLabel,
   mapMarker,
   mapNullablePreview,
   mapPreview,
   mapReportDate,
+  mapKeyLabel,
 } from './reports-center-preview.mapper';
 import {
   mapCounts,
@@ -34,7 +37,7 @@ import {
   mapSummary,
 } from './reports-center-summary.mapper';
 
-export function mapReportsCenterPageContext(value: Json): ReportsCenterPageContextV2 {
+export function mapReportsCenterPageContext(value: Json): ReportsCenterPageContext {
   const root = requiredRecord(value, 'get_reports_center_page_context');
 
   return {
@@ -43,8 +46,15 @@ export function mapReportsCenterPageContext(value: Json): ReportsCenterPageConte
         read(root, 'contractVersion'),
         'get_reports_center_page_context.contractVersion',
       ),
-      'reports_center_page_context_v2',
+      'reports_center_page_context_v3',
       'get_reports_center_page_context.contractVersion',
+    ),
+    eventTypeContract: mapEventTypeContract(
+      requiredRecord(
+        read(root, 'eventTypeContract'),
+        'get_reports_center_page_context.eventTypeContract',
+      ),
+      'get_reports_center_page_context.eventTypeContract',
     ),
     reports: mapReports(read(root, 'reports')),
     selectedPreview: mapNullablePreview(
@@ -84,22 +94,60 @@ export function mapReportsCenterPageContext(value: Json): ReportsCenterPageConte
   };
 }
 
-function mapReports(value: Json | undefined): ReportsCenterListRowV2[] {
+function mapEventTypeContract(
+  record: JsonRecord,
+  field: string,
+): ReportsCenterEventTypeContract {
+  return {
+    canonicalPath: requireLiteral(
+      requiredText(read(record, 'canonicalPath'), `${field}.canonicalPath`),
+      'reports[].eventType.key',
+      `${field}.canonicalPath`,
+    ),
+    removedDuplicatePaths: mapRemovedDuplicatePaths(
+      requiredTextArray(read(record, 'removedDuplicatePaths'), `${field}.removedDuplicatePaths`),
+      `${field}.removedDuplicatePaths`,
+    ),
+    copyPath: requireLiteral(
+      requiredText(read(record, 'copyPath'), `${field}.copyPath`),
+      'get_report_page_copy(locale).reportsCenter.eventTypes.byKey[eventType.key]',
+      `${field}.copyPath`,
+    ),
+    fallbackPolicy: requiredText(read(record, 'fallbackPolicy'), `${field}.fallbackPolicy`),
+    policy: requiredText(read(record, 'policy'), `${field}.policy`),
+  };
+}
+
+function mapRemovedDuplicatePaths(
+  paths: string[],
+  field: string,
+): ReportsCenterEventTypeContract['removedDuplicatePaths'] {
+  if (
+    paths.length !== 2 ||
+    paths[0] !== 'reports[].preview.eventType' ||
+    paths[1] !== 'reports[].marker.eventTypeKey'
+  ) {
+    throw new Error(`${field} has unsupported removed duplicate paths.`);
+  }
+
+  return [
+    'reports[].preview.eventType',
+    'reports[].marker.eventTypeKey',
+  ];
+}
+
+function mapReports(value: Json | undefined): ReportsCenterListRow[] {
   return requiredArray(value, 'get_reports_center_page_context.reports')
     .map((row, index) =>
       mapReportRow(row, `get_reports_center_page_context.reports[${index}]`),
     );
 }
 
-function mapReportRow(row: JsonRecord, field: string): ReportsCenterListRowV2 {
+function mapReportRow(row: JsonRecord, field: string): ReportsCenterListRow {
   return {
-    contractVersion: requireLiteral(
-      requiredText(read(row, 'contractVersion'), `${field}.contractVersion`),
-      'reports_center_list_row_v2',
-      `${field}.contractVersion`,
-    ),
+    contractVersion: requiredText(read(row, 'contractVersion'), `${field}.contractVersion`),
     reportId: requiredText(read(row, 'reportId'), `${field}.reportId`),
-    publicToken: requiredText(read(row, 'publicToken'), `${field}.publicToken`),
+    publicToken: requiredNullableText(read(row, 'publicToken'), `${field}.publicToken`),
     reportTypeKey: requiredText(read(row, 'reportTypeKey'), `${field}.reportTypeKey`),
     sourceEntityType: requiredText(read(row, 'sourceEntityType'), `${field}.sourceEntityType`),
     sourceEntityId: requiredText(read(row, 'sourceEntityId'), `${field}.sourceEntityId`),
@@ -107,7 +155,7 @@ function mapReportRow(row: JsonRecord, field: string): ReportsCenterListRowV2 {
     contentKind: requiredText(read(row, 'contentKind'), `${field}.contentKind`),
     resultKind: requiredNullableText(read(row, 'resultKind'), `${field}.resultKind`),
     source: mapKeyLabel(requiredRecord(read(row, 'source'), `${field}.source`), `${field}.source`),
-    eventType: mapKeyLabel(
+    eventType: mapEventTypeMachine(
       requiredRecord(read(row, 'eventType'), `${field}.eventType`),
       `${field}.eventType`,
     ),
@@ -133,10 +181,22 @@ function mapReportRow(row: JsonRecord, field: string): ReportsCenterListRowV2 {
   };
 }
 
+function mapEventTypeMachine(
+  record: JsonRecord,
+  field: string,
+): ReportsCenterEventTypeMachine {
+  return {
+    key: requiredText(read(record, 'key'), `${field}.key`),
+    label: optionalNullableText(read(record, 'label'), `${field}.label`),
+    tone: optionalNullableText(read(record, 'tone'), `${field}.tone`),
+    iconKey: optionalNullableText(read(record, 'iconKey'), `${field}.iconKey`),
+  };
+}
+
 function mapVisibilityPolicy(
   record: JsonRecord,
   field: string,
-): ReportsCenterVisibilityPolicyV1 {
+): ReportsCenterVisibilityPolicy {
   return {
     isPrimaryListEntry: requiredBoolean(
       read(record, 'isPrimaryListEntry'),

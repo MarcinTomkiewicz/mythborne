@@ -1,15 +1,15 @@
 <app-loading-overlay [visible]="page.isLoading()" />
 
 @if (page.copy(); as copy) {
-  @if (page.context(); as context) {
-    <div class="flex-col gap-lg w-100 min-w-0">
-      <app-game-page-header
-        [eyebrowLabel]="copy.reportsCenter.header.eyebrow"
-        [title]="copy.reportsCenter.header.title"
-        [description]="copy.reportsCenter.header.intro"
-        [summaryRows]="page.headerSummaryRows()"
-      />
+  <div class="flex-col gap-lg w-100 min-w-0">
+    <app-game-page-header
+      [eyebrowLabel]="copy.reportsCenter.header.eyebrow"
+      [title]="copy.reportsCenter.header.title"
+      [description]="copy.reportsCenter.header.intro"
+      [summaryRows]="page.headerSummaryRows()"
+    />
 
+    @if (page.context(); as context) {
       <section class="mg-card radius-lg p-md flex-col gap-md w-100 min-w-0">
         <div class="flex-row-between-center flex-wrap gap-md w-100 min-w-0">
           <div class="flex-col gap-xs min-w-0">
@@ -32,26 +32,28 @@
             [copy]="copy.reportsCenter.list"
             [reports]="context.reports"
             [pagination]="context.pagination"
-            [counts]="context.counts"
             [selectedReportId]="page.selectedReportId()"
+            [selectedReportIds]="page.selectedReportIds()"
+            [actionsCopy]="copy.reportsCenter.actions"
+            [eventTypesCopy]="copy.reportsCenter.eventTypes"
             [markAllReadSupported]="context.actions.markAllRead.supported"
             [markAllReadEnabled]="context.actions.markAllRead.enabled"
-            [markAllReadLabel]="copy.reportsCenter.actions.markAllRead.label"
-            [markAllReadDisabledTooltip]="copy.reportsCenter.actions.markAllRead.disabledTooltip"
             [isLoading]="page.isLoading()"
             (selectReport)="page.selectReport($event)"
+            (toggleReportSelection)="page.toggleReportSelection($event)"
+            (toggleVisibleReportSelection)="page.toggleVisibleReportSelection()"
             (pageChange)="page.changeReportsPage($event)"
-            (markAllRead)="page.markAllRead()"
           />
 
           @if (context.capabilities.preview.rightPreview) {
             <app-report-preview-panel
               [preview]="page.selectedPreview()"
               [copy]="copy.reportsCenter.preview"
+              [eventTypeCopy]="page.selectedPreviewEventTypeCopy()"
             />
           }
         </div>
       </section>
-    </div>
-  }
+    }
+  </div>
 }

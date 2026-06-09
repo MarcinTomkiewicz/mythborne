@@ -1,4 +1,5 @@
 import { Json } from '../types/database.types';
+import { requiredText } from './json-read-primitives';
 
 export type JsonRecord = Record<string, Json | undefined>;
 
@@ -44,5 +45,14 @@ export function requiredRecord(value: Json | undefined, field: string): JsonReco
 export function definedFields(record: JsonRecord): JsonRecord {
   return Object.fromEntries(
     Object.entries(record).filter(([, value]) => value !== undefined && value !== null),
+  );
+}
+
+export function requiredTextRecord(record: JsonRecord, field: string): Record<string, string> {
+  return Object.fromEntries(
+    Object.entries(record).map(([key, value]) => [
+      key,
+      requiredText(value, `${field}.${key}`),
+    ]),
   );
 }

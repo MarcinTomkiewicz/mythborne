@@ -21,6 +21,18 @@
   @include m.grid(auto minmax(0, 1fr) auto, map.get(v.$spacings, "md"), center);
 }
 
+.mg-data-row--selectable-listing {
+  @include m.grid(auto auto minmax(0, 1fr) auto, map.get(v.$spacings, "md"), center);
+}
+
+.mg-data-row--selectable-listing .mg-data-row__end {
+  justify-self: end;
+}
+
+.mg-data-row--start {
+  align-items: start;
+}
+
 .mg-data-row__label {
   color: v.$color-text-muted;
   font-size: map.get(v.$font-sizes, "xs");
@@ -64,6 +76,14 @@
 }
 
 @media (max-width: map.get(v.$breakpoints, "sm")) {
+  .mg-data-row--selectable-listing {
+    grid-template-columns: auto auto minmax(0, 1fr);
+  }
+
+  .mg-data-row--selectable-listing .mg-data-row__end {
+    grid-column: 3;
+  }
+
   .mg-data-row--stat .mg-data-row__meta {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

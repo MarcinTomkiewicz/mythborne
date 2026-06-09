@@ -1,45 +1,77 @@
-import { Component, computed, input, output } from '@angular/core';
-import { ReportsCenterListRowV2 } from '../../../core/domain/reports/reports-center.model';
-
-const SUPPORTED_MARKER_ICON_KEYS = new Set([
-  'report-trial',
-  'report-exploration',
-  'report-combat',
-  'buff',
-  'debuff',
-]);
+import { Component, computed, effect, input, output } from '@angular/core';
+import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { ButtonModule } from 'primeng/button';
+import { CheckboxModule } from 'primeng/checkbox';
+import {
+  ReportsCenterDeleteOneActionCopy,
+  ReportsCenterEventTypeCopy,
+  ReportsCenterRowActionCopy,
+  ReportsCenterSelectReportRowActionCopy,
+} from '../../../core/domain/reports/reports-center-copy.model';
+import { ReportsCenterListRow } from '../../../core/domain/reports/reports-center.model';
+import { reportsCenterMarkerToneClass } from '../../../core/utils/reports-center-marker-tone-class';
+import { semanticIconClass } from '../../../core/utils/semantic-icon-class';
 
 @Component({
   selector: 'app-report-list-row',
   standalone: true,
-  
+  imports: [
+    ButtonModule,
+    CheckboxModule,
+    ReactiveFormsModule,
+  ],
   templateUrl: './report-list-row.html',
   host: { class: 'd-block w-100 min-w-0' },
 })
-export class ReportsCenterListRow {
-  readonly report = input.required<ReportsCenterListRowV2>();
+export class ReportListRow {
+  readonly report = input.required<ReportsCenterListRow>();
   readonly selected = input(false);
+  readonly selectionChecked = input(false);
+  readonly eventTypeCopy = input.required<ReportsCenterEventTypeCopy>();
+  readonly selectReportRowActionCopy = input.required<ReportsCenterSelectReportRowActionCopy>();
+  readonly markReadActionCopy = input.required<ReportsCenterRowActionCopy>();
+  readonly deleteActionCopy = input.required<ReportsCenterDeleteOneActionCopy>();
+  readonly selectionControl = new FormControl(false, { nonNullable: true });
   readonly selectReport = output<string>();
+  readonly toggleReportSelection = output<string>();
   readonly markerIconClass = computed(() => {
-    const iconKey = this.report().marker.iconKey;
-    return SUPPORTED_MARKER_ICON_KEYS.has(iconKey) ? `pi pi-${iconKey}` : null;
+    return semanticIconClass(this.eventTypeCopy().iconKey);
   });
   readonly hasMarkerIcon = computed(() => this.markerIconClass() !== null);
-  readonly markerToneClass = computed(() => {
-    const tone = this.report().preview.outcomeStatus.tone;
-    if (tone === 'positive') {
-      return 'success-text';
-    }
+  readonly selectionAriaLabel = computed(() => {
+    const actionCopy = this.selectReportRowActionCopy();
+    const title = this.report().title;
+    const template = this.selectionChecked()
+      ? actionCopy.selectedAriaLabelTemplate
+      : actionCopy.ariaLabelTemplate;
+    const fallback = this.selectionChecked()
+      ? actionCopy.selectedFallbackAriaLabel
+      : actionCopy.fallbackAriaLabel;
 
-    if (tone === 'negative') {
-      return 'error-text';
-    }
+    return title ? template.replace('{title}', title) : fallback;
+  });
+  readonly markerToneClass = computed(() =>
+    reportsCenterMarkerToneClass(this.report(), this.eventTypeCopy()),
+  );
+  private readonly syncSelectionControl = effect(() => {
+    const selected = this.selectionChecked();
 
-    return 'color-heading';
+    if (this.selectionControl.value !== selected) {
+      this.selectionControl.setValue(selected, { emitEvent: false });
+    }
   });
 
   select(): void {
     this.selectReport.emit(this.report().reportId);
+  }
+
+  toggleSelection(event: Event | null | undefined): void {
+    event?.stopPropagation();
+    this.toggleReportSelection.emit(this.report().reportId);
+  }
+
+  stopActionClick(event: Event): void {
+    event.stopPropagation();
   }
 
   selectFromKeyboard(event: KeyboardEvent): void {

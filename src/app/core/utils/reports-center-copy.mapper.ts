@@ -1,12 +1,27 @@
 import {
   ReportsCenterActionsCopy,
+  ReportsCenterBulkActionCopy,
   ReportsCenterCopy,
+  ReportsCenterDeleteOneActionCopy,
+  ReportsCenterEventTypeCopy,
+  ReportsCenterEventTypeCopyBundle,
   ReportsCenterFilterOptionsCopy,
   ReportsCenterHeaderCopy,
+  ReportsCenterMarkAllReadActionCopy,
   ReportsCenterPreviewCopy,
+  ReportsCenterRowActionCopy,
+  ReportsCenterSelectReportRowActionCopy,
+  ReportsCenterSimpleActionCopy,
   ReportsCenterSummaryCopy,
 } from '../domain/reports/reports-center-copy.model';
-import { JsonRecord, read, requiredRecord, requiredText } from './json-read';
+import {
+  JsonRecord,
+  read,
+  requiredRecord,
+  requiredText,
+  requiredTextRecord,
+  requiredTextArray,
+} from './json-read';
 
 export function mapReportsCenterCopy(center: JsonRecord): ReportsCenterCopy {
   const filters = requiredRecord(read(center, 'filters'), 'reportsCenter.filters');
@@ -51,6 +66,9 @@ export function mapReportsCenterCopy(center: JsonRecord): ReportsCenterCopy {
     },
     filterOptions: mapReportsCenterFilterOptions(
       requiredRecord(read(center, 'filterOptions'), 'reportsCenter.filterOptions'),
+    ),
+    eventTypes: mapReportsCenterEventTypes(
+      requiredRecord(read(center, 'eventTypes'), 'reportsCenter.eventTypes'),
     ),
     list: {
       title: requiredText(read(list, 'title'), 'reportsCenter.list.title'),
@@ -103,26 +121,77 @@ function mapReportsCenterFilterOptions(
 
   return {
     eventTypes: {
-      all: requiredText(read(eventTypes, 'all'), 'reportsCenter.filterOptions.eventTypes.all'),
-      exploration: requiredText(read(eventTypes, 'exploration'), 'reportsCenter.filterOptions.eventTypes.exploration'),
-      combat: requiredText(read(eventTypes, 'combat'), 'reportsCenter.filterOptions.eventTypes.combat'),
-      spy: requiredText(read(eventTypes, 'spy'), 'reportsCenter.filterOptions.eventTypes.spy'),
-      trade: requiredText(read(eventTypes, 'trade'), 'reportsCenter.filterOptions.eventTypes.trade'),
-      auction: requiredText(read(eventTypes, 'auction'), 'reportsCenter.filterOptions.eventTypes.auction'),
-      siege: requiredText(read(eventTypes, 'siege'), 'reportsCenter.filterOptions.eventTypes.siege'),
+      ...requiredTextRecord(eventTypes, 'reportsCenter.filterOptions.eventTypes'),
     },
-    readModes: {
-      unreadFirst: requiredText(read(readModes, 'unreadFirst'), 'reportsCenter.filterOptions.readModes.unreadFirst'),
-      all: requiredText(read(readModes, 'all'), 'reportsCenter.filterOptions.readModes.all'),
-      unreadOnly: requiredText(read(readModes, 'unreadOnly'), 'reportsCenter.filterOptions.readModes.unreadOnly'),
-      readOnly: requiredText(read(readModes, 'readOnly'), 'reportsCenter.filterOptions.readModes.readOnly'),
-    },
-    timeRanges: {
-      last7Days: requiredText(read(timeRanges, 'last7Days'), 'reportsCenter.filterOptions.timeRanges.last7Days'),
-      last30Days: requiredText(read(timeRanges, 'last30Days'), 'reportsCenter.filterOptions.timeRanges.last30Days'),
-      allTime: requiredText(read(timeRanges, 'allTime'), 'reportsCenter.filterOptions.timeRanges.allTime'),
-    },
+    readModes: requiredTextRecord(readModes, 'reportsCenter.filterOptions.readModes'),
+    timeRanges: requiredTextRecord(timeRanges, 'reportsCenter.filterOptions.timeRanges'),
   };
+}
+
+function mapReportsCenterEventTypes(
+  eventTypes: JsonRecord,
+): ReportsCenterEventTypeCopyBundle {
+  const byKey = requiredRecord(read(eventTypes, 'byKey'), 'reportsCenter.eventTypes.byKey');
+
+  return {
+    contractVersion: requireReportsCenterEventTypeCopyVersion(eventTypes),
+    policy: requiredText(read(eventTypes, 'policy'), 'reportsCenter.eventTypes.policy'),
+    keys: requiredTextArray(read(eventTypes, 'keys'), 'reportsCenter.eventTypes.keys'),
+    byKey: Object.fromEntries(
+      Object.entries(byKey).map(([key, value]) => [
+        key,
+        mapReportsCenterEventTypeCopy(
+          requiredRecord(value, `reportsCenter.eventTypes.byKey.${key}`),
+          `reportsCenter.eventTypes.byKey.${key}`,
+        ),
+      ]),
+    ),
+  };
+}
+
+function requireReportsCenterEventTypeCopyVersion(
+  eventTypes: JsonRecord,
+): 'reports_center_event_type_copy_v1' {
+  const version = requiredText(
+    read(eventTypes, 'contractVersion'),
+    'reportsCenter.eventTypes.contractVersion',
+  );
+
+  if (version !== 'reports_center_event_type_copy_v1') {
+    throw new Error(`reportsCenter.eventTypes has unsupported contract version: ${version}.`);
+  }
+
+  return version;
+}
+
+function mapReportsCenterEventTypeCopy(
+  eventType: JsonRecord,
+  field: string,
+): ReportsCenterEventTypeCopy {
+  return {
+    label: requiredText(read(eventType, 'label'), `${field}.label`),
+    tone: requireReportsCenterEventTypeTone(eventType, field),
+    iconKey: requiredText(read(eventType, 'iconKey'), `${field}.iconKey`),
+  };
+}
+
+function requireReportsCenterEventTypeTone(
+  eventType: JsonRecord,
+  field: string,
+): ReportsCenterEventTypeCopy['tone'] {
+  const tone = requiredText(read(eventType, 'tone'), `${field}.tone`);
+
+  if (
+    tone !== 'success'
+    && tone !== 'danger'
+    && tone !== 'warn'
+    && tone !== 'info'
+    && tone !== 'neutral'
+  ) {
+    throw new Error(`${field}.tone has unsupported value: ${tone}.`);
+  }
+
+  return tone;
 }
 
 function mapReportsCenterPreview(preview: JsonRecord): ReportsCenterPreviewCopy {
@@ -133,34 +202,123 @@ function mapReportsCenterPreview(preview: JsonRecord): ReportsCenterPreviewCopy 
     sourceLabel: requiredText(read(preview, 'sourceLabel'), 'reportsCenter.preview.sourceLabel'),
     eventTypeLabel: requiredText(read(preview, 'eventTypeLabel'), 'reportsCenter.preview.eventTypeLabel'),
     reportDateLabel: requiredText(read(preview, 'reportDateLabel'), 'reportsCenter.preview.reportDateLabel'),
+    accessLabel: requiredText(read(preview, 'accessLabel'), 'reportsCenter.preview.accessLabel'),
     rewardLabel: requiredText(read(preview, 'rewardLabel'), 'reportsCenter.preview.rewardLabel'),
+    resourcesLabel: requiredText(read(preview, 'resourcesLabel'), 'reportsCenter.preview.resourcesLabel'),
+    turnCountLabel: requiredText(read(preview, 'turnCountLabel'), 'reportsCenter.preview.turnCountLabel'),
+    opponentTargetLabel: requiredText(
+      read(preview, 'opponentTargetLabel'),
+      'reportsCenter.preview.opponentTargetLabel',
+    ),
+    addressLabel: requiredText(read(preview, 'addressLabel'), 'reportsCenter.preview.addressLabel'),
     openAction: requiredText(read(preview, 'openAction'), 'reportsCenter.preview.openAction'),
     copyLinkAction: requiredText(read(preview, 'copyLinkAction'), 'reportsCenter.preview.copyLinkAction'),
+    copyLinkShortAction: requiredText(
+      read(preview, 'copyLinkShortAction'),
+      'reportsCenter.preview.copyLinkShortAction',
+    ),
   };
 }
 
 function mapReportsCenterActions(actions: JsonRecord): ReportsCenterActionsCopy {
-  const markAllRead = requiredRecord(read(actions, 'markAllRead'), 'reportsCenter.actions.markAllRead');
+  return {
+    markAllRead: mapMarkAllReadAction(actions),
+    selectAllVisible: mapSimpleAction(actions, 'selectAllVisible'),
+    clearSelection: mapSimpleAction(actions, 'clearSelection'),
+    markSelectedRead: mapBulkAction(actions, 'markSelectedRead'),
+    deleteSelected: mapBulkAction(actions, 'deleteSelected'),
+    markOneRead: mapRowAction(actions, 'markOneRead'),
+    deleteOne: mapDeleteOneAction(actions),
+    selectReportRow: mapSelectReportRowAction(actions),
+  };
+}
+
+function mapMarkAllReadAction(actions: JsonRecord): ReportsCenterMarkAllReadActionCopy {
+  const field = 'reportsCenter.actions.markAllRead';
+  const action = requiredRecord(read(actions, 'markAllRead'), field);
 
   return {
-    markAllRead: {
-      label: requiredText(read(markAllRead, 'label'), 'reportsCenter.actions.markAllRead.label'),
-      disabledTooltip: requiredText(
-        read(markAllRead, 'disabledTooltip'),
-        'reportsCenter.actions.markAllRead.disabledTooltip',
-      ),
-      confirmTitle: requiredText(
-        read(markAllRead, 'confirmTitle'),
-        'reportsCenter.actions.markAllRead.confirmTitle',
-      ),
-      confirmText: requiredText(
-        read(markAllRead, 'confirmText'),
-        'reportsCenter.actions.markAllRead.confirmText',
-      ),
-      successText: requiredText(
-        read(markAllRead, 'successText'),
-        'reportsCenter.actions.markAllRead.successText',
-      ),
-    },
+    label: requiredText(read(action, 'label'), `${field}.label`),
+    disabledTooltip: requiredText(read(action, 'disabledTooltip'), `${field}.disabledTooltip`),
+    confirmTitle: requiredText(read(action, 'confirmTitle'), `${field}.confirmTitle`),
+    confirmText: requiredText(read(action, 'confirmText'), `${field}.confirmText`),
+    successText: requiredText(read(action, 'successText'), `${field}.successText`),
+  };
+}
+
+function mapSimpleAction(
+  actions: JsonRecord,
+  actionKey: 'selectAllVisible' | 'clearSelection',
+): ReportsCenterSimpleActionCopy {
+  const field = `reportsCenter.actions.${actionKey}`;
+  const action = requiredRecord(read(actions, actionKey), field);
+
+  return {
+    label: requiredText(read(action, 'label'), `${field}.label`),
+    ariaLabel: requiredText(read(action, 'ariaLabel'), `${field}.ariaLabel`),
+    tooltip: requiredText(read(action, 'tooltip'), `${field}.tooltip`),
+  };
+}
+
+function mapBulkAction(
+  actions: JsonRecord,
+  actionKey: 'markSelectedRead' | 'deleteSelected',
+): ReportsCenterBulkActionCopy {
+  const field = `reportsCenter.actions.${actionKey}`;
+  const action = requiredRecord(read(actions, actionKey), field);
+
+  return {
+    label: requiredText(read(action, 'label'), `${field}.label`),
+    ariaLabel: requiredText(read(action, 'ariaLabel'), `${field}.ariaLabel`),
+    confirmTitle: requiredText(read(action, 'confirmTitle'), `${field}.confirmTitle`),
+    confirmText: requiredText(read(action, 'confirmText'), `${field}.confirmText`),
+    successText: requiredText(read(action, 'successText'), `${field}.successText`),
+    disabledTooltip: requiredText(read(action, 'disabledTooltip'), `${field}.disabledTooltip`),
+  };
+}
+
+function mapRowAction(
+  actions: JsonRecord,
+  actionKey: 'markOneRead' | 'deleteOne',
+): ReportsCenterRowActionCopy {
+  const field = `reportsCenter.actions.${actionKey}`;
+  const action = requiredRecord(read(actions, actionKey), field);
+
+  return {
+    label: requiredText(read(action, 'label'), `${field}.label`),
+    ariaLabel: requiredText(read(action, 'ariaLabel'), `${field}.ariaLabel`),
+    tooltip: requiredText(read(action, 'tooltip'), `${field}.tooltip`),
+    successText: requiredText(read(action, 'successText'), `${field}.successText`),
+  };
+}
+
+function mapDeleteOneAction(actions: JsonRecord): ReportsCenterDeleteOneActionCopy {
+  const field = 'reportsCenter.actions.deleteOne';
+  const action = requiredRecord(read(actions, 'deleteOne'), field);
+
+  return {
+    ...mapRowAction(actions, 'deleteOne'),
+    confirmTitle: requiredText(read(action, 'confirmTitle'), `${field}.confirmTitle`),
+    confirmText: requiredText(read(action, 'confirmText'), `${field}.confirmText`),
+  };
+}
+
+function mapSelectReportRowAction(
+  actions: JsonRecord,
+): ReportsCenterSelectReportRowActionCopy {
+  const field = 'reportsCenter.actions.selectReportRow';
+  const action = requiredRecord(read(actions, 'selectReportRow'), field);
+
+  return {
+    ariaLabelTemplate: requiredText(read(action, 'ariaLabelTemplate'), `${field}.ariaLabelTemplate`),
+    selectedAriaLabelTemplate: requiredText(
+      read(action, 'selectedAriaLabelTemplate'),
+      `${field}.selectedAriaLabelTemplate`,
+    ),
+    fallbackAriaLabel: requiredText(read(action, 'fallbackAriaLabel'), `${field}.fallbackAriaLabel`),
+    selectedFallbackAriaLabel: requiredText(
+      read(action, 'selectedFallbackAriaLabel'),
+      `${field}.selectedFallbackAriaLabel`,
+    ),
   };
 }

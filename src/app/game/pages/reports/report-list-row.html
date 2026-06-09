@@ -1,5 +1,5 @@
 <article
-  class="mg-data-row mg-data-row--listing mg-card--interactive p-sm cursor-pointer"
+  class="mg-data-row mg-data-row--selectable-listing mg-card--interactive p-sm cursor-pointer"
   role="button"
   tabindex="0"
   [class.mg-card--selected]="selected()"
@@ -8,34 +8,77 @@
   (keydown)="selectFromKeyboard($event)"
 >
   <span
-    class="mg-card square-11 radius-lg flex-row-center-center font-extrabold p-0"
+    class="mg-data-row__selection"
+    (click)="$event.stopPropagation()"
+    (keydown)="$event.stopPropagation()"
+  >
+    <p-checkbox
+      [formControl]="selectionControl"
+      [binary]="true"
+      [ariaLabel]="selectionAriaLabel()"
+      (onChange)="toggleSelection($event.originalEvent)"
+    />
+  </span>
+
+  <span
+    class="mg-data-row__marker mg-card square-11 radius-lg flex-row-center-center font-extrabold p-0"
     [class]="markerToneClass()"
     aria-hidden="true"
   >
     @if (hasMarkerIcon()) {
-      <i [class]="markerIconClass()"></i>
+      <i [class]="markerIconClass()" class="square-7"></i>
     } @else {
-      {{ report().marker.markerLabel }}
+      {{ eventTypeCopy().label }}
     }
   </span>
 
-  <div class="flex-col gap-xs min-w-0">
+  <div class="mg-data-row__main flex-col gap-xs min-w-0">
     <h3 class="m-0">
       <strong class="d-block color-heading text-sm lh-13 text-break font-extrabold">
         {{ report().title }}
       </strong>
     </h3>
     <p class="color-muted text-sm lh-14 m-0 text-break">
-      {{ report().source.label }} &middot; {{ report().eventType.label }}
+      {{ report().source.label }} &middot; {{ eventTypeCopy().label }}
     </p>
   </div>
 
-  <div class="flex-col gap-xs text-right flex-none min-w-0">
+  <div class="mg-data-row__end flex-col gap-xs text-right flex-none min-w-0">
     <time class="color-muted text-xs text-nowrap" [attr.datetime]="report().reportDate.value">
       {{ report().reportDate.displayValue ?? report().reportDate.value }}
     </time>
-    @if (report().isUnread) {
-      <span class="color-heading text-lg lh-1 ml-auto" aria-hidden="true">&bull;</span>
-    }
+    <span
+      class="flex-row-end-center gap-xs"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    >
+      @if (report().isUnread) {
+        <span class="color-heading text-lg lh-1 ml-auto" aria-hidden="true">&bull;</span>
+      }
+      <p-button
+        type="button"
+        icon="pi pi-quill"
+        severity="secondary"
+        size="small"
+        [rounded]="true"
+        [text]="true"
+        [ariaLabel]="markReadActionCopy().ariaLabel"
+        [attr.title]="markReadActionCopy().tooltip"
+        [disabled]="true"
+        (click)="stopActionClick($event)"
+      />
+      <p-button
+        type="button"
+        icon="pi pi-demolish"
+        severity="danger"
+        size="small"
+        [rounded]="true"
+        [text]="true"
+        [ariaLabel]="deleteActionCopy().ariaLabel"
+        [attr.title]="deleteActionCopy().tooltip"
+        [disabled]="true"
+        (click)="stopActionClick($event)"
+      />
+    </span>
   </div>
 </article>

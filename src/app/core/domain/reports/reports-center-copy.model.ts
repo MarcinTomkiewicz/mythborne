@@ -3,6 +3,7 @@ export interface ReportsCenterCopy {
   summary: ReportsCenterSummaryCopy;
   filters: ReportsCenterFiltersCopy;
   filterOptions: ReportsCenterFilterOptionsCopy;
+  eventTypes: ReportsCenterEventTypeCopyBundle;
   list: ReportsCenterListCopy;
   preview: ReportsCenterPreviewCopy;
   actions: ReportsCenterActionsCopy;
@@ -36,26 +37,22 @@ export interface ReportsCenterFiltersCopy {
 }
 
 export interface ReportsCenterFilterOptionsCopy {
-  eventTypes: {
-    all: string;
-    exploration: string;
-    combat: string;
-    spy: string;
-    trade: string;
-    auction: string;
-    siege: string;
-  };
-  readModes: {
-    unreadFirst: string;
-    all: string;
-    unreadOnly: string;
-    readOnly: string;
-  };
-  timeRanges: {
-    last7Days: string;
-    last30Days: string;
-    allTime: string;
-  };
+  eventTypes: Record<string, string>;
+  readModes: Record<string, string>;
+  timeRanges: Record<string, string>;
+}
+
+export interface ReportsCenterEventTypeCopyBundle {
+  contractVersion: 'reports_center_event_type_copy_v1';
+  policy: string;
+  keys: string[];
+  byKey: Record<string, ReportsCenterEventTypeCopy>;
+}
+
+export interface ReportsCenterEventTypeCopy {
+  label: string;
+  tone: 'success' | 'danger' | 'warn' | 'info' | 'neutral';
+  iconKey: string;
 }
 
 export interface ReportsCenterListCopy {
@@ -78,17 +75,79 @@ export interface ReportsCenterPreviewCopy {
   sourceLabel: string;
   eventTypeLabel: string;
   reportDateLabel: string;
+  accessLabel: string;
   rewardLabel: string;
+  resourcesLabel: string;
+  turnCountLabel: string;
+  opponentTargetLabel: string;
+  addressLabel: string;
   openAction: string;
   copyLinkAction: string;
+  copyLinkShortAction: string;
 }
 
 export interface ReportsCenterActionsCopy {
-  markAllRead: {
-    label: string;
-    disabledTooltip: string;
-    confirmTitle: string;
-    confirmText: string;
-    successText: string;
-  };
+  markAllRead: ReportsCenterMarkAllReadActionCopy;
+  selectAllVisible: ReportsCenterSimpleActionCopy;
+  clearSelection: ReportsCenterSimpleActionCopy;
+  markSelectedRead: ReportsCenterBulkActionCopy;
+  deleteSelected: ReportsCenterBulkActionCopy;
+  markOneRead: ReportsCenterRowActionCopy;
+  deleteOne: ReportsCenterDeleteOneActionCopy;
+  selectReportRow: ReportsCenterSelectReportRowActionCopy;
+}
+
+export interface ReportsCenterMarkAllReadActionCopy {
+  label: string;
+  disabledTooltip: string;
+  confirmTitle: string;
+  confirmText: string;
+  successText: string;
+}
+
+export interface ReportsCenterSimpleActionCopy {
+  label: string;
+  ariaLabel: string;
+  tooltip: string;
+}
+
+export interface ReportsCenterBulkActionCopy {
+  label: string;
+  ariaLabel: string;
+  confirmTitle: string;
+  confirmText: string;
+  successText: string;
+  disabledTooltip: string;
+}
+
+export interface ReportsCenterRowActionCopy {
+  label: string;
+  ariaLabel: string;
+  tooltip: string;
+  successText: string;
+}
+
+export interface ReportsCenterDeleteOneActionCopy extends ReportsCenterRowActionCopy {
+  confirmTitle: string;
+  confirmText: string;
+}
+
+export interface ReportsCenterSelectReportRowActionCopy {
+  ariaLabelTemplate: string;
+  selectedAriaLabelTemplate: string;
+  fallbackAriaLabel: string;
+  selectedFallbackAriaLabel: string;
+}
+
+export function reportsCenterEventTypeCopyByKey(
+  eventTypes: ReportsCenterEventTypeCopyBundle,
+  key: string,
+): ReportsCenterEventTypeCopy {
+  const copy = eventTypes.byKey[key];
+
+  if (!copy) {
+    throw new Error(`reportsCenter.eventTypes.byKey.${key} is missing.`);
+  }
+
+  return copy;
 }

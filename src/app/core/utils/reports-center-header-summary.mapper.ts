@@ -1,28 +1,26 @@
-import { ReportsCenterSummaryV1 } from '../domain/reports/reports-center.model';
+import { ReportsCenterSummaryCopy } from '../domain/reports/reports-center-copy.model';
+import { ReportsCenterSummary } from '../domain/reports/reports-center.model';
 import { GamePageSummaryRow } from '../interfaces/game-page-summary-row.interface';
 
 export function mapReportsCenterHeaderSummaryRows(
-  summary: ReportsCenterSummaryV1 | null | undefined,
+  copy: ReportsCenterSummaryCopy,
+  summary: ReportsCenterSummary,
 ): readonly GamePageSummaryRow[] {
-  if (!summary) {
-    return [];
-  }
-
   return [
     {
       key: 'totalReports',
-      label: summary.totalReports.label,
+      label: copy.totalReportsLabel,
       value: summary.totalReports.value,
     },
     {
       key: 'unreadReports',
-      label: summary.unreadReports.label,
+      label: copy.unreadReportsLabel,
       value: summary.unreadReports.value,
     },
     {
       key: 'latestReport',
-      label: summary.latestReport.label,
-      value: summary.latestReport.title ?? summary.latestReport.fallbackLabel,
+      label: copy.latestReportLabel,
+      value: summary.latestReport.title ?? copy.latestReportFallback,
       route: summary.latestReport.privatePath ?? undefined,
     },
   ];

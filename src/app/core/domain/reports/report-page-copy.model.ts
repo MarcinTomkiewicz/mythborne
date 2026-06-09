@@ -1,16 +1,22 @@
 import { ReportsCenterCopy } from './reports-center-copy.model';
 
 export interface ReportPageCopy {
-  contractVersion: 'report_page_copy_v2';
+  contractVersion: 'report_page_copy_v3';
+  locale: string;
+  requestedLocale: string;
+  fallbackLocale: 'en';
+  copyStorage: 'report_page_copy_bundles';
+  reportsCopyPatchVersion: string;
   reportsCenter: ReportsCenterCopy;
-  reportShell: ReportShellCopyV2;
+  reportShell: ReportShellCopy;
 }
 
-export interface ReportShellCopyV2 {
+export interface ReportShellCopy {
   header: {
     titleFallback: string;
     backAction: string;
     copyLinkAction: string;
+    openFullReportAction: string;
     removeAction: string;
   };
   meta: {

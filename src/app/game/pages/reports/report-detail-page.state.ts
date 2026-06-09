@@ -2,6 +2,7 @@ import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core'
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PrivateReportDetailPage } from '../../../core/domain/reports/report-detail.model';
 import { ReportPageCopy } from '../../../core/domain/reports/report-page-copy.model';
+import { GameCopyService } from '../../../core/services/game-copy/game-copy.service';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
 import { toDateTimeLabel } from '../../../core/utils/date-display';
@@ -10,6 +11,7 @@ import { RequestToken } from '../../../core/utils/request-token';
 @Injectable()
 export class ReportDetailPageState {
   private readonly activeHero = inject(ActiveHero);
+  private readonly gameCopy = inject(GameCopyService);
   private readonly reports = inject(PlayerReports);
   private readonly destroyRef = inject(DestroyRef);
   private readonly requestToken = new RequestToken();
@@ -75,7 +77,7 @@ export class ReportDetailPageState {
   private loadPageCopy(heroId: string, serverId: string, token: number): void {
     this.startRequest(token);
 
-    this.reports.getPageCopy()
+    this.gameCopy.getCopy('player.reports.page', { locale: 'pl' })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (copy) => {

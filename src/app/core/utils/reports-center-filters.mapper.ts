@@ -1,7 +1,7 @@
 import {
-  ReportsCenterAppliedFiltersV1,
+  ReportsCenterAppliedFilters,
   ReportsCenterFilterOption,
-  ReportsCenterFiltersV1,
+  ReportsCenterFilters,
 } from '../domain/reports/reports-center.model';
 import { Json } from '../types/database.types';
 import {
@@ -14,7 +14,7 @@ import {
   requiredText,
 } from './json-read';
 
-export function mapFilters(record: JsonRecord, field: string): ReportsCenterFiltersV1 {
+export function mapFilters(record: JsonRecord, field: string): ReportsCenterFilters {
   const options = requiredRecord(read(record, 'options'), `${field}.options`);
 
   return {
@@ -33,7 +33,7 @@ export function mapFilters(record: JsonRecord, field: string): ReportsCenterFilt
 export function mapAppliedFilters(
   record: JsonRecord,
   field: string,
-): ReportsCenterAppliedFiltersV1 {
+): ReportsCenterAppliedFilters {
   return {
     query: requiredNullableText(read(record, 'query'), `${field}.query`),
     reportAreaKey: requiredText(read(record, 'reportAreaKey'), `${field}.reportAreaKey`),

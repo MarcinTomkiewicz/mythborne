@@ -5,22 +5,34 @@ import {
   ReportDomainKey as CanonicalReportDomainKey,
 } from './report-detail.model';
 
-export interface ReportsCenterPageContextV2 {
-  contractVersion: 'reports_center_page_context_v2';
-  reports: ReportsCenterListRowV2[];
-  selectedPreview: ReportsCenterPreviewV1 | null;
-  pagination: ReportsCenterPaginationV1;
-  summary: ReportsCenterSummaryV1;
-  counts: ReportsCenterCountsV1;
-  filters: ReportsCenterFiltersV1;
-  actions: ReportsCenterActionsV1;
-  capabilities: ReportsCenterCapabilitiesV1;
+export interface ReportsCenterPageContext {
+  contractVersion: 'reports_center_page_context_v3';
+  eventTypeContract: ReportsCenterEventTypeContract;
+  reports: ReportsCenterListRow[];
+  selectedPreview: ReportsCenterPreview | null;
+  pagination: ReportsCenterPagination;
+  summary: ReportsCenterSummary;
+  counts: ReportsCenterCounts;
+  filters: ReportsCenterFilters;
+  actions: ReportsCenterActions;
+  capabilities: ReportsCenterCapabilities;
 }
 
-export interface ReportsCenterListRowV2 {
-  contractVersion: 'reports_center_list_row_v2';
+export interface ReportsCenterEventTypeContract {
+  canonicalPath: 'reports[].eventType.key';
+  removedDuplicatePaths: [
+    'reports[].preview.eventType',
+    'reports[].marker.eventTypeKey',
+  ];
+  copyPath: 'get_report_page_copy(locale).reportsCenter.eventTypes.byKey[eventType.key]';
+  fallbackPolicy: string;
+  policy: string;
+}
+
+export interface ReportsCenterListRow {
+  contractVersion: 'reports_center_list_row_v2' | string;
   reportId: string;
-  publicToken: string;
+  publicToken: string | null;
   reportTypeKey: string;
   sourceEntityType: string;
   sourceEntityId: string;
@@ -28,39 +40,45 @@ export interface ReportsCenterListRowV2 {
   contentKind: CanonicalReportContentKind | string;
   resultKind: string | null;
   source: KeyLabel;
-  eventType: KeyLabel;
+  eventType: ReportsCenterEventTypeMachine;
   title: string;
   summary: string | null;
   createdAt: string;
-  reportDate: ReportsCenterReportDateV1;
+  reportDate: ReportsCenterReportDate;
   accessRole: ReportsCenterAccessRole;
   readAt: string | null;
   isUnread: boolean;
-  marker: ReportsCenterMarkerV1;
-  preview: ReportsCenterPreviewV1;
-  visibilityPolicy: ReportsCenterVisibilityPolicyV1;
+  marker: ReportsCenterMarker;
+  preview: ReportsCenterPreview;
+  visibilityPolicy: ReportsCenterVisibilityPolicy;
 }
 
-export interface ReportsCenterPreviewV1 {
+export interface ReportsCenterEventTypeMachine {
+  key: string;
+  label: string | null;
+  tone: string | null;
+  iconKey: string | null;
+}
+
+export interface ReportsCenterPreview {
   contractVersion: 'reports_center_preview_v1';
   reportId: string;
   title: string;
   summary: string | null;
   source: KeyLabel;
-  eventType: KeyLabel;
-  reportDate: ReportsCenterReportDateV1;
-  outcomeStatus: ReportsCenterOutcomeStatusV1;
-  opponentTarget: ReportsCenterOpponentTargetV1;
-  address: ReportsCenterAddressV1;
-  combat: ReportsCenterCombatPreviewV1;
-  reward: ReportsCenterPreviewRewardV1;
-  access: ReportsCenterAccessPreviewV1;
-  publicAccess: ReportsCenterPublicAccessV1;
-  marker: ReportsCenterMarkerV1;
-  diagnostics: ReportsCenterPreviewDiagnosticsV1;
+  reportDate: ReportsCenterReportDate;
+  outcomeStatus: ReportsCenterOutcomeStatus;
+  opponentTarget: ReportsCenterOpponentTarget;
+  address: ReportsCenterAddress;
+  combat: ReportsCenterCombatPreview;
+  reward: ReportsCenterRewardPreview;
+  access: ReportsCenterAccessPreview;
+  publicAccess: ReportsCenterPublicAccess;
+  marker: ReportsCenterMarker;
+  diagnostics: ReportsCenterPreviewDiagnostics;
 }
 
-export interface ReportsCenterPaginationV1 {
+export interface ReportsCenterPagination {
   limit: number;
   offset: number;
   totalCount: number;
@@ -70,30 +88,30 @@ export interface ReportsCenterPaginationV1 {
   displayLabel: string;
 }
 
-export interface ReportsCenterSummaryV1 {
-  totalReports: ReportsCenterSummaryMetricV1;
-  unreadReports: ReportsCenterSummaryMetricV1;
-  latestReport: ReportsCenterLatestReportV1;
-  notifications: ReportsCenterNotificationsSummaryV1;
+export interface ReportsCenterSummary {
+  totalReports: ReportsCenterSummaryMetric;
+  unreadReports: ReportsCenterSummaryMetric;
+  latestReport: ReportsCenterLatestReport;
+  notifications: ReportsCenterNotificationsSummary;
 }
 
-export interface ReportsCenterCountsV1 {
+export interface ReportsCenterCounts {
   totalReports: number;
   unreadReports: number;
   matchingReports: number;
   matchingUnreadReports: number;
 }
 
-export interface ReportsCenterFiltersV1 {
-  applied: ReportsCenterAppliedFiltersV1;
-  options: ReportsCenterFilterOptionsV1;
+export interface ReportsCenterFilters {
+  applied: ReportsCenterAppliedFilters;
+  options: ReportsCenterFilterOptions;
 }
 
-export interface ReportsCenterActionsV1 {
-  markAllRead: ReportsCenterMarkAllReadActionV1;
+export interface ReportsCenterActions {
+  markAllRead: ReportsCenterMarkAllReadAction;
 }
 
-export interface ReportsCenterCapabilitiesV1 {
+export interface ReportsCenterCapabilities {
   filters: {
     search: boolean;
     eventType: boolean;
@@ -118,98 +136,72 @@ export interface ReportsCenterCapabilitiesV1 {
   unsupportedFilters: Json[];
 }
 
-export interface MarkAllReportsReadResultV1 {
+export interface MarkAllReportsReadResult {
   contractVersion: 'mark_all_reports_read_result_v1';
   heroId: string;
   requestId: string | null;
   matchingUnreadCountBefore: number;
   markedCount: number;
   remainingUnreadCount: number;
-  filters: ReportsCenterAppliedFiltersV1;
+  filters: ReportsCenterAppliedFilters;
 }
 
-export interface ReportsCenterReportDateV1 {
+export interface ReportsCenterReportDate {
   value: string;
   displayValue: string | null;
 }
 
-export interface ReportsCenterOutcomeStatusV1 {
+export interface ReportsCenterOutcomeStatus {
   key: string | null;
   label: string | null;
   tone: ReportsCenterTone;
 }
 
-export interface ReportsCenterOpponentTargetV1 {
+export interface ReportsCenterOpponentTarget {
   name: string | null;
   roleKey: string | null;
 }
 
-export interface ReportsCenterAddressV1 {
+export interface ReportsCenterAddress {
   displayValue: string | null;
   districtCode: string | null;
   addressNumber: number | null;
 }
 
-export interface ReportsCenterCombatPreviewV1 {
+export interface ReportsCenterCombatPreview {
   combatResultId: string | null;
   turnCount: number | null;
   attackCount: number;
 }
 
-export interface ReportsCenterPreviewRewardV1 {
+export interface ReportsCenterRewardPreview {
   summary: string | null;
   entryCount: number;
-  entriesPreview: ReportsCenterPreviewRewardEntryV1[];
   resourcesSummary: string | null;
-  resources: {
-    summary: string | null;
-    rows: ReportsCenterPreviewResourceRowV1[];
-  };
 }
 
-export interface ReportsCenterPreviewRewardEntryV1 {
-  kind: string | null;
-  label: string | null;
-  displayValue: string;
-  amount: number | null;
-  amountDisplay: string | null;
-  resourceType: string | null;
-  sourceKind: string | null;
-}
-
-export interface ReportsCenterPreviewResourceRowV1 {
-  resourceType: string | null;
-  label: string | null;
-  displayValue: string;
-  amount: number | null;
-  gainAmount: number | null;
-  lossAmount: number | null;
-  sinkAmount: number | null;
-}
-
-export interface ReportsCenterAccessPreviewV1 {
+export interface ReportsCenterAccessPreview {
   visibility: 'private' | string;
   accessRole: ReportsCenterAccessRole;
   isUnread: boolean;
   readAt: string | null;
 }
 
-export interface ReportsCenterPublicAccessV1 {
+export interface ReportsCenterPublicAccess {
   hasPublicToken: boolean;
   publicToken: string | null;
   publicPath: string | null;
   privatePath: string;
 }
 
-export interface ReportsCenterMarkerV1 {
+export interface ReportsCenterMarker {
   markerKey: string;
   markerLabel: string;
   iconKey: string;
   domainKey: CanonicalReportDomainKey | string;
-  eventTypeKey: string;
 }
 
-export interface ReportsCenterPreviewDiagnosticsV1 {
+export interface ReportsCenterPreviewDiagnostics {
   previewWarnings: ReportsCenterPreviewWarning[];
   usesFullReportDetail: false;
   usesPrivateDomainRpc: false;
@@ -222,18 +214,18 @@ export interface ReportsCenterPreviewWarning {
   message?: string;
 }
 
-export interface ReportsCenterVisibilityPolicyV1 {
+export interface ReportsCenterVisibilityPolicy {
   isPrimaryListEntry: boolean;
   isChildCombatReport: boolean | null;
   parentReportId: string | null;
 }
 
-export interface ReportsCenterSummaryMetricV1 {
+export interface ReportsCenterSummaryMetric {
   label: string;
   value: number;
 }
 
-export interface ReportsCenterLatestReportV1 {
+export interface ReportsCenterLatestReport {
   label: string;
   fallbackLabel: string;
   reportId: string | null;
@@ -244,21 +236,21 @@ export interface ReportsCenterLatestReportV1 {
   privatePath: string | null;
 }
 
-export interface ReportsCenterNotificationsSummaryV1 {
+export interface ReportsCenterNotificationsSummary {
   included: false;
   reasonKey: string;
   label: string | null;
   latestNotification: null;
 }
 
-export interface ReportsCenterAppliedFiltersV1 {
+export interface ReportsCenterAppliedFilters {
   query: string | null;
   reportAreaKey: ReportsCenterEventTypeFilterKey;
   readModeKey: ReportsCenterReadModeKey;
   timeRangeKey: ReportsCenterTimeRangeKey;
 }
 
-export interface ReportsCenterFilterOptionsV1 {
+export interface ReportsCenterFilterOptions {
   eventTypes: ReportsCenterFilterOption[];
   readModes: ReportsCenterFilterOption[];
   timeRanges: ReportsCenterFilterOption[];
@@ -270,7 +262,7 @@ export interface ReportsCenterFilterOption {
   enabled: boolean;
 }
 
-export interface ReportsCenterMarkAllReadActionV1 {
+export interface ReportsCenterMarkAllReadAction {
   supported: boolean;
   enabled: boolean;
   matchingUnreadCount: number;

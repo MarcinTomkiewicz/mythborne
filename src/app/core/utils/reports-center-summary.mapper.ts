@@ -1,10 +1,10 @@
 import {
-  ReportsCenterCountsV1,
-  ReportsCenterLatestReportV1,
-  ReportsCenterNotificationsSummaryV1,
-  ReportsCenterPaginationV1,
-  ReportsCenterSummaryMetricV1,
-  ReportsCenterSummaryV1,
+  ReportsCenterCounts,
+  ReportsCenterLatestReport,
+  ReportsCenterNotificationsSummary,
+  ReportsCenterPagination,
+  ReportsCenterSummary,
+  ReportsCenterSummaryMetric,
 } from '../domain/reports/reports-center.model';
 import { Json } from '../types/database.types';
 import {
@@ -19,7 +19,7 @@ import {
   requireNull,
 } from './json-read';
 
-export function mapPagination(record: JsonRecord, field: string): ReportsCenterPaginationV1 {
+export function mapPagination(record: JsonRecord, field: string): ReportsCenterPagination {
   return {
     limit: requiredNumber(read(record, 'limit'), `${field}.limit`),
     offset: requiredNumber(read(record, 'offset'), `${field}.offset`),
@@ -31,7 +31,7 @@ export function mapPagination(record: JsonRecord, field: string): ReportsCenterP
   };
 }
 
-export function mapSummary(record: JsonRecord, field: string): ReportsCenterSummaryV1 {
+export function mapSummary(record: JsonRecord, field: string): ReportsCenterSummary {
   return {
     totalReports: mapMetric(
       requiredRecord(read(record, 'totalReports'), `${field}.totalReports`),
@@ -52,7 +52,7 @@ export function mapSummary(record: JsonRecord, field: string): ReportsCenterSumm
   };
 }
 
-export function mapCounts(record: JsonRecord, field: string): ReportsCenterCountsV1 {
+export function mapCounts(record: JsonRecord, field: string): ReportsCenterCounts {
   return {
     totalReports: requiredNumber(read(record, 'totalReports'), `${field}.totalReports`),
     unreadReports: requiredNumber(read(record, 'unreadReports'), `${field}.unreadReports`),
@@ -64,14 +64,14 @@ export function mapCounts(record: JsonRecord, field: string): ReportsCenterCount
   };
 }
 
-function mapMetric(record: JsonRecord, field: string): ReportsCenterSummaryMetricV1 {
+function mapMetric(record: JsonRecord, field: string): ReportsCenterSummaryMetric {
   return {
     label: requiredText(read(record, 'label'), `${field}.label`),
     value: requiredNumber(read(record, 'value'), `${field}.value`),
   };
 }
 
-function mapLatestReport(record: JsonRecord, field: string): ReportsCenterLatestReportV1 {
+function mapLatestReport(record: JsonRecord, field: string): ReportsCenterLatestReport {
   return {
     label: requiredText(read(record, 'label'), `${field}.label`),
     fallbackLabel: requiredText(read(record, 'fallbackLabel'), `${field}.fallbackLabel`),
@@ -87,7 +87,7 @@ function mapLatestReport(record: JsonRecord, field: string): ReportsCenterLatest
 function mapNotificationsSummary(
   record: JsonRecord,
   field: string,
-): ReportsCenterNotificationsSummaryV1 {
+): ReportsCenterNotificationsSummary {
   return {
     included: requireFalse(read(record, 'included'), `${field}.included`),
     reasonKey: requiredText(read(record, 'reasonKey'), `${field}.reasonKey`),

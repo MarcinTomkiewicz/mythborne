@@ -5,17 +5,15 @@ import {
   PrivateReportDetailPage,
   PublicReportDetailV2,
 } from '../../domain/reports/report-detail.model';
-import { ReportPageCopy } from '../../domain/reports/report-page-copy.model';
 import {
-  MarkAllReportsReadResultV1,
-  ReportsCenterPageContextV2,
+  MarkAllReportsReadResult,
+  ReportsCenterPageContext,
 } from '../../domain/reports/reports-center.model';
 import {
   GetPublicReportDetailRpcArgs,
   GetPublicReportDetailRpcResult,
   GetReportDetailRpcArgs,
   GetReportDetailRpcResult,
-  GetReportPageCopyRpcResult,
   GetReportsCenterPageContextRpcArgs,
   GetReportsCenterPageContextRpcResult,
   MarkAllReportsReadRpcArgs,
@@ -25,7 +23,6 @@ import {
   mapPublicReportDetailPage,
   mapReportDetailPage,
 } from '../../utils/report-detail-page.mapper';
-import { mapReportPageCopy } from '../../utils/report-page-copy.mapper';
 import { mapMarkAllReportsReadResult } from '../../utils/reports-center-actions.mapper';
 import { mapReportsCenterPageContext } from '../../utils/reports-center-page-context.mapper';
 import { Backend } from '../backend/backend';
@@ -33,14 +30,6 @@ import { Backend } from '../backend/backend';
 @Injectable({ providedIn: 'root' })
 export class PlayerReports {
   private readonly backend = inject(Backend);
-
-  getPageCopy(): Observable<ReportPageCopy> {
-    return this.backend.rpc<GetReportPageCopyRpcResult>(
-      RPC.get_report_page_copy,
-    ).pipe(
-      map(mapReportPageCopy),
-    );
-  }
 
   getReportsCenterPageContext(input: {
     heroId: string;
@@ -50,7 +39,7 @@ export class PlayerReports {
     reportAreaKey: string | null;
     readModeKey: string;
     timeRangeKey: string;
-  }): Observable<ReportsCenterPageContextV2> {
+  }): Observable<ReportsCenterPageContext> {
     const args: GetReportsCenterPageContextRpcArgs = {
       p_hero_id: input.heroId,
       p_limit: input.limit,
@@ -76,7 +65,7 @@ export class PlayerReports {
     readModeKey: string;
     timeRangeKey: string;
     requestId: string | null;
-  }): Observable<MarkAllReportsReadResultV1> {
+  }): Observable<MarkAllReportsReadResult> {
     const args: MarkAllReportsReadRpcArgs = {
       p_hero_id: input.heroId,
       p_query: input.query ?? undefined,

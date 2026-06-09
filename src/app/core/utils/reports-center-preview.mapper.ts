@@ -1,18 +1,16 @@
 import { KeyLabel } from '../domain/common/key-label.model';
 import {
-  ReportsCenterAccessPreviewV1,
-  ReportsCenterAddressV1,
-  ReportsCenterCombatPreviewV1,
-  ReportsCenterMarkerV1,
-  ReportsCenterOpponentTargetV1,
-  ReportsCenterOutcomeStatusV1,
-  ReportsCenterPreviewDiagnosticsV1,
-  ReportsCenterPreviewResourceRowV1,
-  ReportsCenterPreviewRewardEntryV1,
-  ReportsCenterPreviewRewardV1,
-  ReportsCenterPreviewV1,
-  ReportsCenterPublicAccessV1,
-  ReportsCenterReportDateV1,
+  ReportsCenterAccessPreview,
+  ReportsCenterAddress,
+  ReportsCenterCombatPreview,
+  ReportsCenterMarker,
+  ReportsCenterOpponentTarget,
+  ReportsCenterOutcomeStatus,
+  ReportsCenterPreview,
+  ReportsCenterPreviewDiagnostics,
+  ReportsCenterPublicAccess,
+  ReportsCenterReportDate,
+  ReportsCenterRewardPreview,
 } from '../domain/reports/reports-center.model';
 import { Json } from '../types/database.types';
 import {
@@ -33,7 +31,7 @@ import {
 export function mapNullablePreview(
   value: Json | undefined,
   field: string,
-): ReportsCenterPreviewV1 | null {
+): ReportsCenterPreview | null {
   if (value === null) {
     return null;
   }
@@ -41,7 +39,7 @@ export function mapNullablePreview(
   return mapPreview(requiredRecord(value, field), field);
 }
 
-export function mapPreview(record: JsonRecord, field: string): ReportsCenterPreviewV1 {
+export function mapPreview(record: JsonRecord, field: string): ReportsCenterPreview {
   return {
     contractVersion: requireLiteral(
       requiredText(read(record, 'contractVersion'), `${field}.contractVersion`),
@@ -52,10 +50,6 @@ export function mapPreview(record: JsonRecord, field: string): ReportsCenterPrev
     title: requiredText(read(record, 'title'), `${field}.title`),
     summary: requiredNullableText(read(record, 'summary'), `${field}.summary`),
     source: mapKeyLabel(requiredRecord(read(record, 'source'), `${field}.source`), `${field}.source`),
-    eventType: mapKeyLabel(
-      requiredRecord(read(record, 'eventType'), `${field}.eventType`),
-      `${field}.eventType`,
-    ),
     reportDate: mapReportDate(
       requiredRecord(read(record, 'reportDate'), `${field}.reportDate`),
       `${field}.reportDate`,
@@ -109,24 +103,23 @@ export function mapKeyLabel(record: JsonRecord, field: string): KeyLabel {
 export function mapReportDate(
   record: JsonRecord,
   field: string,
-): ReportsCenterReportDateV1 {
+): ReportsCenterReportDate {
   return {
     value: requiredText(read(record, 'value'), `${field}.value`),
     displayValue: requiredNullableText(read(record, 'displayValue'), `${field}.displayValue`),
   };
 }
 
-export function mapMarker(record: JsonRecord, field: string): ReportsCenterMarkerV1 {
+export function mapMarker(record: JsonRecord, field: string): ReportsCenterMarker {
   return {
     markerKey: requiredText(read(record, 'markerKey'), `${field}.markerKey`),
     markerLabel: requiredText(read(record, 'markerLabel'), `${field}.markerLabel`),
     iconKey: requiredText(read(record, 'iconKey'), `${field}.iconKey`),
     domainKey: requiredText(read(record, 'domainKey'), `${field}.domainKey`),
-    eventTypeKey: requiredText(read(record, 'eventTypeKey'), `${field}.eventTypeKey`),
   };
 }
 
-function mapOutcomeStatus(record: JsonRecord, field: string): ReportsCenterOutcomeStatusV1 {
+function mapOutcomeStatus(record: JsonRecord, field: string): ReportsCenterOutcomeStatus {
   return {
     key: requiredNullableText(read(record, 'key'), `${field}.key`),
     label: requiredNullableText(read(record, 'label'), `${field}.label`),
@@ -134,14 +127,14 @@ function mapOutcomeStatus(record: JsonRecord, field: string): ReportsCenterOutco
   };
 }
 
-function mapOpponentTarget(record: JsonRecord, field: string): ReportsCenterOpponentTargetV1 {
+function mapOpponentTarget(record: JsonRecord, field: string): ReportsCenterOpponentTarget {
   return {
     name: requiredNullableText(read(record, 'name'), `${field}.name`),
     roleKey: requiredNullableText(read(record, 'roleKey'), `${field}.roleKey`),
   };
 }
 
-function mapAddress(record: JsonRecord, field: string): ReportsCenterAddressV1 {
+function mapAddress(record: JsonRecord, field: string): ReportsCenterAddress {
   return {
     displayValue: requiredNullableText(read(record, 'displayValue'), `${field}.displayValue`),
     districtCode: requiredNullableText(read(record, 'districtCode'), `${field}.districtCode`),
@@ -149,7 +142,7 @@ function mapAddress(record: JsonRecord, field: string): ReportsCenterAddressV1 {
   };
 }
 
-function mapCombat(record: JsonRecord, field: string): ReportsCenterCombatPreviewV1 {
+function mapCombat(record: JsonRecord, field: string): ReportsCenterCombatPreview {
   return {
     combatResultId: requiredNullableText(read(record, 'combatResultId'), `${field}.combatResultId`),
     turnCount: requiredNullableNumber(read(record, 'turnCount'), `${field}.turnCount`),
@@ -157,57 +150,18 @@ function mapCombat(record: JsonRecord, field: string): ReportsCenterCombatPrevie
   };
 }
 
-function mapReward(record: JsonRecord, field: string): ReportsCenterPreviewRewardV1 {
-  const resources = requiredRecord(read(record, 'resources'), `${field}.resources`);
-
+function mapReward(record: JsonRecord, field: string): ReportsCenterRewardPreview {
   return {
     summary: requiredNullableText(read(record, 'summary'), `${field}.summary`),
     entryCount: requiredNumber(read(record, 'entryCount'), `${field}.entryCount`),
-    entriesPreview: requiredArray(read(record, 'entriesPreview'), `${field}.entriesPreview`)
-      .map((entry, index) => mapRewardEntry(entry, `${field}.entriesPreview[${index}]`)),
     resourcesSummary: requiredNullableText(
       read(record, 'resourcesSummary'),
       `${field}.resourcesSummary`,
     ),
-    resources: {
-      summary: requiredNullableText(read(resources, 'summary'), `${field}.resources.summary`),
-      rows: requiredArray(read(resources, 'rows'), `${field}.resources.rows`)
-        .map((row, index) => mapResourceRow(row, `${field}.resources.rows[${index}]`)),
-    },
   };
 }
 
-function mapRewardEntry(
-  record: JsonRecord,
-  field: string,
-): ReportsCenterPreviewRewardEntryV1 {
-  return {
-    kind: requiredNullableText(read(record, 'kind'), `${field}.kind`),
-    label: requiredNullableText(read(record, 'label'), `${field}.label`),
-    displayValue: requiredText(read(record, 'displayValue'), `${field}.displayValue`),
-    amount: requiredNullableNumber(read(record, 'amount'), `${field}.amount`),
-    amountDisplay: requiredNullableText(read(record, 'amountDisplay'), `${field}.amountDisplay`),
-    resourceType: requiredNullableText(read(record, 'resourceType'), `${field}.resourceType`),
-    sourceKind: requiredNullableText(read(record, 'sourceKind'), `${field}.sourceKind`),
-  };
-}
-
-function mapResourceRow(
-  record: JsonRecord,
-  field: string,
-): ReportsCenterPreviewResourceRowV1 {
-  return {
-    resourceType: requiredNullableText(read(record, 'resourceType'), `${field}.resourceType`),
-    label: requiredNullableText(read(record, 'label'), `${field}.label`),
-    displayValue: requiredText(read(record, 'displayValue'), `${field}.displayValue`),
-    amount: requiredNullableNumber(read(record, 'amount'), `${field}.amount`),
-    gainAmount: requiredNullableNumber(read(record, 'gainAmount'), `${field}.gainAmount`),
-    lossAmount: requiredNullableNumber(read(record, 'lossAmount'), `${field}.lossAmount`),
-    sinkAmount: requiredNullableNumber(read(record, 'sinkAmount'), `${field}.sinkAmount`),
-  };
-}
-
-function mapAccess(record: JsonRecord, field: string): ReportsCenterAccessPreviewV1 {
+function mapAccess(record: JsonRecord, field: string): ReportsCenterAccessPreview {
   return {
     visibility: requiredText(read(record, 'visibility'), `${field}.visibility`),
     accessRole: requiredText(read(record, 'accessRole'), `${field}.accessRole`),
@@ -216,7 +170,7 @@ function mapAccess(record: JsonRecord, field: string): ReportsCenterAccessPrevie
   };
 }
 
-function mapPublicAccess(record: JsonRecord, field: string): ReportsCenterPublicAccessV1 {
+function mapPublicAccess(record: JsonRecord, field: string): ReportsCenterPublicAccess {
   return {
     hasPublicToken: requiredBoolean(read(record, 'hasPublicToken'), `${field}.hasPublicToken`),
     publicToken: requiredNullableText(read(record, 'publicToken'), `${field}.publicToken`),
@@ -225,7 +179,7 @@ function mapPublicAccess(record: JsonRecord, field: string): ReportsCenterPublic
   };
 }
 
-function mapDiagnostics(record: JsonRecord, field: string): ReportsCenterPreviewDiagnosticsV1 {
+function mapDiagnostics(record: JsonRecord, field: string): ReportsCenterPreviewDiagnostics {
   return {
     previewWarnings: requiredArray(read(record, 'previewWarnings'), `${field}.previewWarnings`)
       .map((warning, index) => {

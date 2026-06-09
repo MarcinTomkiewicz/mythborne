@@ -1,7 +1,7 @@
 import {
-  MarkAllReportsReadResultV1,
-  ReportsCenterActionsV1,
-  ReportsCenterCapabilitiesV1,
+  MarkAllReportsReadResult,
+  ReportsCenterActions,
+  ReportsCenterCapabilities,
 } from '../domain/reports/reports-center.model';
 import { Json } from '../types/database.types';
 import {
@@ -18,7 +18,7 @@ import {
 } from './json-read';
 import { mapAppliedFilters } from './reports-center-filters.mapper';
 
-export function mapMarkAllReportsReadResult(value: Json): MarkAllReportsReadResultV1 {
+export function mapMarkAllReportsReadResult(value: Json): MarkAllReportsReadResult {
   const root = requiredRecord(value, 'mark_all_reports_read');
 
   return {
@@ -45,7 +45,7 @@ export function mapMarkAllReportsReadResult(value: Json): MarkAllReportsReadResu
   };
 }
 
-export function mapActions(record: JsonRecord, field: string): ReportsCenterActionsV1 {
+export function mapActions(record: JsonRecord, field: string): ReportsCenterActions {
   const markAllRead = requiredRecord(read(record, 'markAllRead'), `${field}.markAllRead`);
 
   return {
@@ -65,7 +65,7 @@ export function mapActions(record: JsonRecord, field: string): ReportsCenterActi
   };
 }
 
-export function mapCapabilities(record: JsonRecord, field: string): ReportsCenterCapabilitiesV1 {
+export function mapCapabilities(record: JsonRecord, field: string): ReportsCenterCapabilities {
   const filters = requiredRecord(read(record, 'filters'), `${field}.filters`);
   const preview = requiredRecord(read(record, 'preview'), `${field}.preview`);
   const markAllRead = requiredRecord(read(record, 'markAllRead'), `${field}.markAllRead`);

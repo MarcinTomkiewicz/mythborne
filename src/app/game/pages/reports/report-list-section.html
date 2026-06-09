@@ -1,19 +1,42 @@
 <section class="mg-card p-sm flex-col gap-sm w-100 min-w-0">
-  <div class="flex-row-end-center flex-wrap gap-md w-100 min-w-0">
-    @if (markAllReadSupported()) {
-      <div class="flex-row-end-center flex-wrap gap-sm min-w-0">
-        @if (!markAllReadEnabled()) {
-          <span class="color-muted text-sm">{{ markAllReadDisabledTooltip() }}</span>
-        }
-        <p-button
-          type="button"
-          severity="secondary"
-          [label]="markAllReadLabel()"
-          [disabled]="!markAllReadEnabled() || isLoading()"
-          (click)="markAllRead.emit()"
-        />
-      </div>
-    }
+  <div class="flex-row-between-center flex-wrap gap-md w-100 min-w-0">
+    <div
+      class="flex-row-start-center gap-sm min-w-0"
+      (click)="$event.stopPropagation()"
+      (keydown)="$event.stopPropagation()"
+    >
+      <p-button
+        type="button"
+        severity="secondary"
+        [label]="visibleSelectionActionCopy().label"
+        [ariaLabel]="visibleSelectionActionCopy().ariaLabel"
+        [attr.title]="visibleSelectionActionCopy().tooltip"
+        [disabled]="reports().length === 0 || isLoading()"
+        (click)="toggleVisibleReportSelection.emit()"
+      />
+    </div>
+
+    <div class="flex-row-end-center flex-wrap gap-sm min-w-0">
+      @if (markAllReadSupported() && !markAllReadEnabled()) {
+        <span class="color-muted text-sm">{{ actionsCopy().markAllRead.disabledTooltip }}</span>
+      }
+      <p-button
+        type="button"
+        severity="secondary"
+        [label]="actionsCopy().markSelectedRead.label"
+        [ariaLabel]="actionsCopy().markSelectedRead.ariaLabel"
+        [attr.title]="actionsCopy().markSelectedRead.disabledTooltip"
+        [disabled]="true"
+      />
+      <p-button
+        type="button"
+        severity="danger"
+        [label]="actionsCopy().deleteSelected.label"
+        [ariaLabel]="actionsCopy().deleteSelected.ariaLabel"
+        [attr.title]="actionsCopy().deleteSelected.disabledTooltip"
+        [disabled]="true"
+      />
+    </div>
   </div>
 
   @if (reports().length === 0) {
@@ -27,7 +50,13 @@
         <app-report-list-row
           [report]="report"
           [selected]="selectedReportId() === report.reportId"
+          [selectionChecked]="selectedReportIds().includes(report.reportId)"
+          [eventTypeCopy]="eventTypeCopy(report)"
+          [selectReportRowActionCopy]="actionsCopy().selectReportRow"
+          [markReadActionCopy]="actionsCopy().markOneRead"
+          [deleteActionCopy]="actionsCopy().deleteOne"
           (selectReport)="selectReport.emit($event)"
+          (toggleReportSelection)="toggleReportSelection.emit($event)"
         />
       }
     </div>

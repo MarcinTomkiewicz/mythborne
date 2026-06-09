@@ -1,8 +1,5 @@
 import { Database } from './database.types';
 
-export type GetReportPageCopyRpcResult =
-  Database['public']['Functions']['get_report_page_copy']['Returns'];
-
 export type GetReportsCenterPageContextRpcArgs =
   Database['public']['Functions']['get_reports_center_page_context']['Args'];
 

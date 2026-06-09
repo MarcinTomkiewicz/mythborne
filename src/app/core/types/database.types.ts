@@ -12826,6 +12826,27 @@ export type Database = {
         }
         Relationships: []
       }
+      report_page_copy_bundles: {
+        Row: {
+          copy_json: Json
+          created_at: string
+          locale: string
+          updated_at: string
+        }
+        Insert: {
+          copy_json: Json
+          created_at?: string
+          locale: string
+          updated_at?: string
+        }
+        Update: {
+          copy_json?: Json
+          created_at?: string
+          locale?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       requirement_definitions: {
         Row: {
           admin_description: string | null
@@ -15026,6 +15047,18 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      apply_reports_center_context_event_type_context_json: {
+        Args: { p_context_json: Json }
+        Returns: Json
+      }
+      apply_reports_center_preview_event_type_context_json: {
+        Args: { p_preview_json: Json }
+        Returns: Json
+      }
+      apply_reports_center_report_row_event_type_context_json: {
+        Args: { p_row_json: Json }
+        Returns: Json
+      }
       apply_reward_character_points_delta: {
         Args: {
           p_amount_delta: number
@@ -15813,6 +15846,10 @@ export type Database = {
       }
       build_report_shell_context_json: {
         Args: { p_public_safe?: boolean; p_report_id: string }
+        Returns: Json
+      }
+      build_reports_center_report_event_type_context_json: {
+        Args: { p_report_id: string }
         Returns: Json
       }
       build_reports_center_report_preview_json: {
@@ -20022,6 +20059,41 @@ export type Database = {
           trial_opportunity_step_cap: number
         }[]
       }
+      get_hero_exploration_difficulty_card_previews_base: {
+        Args: { p_hero_id: string; p_steps_to_preview?: number }
+        Returns: {
+          auto_result_display: string
+          auto_result_policy: string
+          auto_result_preview_json: Json
+          auto_result_success_chance: number
+          card_json: Json
+          difficulty_description: string
+          difficulty_helper_text: string
+          difficulty_key: string
+          difficulty_label: string
+          district_code: string
+          generated_at: string
+          hero_id: string
+          is_active: boolean
+          is_available: boolean
+          manifestation_chance: number
+          manifestation_display: string
+          manifestation_preview_json: Json
+          reward_profile_label: string
+          reward_profile_summary: string
+          reward_profiles_json: Json
+          server_id: string
+          source_json: Json
+          step_duration_display: string
+          step_duration_multiplier: number
+          step_duration_seconds: number
+          trial_opportunity_chance: number
+          trial_opportunity_display: string
+          trial_opportunity_is_guaranteed_by_step_cap: boolean
+          trial_opportunity_preview_rows_json: Json
+          trial_opportunity_step_cap: number
+        }[]
+      }
       get_hero_exploration_difficulty_card_previews_core: {
         Args: { p_hero_id: string; p_steps_to_preview?: number }
         Returns: {
@@ -21277,6 +21349,10 @@ export type Database = {
         Args: { p_locale?: string }
         Returns: Json
       }
+      get_player_exploration_difficulty_copy_base: {
+        Args: { p_locale?: string }
+        Returns: Json
+      }
       get_player_exploration_result_copy: {
         Args: { p_locale?: string }
         Returns: Json
@@ -21458,7 +21534,8 @@ export type Database = {
         }
         Returns: Json
       }
-      get_report_page_copy: { Args: never; Returns: Json }
+      get_report_page_copy: { Args: { p_locale?: string }; Returns: Json }
+      get_report_page_copy_legacy_static: { Args: never; Returns: Json }
       get_reports_center_filtered_report_rows: {
         Args: {
           p_hero_id: string
@@ -21494,6 +21571,30 @@ export type Database = {
         }[]
       }
       get_reports_center_page_context: {
+        Args: {
+          p_hero_id: string
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_read_mode_key?: string
+          p_report_area_key?: string
+          p_time_range_key?: string
+        }
+        Returns: Json
+      }
+      get_reports_center_page_context_base: {
+        Args: {
+          p_hero_id: string
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_read_mode_key?: string
+          p_report_area_key?: string
+          p_time_range_key?: string
+        }
+        Returns: Json
+      }
+      get_reports_center_page_context_core: {
         Args: {
           p_hero_id: string
           p_limit?: number
@@ -22268,6 +22369,10 @@ export type Database = {
       }
       mark_report_read: {
         Args: { p_hero_id: string; p_report_id: string }
+        Returns: Json
+      }
+      mark_reports_read: {
+        Args: { p_hero_id: string; p_report_ids: string[] }
         Returns: Json
       }
       materialize_hero_resource: {
@@ -23497,6 +23602,15 @@ export type Database = {
           p_hero_id: string
           p_reason?: string
           p_report_id: string
+          p_request_id?: string
+        }
+        Returns: Json
+      }
+      remove_reports_from_list: {
+        Args: {
+          p_hero_id: string
+          p_reason?: string
+          p_report_ids: string[]
           p_request_id?: string
         }
         Returns: Json

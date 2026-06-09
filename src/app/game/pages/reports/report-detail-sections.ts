@@ -4,7 +4,7 @@ import type {
   PrivateReportDetailPage,
   ReportDetailV2,
 } from '../../../core/domain/reports/report-detail.model';
-import type { ReportShellCopyV2 } from '../../../core/domain/reports/report-page-copy.model';
+import type { ReportShellCopy } from '../../../core/domain/reports/report-page-copy.model';
 import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/browser-clipboard';
 import { mapCanonicalReportCombatStageView } from '../../../core/utils/combat-report-display.mapper';
 import { publicReportPathFromToken } from '../../../core/utils/public-report-path';
@@ -27,7 +27,7 @@ import { PvpReportDomainContent } from '../../components/pvp-report-domain-conte
 export class ReportDetailSections {
   readonly detail = input.required<ReportDetailV2>();
   readonly activeHeroId = input<string | null>(null);
-  readonly shellCopy = input.required<ReportShellCopyV2>();
+  readonly shellCopy = input.required<ReportShellCopy>();
 
   readonly context = computed(() => this.detail().domainContextJson);
   readonly isPrivateExploration = computed(() => {

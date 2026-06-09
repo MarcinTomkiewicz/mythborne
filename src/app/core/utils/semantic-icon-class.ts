@@ -5,14 +5,24 @@ const SEMANTIC_ICON_CLASS_BY_KEY: Readonly<Record<string, string>> = {
   heart: 'pi pi-heart',
   marble: 'pi pi-marble',
   materials: 'pi pi-marble',
-  trial: 'pi pi-trial',
+  buff: 'pi pi-report-buff',
+  combat: 'pi pi-report-combat',
+  debuff: 'pi pi-report-debuff',
+  exploration: 'pi pi-report-exploration',
+  'report-buff': 'pi pi-report-buff',
+  'report-combat': 'pi pi-report-combat',
+  'report-debuff': 'pi pi-report-debuff',
+  'report-exploration': 'pi pi-report-exploration',
+  'report-resource': 'pi pi-report-resource',
+  'report-trial': 'pi pi-report-trial',
+  resource: 'pi pi-report-resource',
+  trial: 'pi pi-report-trial',
   workforce: 'pi pi-workforce',
 };
 const warnedUnknownSemanticIconKeys = new Set<string>();
 
 export function semanticIconClass(iconKey: string): string | null {
   const key = iconKey.trim();
-
   if (!key) {
     return null;
   }
@@ -36,12 +46,26 @@ export function requiredSemanticIconClass(iconKey: string, field: string): strin
   return iconClass;
 }
 
-export function semanticIconToneClass(tone: 'success' | 'danger'): string {
+export function semanticIconToneClass(
+  tone: 'success' | 'danger' | 'warn' | 'info' | 'neutral',
+): string {
   if (tone === 'success') {
     return 'success-text';
   }
 
-  return 'error-text';
+  if (tone === 'danger') {
+    return 'error-text';
+  }
+
+  if (tone === 'warn') {
+    return 'warn-text';
+  }
+
+  if (tone === 'info') {
+    return 'info-text';
+  }
+
+  return 'color-heading';
 }
 
 function warnUnknownSemanticIconKey(iconKey: string): void {

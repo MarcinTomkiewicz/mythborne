@@ -8,6 +8,17 @@ export function mapReportPageCopy(value: Json): ReportPageCopy {
 
   return {
     contractVersion: requireReportPageCopyVersion(root),
+    locale: requiredText(read(root, 'locale'), 'get_report_page_copy.locale'),
+    requestedLocale: requiredText(
+      read(root, 'requestedLocale'),
+      'get_report_page_copy.requestedLocale',
+    ),
+    fallbackLocale: requireReportPageCopyFallbackLocale(root),
+    copyStorage: requireReportPageCopyStorage(root),
+    reportsCopyPatchVersion: requiredText(
+      read(root, 'reportsCopyPatchVersion'),
+      'get_report_page_copy.reportsCopyPatchVersion',
+    ),
     reportsCenter: mapReportsCenterCopy(
       requiredRecord(read(root, 'reportsCenter'), 'get_report_page_copy.reportsCenter'),
     ),
@@ -17,17 +28,43 @@ export function mapReportPageCopy(value: Json): ReportPageCopy {
   };
 }
 
-function requireReportPageCopyVersion(root: JsonRecord): 'report_page_copy_v2' {
+function requireReportPageCopyVersion(root: JsonRecord): 'report_page_copy_v3' {
   const version = requiredText(
     read(root, 'contractVersion'),
     'get_report_page_copy.contractVersion',
   );
 
-  if (version !== 'report_page_copy_v2') {
+  if (version !== 'report_page_copy_v3') {
     throw new Error(`get_report_page_copy has unsupported contract version: ${version}.`);
   }
 
   return version;
+}
+
+function requireReportPageCopyFallbackLocale(root: JsonRecord): 'en' {
+  const fallbackLocale = requiredText(
+    read(root, 'fallbackLocale'),
+    'get_report_page_copy.fallbackLocale',
+  );
+
+  if (fallbackLocale !== 'en') {
+    throw new Error(`get_report_page_copy has unsupported fallback locale: ${fallbackLocale}.`);
+  }
+
+  return fallbackLocale;
+}
+
+function requireReportPageCopyStorage(root: JsonRecord): 'report_page_copy_bundles' {
+  const copyStorage = requiredText(
+    read(root, 'copyStorage'),
+    'get_report_page_copy.copyStorage',
+  );
+
+  if (copyStorage !== 'report_page_copy_bundles') {
+    throw new Error(`get_report_page_copy has unsupported copy storage: ${copyStorage}.`);
+  }
+
+  return copyStorage;
 }
 
 function mapReportShell(shell: JsonRecord): ReportPageCopy['reportShell'] {
@@ -41,6 +78,10 @@ function mapReportShell(shell: JsonRecord): ReportPageCopy['reportShell'] {
       titleFallback: requiredText(read(header, 'titleFallback'), 'reportShell.header.titleFallback'),
       backAction: requiredText(read(header, 'backAction'), 'reportShell.header.backAction'),
       copyLinkAction: requiredText(read(header, 'copyLinkAction'), 'reportShell.header.copyLinkAction'),
+      openFullReportAction: requiredText(
+        read(header, 'openFullReportAction'),
+        'reportShell.header.openFullReportAction',
+      ),
       removeAction: requiredText(read(header, 'removeAction'), 'reportShell.header.removeAction'),
     },
     meta: {

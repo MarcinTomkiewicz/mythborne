@@ -21,8 +21,8 @@
       }
 
       @if (rewardValues().length > 0) {
-        <div class="mg-data-row">
-          <span class="color-muted text-xs">{{ copy().rewardLabel }}</span>
+        <div class="mg-data-row mg-data-row--start">
+          <span class="color-muted text-xs align-self-start">{{ copy().rewardLabel }}</span>
           <div class="flex-col gap-xs text-right min-w-0">
             @for (value of rewardValues(); track $index) {
               <strong class="color-text text-sm text-break">

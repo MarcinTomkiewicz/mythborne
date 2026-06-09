@@ -5,9 +5,9 @@ import { SelectModule } from 'primeng/select';
 import { REPORTS_CENTER_FILTER_GROUPS } from '../../../core/configs/reports-center-filter-groups.config';
 import { ReportsCenterFiltersCopy } from '../../../core/domain/reports/reports-center-copy.model';
 import {
-  ReportsCenterCapabilitiesV1,
+  ReportsCenterCapabilities,
   ReportsCenterFilterOption,
-  ReportsCenterFiltersV1,
+  ReportsCenterFilters,
 } from '../../../core/domain/reports/reports-center.model';
 import { ReportsCenterFilterGroupConfig } from '../../../core/interfaces/reports-center-filter-group-config.interface';
 
@@ -26,8 +26,8 @@ export class ReportFiltersPanel {
   readonly filterGroups = REPORTS_CENTER_FILTER_GROUPS;
 
   readonly copy = input.required<ReportsCenterFiltersCopy>();
-  readonly filters = input.required<ReportsCenterFiltersV1>();
-  readonly capabilities = input.required<ReportsCenterCapabilitiesV1['filters']>();
+  readonly filters = input.required<ReportsCenterFilters>();
+  readonly capabilities = input.required<ReportsCenterCapabilities['filters']>();
   readonly filterForm = input.required<FormGroup>();
   readonly isLoading = input.required<boolean>();
   readonly apply = output<void>();
