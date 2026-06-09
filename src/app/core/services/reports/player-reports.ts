@@ -18,6 +18,10 @@ import {
   GetReportsCenterPageContextRpcResult,
   MarkAllReportsReadRpcArgs,
   MarkAllReportsReadRpcResult,
+  MarkReportsReadRpcArgs,
+  MarkReportsReadRpcResult,
+  RemoveReportsFromListRpcArgs,
+  RemoveReportsFromListRpcResult,
 } from '../../types/report-rpc.types';
 import {
   mapPublicReportDetailPage,
@@ -80,6 +84,38 @@ export class PlayerReports {
       args,
     ).pipe(
       map(mapMarkAllReportsReadResult),
+    );
+  }
+
+  markReportsRead(input: {
+    heroId: string;
+    reportIds: readonly string[];
+  }): Observable<MarkReportsReadRpcResult> {
+    const args: MarkReportsReadRpcArgs = {
+      p_hero_id: input.heroId,
+      p_report_ids: [...input.reportIds],
+    };
+
+    return this.backend.rpc<MarkReportsReadRpcResult>(
+      RPC.mark_reports_read,
+      args,
+    );
+  }
+
+  removeReportsFromList(input: {
+    heroId: string;
+    reportIds: readonly string[];
+    requestId: string | null;
+  }): Observable<RemoveReportsFromListRpcResult> {
+    const args: RemoveReportsFromListRpcArgs = {
+      p_hero_id: input.heroId,
+      p_report_ids: [...input.reportIds],
+      p_request_id: input.requestId ?? undefined,
+    };
+
+    return this.backend.rpc<RemoveReportsFromListRpcResult>(
+      RPC.remove_reports_from_list,
+      args,
     );
   }
 

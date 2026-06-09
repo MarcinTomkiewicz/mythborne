@@ -64,8 +64,8 @@
         [text]="true"
         [ariaLabel]="markReadActionCopy().ariaLabel"
         [attr.title]="markReadActionCopy().tooltip"
-        [disabled]="true"
-        (click)="stopActionClick($event)"
+        [disabled]="actionDisabled() || !report().isUnread"
+        (click)="markRead($event)"
       />
       <p-button
         type="button"
@@ -76,8 +76,8 @@
         [text]="true"
         [ariaLabel]="deleteActionCopy().ariaLabel"
         [attr.title]="deleteActionCopy().tooltip"
-        [disabled]="true"
-        (click)="stopActionClick($event)"
+        [disabled]="actionDisabled()"
+        (click)="delete($event)"
       />
     </span>
   </div>

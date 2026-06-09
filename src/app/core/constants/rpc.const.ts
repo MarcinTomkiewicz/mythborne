@@ -99,6 +99,8 @@ export const RPC = {
   get_report_page_copy: 'get_report_page_copy',
   get_reports_center_page_context: 'get_reports_center_page_context',
   mark_all_reports_read: 'mark_all_reports_read',
+  mark_reports_read: 'mark_reports_read',
+  remove_reports_from_list: 'remove_reports_from_list',
   get_report_detail: 'get_report_detail',
   get_public_report_detail: 'get_public_report_detail',
   get_hero_game_report_detail: 'get_hero_game_report_detail',

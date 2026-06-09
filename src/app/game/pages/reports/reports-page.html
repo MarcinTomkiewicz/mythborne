@@ -40,9 +40,14 @@
             [markAllReadSupported]="context.actions.markAllRead.supported"
             [markAllReadEnabled]="context.actions.markAllRead.enabled"
             [isLoading]="page.isLoading()"
+            [isActionLoading]="page.isReportActionLoading()"
             (selectReport)="page.selectReport($event)"
             (toggleReportSelection)="page.toggleReportSelection($event)"
             (toggleVisibleReportSelection)="page.toggleVisibleReportSelection()"
+            (markSelectedReportsRead)="page.markSelectedReportsRead()"
+            (deleteSelectedReports)="page.deleteSelectedReports()"
+            (markReportRead)="page.markReportRead($event)"
+            (deleteReport)="page.deleteReport($event)"
             (pageChange)="page.changeReportsPage($event)"
           />
 

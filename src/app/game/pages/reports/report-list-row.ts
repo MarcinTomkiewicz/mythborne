@@ -31,9 +31,12 @@ export class ReportListRow {
   readonly selectReportRowActionCopy = input.required<ReportsCenterSelectReportRowActionCopy>();
   readonly markReadActionCopy = input.required<ReportsCenterRowActionCopy>();
   readonly deleteActionCopy = input.required<ReportsCenterDeleteOneActionCopy>();
+  readonly actionDisabled = input(false);
   readonly selectionControl = new FormControl(false, { nonNullable: true });
   readonly selectReport = output<string>();
   readonly toggleReportSelection = output<string>();
+  readonly markReportRead = output<string>();
+  readonly deleteReport = output<string>();
   readonly markerIconClass = computed(() => {
     return semanticIconClass(this.eventTypeCopy().iconKey);
   });
@@ -70,8 +73,24 @@ export class ReportListRow {
     this.toggleReportSelection.emit(this.report().reportId);
   }
 
-  stopActionClick(event: Event): void {
+  markRead(event: Event): void {
     event.stopPropagation();
+
+    if (this.actionDisabled() || !this.report().isUnread) {
+      return;
+    }
+
+    this.markReportRead.emit(this.report().reportId);
+  }
+
+  delete(event: Event): void {
+    event.stopPropagation();
+
+    if (this.actionDisabled()) {
+      return;
+    }
+
+    this.deleteReport.emit(this.report().reportId);
   }
 
   selectFromKeyboard(event: KeyboardEvent): void {

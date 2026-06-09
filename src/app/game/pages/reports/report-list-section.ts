@@ -36,10 +36,15 @@ export class ReportListSection {
   readonly markAllReadSupported = input(false);
   readonly markAllReadEnabled = input(false);
   readonly isLoading = input(false);
+  readonly isActionLoading = input(false);
   readonly pageChange = output<{ first?: number | null; rows?: number | null }>();
   readonly selectReport = output<string>();
   readonly toggleReportSelection = output<string>();
   readonly toggleVisibleReportSelection = output<void>();
+  readonly markSelectedReportsRead = output<void>();
+  readonly deleteSelectedReports = output<void>();
+  readonly markReportRead = output<string>();
+  readonly deleteReport = output<string>();
   readonly allVisibleReportsSelected = computed(() => {
     const selectedReportIds = this.selectedReportIds();
     const reports = this.reports();
@@ -53,6 +58,13 @@ export class ReportListSection {
     this.allVisibleReportsSelected()
       ? this.actionsCopy().clearSelection
       : this.actionsCopy().selectAllVisible,
+  );
+  readonly hasSelectedReports = computed(() => this.selectedReportIds().length > 0);
+  readonly actionControlsDisabled = computed(() =>
+    this.isLoading() || this.isActionLoading(),
+  );
+  readonly bulkActionDisabled = computed(() =>
+    !this.hasSelectedReports() || this.actionControlsDisabled(),
   );
 
   eventTypeCopy(report: ReportsCenterListRow): ReportsCenterEventTypeCopy {

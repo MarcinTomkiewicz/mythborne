@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { finalize, Observable } from 'rxjs';
 import { ReportPageCopy } from '../../../core/domain/reports/report-page-copy.model';
 import {
   reportsCenterEventTypeCopyByKey,
@@ -31,7 +31,7 @@ import { RequestToken } from '../../../core/utils/request-token';
 const REPORTS_CENTER_PAGE_LIMIT = 12;
 const REPORTS_CENTER_PAGE_OFFSET = 0;
 const DEFAULT_REPORT_AREA_KEY = 'all';
-const DEFAULT_READ_MODE_KEY = 'unread_first';
+const DEFAULT_READ_MODE_KEY = 'all';
 const DEFAULT_TIME_RANGE_KEY = 'last_7_days';
 
 @Injectable()
@@ -41,6 +41,7 @@ export class ReportsPageState {
   private readonly reports = inject(PlayerReports);
   private readonly destroyRef = inject(DestroyRef);
   private readonly requestToken = new RequestToken();
+  private readonly reportActionToken = new RequestToken();
 
   private activeHeroId: string | null = null;
   private activeServerId: string | null = null;
@@ -63,6 +64,7 @@ export class ReportsPageState {
   readonly selectedReportIds = signal<readonly string[]>([]);
   readonly hasError = signal(false);
   readonly pendingRequestCount = signal(0);
+  readonly isReportActionLoading = signal(false);
   readonly isLoading = computed(() => this.pendingRequestCount() > 0);
   readonly selectedRow = computed(() => {
     const selectedReportId = this.selectedReportId();
@@ -220,6 +222,64 @@ export class ReportsPageState {
     );
   }
 
+  markReportRead(reportId: string): void {
+    const report = this.context()?.reports.find((row) => row.reportId === reportId);
+
+    if (!report || !report.isUnread) {
+      return;
+    }
+
+    this.runReportAction(
+      [reportId],
+      (reportIds, heroId) =>
+        this.reports.markReportsRead({ heroId, reportIds }),
+    );
+  }
+
+  deleteReport(reportId: string): void {
+    if (!this.context()?.reports.some((row) => row.reportId === reportId)) {
+      return;
+    }
+
+    this.runReportAction(
+      [reportId],
+      (reportIds, heroId, requestId) =>
+        this.reports.removeReportsFromList({ heroId, reportIds, requestId }),
+    );
+  }
+
+  markSelectedReportsRead(): void {
+    const reportIds = this.selectedVisibleReportIds();
+
+    if (reportIds.length === 0) {
+      return;
+    }
+
+    this.runReportAction(
+      reportIds,
+      (selectedReportIds, heroId) =>
+        this.reports.markReportsRead({ heroId, reportIds: selectedReportIds }),
+    );
+  }
+
+  deleteSelectedReports(): void {
+    const reportIds = this.selectedVisibleReportIds();
+
+    if (reportIds.length === 0) {
+      return;
+    }
+
+    this.runReportAction(
+      reportIds,
+      (selectedReportIds, heroId, requestId) =>
+        this.reports.removeReportsFromList({
+          heroId,
+          reportIds: selectedReportIds,
+          requestId,
+        }),
+    );
+  }
+
   private loadCurrentPage(): void {
     if (!this.activeHeroId || !this.activeServerId) {
       return;
@@ -354,6 +414,70 @@ export class ReportsPageState {
     );
   }
 
+  private selectedVisibleReportIds(): readonly string[] {
+    const selectedReportIds = this.selectedReportIds();
+
+    return this.context()
+      ?.reports
+      .filter((row) => selectedReportIds.includes(row.reportId))
+      .map((row) => row.reportId) ?? [];
+  }
+
+  private runReportAction(
+    reportIds: readonly string[],
+    operation: (
+      reportIds: readonly string[],
+      heroId: string,
+      requestId: string | null,
+    ) => Observable<unknown>,
+  ): void {
+    if (
+      reportIds.length === 0
+      || this.isReportActionLoading()
+      || !this.activeHeroId
+      || !this.activeServerId
+    ) {
+      return;
+    }
+
+    const token = this.reportActionToken.next();
+    const heroId = this.activeHeroId;
+    const serverId = this.activeServerId;
+    const requestId = `${Date.now()}:${token}`;
+
+    this.hasError.set(false);
+    this.isReportActionLoading.set(true);
+    operation(reportIds, heroId, requestId)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          if (this.isCurrentReportAction(token, heroId, serverId)) {
+            this.isReportActionLoading.set(false);
+          }
+        }),
+      )
+      .subscribe({
+        next: () => {
+          if (!this.isCurrentReportAction(token, heroId, serverId)) {
+            return;
+          }
+
+          this.loadReportsCenterPage(heroId, serverId, this.beginRequestToken());
+        },
+        error: (error: unknown) => {
+          if (!this.isCurrentReportAction(token, heroId, serverId)) {
+            return;
+          }
+
+          if (isDevMode()) {
+            console.error('Reports center action failed.', error);
+          }
+
+          this.hasError.set(true);
+        },
+      });
+  }
+
   private currentFilters(): ReportsCenterAppliedFilters {
     const query = this.filtersForm.controls.query.value.trim();
 
@@ -372,6 +496,18 @@ export class ReportsPageState {
   ): boolean {
     return (
       this.requestToken.isCurrent(token) &&
+      this.activeHeroId === heroId &&
+      this.activeServerId === serverId
+    );
+  }
+
+  private isCurrentReportAction(
+    token: number,
+    heroId: string,
+    serverId: string,
+  ): boolean {
+    return (
+      this.reportActionToken.isCurrent(token) &&
       this.activeHeroId === heroId &&
       this.activeServerId === serverId
     );

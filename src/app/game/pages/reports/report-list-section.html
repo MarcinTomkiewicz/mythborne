@@ -11,7 +11,7 @@
         [label]="visibleSelectionActionCopy().label"
         [ariaLabel]="visibleSelectionActionCopy().ariaLabel"
         [attr.title]="visibleSelectionActionCopy().tooltip"
-        [disabled]="reports().length === 0 || isLoading()"
+        [disabled]="reports().length === 0 || actionControlsDisabled()"
         (click)="toggleVisibleReportSelection.emit()"
       />
     </div>
@@ -25,16 +25,18 @@
         severity="secondary"
         [label]="actionsCopy().markSelectedRead.label"
         [ariaLabel]="actionsCopy().markSelectedRead.ariaLabel"
-        [attr.title]="actionsCopy().markSelectedRead.disabledTooltip"
-        [disabled]="true"
+        [attr.title]="bulkActionDisabled() ? actionsCopy().markSelectedRead.disabledTooltip : actionsCopy().markSelectedRead.label"
+        [disabled]="bulkActionDisabled()"
+        (click)="markSelectedReportsRead.emit()"
       />
       <p-button
         type="button"
         severity="danger"
         [label]="actionsCopy().deleteSelected.label"
         [ariaLabel]="actionsCopy().deleteSelected.ariaLabel"
-        [attr.title]="actionsCopy().deleteSelected.disabledTooltip"
-        [disabled]="true"
+        [attr.title]="bulkActionDisabled() ? actionsCopy().deleteSelected.disabledTooltip : actionsCopy().deleteSelected.label"
+        [disabled]="bulkActionDisabled()"
+        (click)="deleteSelectedReports.emit()"
       />
     </div>
   </div>
@@ -55,8 +57,11 @@
           [selectReportRowActionCopy]="actionsCopy().selectReportRow"
           [markReadActionCopy]="actionsCopy().markOneRead"
           [deleteActionCopy]="actionsCopy().deleteOne"
+          [actionDisabled]="actionControlsDisabled()"
           (selectReport)="selectReport.emit($event)"
           (toggleReportSelection)="toggleReportSelection.emit($event)"
+          (markReportRead)="markReportRead.emit($event)"
+          (deleteReport)="deleteReport.emit($event)"
         />
       }
     </div>

@@ -12,6 +12,18 @@ export type MarkAllReportsReadRpcArgs =
 export type MarkAllReportsReadRpcResult =
   Database['public']['Functions']['mark_all_reports_read']['Returns'];
 
+export type MarkReportsReadRpcArgs =
+  Database['public']['Functions']['mark_reports_read']['Args'];
+
+export type MarkReportsReadRpcResult =
+  Database['public']['Functions']['mark_reports_read']['Returns'];
+
+export type RemoveReportsFromListRpcArgs =
+  Database['public']['Functions']['remove_reports_from_list']['Args'];
+
+export type RemoveReportsFromListRpcResult =
+  Database['public']['Functions']['remove_reports_from_list']['Returns'];
+
 export type GetReportDetailRpcArgs =
   Database['public']['Functions']['get_report_detail']['Args'];
 

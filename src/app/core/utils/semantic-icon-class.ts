@@ -16,7 +16,7 @@ const SEMANTIC_ICON_CLASS_BY_KEY: Readonly<Record<string, string>> = {
   'report-resource': 'pi pi-report-resource',
   'report-trial': 'pi pi-report-trial',
   resource: 'pi pi-report-resource',
-  trial: 'pi pi-report-trial',
+  trial: 'pi pi-trial',
   workforce: 'pi pi-workforce',
 };
 const warnedUnknownSemanticIconKeys = new Set<string>();
