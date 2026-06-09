@@ -10,6 +10,7 @@ import {
   optionalNumber,
   optionalText,
   read,
+  requiredBoolean,
   requiredNonNegativeInteger,
   requiredRecord,
   requiredText,
@@ -67,100 +68,32 @@ function mapArmoryPageItemRow(
       read(row, 'allowedSlotKeys'),
       'items.allowedSlotKeys',
     ),
-    meetsRequirements: mapMeetsRequirements(row),
+    meetsRequirements: requiredBoolean(
+      read(row, 'meetsRequirements'),
+      'items.meetsRequirements',
+    ),
+    requirementStatusKey: requiredText(
+      read(row, 'requirementStatusKey'),
+      'items.requirementStatusKey',
+    ),
+    requirementStatusAvailable: requiredBoolean(
+      read(row, 'requirementStatusAvailable'),
+      'items.requirementStatusAvailable',
+    ),
+    requirementCount: requiredNonNegativeInteger(
+      read(row, 'requirementCount'),
+      'items.requirementCount',
+    ),
+    unmetRequirementCount: requiredNonNegativeInteger(
+      read(row, 'unmetRequirementCount'),
+      'items.unmetRequirementCount',
+    ),
+    requirementStatus: requiredRecord(
+      read(row, 'requirementStatus'),
+      'items.requirementStatus',
+    ),
     displayCore: mapArmoryItemDisplayCore(row, itemId, itemName),
   };
-}
-
-function mapMeetsRequirements(row: JsonRecord): boolean | null {
-  const directValue = optionalBoolean(read(row, 'meetsRequirements', 'meets_requirements'));
-
-  if (directValue !== null) {
-    return directValue;
-  }
-
-  const directCountValue = requirementStatusFromCounts(row)
-    ?? requirementStatusFromRows(read(row, 'requirementsJson', 'requirements_json', 'requirements'))
-    ?? requirementStatusFromFailures(read(row, 'failuresJson', 'failures_json', 'failures'));
-
-  if (directCountValue !== null) {
-    return directCountValue;
-  }
-
-  return [
-    read(row, 'requirementPreview', 'requirement_preview'),
-    read(row, 'requirementStatus', 'requirement_status'),
-    read(row, 'bonusesJson', 'bonuses_json'),
-    read(row, 'checkJson', 'check_json'),
-  ].reduce<boolean | null>((currentStatus, value) =>
-    currentStatus ?? requirementStatusFromPreview(value),
-  null);
-}
-
-function requirementStatusFromPreview(value: Json | undefined): boolean | null {
-  if (value === null || value === undefined) {
-    return null;
-  }
-
-  const preview = requiredRecord(value, 'items.requirementPreview');
-  const directValue = optionalBoolean(read(preview, 'meetsRequirements', 'meets_requirements'));
-
-  return directValue
-    ?? requirementStatusFromCounts(preview)
-    ?? requirementStatusFromRows(read(preview, 'requirementsJson', 'requirements_json', 'requirements'))
-    ?? requirementStatusFromFailures(read(preview, 'failuresJson', 'failures_json', 'failures'))
-    ?? [
-      read(preview, 'requirementStatus', 'requirement_status'),
-      read(preview, 'requirementPreview', 'requirement_preview'),
-      read(preview, 'checkJson', 'check_json'),
-    ].reduce<boolean | null>((currentStatus, value) =>
-      currentStatus ?? requirementStatusFromPreview(value),
-    null);
-}
-
-function requirementStatusFromCounts(record: JsonRecord): boolean | null {
-  const unmetCount = optionalNumber(read(record, 'unmetCount', 'unmet_count'));
-
-  if (unmetCount !== null) {
-    return unmetCount === 0;
-  }
-
-  return null;
-}
-
-function requirementStatusFromRows(value: Json | undefined): boolean | null {
-  if (!Array.isArray(value)) {
-    return null;
-  }
-
-  const statuses: boolean[] = [];
-
-  for (const [index, entry] of value.entries()) {
-    if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) {
-      return null;
-    }
-
-    const row = entry as JsonRecord;
-    const rawStatus = read(row, 'isMet', 'is_met');
-
-    if (rawStatus === null || rawStatus === undefined) {
-      return null;
-    }
-
-    const isMet = optionalBoolean(rawStatus);
-
-    if (isMet === null) {
-      throw new Error(`items.requirements[${index}].isMet must be a boolean when present.`);
-    }
-
-    statuses.push(isMet);
-  }
-
-  return statuses.length ? statuses.every(Boolean) : null;
-}
-
-function requirementStatusFromFailures(value: Json | undefined): boolean | null {
-  return Array.isArray(value) ? value.length === 0 : null;
 }
 
 function mapArmoryItemDisplayCore(

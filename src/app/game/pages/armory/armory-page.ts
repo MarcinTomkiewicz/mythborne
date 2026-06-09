@@ -4,23 +4,29 @@ import {
   ArmorySummaryRowKey,
   ARMORY_SUMMARY_ROW_CONFIG,
 } from '../../../core/configs/armory-summary-rows.config';
-import { equipmentPreviewIconClassForSlot } from '../../../core/domain/equipment/equipment-preview-icons.config';
 import { EquipmentPreviewSlotRow } from '../../../core/domain/equipment/equipment-preview.model';
 import {
-  PlayerArmoryEquipmentSlotReadModel,
   PlayerArmoryItemReadModel,
-  PlayerArmoryPageContextReadModel,
-  PlayerArmorySellItemMessageParts,
-  PlayerArmorySellSelectedMessageParts,
 } from '../../../core/domain/item/player-armory-page-context.model';
+import {
+  buildSellItemConfirmationSegments,
+  buildSellSelectedConfirmationSegments,
+  canEquipInventoryItem,
+  canVendorScrapInventoryItem,
+  mapArmoryPageEquipmentPreviewRows,
+  plainStructuredConfirmMessage,
+  visibleArmoryItemsById,
+} from '../../../core/domain/item/player-armory-page-helpers';
 import type {
   StructuredConfirmDialogSegment,
 } from '../../../core/interfaces/structured-confirm-dialog-segment.interface';
 import { GamePageSummaryRow } from '../../../core/interfaces/game-page-summary-row.interface';
+import {
+  ArmoryBulkMoveInventoryItemsInput,
+  ArmoryRenameInventoryShelfInput,
+} from '../../../core/interfaces/item/armory-page-actions.interface';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
-import { ItemLifecycleService } from '../../../core/services/items/item-lifecycle';
-import { PlayerArmory } from '../../../core/services/items/player-armory';
 import { ArmoryInventorySection } from '../../components/armory-inventory-section/armory-inventory-section';
 import { LoadoutPresetManagement } from '../../components/loadout-preset-management/loadout-preset-management';
 import { EquipmentPreview } from '../../../shared/equipment-preview/equipment-preview';
@@ -47,14 +53,10 @@ const ARMORY_SELL_ITEM_CONFIRMATION_KEY = 'armory-sell-item';
 })
 export class ArmoryPage implements OnInit {
   private readonly confirmationService = inject(ConfirmationService);
-  private readonly lifecycle = inject(ItemLifecycleService);
-  private readonly armory = inject(PlayerArmory);
-  private inventoryActionToken = 0;
   readonly page = inject(ArmoryPageFacade);
   readonly equipment = inject(CurrentEquipmentState);
   readonly selectedEquippedItemIds = signal<readonly string[]>([]);
   readonly selectedInventoryItemIds = signal<readonly string[]>([]);
-  readonly isInventoryMutating = signal(false);
   readonly sellItemConfirmationSegments =
     signal<readonly StructuredConfirmDialogSegment[]>([]);
   readonly isScreenLoading = computed(() =>
@@ -62,11 +64,11 @@ export class ArmoryPage implements OnInit {
     && (
       this.page.status() !== 'loaded'
       || this.equipment.isMutating()
-      || this.isInventoryMutating()
+      || this.page.isInventoryMutating()
     ),
   );
   readonly inventoryActionDisabled = computed(() =>
-    this.equipment.isMutating() || this.isInventoryMutating(),
+    this.equipment.isMutating() || this.page.isInventoryMutating(),
   );
   readonly equippedItemCount = computed(() =>
     this.page.equipmentSlots().filter((slot) => slot.hasItem).length,
@@ -187,8 +189,7 @@ export class ArmoryPage implements OnInit {
 
     if (
       selectedItems.length !== itemIds.length
-      || selectedItems.some((item) => item.lifecycleStatusKey !== 'active')
-      || selectedItems.some((item) => !item.displayCore.valueDisplay)
+      || selectedItems.some((item) => !canVendorScrapInventoryItem(item))
     ) {
       return;
     }
@@ -198,6 +199,10 @@ export class ArmoryPage implements OnInit {
       copy.confirmations.sellSelectedHighlightFields,
       selectedItems,
     );
+
+    if (!messageSegments.length) {
+      return;
+    }
 
     this.sellItemConfirmationSegments.set(messageSegments);
     this.confirmationService.confirm({
@@ -231,41 +236,18 @@ export class ArmoryPage implements OnInit {
 
     if (
       selectedItems.length !== items.length
-      || selectedItems.some((item) => item.lifecycleStatusKey !== 'active')
-      || selectedItems.some((item) => !item.displayCore.valueDisplay)
+      || selectedItems.some((item) => !canVendorScrapInventoryItem(item))
     ) {
       return;
     }
 
-    const token = ++this.inventoryActionToken;
-    const contextKey = `${context.serverId}:${context.heroId}`;
-
-    this.isInventoryMutating.set(true);
-    this.lifecycle.bulkVendorScrapHeroItems({
-      actorHeroId: context.heroId,
-      items: selectedItems.map((item) => ({ itemId: item.itemId })),
-    }).subscribe({
-      next: () => {
-        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
-          return;
-        }
-
-        this.refreshAfterInventoryMutation();
-      },
-      error: () => {
-        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
-          return;
-        }
-
-        this.isInventoryMutating.set(false);
-      },
-    });
+    this.page.bulkVendorScrapInventoryItems(
+      selectedItems.map((item) => item.itemId),
+      () => this.clearInventorySelectionAfterMutation(),
+    );
   }
 
-  bulkMoveInventoryItems(input: {
-    itemIds: readonly string[];
-    targetShelfPosition: number;
-  }): void {
+  bulkMoveInventoryItems(input: ArmoryBulkMoveInventoryItemsInput): void {
     const context = this.page.context();
 
     if (this.inventoryActionDisabled() || !context || !input.itemIds.length) {
@@ -283,29 +265,9 @@ export class ArmoryPage implements OnInit {
       return;
     }
 
-    const token = ++this.inventoryActionToken;
-    const contextKey = `${context.serverId}:${context.heroId}`;
-
-    this.isInventoryMutating.set(true);
-    this.armory.bulkMoveItemsToShelf({
-      items: selectedItems.map((item) => ({ itemId: item.itemId })),
-      targetShelfPosition: input.targetShelfPosition,
-    }).subscribe({
-      next: () => {
-        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
-          return;
-        }
-
-        this.refreshAfterInventoryMutation();
-      },
-      error: () => {
-        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
-          return;
-        }
-
-        this.isInventoryMutating.set(false);
-      },
-    });
+    this.page.bulkMoveInventoryItems(input, () =>
+      this.clearInventorySelectionAfterMutation(),
+    );
   }
 
   confirmSellInventoryItem(item: PlayerArmoryItemReadModel): void {
@@ -314,7 +276,7 @@ export class ArmoryPage implements OnInit {
 
     if (
       this.inventoryActionDisabled()
-      || item.lifecycleStatusKey !== 'active'
+      || !canVendorScrapInventoryItem(item)
       || !copy
       || !valueDisplay
     ) {
@@ -348,36 +310,16 @@ export class ArmoryPage implements OnInit {
     this.sellItemConfirmationSegments.set([]);
   }
 
-  renameInventoryShelf(input: { shelfPosition: number; name: string }): void {
+  renameInventoryShelf(input: ArmoryRenameInventoryShelfInput): void {
     const context = this.page.context();
 
     if (this.inventoryActionDisabled() || !context) {
       return;
     }
 
-    const token = ++this.inventoryActionToken;
-    const contextKey = `${context.serverId}:${context.heroId}`;
-
-    this.isInventoryMutating.set(true);
-    this.armory.renameShelf({
-      shelfPosition: input.shelfPosition,
-      newName: input.name,
-    }).subscribe({
-      next: () => {
-        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
-          return;
-        }
-
-        this.refreshAfterInventoryMutation();
-      },
-      error: () => {
-        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
-          return;
-        }
-
-        this.isInventoryMutating.set(false);
-      },
-    });
+    this.page.renameInventoryShelf(input, () =>
+      this.clearInventorySelectionAfterMutation(),
+    );
   }
 
   private refreshAfterEquipmentMutation(): void {
@@ -386,10 +328,13 @@ export class ArmoryPage implements OnInit {
   }
 
   private refreshAfterInventoryMutation(): void {
+    this.clearInventorySelectionAfterMutation();
+    this.page.loadData();
+  }
+
+  private clearInventorySelectionAfterMutation(): void {
     this.selectedEquippedItemIds.set([]);
     this.selectedInventoryItemIds.set([]);
-    this.isInventoryMutating.set(false);
-    this.page.loadData();
   }
 
   private sellInventoryItem(item: PlayerArmoryItemReadModel): void {
@@ -397,174 +342,15 @@ export class ArmoryPage implements OnInit {
 
     if (
       this.inventoryActionDisabled()
-      || item.lifecycleStatusKey !== 'active'
+      || !canVendorScrapInventoryItem(item)
       || !context
     ) {
       return;
     }
 
-    const token = ++this.inventoryActionToken;
-    const contextKey = `${context.serverId}:${context.heroId}`;
-
-    this.isInventoryMutating.set(true);
-    this.lifecycle.vendorScrapHeroItem({
-      actorHeroId: context.heroId,
-      itemId: item.itemId,
-    }).subscribe({
-      next: () => {
-        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
-          return;
-        }
-
-        this.refreshAfterInventoryMutation();
-      },
-      error: () => {
-        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
-          return;
-        }
-
-        this.isInventoryMutating.set(false);
-      },
-    });
+    this.page.vendorScrapInventoryItem(
+      item.itemId,
+      () => this.clearInventorySelectionAfterMutation(),
+    );
   }
-
-  private acceptsInventoryActionResponse(token: number, contextKey: string): boolean {
-    if (token !== this.inventoryActionToken) {
-      return false;
-    }
-
-    if (contextKey !== contextKeyFor(this.page.context())) {
-      this.isInventoryMutating.set(false);
-      return false;
-    }
-
-    return true;
-  }
-}
-
-function buildSellItemConfirmationSegments(
-  parts: PlayerArmorySellItemMessageParts,
-  highlightFields: readonly string[],
-  itemName: string,
-  drachmaValue: string,
-): StructuredConfirmDialogSegment[] {
-  return [
-    { text: parts.prefix, highlighted: false },
-    { text: itemName, highlighted: highlightFields.includes(parts.itemNameToken) },
-    { text: parts.middle, highlighted: false },
-    {
-      text: drachmaValue,
-      highlighted: highlightFields.includes(parts.drachmaValueToken),
-    },
-    { text: parts.suffix, highlighted: false },
-  ];
-}
-
-function buildSellSelectedConfirmationSegments(
-  parts: PlayerArmorySellSelectedMessageParts,
-  highlightFields: readonly string[],
-  items: readonly PlayerArmoryItemReadModel[],
-): StructuredConfirmDialogSegment[] {
-  const totalDrachmaValue = items.reduce(
-    (total, item) => total + (item.drachmaValue ?? 0),
-    0,
-  );
-
-  return [
-    { text: parts.intro, highlighted: false, lineBreakAfter: true },
-    { text: parts.itemsIntro, highlighted: false, lineBreakAfter: true },
-    ...items.flatMap((item) => buildSellSelectedItemLineSegments(
-      parts,
-      highlightFields,
-      item,
-    )),
-    { text: parts.totalPrefix, highlighted: false },
-    {
-      text: String(totalDrachmaValue),
-      highlighted: highlightFields.includes(parts.totalValueToken),
-    },
-    { text: parts.totalSuffix, highlighted: false },
-  ];
-}
-
-function buildSellSelectedItemLineSegments(
-  parts: PlayerArmorySellSelectedMessageParts,
-  highlightFields: readonly string[],
-  item: PlayerArmoryItemReadModel,
-): StructuredConfirmDialogSegment[] {
-  const itemLineParts = parts.itemLineParts;
-  const valueDisplay = item.displayCore.valueDisplay?.displayValue;
-
-  if (!valueDisplay) {
-    return [];
-  }
-
-  return [
-    {
-      text: item.displayCore.itemName,
-      highlighted: highlightFields.includes(itemLineParts.itemNameToken),
-    },
-    { text: itemLineParts.middle, highlighted: false },
-    {
-      text: valueDisplay,
-      highlighted: highlightFields.includes(itemLineParts.drachmaValueToken),
-    },
-    { text: itemLineParts.suffix, highlighted: false, lineBreakAfter: true },
-  ];
-}
-
-function plainStructuredConfirmMessage(
-  segments: readonly StructuredConfirmDialogSegment[],
-): string {
-  return segments
-    .map((segment) => `${segment.text}${segment.lineBreakAfter ? '\n' : ''}`)
-    .join('');
-}
-
-function contextKeyFor(
-  context: Pick<PlayerArmoryPageContextReadModel, 'heroId' | 'serverId'> | null,
-): string | null {
-  return context ? `${context.serverId}:${context.heroId}` : null;
-}
-
-function visibleArmoryItemsById(
-  context: PlayerArmoryPageContextReadModel,
-  itemIds: readonly string[],
-): PlayerArmoryItemReadModel[] {
-  const visibleItemsById = new Map(
-    context.readModel.visibleItems.map((item) => [item.itemId, item]),
-  );
-
-  return itemIds
-    .map((itemId) => visibleItemsById.get(itemId) ?? null)
-    .filter((item): item is PlayerArmoryItemReadModel => item !== null);
-}
-
-function canEquipInventoryItem(item: PlayerArmoryItemReadModel): boolean {
-  return item.lifecycleStatusKey === 'active'
-    && item.meetsRequirements === true;
-}
-
-function mapArmoryPageEquipmentPreviewRows(
-  slots: readonly PlayerArmoryEquipmentSlotReadModel[],
-): EquipmentPreviewSlotRow[] {
-  return slots.map((slot) => ({
-    slotKey: slot.slotKey,
-    label: slot.slotLabel,
-    sortOrder: slot.slotSortOrder,
-    iconClass: equipmentPreviewIconClassForSlot(slot.slotKey),
-    emptyDisplayName: slot.hasItem ? null : slot.itemDisplayName,
-    emptyDisplayDetail: slot.hasItem ? null : slot.itemDisplayStateLabel,
-    item: slot.hasItem
-      ? {
-          itemId: slot.itemId!,
-          name: slot.itemDisplayName,
-          metadata: slot.itemDisplayStateLabel,
-          statusLabel: slot.itemDisplayStateLabel,
-          qualityLabel: slot.qualityLabel,
-          kindLabel: slot.baseName,
-          slotLabel: slot.slotLabel,
-        }
-      : null,
-  }));
 }

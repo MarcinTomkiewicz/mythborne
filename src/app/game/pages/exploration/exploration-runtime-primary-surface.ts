@@ -7,6 +7,7 @@ import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationMinigameHandoffState } from './exploration-minigame-handoff.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPageState } from './exploration-page.state';
+import { ExplorationSandboxToolState } from './exploration-sandbox-tool.state';
 import { ExplorationStepState } from './exploration-step.state';
 
 @Component({
@@ -26,5 +27,6 @@ export class ExplorationRuntimePrimarySurface {
   readonly minigameHandoff = inject(ExplorationMinigameHandoffState);
   readonly overview = inject(ExplorationOverviewState);
   readonly page = inject(ExplorationPageState);
+  readonly sandbox = inject(ExplorationSandboxToolState);
   readonly step = inject(ExplorationStepState);
 }

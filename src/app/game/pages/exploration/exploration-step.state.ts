@@ -5,10 +5,10 @@ import {
   HeroExplorationStepReadModel,
   HeroExplorationStepResolutionReadModel,
 } from '../../../core/domain/exploration/exploration-runtime.model';
+import { EXPLORATION_RUNTIME_COPY } from '../../../core/constants/exploration-runtime-copy.const';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { ToastService } from '../../../core/services/ui/toast';
 import type { PendingTimerDisplay } from '../../../core/types/pending-timer.types';
-import { jsonRecord, read } from '../../../core/utils/json-read';
 import { pendingTimerDisplay, pendingTimerHasElapsed } from '../../../core/utils/pending-timer';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
@@ -86,12 +86,12 @@ export class ExplorationStepState {
     this.feedback.clear();
 
     if (!context || !step) {
-      this.feedback.setError(null, 'Brak aktywnego kroku ruchu do sprawdzenia.');
+      this.feedback.setError(null, EXPLORATION_RUNTIME_COPY.stepMissingActive);
       return;
     }
 
     if (!this.isActiveStepWorkflowReady(step, this.now())) {
-      this.feedback.setError(null, 'Krok ruchu nie jest jeszcze gotowy.');
+      this.feedback.setError(null, EXPLORATION_RUNTIME_COPY.stepNotReady);
       return;
     }
 
@@ -114,20 +114,40 @@ export class ExplorationStepState {
       )
       .subscribe({
         next: (workflow) => {
-          if (!this.isCurrentResolve(token, context.heroId, context.difficultyKey, step.id)) {
+          if (
+            !this.isCurrentResolve(
+              token,
+              context.serverId,
+              context.heroId,
+              context.difficultyKey,
+              step.id,
+            )
+          ) {
             return;
           }
 
           this.lastResolvedStep.set(workflow.result);
           this.overview.setStateFromWorkflow(workflow.state);
-          this.toast.show('success', 'Eksploracja', 'Wynik ruchu został sprawdzony.');
+          this.toast.show(
+            'success',
+            EXPLORATION_RUNTIME_COPY.explorationToastTitle,
+            EXPLORATION_RUNTIME_COPY.stepResolved,
+          );
         },
         error: (error: unknown) => {
-          if (!this.isCurrentResolve(token, context.heroId, context.difficultyKey, step.id)) {
+          if (
+            !this.isCurrentResolve(
+              token,
+              context.serverId,
+              context.heroId,
+              context.difficultyKey,
+              step.id,
+            )
+          ) {
             return;
           }
 
-          this.feedback.setError(error, 'Nie udało się sprawdzić wyniku ruchu.');
+          this.feedback.setError(error, EXPLORATION_RUNTIME_COPY.stepResolveFailed);
         },
       });
   }
@@ -139,14 +159,9 @@ export class ExplorationStepState {
       return false;
     }
 
-    const metadata = jsonRecord(result.metadataJson);
-
     return (
-      (
-        result.rawOutcomeKind === 'trial_opportunity' ||
-        read(metadata, 'rawOutcomeKind', 'raw_outcome_kind') === 'trial_opportunity'
-      ) &&
-      read(metadata, 'trialManifested', 'trial_manifested') === false
+      result.rawOutcomeKind === 'trial_opportunity' &&
+      result.challengeAttemptId === null
     );
   }
 
@@ -194,13 +209,14 @@ export class ExplorationStepState {
 
   private isCurrentResolve(
     token: number,
+    serverId: string,
     heroId: string,
     difficultyKey: string,
     stepId: string,
   ): boolean {
     return (
       this.resolveToken.isCurrent(token) &&
-      this.overview.isCurrentContext(heroId, difficultyKey) &&
+      this.overview.isCurrentContext(serverId, heroId, difficultyKey) &&
       this.overview.state()?.activeStep?.id === stepId
     );
   }

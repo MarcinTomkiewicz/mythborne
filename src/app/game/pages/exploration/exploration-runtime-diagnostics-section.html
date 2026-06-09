@@ -17,17 +17,17 @@
               type="button"
               severity="success"
               label="Sandbox: sukces"
-              [loading]="page.isRunningSandboxTool()"
-              [disabled]="page.isRunningSandboxTool() || !canShowSandboxChallengeTools()"
-              (onClick)="page.forceCompleteSandboxChallenge(true)"
+              [loading]="sandbox.isRunningSandboxTool()"
+              [disabled]="sandbox.isRunningSandboxTool() || !canShowSandboxChallengeTools()"
+              (onClick)="sandbox.forceCompleteSandboxChallenge(true)"
             />
             <p-button
               type="button"
               severity="danger"
               label="Sandbox: porażka"
-              [loading]="page.isRunningSandboxTool()"
-              [disabled]="page.isRunningSandboxTool() || !canShowSandboxChallengeTools()"
-              (onClick)="page.forceCompleteSandboxChallenge(false)"
+              [loading]="sandbox.isRunningSandboxTool()"
+              [disabled]="sandbox.isRunningSandboxTool() || !canShowSandboxChallengeTools()"
+              (onClick)="sandbox.forceCompleteSandboxChallenge(false)"
             />
           </div>
         </article>

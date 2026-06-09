@@ -1,6 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
+import { ExplorationDiagnosticsState } from './exploration-diagnostics.state';
 import { ExplorationDifficultyPreviewSection } from './exploration-difficulty-preview-section';
 import { ExplorationRuntimeDiagnosticsSection } from './exploration-runtime-diagnostics-section';
 import { ExplorationRuntimeDirectionSection } from './exploration-runtime-direction-section';
@@ -11,6 +12,7 @@ import { ExplorationOverviewState } from './exploration-overview.state';
 import { ExplorationPageState } from './exploration-page.state';
 import { ExplorationPreviewState } from './exploration-preview.state';
 import { ExplorationRewardState } from './exploration-reward.state';
+import { ExplorationSandboxToolState } from './exploration-sandbox-tool.state';
 import { ExplorationStepState } from './exploration-step.state';
 import { ExplorationStartState } from './exploration-start.state';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
@@ -27,6 +29,7 @@ import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay'
   ],
   providers: [
     ExplorationFeedbackState,
+    ExplorationDiagnosticsState,
     ExplorationPreviewState,
     ExplorationOverviewState,
     ExplorationMovementState,
@@ -34,6 +37,7 @@ import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay'
     ExplorationStepState,
     ExplorationChallengeState,
     ExplorationRewardState,
+    ExplorationSandboxToolState,
     ExplorationStartState,
     ExplorationPageState,
   ],

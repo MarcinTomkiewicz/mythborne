@@ -1,12 +1,18 @@
-import { DestroyRef, Injectable, Signal, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs';
+import { MansionBuildingJobFinalization } from '../../domain/building/building.model';
 import {
   EstateBuildingJob,
   PlayerEstatePageContextV3,
 } from '../../domain/estate/player-estate-page-context.model';
+import {
+  ActiveJobSettlementAttempt,
+  MansionActiveJobBindings,
+} from '../../interfaces/building/mansion-active-job-settlement.interface';
 import { toBuildingDurationLabel } from '../../utils/building-display';
 import { getErrorMessage } from '../../utils/error-message';
-import { PlayerDashboardShellState } from '../hero/player-dashboard-shell-state';
+import { ActiveHeroRuntimeInvalidation } from '../hero/active-hero-runtime-invalidation';
 import { PlayerEstate } from '../estate/player-estate';
 import { Platform } from '../platform/platform';
 import { ToastService } from '../ui/toast';
@@ -18,7 +24,7 @@ const ACTIVE_JOB_SETTLEMENT_RETRY_COOLDOWN_MS = 5000;
 export class MansionActiveJobState {
   private readonly destroyRef = inject(DestroyRef);
   private readonly playerEstate = inject(PlayerEstate);
-  private readonly dashboardShellState = inject(PlayerDashboardShellState);
+  private readonly runtimeInvalidation = inject(ActiveHeroRuntimeInvalidation);
   private readonly platform = inject(Platform);
   private readonly toast = inject(ToastService);
   private readonly buildingJobs = inject(BuildingJobs);
@@ -26,11 +32,7 @@ export class MansionActiveJobState {
   readonly settlingActiveJobId = signal<string | null>(null);
   readonly nowMs = signal(Date.now());
 
-  private context: Signal<PlayerEstatePageContextV3 | null> | null = null;
-  private applyContext: ((context: PlayerEstatePageContextV3) => void) | null = null;
-  private acceptsContext: ((context: PlayerEstatePageContextV3) => boolean) | null = null;
-  private contextKey: ((context: PlayerEstatePageContextV3 | null) => string | null) | null = null;
-  private isCurrentContextKey: ((contextKey: string | null) => boolean) | null = null;
+  private bindings: MansionActiveJobBindings | null = null;
   private settlementRequestId = 0;
   private readonly secondsUntilCompletionBaselines = new Map<
     string,
@@ -45,7 +47,7 @@ export class MansionActiveJobState {
       return;
     }
 
-    const job = this.context?.()?.estateRuntimeState?.active_job_json ?? null;
+    const job = this.currentActiveJob();
 
     if (!job || this.activeJobRemainingSeconds(job) !== 0) {
       return;
@@ -58,18 +60,8 @@ export class MansionActiveJobState {
     this.startActiveJobClock();
   }
 
-  configure(input: {
-    context: Signal<PlayerEstatePageContextV3 | null>;
-    applyContext: (context: PlayerEstatePageContextV3) => void;
-    acceptsContext: (context: PlayerEstatePageContextV3) => boolean;
-    contextKey: (context: PlayerEstatePageContextV3 | null) => string | null;
-    isCurrentContextKey: (contextKey: string | null) => boolean;
-  }): void {
-    this.context = input.context;
-    this.applyContext = input.applyContext;
-    this.acceptsContext = input.acceptsContext;
-    this.contextKey = input.contextKey;
-    this.isCurrentContextKey = input.isCurrentContextKey;
+  configure(input: MansionActiveJobBindings): void {
+    this.bindings = input;
   }
 
   activeJobCountdownLabel(job: EstateBuildingJob): string | null {
@@ -108,81 +100,182 @@ export class MansionActiveJobState {
   }
 
   private settleDueActiveJob(job: EstateBuildingJob): void {
-    const context = this.context?.() ?? null;
-    const estate = context?.estateRuntimeState;
-    const activeJob = estate?.active_job_json;
-    const contextKey = this.contextKey?.(context) ?? null;
+    const attempt = this.createSettlementAttempt(job);
 
-    if (
-      !context
-      || !estate
-      || activeJob?.jobId !== job.jobId
-      || this.settlingActiveJobId()
-      || !this.canAttemptActiveJobSettlement(job.jobId)
-    ) {
+    if (!attempt) {
       return;
     }
 
+    this.runSettlementAttempt(attempt);
+  }
+
+  private runSettlementAttempt(attempt: ActiveJobSettlementAttempt): void {
+    this.buildingJobs.finalizeHeroEstateBuildingJobs(attempt.context.hero.id).pipe(
+      switchMap((result) => this.reloadAfterCommittedSettlement(attempt, result)),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: (nextContext) => this.handleSettlementReloadSuccess(attempt, nextContext),
+      error: (error: unknown) => this.handleSettlementError(attempt, error),
+    });
+  }
+
+  private createSettlementAttempt(
+    job: EstateBuildingJob,
+  ): ActiveJobSettlementAttempt | null {
+    const bindings = this.requireBindings();
+    const context = bindings.context();
+
+    if (!context) {
+      return null;
+    }
+
+    const estate = context.estateRuntimeState;
+
+    if (!estate) {
+      return null;
+    }
+
+    const activeJob = estate.active_job_json;
+
+    if (
+      !activeJob
+      || activeJob.jobId !== job.jobId
+      || this.settlingActiveJobId()
+      || !this.canAttemptActiveJobSettlement(job.jobId)
+    ) {
+      return null;
+    }
+
     const requestId = ++this.settlementRequestId;
+    const contextKey = bindings.contextKey(context);
+
+    if (!contextKey) {
+      return null;
+    }
 
     this.recordActiveJobSettlementAttempt(job.jobId);
     this.settlingActiveJobId.set(job.jobId);
 
-    this.buildingJobs.finalizeHeroEstateBuildingJobs(context.hero.id).pipe(
-      switchMap((result) => {
-        if (
-          result.heroId !== context.hero.id
-          || result.serverId !== context.hero.server_id
-          || result.estateId !== estate.estate_id
-        ) {
-          console.error({
-            estateActiveJobSettlement: {
-              jobId: job.jobId,
-              estateId: estate.estate_id,
-              result,
-            },
-          });
+    return {
+      requestId,
+      job,
+      context,
+      estate,
+      contextKey,
+      bindings,
+    };
+  }
 
-          throw new Error();
-        }
+  private reloadAfterCommittedSettlement(
+    attempt: ActiveJobSettlementAttempt,
+    result: MansionBuildingJobFinalization,
+  ) {
+    this.assertSettlementResultMatchesAttempt(result, attempt);
+    this.invalidateDashboardAfterSettlement(result);
 
-        return this.playerEstate.getPageContext();
-      }),
-    ).subscribe({
-      next: (nextContext) => {
-        if (
-          requestId !== this.settlementRequestId
-          || this.isCurrentContextKey?.(contextKey) !== true
-          || this.acceptsContext?.(nextContext) !== true
-        ) {
-          this.clearSettlingJob(requestId);
-          return;
-        }
+    return this.playerEstate.getPageContext();
+  }
 
-        this.applyContext?.(nextContext);
-        this.dashboardShellState.refreshActiveDashboardContext();
-        this.handleActiveJobSettlementReload(job.jobId, nextContext);
-        this.clearSettlingJob(requestId);
-      },
-      error: (error: unknown) => {
-        if (
-          requestId !== this.settlementRequestId
-          || this.isCurrentContextKey?.(contextKey) !== true
-        ) {
-          this.clearSettlingJob(requestId);
-          return;
-        }
+  private assertSettlementResultMatchesAttempt(
+    result: MansionBuildingJobFinalization,
+    attempt: ActiveJobSettlementAttempt,
+  ): void {
+    if (
+      result.heroId === attempt.context.hero.id
+      && result.serverId === attempt.context.hero.server_id
+      && result.estateId === attempt.estate.estate_id
+    ) {
+      return;
+    }
 
-        const message = getErrorMessage(error, '');
-        this.handleActiveJobSettlementFailure(job.jobId);
+    throw new Error(
+      `Finalized estate building job result does not match active attempt for job ${attempt.job.jobId}.`,
+    );
+  }
 
-        if (message) {
-          this.toast.show('error', context.copyJson.summary.activeJob, message);
-        }
+  private invalidateDashboardAfterSettlement(
+    result: MansionBuildingJobFinalization,
+  ): void {
+    this.runtimeInvalidation.invalidateActiveHeroDashboardContext(
+      'estate_building_job_finalized',
+      { serverId: result.serverId, heroId: result.heroId },
+    );
+  }
 
-        this.clearSettlingJob(requestId);
-      },
-    });
+  private handleSettlementReloadSuccess(
+    attempt: ActiveJobSettlementAttempt,
+    nextContext: PlayerEstatePageContextV3,
+  ): void {
+    if (
+      !this.isCurrentSettlementAttempt(attempt) ||
+      !attempt.bindings.acceptsContext(nextContext)
+    ) {
+      this.clearSettlingJob(attempt.requestId);
+      return;
+    }
+
+    attempt.bindings.applyContext(nextContext);
+    this.handleActiveJobSettlementReload(attempt.job.jobId, nextContext);
+    this.clearSettlingJob(attempt.requestId);
+  }
+
+  private handleSettlementError(
+    attempt: ActiveJobSettlementAttempt,
+    error: unknown,
+  ): void {
+    if (!this.isCurrentSettlementAttempt(attempt)) {
+      this.clearSettlingJob(attempt.requestId);
+      return;
+    }
+
+    const message = getErrorMessage(error, '');
+
+    this.handleActiveJobSettlementFailure(attempt.job.jobId);
+
+    if (message) {
+      this.toast.show('error', attempt.context.copyJson.summary.activeJob, message);
+    }
+
+    this.clearSettlingJob(attempt.requestId);
+  }
+
+  private isCurrentSettlementAttempt(attempt: ActiveJobSettlementAttempt): boolean {
+    return (
+      attempt.requestId === this.settlementRequestId &&
+      attempt.bindings.isCurrentContextKey(attempt.contextKey)
+    );
+  }
+
+  private currentConfiguredContext(): PlayerEstatePageContextV3 | null {
+    if (!this.bindings) {
+      return null;
+    }
+
+    return this.bindings.context();
+  }
+
+  private currentActiveJob(): EstateBuildingJob | null {
+    const context = this.currentConfiguredContext();
+
+    if (!context) {
+      return null;
+    }
+
+    const estate = context.estateRuntimeState;
+
+    if (!estate) {
+      return null;
+    }
+
+    return estate.active_job_json;
+  }
+
+  private requireBindings(): MansionActiveJobBindings {
+    if (!this.bindings) {
+      throw new Error('Mansion active job state must be configured before settlement.');
+    }
+
+    return this.bindings;
   }
 
   private activeJobRemainingSeconds(job: EstateBuildingJob): number | null {
@@ -250,10 +343,11 @@ export class MansionActiveJobState {
 
   private recordActiveJobSettlementAttempt(jobId: string): void {
     const retry = this.settlementRetries.get(jobId);
+    const attemptCount = retry ? retry.attemptCount + 1 : 1;
 
     this.settlementRetries.set(jobId, {
-      attemptCount: (retry?.attemptCount ?? 0) + 1,
-      nextAttemptAtMs: Number.POSITIVE_INFINITY,
+      attemptCount,
+      nextAttemptAtMs: this.nowMs() + ACTIVE_JOB_SETTLEMENT_RETRY_COOLDOWN_MS,
     });
   }
 
@@ -261,29 +355,24 @@ export class MansionActiveJobState {
     jobId: string,
     context: PlayerEstatePageContextV3,
   ): void {
-    const activeJob = context.estateRuntimeState?.active_job_json;
+    const estate = context.estateRuntimeState;
+    const activeJob = estate ? estate.active_job_json : null;
 
-    if (activeJob?.jobId !== jobId) {
+    if (!activeJob || activeJob.jobId !== jobId) {
       this.settlementRetries.delete(jobId);
       this.secondsUntilCompletionBaselines.delete(jobId);
       return;
     }
 
-    console.error({
-      estateActiveJobSettlement: {
-        jobId,
-        activeJobId: activeJob?.jobId ?? null,
-        estateId: context.estateRuntimeState?.estate_id ?? null,
-      },
-    });
     this.handleActiveJobSettlementFailure(jobId);
   }
 
   private handleActiveJobSettlementFailure(jobId: string): void {
     const retry = this.settlementRetries.get(jobId);
+    const attemptCount = retry ? retry.attemptCount : 1;
 
     this.settlementRetries.set(jobId, {
-      attemptCount: retry?.attemptCount ?? 1,
+      attemptCount,
       nextAttemptAtMs: this.nowMs() + ACTIVE_JOB_SETTLEMENT_RETRY_COOLDOWN_MS,
     });
   }

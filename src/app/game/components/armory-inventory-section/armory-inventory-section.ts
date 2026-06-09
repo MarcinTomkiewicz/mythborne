@@ -15,7 +15,20 @@ import {
   PlayerArmoryItemReadModel,
   PlayerArmoryStorageSlotReadModel,
 } from '../../../core/domain/item/player-armory-page-context.model';
+import {
+  canEquipInventoryItem,
+  canVendorScrapInventoryItem,
+  sumVendorScrapDrachmaValue,
+} from '../../../core/domain/item/player-armory-page-helpers';
 import { ArmoryBulkActionsToolbarState } from '../../../core/interfaces/item/armory-bulk-actions-toolbar-state.interface';
+import {
+  ArmoryInventoryDragData,
+  ArmoryInventoryShelfRow,
+} from '../../../core/interfaces/item/armory-inventory-section.interface';
+import {
+  ArmoryBulkMoveInventoryItemsInput,
+  ArmoryRenameInventoryShelfInput,
+} from '../../../core/interfaces/item/armory-page-actions.interface';
 import {
   ARMORY_INVENTORY_ALL_FILTER_VALUE,
   armoryAvailabilityFilterOptions,
@@ -67,12 +80,9 @@ export class ArmoryInventorySection {
   readonly sellItem = output<PlayerArmoryItemReadModel>();
   readonly bulkEquipItems = output<readonly string[]>();
   readonly bulkSellItems = output<readonly string[]>();
-  readonly bulkMoveItems = output<{
-    itemIds: readonly string[];
-    targetShelfPosition: number;
-  }>();
+  readonly bulkMoveItems = output<ArmoryBulkMoveInventoryItemsInput>();
   readonly selectedItemIdsChange = output<readonly string[]>();
-  readonly renameShelf = output<{ shelfPosition: number; name: string }>();
+  readonly renameShelf = output<ArmoryRenameInventoryShelfInput>();
   readonly shelfNameForm = new FormRecord<FormControl<string>>({});
   readonly searchControl = new FormControl<string>('', { nonNullable: true });
   readonly slotFilterControl = new FormControl<string>(ARMORY_INVENTORY_ALL_FILTER_VALUE, {
@@ -169,10 +179,7 @@ export class ArmoryInventorySection {
       .map((item) => item.itemId),
   );
   readonly selectedVisibleDrachmaValue = computed(() =>
-    this.selectedVisibleItems().reduce(
-      (total, item) => total + (item.drachmaValue ?? 0),
-      0,
-    ),
+    sumVendorScrapDrachmaValue(this.selectedVisibleItems()),
   );
   readonly moveDestinationOptions = computed<Array<SelectOption<number>>>(() => {
     const selectedItems = this.selectedVisibleItems();
@@ -242,12 +249,11 @@ export class ArmoryInventorySection {
   }
 
   canEquipItem(item: PlayerArmoryItemReadModel): boolean {
-    return item.lifecycleStatusKey === 'active'
-      && item.meetsRequirements === true;
+    return canEquipInventoryItem(item);
   }
 
   canSellItem(item: PlayerArmoryItemReadModel): boolean {
-    return item.lifecycleStatusKey === 'active';
+    return canVendorScrapInventoryItem(item);
   }
 
   isItemSelected(item: PlayerArmoryItemReadModel): boolean {
@@ -399,14 +405,4 @@ export class ArmoryInventorySection {
 
 function shelfControlName(position: number): string {
   return `shelf_${position}`;
-}
-
-interface ArmoryInventoryDragData {
-  item: PlayerArmoryItemReadModel;
-}
-
-interface ArmoryInventoryShelfRow extends PlayerArmoryStorageSlotReadModel {
-  controlName: string;
-  canRename: boolean;
-  shelfCountLabel: string;
 }

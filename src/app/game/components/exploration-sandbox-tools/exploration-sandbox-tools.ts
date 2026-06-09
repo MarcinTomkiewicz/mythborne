@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
-import { ExplorationPageState } from '../../pages/exploration/exploration-page.state';
+import { ExplorationSandboxToolState } from '../../pages/exploration/exploration-sandbox-tool.state';
 
 @Component({
   selector: 'app-exploration-sandbox-tools',
@@ -10,5 +10,5 @@ import { ExplorationPageState } from '../../pages/exploration/exploration-page.s
   host: { class: 'd-block w-100' },
 })
 export class ExplorationSandboxTools {
-  readonly page = inject(ExplorationPageState);
+  readonly sandbox = inject(ExplorationSandboxToolState);
 }

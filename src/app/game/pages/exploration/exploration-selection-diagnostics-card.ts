@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CollapsedJsonPreview } from '../../../shared/json-preview/collapsed-json-preview';
-import { ExplorationPageState } from './exploration-page.state';
+import { ExplorationDiagnosticsState } from './exploration-diagnostics.state';
 
 @Component({
   selector: 'app-exploration-selection-diagnostics-card',
@@ -9,5 +9,5 @@ import { ExplorationPageState } from './exploration-page.state';
   templateUrl: './exploration-selection-diagnostics-card.html',
 })
 export class ExplorationSelectionDiagnosticsCard {
-  readonly page = inject(ExplorationPageState);
+  readonly diagnostics = inject(ExplorationDiagnosticsState);
 }

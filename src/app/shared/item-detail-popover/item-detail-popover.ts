@@ -80,10 +80,6 @@ export class ItemDetailPopover {
     this.open(event, popover);
   }
 
-  openFromFocus(event: Event, popover: Popover): void {
-    this.open(event, popover);
-  }
-
   openFromClick(event: Event, popover: Popover): void {
     if (!this.buttonTrigger() && this.isInteractiveTarget(event.target)) {
       return;

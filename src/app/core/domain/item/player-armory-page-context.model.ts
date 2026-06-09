@@ -180,7 +180,12 @@ export interface PlayerArmoryItemReadModel {
   shelfPosition: number;
   shelfName: string | null;
   allowedSlotKeys: string[];
-  meetsRequirements?: boolean | null;
+  meetsRequirements: boolean;
+  requirementStatusKey: string;
+  requirementStatusAvailable: boolean;
+  requirementCount: number;
+  unmetRequirementCount: number;
+  requirementStatus: JsonRecord;
   displayCore: PlayerItemDisplayCore;
 }
 

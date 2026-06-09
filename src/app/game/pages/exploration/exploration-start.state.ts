@@ -1,6 +1,7 @@
 import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
+import { EXPLORATION_RUNTIME_COPY } from '../../../core/constants/exploration-runtime-copy.const';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { createRequestId } from '../../../core/utils/request-id';
 import { RequestToken } from '../../../core/utils/request-token';
@@ -27,7 +28,7 @@ export class ExplorationStartState {
     const context = this.overview.currentContext();
 
     if (!context) {
-      this.feedback.setError(null, 'Wybierz poziom trudności przed rozpoczęciem eksploracji.');
+      this.feedback.setError(null, EXPLORATION_RUNTIME_COPY.startDifficultyRequired);
       return;
     }
 
@@ -54,7 +55,14 @@ export class ExplorationStartState {
       )
       .subscribe({
         next: (state) => {
-          if (!this.isCurrentAction(token, context.heroId, context.difficultyKey)) {
+          if (
+            !this.isCurrentAction(
+              token,
+              context.serverId,
+              context.heroId,
+              context.difficultyKey,
+            )
+          ) {
             return;
           }
 
@@ -63,19 +71,31 @@ export class ExplorationStartState {
           onReady?.();
         },
         error: (error: unknown) => {
-          if (!this.isCurrentAction(token, context.heroId, context.difficultyKey)) {
+          if (
+            !this.isCurrentAction(
+              token,
+              context.serverId,
+              context.heroId,
+              context.difficultyKey,
+            )
+          ) {
             return;
           }
 
-          this.feedback.setError(error, 'Nie udało się rozpocząć eksploracji.');
+          this.feedback.setError(error, EXPLORATION_RUNTIME_COPY.startExplorationFailed);
         },
       });
   }
 
-  private isCurrentAction(token: number, heroId: string, difficultyKey: string): boolean {
+  private isCurrentAction(
+    token: number,
+    serverId: string,
+    heroId: string,
+    difficultyKey: string,
+  ): boolean {
     return (
       this.actionToken.isCurrent(token) &&
-      this.overview.isCurrentContext(heroId, difficultyKey)
+      this.overview.isCurrentContext(serverId, heroId, difficultyKey)
     );
   }
 }

@@ -1,7 +1,7 @@
 @let state = overview.state();
 
 @if (state?.hasExploration && state?.exploration) {
-  @if (page.sandboxChallengeResult() || minigameHandoff.currentMinigameReportPointer()) {
+  @if (sandbox.sandboxChallengeResult() || minigameHandoff.currentMinigameReportPointer()) {
     <app-exploration-result-report />
   } @else if (challenge.activeChallenge()) {
     <app-exploration-active-challenge-report />
@@ -12,7 +12,7 @@
       [timer]="step.activeStepTimerDisplay()"
       [isReady]="step.canCheckActiveStepResult()"
       [isResolving]="step.isResolving()"
-      [isUpdating]="page.isUpdatingActiveStepTimer()"
+      [isUpdating]="sandbox.isUpdatingActiveStepTimer()"
       timerAriaLabel="Czas kroku eksploracji"
       progressAriaLabel="Postęp czasu eksploracji"
       pendingLabel="Pozostały czas"

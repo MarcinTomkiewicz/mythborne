@@ -1,12 +1,9 @@
 import { Component, computed, inject } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
-import { GameServerKind } from '../../../core/enums/active-server.enum';
-import { ActiveServer } from '../../../core/services/server/active-server';
 import { ExplorationSandboxTools } from '../../components/exploration-sandbox-tools/exploration-sandbox-tools';
-import { ExplorationChallengeState } from './exploration-challenge.state';
-import { ExplorationPageState } from './exploration-page.state';
+import { ExplorationDiagnosticsState } from './exploration-diagnostics.state';
+import { ExplorationSandboxToolState } from './exploration-sandbox-tool.state';
 import { ExplorationSelectionDiagnosticsCard } from './exploration-selection-diagnostics-card';
-import { ExplorationStepState } from './exploration-step.state';
 
 @Component({
   selector: 'app-exploration-runtime-diagnostics-section',
@@ -16,29 +13,13 @@ import { ExplorationStepState } from './exploration-step.state';
   host: { class: 'd-contents' },
 })
 export class ExplorationRuntimeDiagnosticsSection {
-  private readonly activeServer = inject(ActiveServer);
-  readonly challenge = inject(ExplorationChallengeState);
-  readonly page = inject(ExplorationPageState);
-  readonly step = inject(ExplorationStepState);
-  readonly canShowSelectionDiagnostics = computed(() => {
-    const server = this.activeServer.selectedServer();
-    const access = this.activeServer.access();
-
-    return server?.kind === GameServerKind.Sandbox && access.canAccessSandbox;
-  });
+  readonly diagnostics = inject(ExplorationDiagnosticsState);
+  readonly sandbox = inject(ExplorationSandboxToolState);
+  readonly canShowSelectionDiagnostics = this.sandbox.canShowSelectionDiagnostics;
   readonly canShowSandboxChallengeTools = computed(() =>
     this.canShowSelectionDiagnostics()
-    && this.page.canShowSandboxChallengeCompletionTools(),
+    && this.sandbox.canShowSandboxChallengeCompletionTools(),
   );
-  readonly canShowResolvedDiagnostics = computed(() =>
-    Boolean(
-      this.step.currentStepResult()
-      || this.page.sandboxChallengeResult()
-      || this.challenge.activeChallenge()
-    ),
-  );
-  readonly canShowDiagnosticsSection = computed(() =>
-    this.page.canShowSandboxTools()
-    || (this.canShowResolvedDiagnostics() && this.canShowSelectionDiagnostics()),
-  );
+  readonly canShowResolvedDiagnostics = this.diagnostics.canShowResolvedDiagnostics;
+  readonly canShowDiagnosticsSection = this.diagnostics.canShowDiagnosticsSection;
 }

@@ -1,4 +1,4 @@
-@if (page.canShowSandboxTools()) {
+@if (sandbox.canShowSandboxTools()) {
   <article class="mg-card p-md w-100 mb-md flex-row-between-center flex-col-sm gap-md">
     <div class="flex-col gap-xs min-w-0">
       <p class="small-caps color-muted text-xs mb-0">Sandbox</p>
@@ -13,18 +13,18 @@
         size="small"
         severity="secondary"
         label="Skróć czas"
-        [loading]="page.isRunningSandboxTool()"
-        [disabled]="!page.canSkipSandboxStepTimer()"
-        (onClick)="page.skipSandboxStepTimer()"
+        [loading]="sandbox.isRunningSandboxTool()"
+        [disabled]="!sandbox.canSkipSandboxStepTimer()"
+        (onClick)="sandbox.skipSandboxStepTimer()"
       />
       <p-button
         type="button"
         size="small"
         severity="secondary"
         label="Dodaj triale"
-        [loading]="page.isRunningSandboxTool()"
-        [disabled]="!page.canAddSandboxTrials()"
-        (onClick)="page.addSandboxTrials()"
+        [loading]="sandbox.isRunningSandboxTool()"
+        [disabled]="!sandbox.canAddSandboxTrials()"
+        (onClick)="sandbox.addSandboxTrials()"
       />
     </div>
   </article>

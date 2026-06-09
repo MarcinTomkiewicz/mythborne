@@ -1,10 +1,15 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, forkJoin, of, switchMap } from 'rxjs';
+import {
+  EXPLORATION_RUNTIME_COPY,
+  explorationRemainingTrialsLabel,
+} from '../../../core/constants/exploration-runtime-copy.const';
 import { HeroExplorationDifficultyCardPreview } from '../../../core/domain/exploration/exploration-preview.model';
 import { HeroExplorationStateReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
+import { ExplorationRuntimeContext } from '../../../core/types/exploration-runtime-context.types';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import {
@@ -26,6 +31,7 @@ export class ExplorationOverviewState {
   private readonly loadToken = new RequestToken();
 
   private activeHeroId: string | null = null;
+  private activeServerId: string | null = null;
 
   readonly state = signal<HeroExplorationStateReadModel | null>(null);
   readonly selectedDifficultyKey = signal<string | null>(null);
@@ -37,7 +43,7 @@ export class ExplorationOverviewState {
 
   readonly remainingTrialsLabel = computed(() => {
     const remaining = this.state()?.remainingTrials ?? 0;
-    return `${remaining} ${remaining === 1 ? 'próba' : 'prób'} dostępnych dzisiaj`;
+    return explorationRemainingTrialsLabel(remaining);
   });
   readonly currentNodeLabel = computed(() => explorationCurrentNodeLabel(this.state()));
   readonly activeStepLabel = computed(() => explorationActiveStepLabel(this.state()));
@@ -64,7 +70,8 @@ export class ExplorationOverviewState {
           }
 
           this.activeHeroId = context.heroId;
-          this.loadOverview(context.heroId, token);
+          this.activeServerId = context.serverId;
+          this.loadOverview(context.serverId, context.heroId, token);
         },
         error: (error: unknown) => {
           if (!this.loadToken.isCurrent(token)) {
@@ -72,7 +79,7 @@ export class ExplorationOverviewState {
           }
 
           this.isLoading.set(false);
-          this.feedback.setError(error, 'Failed to load active hero.');
+          this.feedback.setError(error, EXPLORATION_RUNTIME_COPY.activeHeroLoadFailed);
         },
       });
   }
@@ -86,11 +93,11 @@ export class ExplorationOverviewState {
     this.loadSelectedState();
   }
 
-  currentContext(): { heroId: string; difficultyKey: string } | null {
+  currentContext(): ExplorationRuntimeContext | null {
     const difficultyKey = this.selectedDifficultyKey();
 
-    return this.activeHeroId && difficultyKey
-      ? { heroId: this.activeHeroId, difficultyKey }
+    return this.activeServerId && this.activeHeroId && difficultyKey
+      ? { serverId: this.activeServerId, heroId: this.activeHeroId, difficultyKey }
       : null;
   }
 
@@ -102,13 +109,19 @@ export class ExplorationOverviewState {
     this.loadSelectedState();
   }
 
-  isCurrentContext(heroId: string, difficultyKey: string): boolean {
+  isCurrentContext(
+    serverId: string,
+    heroId: string,
+    difficultyKey: string,
+  ): boolean {
     return (
-      this.activeHeroId === heroId && this.selectedDifficultyKey() === difficultyKey
+      this.activeServerId === serverId &&
+      this.activeHeroId === heroId &&
+      this.selectedDifficultyKey() === difficultyKey
     );
   }
 
-  private loadOverview(heroId: string, token: number): void {
+  private loadOverview(serverId: string, heroId: string, token: number): void {
     this.previews
       .loadDifficultyCardPreviews(heroId)
       .pipe(
@@ -144,24 +157,25 @@ export class ExplorationOverviewState {
       )
       .subscribe({
         next: (result) => {
-          if (!result || !this.isCurrentLoad(token, heroId)) {
+          if (!result || !this.isCurrentLoad(token, serverId, heroId)) {
             return;
           }
 
           this.state.set(result.state);
         },
         error: (error: unknown) => {
-          if (!this.isCurrentLoad(token, heroId)) {
+          if (!this.isCurrentLoad(token, serverId, heroId)) {
             return;
           }
 
-          this.feedback.setError(error, 'Failed to load exploration status.');
+          this.feedback.setError(error, EXPLORATION_RUNTIME_COPY.explorationStatusLoadFailed);
         },
       });
   }
 
   private clearHeroScopedPreviewState(): void {
     this.activeHeroId = null;
+    this.activeServerId = null;
     this.state.set(null);
     this.selectedDifficultyKey.set(null);
     this.previews.difficultyCardPreviews.set([]);
@@ -191,18 +205,32 @@ export class ExplorationOverviewState {
       )
       .subscribe({
         next: (state) => {
-          if (!this.isCurrentLoad(token, context.heroId, context.difficultyKey)) {
+          if (
+            !this.isCurrentLoad(
+              token,
+              context.serverId,
+              context.heroId,
+              context.difficultyKey,
+            )
+          ) {
             return;
           }
 
           this.state.set(state);
         },
         error: (error: unknown) => {
-          if (!this.isCurrentLoad(token, context.heroId, context.difficultyKey)) {
+          if (
+            !this.isCurrentLoad(
+              token,
+              context.serverId,
+              context.heroId,
+              context.difficultyKey,
+            )
+          ) {
             return;
           }
 
-          this.feedback.setError(error, 'Failed to load exploration status.');
+          this.feedback.setError(error, EXPLORATION_RUNTIME_COPY.explorationStatusLoadFailed);
         },
       });
   }
@@ -221,12 +249,13 @@ export class ExplorationOverviewState {
 
   private isCurrentLoad(
     token: number,
+    serverId: string,
     heroId: string,
     difficultyKey = this.selectedDifficultyKey(),
   ): boolean {
     return (
       this.loadToken.isCurrent(token) &&
-      this.isCurrentContext(heroId, difficultyKey ?? '')
+      this.isCurrentContext(serverId, heroId, difficultyKey ?? '')
     );
   }
 }

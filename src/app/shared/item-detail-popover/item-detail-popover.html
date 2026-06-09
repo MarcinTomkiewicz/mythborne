@@ -9,7 +9,6 @@
   [attr.aria-label]="buttonTrigger() ? null : triggerAriaLabel(detail.name)"
   (mouseenter)="openFromPointer($event, popover)"
   (mouseleave)="scheduleClose(popover)"
-  (focusin)="openFromFocus($event, popover)"
   (focusout)="scheduleClose(popover)"
   (click)="buttonTrigger() ? null : openFromClick($event, popover)"
 >

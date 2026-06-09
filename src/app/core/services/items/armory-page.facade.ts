@@ -1,22 +1,36 @@
-import { Injectable, inject, signal } from '@angular/core';
-import { catchError, forkJoin, map, of } from 'rxjs';
+import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Origin } from '../../domain/origin/origin.model';
 import {
   PlayerArmoryEquipmentSlotReadModel,
-  PlayerArmoryItemReadModel,
   PlayerArmoryLoadoutPresetReadModel,
   PlayerArmoryPageCopyReadModel,
   PlayerArmoryPageContextReadModel,
   PlayerArmoryReadModel,
 } from '../../domain/item/player-armory-page-context.model';
+import {
+  ArmoryBulkMoveInventoryItemsInput,
+  ArmoryRenameInventoryShelfInput,
+} from '../../interfaces/item/armory-page-actions.interface';
 import { Json } from '../../types/database.types';
 import { getErrorMessage } from '../../utils/error-message';
+import {
+  canVendorScrapInventoryItem,
+  playerArmoryContextKey,
+  visibleArmoryItemsById,
+} from '../../domain/item/player-armory-page-helpers';
+import { ActiveHeroRuntimeInvalidation } from '../hero/active-hero-runtime-invalidation';
+import { ItemLifecycleService } from './item-lifecycle';
 import { PlayerArmory } from './player-armory';
 
 @Injectable()
 export class ArmoryPageFacade {
   private readonly armory = inject(PlayerArmory);
+  private readonly lifecycle = inject(ItemLifecycleService);
+  private readonly runtimeInvalidation = inject(ActiveHeroRuntimeInvalidation);
+  private readonly destroyRef = inject(DestroyRef);
   private loadToken = 0;
+  private inventoryActionToken = 0;
 
   readonly status = signal<'idle' | 'loading' | 'loaded' | 'error'>('idle');
   readonly error = signal<string | null>(null);
@@ -28,6 +42,7 @@ export class ArmoryPageFacade {
   readonly heroLuck = signal(0);
   readonly equipmentSlots = signal<PlayerArmoryEquipmentSlotReadModel[]>([]);
   readonly origin = signal<Origin | null>(null);
+  readonly isInventoryMutating = signal(false);
 
   loadData(): void {
     const token = ++this.loadToken;
@@ -41,8 +56,11 @@ export class ArmoryPageFacade {
     this.runtimeDerivedStats.set(null);
     this.equipmentSlots.set([]);
     this.origin.set(null);
+    this.isInventoryMutating.set(false);
 
-    this.armory.getArmoryPageContext().subscribe({
+    this.armory.getArmoryPageContext().pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
       next: (context) => {
         if (token !== this.loadToken) {
           return;
@@ -55,7 +73,6 @@ export class ArmoryPageFacade {
         this.loadoutPresets.set(context.loadoutPresets);
         this.runtimeDerivedStats.set(context.runtimeDerivedStats);
         this.status.set('loaded');
-        this.hydrateMissingRequirementStatuses(context, token);
       },
       error: (error: unknown) => {
         if (token !== this.loadToken) {
@@ -73,71 +90,214 @@ export class ArmoryPageFacade {
     });
   }
 
-  private hydrateMissingRequirementStatuses(
-    context: PlayerArmoryPageContextReadModel,
-    token: number,
+  vendorScrapInventoryItem(
+    itemId: string,
+    afterSuccess?: () => void,
   ): void {
-    const items = context.readModel.visibleItems.filter((item) =>
-      item.lifecycleStatusKey === 'active' && item.meetsRequirements == null
-    );
+    const context = this.context();
 
-    if (!items.length) {
+    if (!context || this.isInventoryMutating()) {
       return;
     }
 
-    forkJoin(
-      items.map((item) =>
-        this.armory.getItemRequirementPreviewForHero(context.heroId, item.itemId).pipe(
-          map((preview) => ({
-            itemId: item.itemId,
-            meetsRequirements: preview?.meetsRequirements ?? null,
-          })),
-          catchError(() => of({
-            itemId: item.itemId,
-            meetsRequirements: null,
-          })),
-        )
-      ),
-    ).subscribe((statuses) => {
-      if (token !== this.loadToken) {
-        return;
-      }
+    const selectedItems = visibleArmoryItemsById(context, [itemId]);
 
-      const statusByItemId = new Map(
-        statuses.map((status) => [status.itemId, status.meetsRequirements]),
-      );
-      const readModel = {
-        ...context.readModel,
-        shelves: context.readModel.shelves.map((shelf) => ({
-          ...shelf,
-          visibleItems: shelf.visibleItems.map((item) =>
-            patchRequirementStatus(item, statusByItemId),
-          ),
-        })),
-        visibleItems: context.readModel.visibleItems.map((item) =>
-          patchRequirementStatus(item, statusByItemId),
-        ),
-      };
-      const updatedContext = {
-        ...context,
-        readModel,
-      };
+    if (
+      selectedItems.length !== 1
+      || selectedItems.some((item) => !canVendorScrapInventoryItem(item))
+    ) {
+      return;
+    }
 
-      this.context.set(updatedContext);
-      this.readModel.set(readModel);
+    const token = ++this.inventoryActionToken;
+    const contextKey = playerArmoryContextKey(context);
+
+    this.isInventoryMutating.set(true);
+    this.lifecycle.vendorScrapHeroItem({
+      actorHeroId: context.heroId,
+      itemId: selectedItems[0].itemId,
+    }).pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: () => {
+        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
+          return;
+        }
+
+        afterSuccess?.();
+        this.refreshAfterInventoryMutation();
+        this.runtimeInvalidation.invalidateActiveHeroDashboardContext(
+          'armory_vendor_scrap_committed',
+          { serverId: context.serverId, heroId: context.heroId },
+        );
+      },
+      error: () => {
+        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
+          return;
+        }
+
+        this.isInventoryMutating.set(false);
+      },
     });
   }
-}
 
-function patchRequirementStatus(
-  item: PlayerArmoryItemReadModel,
-  statusByItemId: ReadonlyMap<string, boolean | null>,
-): PlayerArmoryItemReadModel {
-  return statusByItemId.has(item.itemId)
-    ? {
-        ...item,
-        meetsRequirements: statusByItemId.get(item.itemId) ?? null,
-      }
-    : item;
+  bulkVendorScrapInventoryItems(
+    itemIds: readonly string[],
+    afterSuccess?: () => void,
+  ): void {
+    const context = this.context();
+
+    if (!context || this.isInventoryMutating() || !itemIds.length) {
+      return;
+    }
+
+    const selectedItems = visibleArmoryItemsById(context, itemIds);
+
+    if (
+      selectedItems.length !== itemIds.length
+      || selectedItems.some((item) => !canVendorScrapInventoryItem(item))
+    ) {
+      return;
+    }
+
+    const token = ++this.inventoryActionToken;
+    const contextKey = playerArmoryContextKey(context);
+
+    this.isInventoryMutating.set(true);
+    this.lifecycle.bulkVendorScrapHeroItems({
+      actorHeroId: context.heroId,
+      items: selectedItems.map((item) => ({ itemId: item.itemId })),
+    }).pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: () => {
+        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
+          return;
+        }
+
+        afterSuccess?.();
+        this.refreshAfterInventoryMutation();
+        this.runtimeInvalidation.invalidateActiveHeroDashboardContext(
+          'armory_bulk_vendor_scrap_committed',
+          { serverId: context.serverId, heroId: context.heroId },
+        );
+      },
+      error: () => {
+        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
+          return;
+        }
+
+        this.isInventoryMutating.set(false);
+      },
+    });
+  }
+
+  bulkMoveInventoryItems(
+    input: ArmoryBulkMoveInventoryItemsInput,
+    afterSuccess?: () => void,
+  ): void {
+    const context = this.context();
+
+    if (!context || this.isInventoryMutating() || !input.itemIds.length) {
+      return;
+    }
+
+    const selectedItems = visibleArmoryItemsById(context, input.itemIds);
+    const targetShelf = context.readModel.shelves.find((shelf) =>
+      shelf.position === input.targetShelfPosition
+      && shelf.isPersisted
+      && !shelf.isUnsortedDropArea,
+    );
+
+    if (selectedItems.length !== input.itemIds.length || !targetShelf) {
+      return;
+    }
+
+    const token = ++this.inventoryActionToken;
+    const contextKey = playerArmoryContextKey(context);
+
+    this.isInventoryMutating.set(true);
+    this.armory.bulkMoveItemsToShelf({
+      items: selectedItems.map((item) => ({ itemId: item.itemId })),
+      targetShelfPosition: input.targetShelfPosition,
+    }).pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: () => {
+        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
+          return;
+        }
+
+        afterSuccess?.();
+        this.refreshAfterInventoryMutation();
+      },
+      error: () => {
+        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
+          return;
+        }
+
+        this.isInventoryMutating.set(false);
+      },
+    });
+  }
+
+  renameInventoryShelf(
+    input: ArmoryRenameInventoryShelfInput,
+    afterSuccess?: () => void,
+  ): void {
+    const context = this.context();
+
+    if (!context || this.isInventoryMutating()) {
+      return;
+    }
+
+    const token = ++this.inventoryActionToken;
+    const contextKey = playerArmoryContextKey(context);
+
+    this.isInventoryMutating.set(true);
+    this.armory.renameShelf({
+      shelfPosition: input.shelfPosition,
+      newName: input.name,
+    }).pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: () => {
+        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
+          return;
+        }
+
+        afterSuccess?.();
+        this.refreshAfterInventoryMutation();
+      },
+      error: () => {
+        if (!this.acceptsInventoryActionResponse(token, contextKey)) {
+          return;
+        }
+
+        this.isInventoryMutating.set(false);
+      },
+    });
+  }
+
+  private acceptsInventoryActionResponse(
+    token: number,
+    contextKey: string | null,
+  ): boolean {
+    if (token !== this.inventoryActionToken) {
+      return false;
+    }
+
+    if (contextKey !== playerArmoryContextKey(this.context())) {
+      this.isInventoryMutating.set(false);
+      return false;
+    }
+
+    return true;
+  }
+
+  private refreshAfterInventoryMutation(): void {
+    this.isInventoryMutating.set(false);
+    this.loadData();
+  }
 }
 

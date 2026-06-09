@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import { ExplorationMinigameHandoffState } from '../../pages/exploration/exploration-minigame-handoff.state';
-import { ExplorationPageState } from '../../pages/exploration/exploration-page.state';
+import { ExplorationSandboxToolState } from '../../pages/exploration/exploration-sandbox-tool.state';
 import { ExplorationReportResultContent } from '../exploration-report-result-content/exploration-report-result-content';
 
 @Component({
@@ -14,9 +14,11 @@ import { ExplorationReportResultContent } from '../exploration-report-result-con
 })
 export class ExplorationResultReport {
   private readonly minigameHandoff = inject(ExplorationMinigameHandoffState);
-  private readonly page = inject(ExplorationPageState);
+  private readonly sandbox = inject(ExplorationSandboxToolState);
 
-  readonly currentChallengeResult = computed(() => this.page.sandboxChallengeResult());
+  readonly currentChallengeResult = computed(() =>
+    this.sandbox.sandboxChallengeResult(),
+  );
   readonly minigameReportPointer = computed(() =>
     this.minigameHandoff.currentMinigameReportPointer(),
   );

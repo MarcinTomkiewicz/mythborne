@@ -2,15 +2,18 @@ import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angul
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, finalize } from 'rxjs';
 import { ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
+import { EXPLORATION_RUNTIME_COPY } from '../../../core/constants/exploration-runtime-copy.const';
 import {
   ExplorationChallengeRewardReadModel,
   ExplorationGeneratedRewardItemReadModel,
   RewardGrantEntryReadModel,
 } from '../../../core/domain/exploration/exploration-reward.model';
-import { HeroExplorationStepResolutionReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { HeroExplorationRewards } from '../../../core/services/exploration/hero-exploration-rewards';
-import { PlayerDashboardShellState } from '../../../core/services/hero/player-dashboard-shell-state';
-import { jsonRecord, optionalText, read } from '../../../core/utils/json-read';
+import { ActiveHeroRuntimeInvalidation } from '../../../core/services/hero/active-hero-runtime-invalidation';
+import {
+  ExplorationPreferredChallengeReward,
+  ExplorationRewardSource,
+} from '../../../core/types/exploration-runtime-context.types';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
@@ -30,24 +33,18 @@ import {
 } from './exploration-reward-diagnostics-ui';
 import { ExplorationStepState } from './exploration-step.state';
 
-type RewardSource =
-  | { kind: 'challenge_attempt'; explorationId: string; challengeAttemptId: string }
-  | { kind: 'step'; explorationId: string; stepId: string };
-
 @Injectable()
 export class ExplorationRewardState {
   private readonly destroyRef = inject(DestroyRef);
   private readonly feedback = inject(ExplorationFeedbackState);
   private readonly overview = inject(ExplorationOverviewState);
   private readonly rewards = inject(HeroExplorationRewards);
-  private readonly dashboardShell = inject(PlayerDashboardShellState);
+  private readonly runtimeInvalidation = inject(ActiveHeroRuntimeInvalidation);
   private readonly step = inject(ExplorationStepState);
   private readonly loadToken = new RequestToken();
-  private readonly currentSource = signal<RewardSource | null>(null);
-  private readonly preferredChallengeReward = signal<{
-    explorationId: string;
-    challengeAttemptId: string;
-  } | null>(null);
+  private readonly currentSource = signal<ExplorationRewardSource | null>(null);
+  private readonly preferredChallengeReward =
+    signal<ExplorationPreferredChallengeReward | null>(null);
 
   readonly reward = signal<ExplorationChallengeRewardReadModel | null>(null);
   readonly isLoadingReward = signal(false);
@@ -58,7 +55,7 @@ export class ExplorationRewardState {
   );
   readonly rewardUnavailableMessage = computed(() =>
     this.currentSource() && !this.isLoadingReward() && !this.reward()
-      ? 'Szczegóły nagrody nie są teraz dostępne.'
+      ? EXPLORATION_RUNTIME_COPY.rewardUnavailable
       : null,
   );
 
@@ -113,7 +110,7 @@ export class ExplorationRewardState {
     return rewardItemIconClass(item);
   }
 
-  private resolveRewardSource(): RewardSource | null {
+  private resolveRewardSource(): ExplorationRewardSource | null {
     const state = this.overview.state();
     const explorationId = state?.exploration?.id ?? null;
 
@@ -136,8 +133,21 @@ export class ExplorationRewardState {
           : null;
       }
 
-      return stepResult.outcomeKind === 'encounter' &&
-        this.stepEncounterKind(stepResult) === ENCOUNTER_KIND.resource
+      if (stepResult.outcomeKind !== 'encounter') {
+        return null;
+      }
+
+      const encounterKind = stepResult.selectedDefinition?.encounterKind ?? null;
+
+      if (!encounterKind) {
+        this.feedback.setError(
+          null,
+          EXPLORATION_RUNTIME_COPY.rewardEncounterKindMissing,
+        );
+        return null;
+      }
+
+      return encounterKind === ENCOUNTER_KIND.resource
         ? { kind: 'step', explorationId, stepId: stepResult.stepId }
         : null;
     }
@@ -151,7 +161,7 @@ export class ExplorationRewardState {
       : null;
   }
 
-  private loadReward(source: RewardSource): void {
+  private loadReward(source: ExplorationRewardSource): void {
     const context = this.overview.currentContext();
 
     if (!context) {
@@ -180,17 +190,36 @@ export class ExplorationRewardState {
       )
       .subscribe({
         next: (reward) => {
-          if (this.isCurrentLoad(token, context.heroId, context.difficultyKey, source)) {
+          if (
+            this.isCurrentLoad(
+              token,
+              context.serverId,
+              context.heroId,
+              context.difficultyKey,
+              source,
+            )
+          ) {
             this.reward.set(reward);
 
             if (reward) {
-              this.dashboardShell.refreshActiveDashboardContext();
+              this.runtimeInvalidation.invalidateActiveHeroDashboardContext(
+                'exploration_reward_loaded',
+                { serverId: context.serverId, heroId: context.heroId },
+              );
             }
           }
         },
         error: (error: unknown) => {
-          if (this.isCurrentLoad(token, context.heroId, context.difficultyKey, source)) {
-            this.feedback.setError(error, 'Nie udało się odczytać nagrody eksploracji.');
+          if (
+            this.isCurrentLoad(
+              token,
+              context.serverId,
+              context.heroId,
+              context.difficultyKey,
+              source,
+            )
+          ) {
+            this.feedback.setError(error, EXPLORATION_RUNTIME_COPY.rewardLoadFailed);
           }
         },
       });
@@ -198,15 +227,16 @@ export class ExplorationRewardState {
 
   private isCurrentLoad(
     token: number,
+    serverId: string,
     heroId: string,
     difficultyKey: string,
-    source: RewardSource,
+    source: ExplorationRewardSource,
   ): boolean {
     const current = this.currentSource();
 
     return (
       this.loadToken.isCurrent(token) &&
-      this.overview.isCurrentContext(heroId, difficultyKey) &&
+      this.overview.isCurrentContext(serverId, heroId, difficultyKey) &&
       current?.kind === source.kind &&
       current.explorationId === source.explorationId &&
       (
@@ -224,10 +254,4 @@ export class ExplorationRewardState {
     this.isLoadingReward.set(false);
   }
 
-  private stepEncounterKind(result: HeroExplorationStepResolutionReadModel): string | null {
-    const metadata = jsonRecord(result.metadataJson);
-
-    return result.selectedDefinition?.encounterKind
-      ?? optionalText(read(metadata, 'encounterKind', 'encounter_kind'));
-  }
 }

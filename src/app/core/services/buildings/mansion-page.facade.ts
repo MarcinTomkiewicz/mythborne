@@ -1,4 +1,5 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   EstateBuildingJob,
   EstateBuildingRow,
@@ -9,6 +10,7 @@ import {
 import { resolveBuildingImagePath } from '../../domain/building/building-image-paths';
 import { toBuildingDurationLabel } from '../../utils/building-display';
 import { getErrorMessage } from '../../utils/error-message';
+import { ActiveHeroRuntimeInvalidation } from '../hero/active-hero-runtime-invalidation';
 import { ActiveHero } from '../hero/active-hero';
 import { PlayerEstate } from '../estate/player-estate';
 import { ToastService } from '../ui/toast';
@@ -20,8 +22,10 @@ export class MansionPageFacade {
   private readonly activeJobState = inject(MansionActiveJobState);
   private readonly playerEstate = inject(PlayerEstate);
   private readonly activeHero = inject(ActiveHero);
+  private readonly runtimeInvalidation = inject(ActiveHeroRuntimeInvalidation);
   private readonly toast = inject(ToastService);
   private readonly buildingJobs = inject(BuildingJobs);
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
@@ -67,12 +71,18 @@ export class MansionPageFacade {
     this.isLoading.set(true);
     this.error.set(null);
 
-    this.playerEstate.getPageContext().subscribe({
+    this.playerEstate.getPageContext().pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
       next: (context) => {
-        if (
-          requestId !== this.loadRequestId
-          || !this.acceptsContext(context)
-        ) {
+        if (requestId !== this.loadRequestId) {
+          return;
+        }
+
+        if (!this.acceptsContext(context)) {
+          this.context.set(null);
+          this.error.set('Mansion context changed while loading.');
+          this.isLoading.set(false);
           return;
         }
 
@@ -117,7 +127,9 @@ export class MansionPageFacade {
     this.buildingJobs.startHeroEstateBuildingUpgrade({
       heroId: context.hero.id,
       buildingId: building.buildingId,
-    }).subscribe({
+    }).pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
       next: (result) => {
         if (
           requestId !== this.actionRequestId
@@ -132,11 +144,19 @@ export class MansionPageFacade {
           || result.buildingId !== building.buildingId
         ) {
           this.clearStartingBuilding(requestId);
+          this.runtimeInvalidation.invalidateActiveHeroDashboardContext(
+            'estate_building_upgrade_committed_mismatch',
+            { serverId: context.hero.server_id, heroId: context.hero.id },
+          );
           this.loadData();
           return;
         }
 
         this.clearStartingBuilding(requestId);
+        this.runtimeInvalidation.invalidateActiveHeroDashboardContext(
+          'estate_building_upgrade_committed',
+          { serverId: context.hero.server_id, heroId: context.hero.id },
+        );
         this.loadData();
       },
       error: (error: unknown) => {
