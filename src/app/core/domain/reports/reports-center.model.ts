@@ -6,8 +6,9 @@ import {
 } from './report-detail.model';
 
 export interface ReportsCenterPageContext {
-  contractVersion: 'reports_center_page_context_v3';
+  contractVersion: 'reports_center_page_context_v4';
   eventTypeContract: ReportsCenterEventTypeContract;
+  filterOptionsContract: ReportsCenterFilterOptionsContract;
   reports: ReportsCenterListRow[];
   selectedPreview: ReportsCenterPreview | null;
   pagination: ReportsCenterPagination;
@@ -27,6 +28,10 @@ export interface ReportsCenterEventTypeContract {
   copyPath: 'get_report_page_copy(locale).reportsCenter.eventTypes.byKey[eventType.key]';
   fallbackPolicy: string;
   policy: string;
+}
+
+export interface ReportsCenterFilterOptionsContract {
+  contractVersion: 'reports_center_filter_options_v2';
 }
 
 export interface ReportsCenterListRow {
@@ -221,25 +226,20 @@ export interface ReportsCenterVisibilityPolicy {
 }
 
 export interface ReportsCenterSummaryMetric {
-  label: string;
   value: number;
 }
 
 export interface ReportsCenterLatestReport {
-  label: string;
-  fallbackLabel: string;
   reportId: string | null;
   title: string | null;
   createdAt: string | null;
   publicToken: string | null;
-  openActionLabel: string;
   privatePath: string | null;
 }
 
 export interface ReportsCenterNotificationsSummary {
   included: false;
   reasonKey: string;
-  label: string | null;
   latestNotification: null;
 }
 
@@ -258,16 +258,20 @@ export interface ReportsCenterFilterOptions {
 
 export interface ReportsCenterFilterOption {
   key: string;
+  enabled: boolean;
+}
+
+export interface ReportsCenterFilterOptionView {
+  key: string;
   label: string;
   enabled: boolean;
+  disabled: boolean;
 }
 
 export interface ReportsCenterMarkAllReadAction {
   supported: boolean;
   enabled: boolean;
   matchingUnreadCount: number;
-  label: string;
-  disabledTooltip: string;
 }
 
 export type ReportsCenterAccessRole = 'owner' | 'participant' | 'viewer' | string;

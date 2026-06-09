@@ -45,7 +45,6 @@ export function mapAppliedFilters(
 function mapFilterOptions(value: Json | undefined, field: string): ReportsCenterFilterOption[] {
   return requiredArray(value, field).map((option, index) => ({
     key: requiredText(read(option, 'key'), `${field}[${index}].key`),
-    label: requiredText(read(option, 'label'), `${field}[${index}].label`),
     enabled: requiredBoolean(read(option, 'enabled'), `${field}[${index}].enabled`),
   }));
 }

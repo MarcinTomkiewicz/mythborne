@@ -9,26 +9,16 @@ export function reportsCenterRewardPreviewValues(
 
   return Array.from(
     new Set([
-      ...rewardPreviewParts(reward.summary, reward.entryCount),
-      ...rewardPreviewParts(reward.resourcesSummary, reward.entryCount),
+      ...rewardPreviewValues(reward.summary),
+      ...rewardPreviewValues(reward.resourcesSummary),
     ]),
   );
 }
 
-function rewardPreviewParts(
-  value: string | null,
-  entryCount: number,
-): string[] {
+function rewardPreviewValues(value: string | null): string[] {
   if (!value) {
     return [];
   }
 
-  if (entryCount <= 1) {
-    return [value.trim()].filter(Boolean);
-  }
-
-  return value
-    .split(/\s*,\s*/u)
-    .map((part) => part.trim())
-    .filter(Boolean);
+  return [value.trim()].filter(Boolean);
 }

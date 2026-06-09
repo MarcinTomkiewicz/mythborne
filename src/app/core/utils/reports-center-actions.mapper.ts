@@ -56,11 +56,6 @@ export function mapActions(record: JsonRecord, field: string): ReportsCenterActi
         read(markAllRead, 'matchingUnreadCount'),
         `${field}.markAllRead.matchingUnreadCount`,
       ),
-      label: requiredText(read(markAllRead, 'label'), `${field}.markAllRead.label`),
-      disabledTooltip: requiredText(
-        read(markAllRead, 'disabledTooltip'),
-        `${field}.markAllRead.disabledTooltip`,
-      ),
     },
   };
 }

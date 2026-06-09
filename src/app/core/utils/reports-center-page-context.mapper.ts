@@ -1,6 +1,7 @@
 import {
   ReportsCenterEventTypeContract,
   ReportsCenterEventTypeMachine,
+  ReportsCenterFilterOptionsContract,
   ReportsCenterListRow,
   ReportsCenterPageContext,
   ReportsCenterVisibilityPolicy,
@@ -46,7 +47,7 @@ export function mapReportsCenterPageContext(value: Json): ReportsCenterPageConte
         read(root, 'contractVersion'),
         'get_reports_center_page_context.contractVersion',
       ),
-      'reports_center_page_context_v3',
+      'reports_center_page_context_v4',
       'get_reports_center_page_context.contractVersion',
     ),
     eventTypeContract: mapEventTypeContract(
@@ -55,6 +56,13 @@ export function mapReportsCenterPageContext(value: Json): ReportsCenterPageConte
         'get_reports_center_page_context.eventTypeContract',
       ),
       'get_reports_center_page_context.eventTypeContract',
+    ),
+    filterOptionsContract: mapFilterOptionsContract(
+      requiredRecord(
+        read(root, 'filterOptionsContract'),
+        'get_reports_center_page_context.filterOptionsContract',
+      ),
+      'get_reports_center_page_context.filterOptionsContract',
     ),
     reports: mapReports(read(root, 'reports')),
     selectedPreview: mapNullablePreview(
@@ -115,6 +123,19 @@ function mapEventTypeContract(
     ),
     fallbackPolicy: requiredText(read(record, 'fallbackPolicy'), `${field}.fallbackPolicy`),
     policy: requiredText(read(record, 'policy'), `${field}.policy`),
+  };
+}
+
+function mapFilterOptionsContract(
+  record: JsonRecord,
+  field: string,
+): ReportsCenterFilterOptionsContract {
+  return {
+    contractVersion: requireLiteral(
+      requiredText(read(record, 'contractVersion'), `${field}.contractVersion`),
+      'reports_center_filter_options_v2',
+      `${field}.contractVersion`,
+    ),
   };
 }
 

@@ -3,10 +3,13 @@ import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { REPORTS_CENTER_FILTER_GROUPS } from '../../../core/configs/reports-center-filter-groups.config';
-import { ReportsCenterFiltersCopy } from '../../../core/domain/reports/reports-center-copy.model';
+import {
+  ReportsCenterFilterOptionsCopy,
+  ReportsCenterFiltersCopy,
+} from '../../../core/domain/reports/reports-center-copy.model';
 import {
   ReportsCenterCapabilities,
-  ReportsCenterFilterOption,
+  ReportsCenterFilterOptionView,
   ReportsCenterFilters,
 } from '../../../core/domain/reports/reports-center.model';
 import { ReportsCenterFilterGroupConfig } from '../../../core/interfaces/reports-center-filter-group-config.interface';
@@ -26,6 +29,7 @@ export class ReportFiltersPanel {
   readonly filterGroups = REPORTS_CENTER_FILTER_GROUPS;
 
   readonly copy = input.required<ReportsCenterFiltersCopy>();
+  readonly filterOptionsCopy = input.required<ReportsCenterFilterOptionsCopy>();
   readonly filters = input.required<ReportsCenterFilters>();
   readonly capabilities = input.required<ReportsCenterCapabilities['filters']>();
   readonly filterForm = input.required<FormGroup>();
@@ -49,20 +53,35 @@ export class ReportFiltersPanel {
     return this.capabilities()[group.capabilityKey];
   }
 
-  filterOptions(group: ReportsCenterFilterGroupConfig): readonly ReportsCenterFilterOption[] {
-    return this.filters().options[group.optionsKey];
-  }
-
-  selectOptions(
-    group: ReportsCenterFilterGroupConfig,
-  ): (ReportsCenterFilterOption & { disabled: boolean })[] {
-    return this.filterOptions(group).map((option) => ({
-      ...option,
+  filterOptions(group: ReportsCenterFilterGroupConfig): readonly ReportsCenterFilterOptionView[] {
+    return this.filters().options[group.optionsKey].map((option) => ({
+      key: option.key,
+      label: this.filterOptionLabel(group, option.key),
+      enabled: option.enabled,
       disabled: !option.enabled,
     }));
   }
 
+  selectOptions(
+    group: ReportsCenterFilterGroupConfig,
+  ): ReportsCenterFilterOptionView[] {
+    return [...this.filterOptions(group)];
+  }
+
   filterLabel(group: ReportsCenterFilterGroupConfig): string {
     return this.copy()[group.copyLabelKey];
+  }
+
+  private filterOptionLabel(
+    group: ReportsCenterFilterGroupConfig,
+    key: string,
+  ): string {
+    const label = this.filterOptionsCopy()[group.optionsKey][key];
+
+    if (!label) {
+      throw new Error(`reportsCenter.filterOptions.${group.optionsKey}.${key} is missing.`);
+    }
+
+    return label;
   }
 }

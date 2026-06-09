@@ -66,20 +66,16 @@ export function mapCounts(record: JsonRecord, field: string): ReportsCenterCount
 
 function mapMetric(record: JsonRecord, field: string): ReportsCenterSummaryMetric {
   return {
-    label: requiredText(read(record, 'label'), `${field}.label`),
     value: requiredNumber(read(record, 'value'), `${field}.value`),
   };
 }
 
 function mapLatestReport(record: JsonRecord, field: string): ReportsCenterLatestReport {
   return {
-    label: requiredText(read(record, 'label'), `${field}.label`),
-    fallbackLabel: requiredText(read(record, 'fallbackLabel'), `${field}.fallbackLabel`),
     reportId: requiredNullableText(read(record, 'reportId'), `${field}.reportId`),
     title: requiredNullableText(read(record, 'title'), `${field}.title`),
     createdAt: requiredNullableText(read(record, 'createdAt'), `${field}.createdAt`),
     publicToken: requiredNullableText(read(record, 'publicToken'), `${field}.publicToken`),
-    openActionLabel: requiredText(read(record, 'openActionLabel'), `${field}.openActionLabel`),
     privatePath: requiredNullableText(read(record, 'privatePath'), `${field}.privatePath`),
   };
 }
@@ -91,7 +87,6 @@ function mapNotificationsSummary(
   return {
     included: requireFalse(read(record, 'included'), `${field}.included`),
     reasonKey: requiredText(read(record, 'reasonKey'), `${field}.reasonKey`),
-    label: requiredNullableText(read(record, 'label'), `${field}.label`),
     latestNotification: requireNull(read(record, 'latestNotification'), `${field}.latestNotification`),
   };
 }
