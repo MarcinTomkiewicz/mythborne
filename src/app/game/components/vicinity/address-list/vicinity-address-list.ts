@@ -1,15 +1,15 @@
 import { Component, computed, input, output } from '@angular/core';
-import { ButtonModule } from 'primeng/button';
-import { TooltipModule } from 'primeng/tooltip';
 import {
+  VicinityAddressListVariant,
   VicinityListRow,
-  VicinityRowActionKind,
+  VicinityRowActionEvent,
 } from '../../../../core/types/vicinity.types';
+import { VicinityRowActions } from '../row-actions/vicinity-row-actions';
 
 @Component({
   selector: 'app-vicinity-address-list',
   standalone: true,
-  imports: [ButtonModule, TooltipModule],
+  imports: [VicinityRowActions],
   host: { class: 'd-contents' },
   templateUrl: './vicinity-address-list.html',
 })
@@ -18,6 +18,7 @@ export class VicinityAddressList {
   readonly columnLabels = input.required<readonly string[]>();
   readonly emptyLabel = input.required<string>();
   readonly tableLabel = input.required<string>();
+  readonly variant = input<VicinityAddressListVariant>('vicinity');
   readonly selectedRow = input<VicinityListRow | null>(null);
   readonly pvpError = input<string | null>(null);
   readonly actionError = input<string | null>(null);
@@ -42,8 +43,10 @@ export class VicinityAddressList {
     },
   ].filter((row) => row.message));
   readonly selectRow = output<VicinityListRow>();
-  readonly startAction = output<{
-    row: VicinityListRow;
-    actionKind: VicinityRowActionKind;
-  }>();
+  readonly rowGridClass = computed(() =>
+    this.variant() === 'ranking'
+      ? 'grid-data-list-row-ranking'
+      : 'grid-data-list-row',
+  );
+  readonly startAction = output<VicinityRowActionEvent<VicinityListRow>>();
 }

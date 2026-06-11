@@ -1,0 +1,35 @@
+<aside class="flex-col gap-md min-w-0 w-100">
+  <section class="mg-card flex-col gap-md p-lg w-100">
+    @if (selected(); as row) {
+      <div class="flex-col gap-xs min-w-0">
+        <p class="color-muted small-caps uppercase text-xs mb-0">{{ copy().targetPanel.labels.target }}</p>
+        <h3 class="color-heading text-lg mb-0">{{ row.heroName }}</h3>
+      </div>
+
+      <div class="flex-col gap-sm w-100">
+        @for (fact of factRows(); track fact.key) {
+          <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+            <span class="color-muted small-caps uppercase text-xs">{{ fact.label }}</span>
+            <strong class="color-heading text-sm text-right">{{ fact.value }}</strong>
+          </div>
+        }
+      </div>
+
+      @if (selectedActionRow(); as actionRow) {
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          <app-vicinity-row-actions
+            [row]="actionRow"
+            [actions]="actionRow.actions"
+            [showLabels]="true"
+            (startAction)="startAction.emit($event)"
+          />
+        </div>
+      }
+    } @else {
+      <div class="flex-col gap-xs min-w-0">
+        <h3 class="color-heading text-lg mb-0">{{ copy().targetPanel.emptyState.title }}</h3>
+        <p class="muted-text mb-0">{{ copy().targetPanel.emptyState.text }}</p>
+      </div>
+    }
+  </section>
+</aside>

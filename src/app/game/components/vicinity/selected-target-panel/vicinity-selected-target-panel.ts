@@ -1,16 +1,16 @@
 import { Component, computed, input, output } from '@angular/core';
-import { ButtonModule } from 'primeng/button';
 import type { GamePageSummaryRow } from '../../../../core/interfaces/game-page-summary-row.interface';
 import type { PlayerVicinityCopyReadModel } from '../../../../core/domain/vicinity/player-vicinity-page-context.model';
 import {
   VicinityListRow,
-  VicinityRowActionKind,
+  VicinityRowActionEvent,
 } from '../../../../core/types/vicinity.types';
+import { VicinityRowActions } from '../row-actions/vicinity-row-actions';
 
 @Component({
   selector: 'app-vicinity-selected-target-panel',
   standalone: true,
-  imports: [ButtonModule],
+  imports: [VicinityRowActions],
   host: { class: 'd-contents' },
   templateUrl: './vicinity-selected-target-panel.html',
 })
@@ -75,10 +75,7 @@ export class VicinitySelectedTargetPanel {
 
     return rows;
   });
-  readonly startAction = output<{
-    row: VicinityListRow;
-    actionKind: VicinityRowActionKind;
-  }>();
+  readonly startAction = output<VicinityRowActionEvent<VicinityListRow>>();
 }
 
 function targetProtectionDisplay(

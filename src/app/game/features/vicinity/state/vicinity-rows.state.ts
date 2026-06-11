@@ -5,7 +5,7 @@ import type {
 } from '../../../../core/domain/vicinity/player-vicinity-page-context.model';
 import {
   PvpStartActionKind,
-  VicinityListRow,
+  VicinityAddressListRow,
   VicinityRowAction,
   VicinityRowActionKind,
 } from '../../../../core/types/vicinity.types';
@@ -82,7 +82,7 @@ export class VicinityRowsState {
       ?? null;
   });
 
-  selectRow(row: VicinityListRow): void {
+  selectRow(row: VicinityAddressListRow): void {
     this.selectedRowKey.set(row.key);
 
     if (row.kind === 'empty') {
@@ -123,7 +123,7 @@ export class VicinityRowsState {
     );
   }
 
-  startRowAction(row: VicinityListRow, actionKind: VicinityRowActionKind): void {
+  startRowAction(row: VicinityAddressListRow, actionKind: VicinityRowActionKind): void {
     if (actionKind === 'claimEstate') {
       this.selectRow(row);
       return;
@@ -146,7 +146,7 @@ export class VicinityRowsState {
     });
   }
 
-  private withActionState(row: VicinityListRow): VicinityListRow {
+  private withActionState(row: VicinityAddressListRow): VicinityAddressListRow {
     if (!row.candidate) {
       return row;
     }
@@ -158,7 +158,7 @@ export class VicinityRowsState {
   }
 
   private withSingleActionState(
-    row: VicinityListRow,
+    row: VicinityAddressListRow,
     action: VicinityRowAction,
   ): VicinityRowAction {
     const candidate = row.candidate;

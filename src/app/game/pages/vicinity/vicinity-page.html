@@ -77,7 +77,7 @@
               [actionError]="actions.error()"
               [actionSuccess]="actions.success()"
               [metadataError]="metadata.error()"
-              (selectRow)="rowsState.selectRow($event)"
+              (selectRow)="selectRow($event)"
               (startAction)="handleRowAction($event.row, $event.actionKind)"
             />
 

@@ -15047,6 +15047,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      apply_reports_center_context_action_targets_json: {
+        Args: { p_context_json: Json; p_hero_id: string }
+        Returns: Json
+      }
       apply_reports_center_context_event_type_context_json: {
         Args: { p_context_json: Json }
         Returns: Json
@@ -15846,6 +15850,10 @@ export type Database = {
       }
       build_report_shell_context_json: {
         Args: { p_public_safe?: boolean; p_report_id: string }
+        Returns: Json
+      }
+      build_reports_center_report_action_targets_json: {
+        Args: { p_hero_id: string; p_report_id: string }
         Returns: Json
       }
       build_reports_center_report_event_type_context_json: {
@@ -21455,6 +21463,17 @@ export type Database = {
           points_delta: number
         }[]
       }
+      get_pvp_ranking_context: {
+        Args: {
+          p_district_key?: string
+          p_hero_id: string
+          p_offset?: number
+          p_query?: string
+          p_selected_target_hero_id?: string
+        }
+        Returns: Json
+      }
+      get_pvp_ranking_copy: { Args: { p_locale?: string }; Returns: Json }
       get_pvp_target_candidates: {
         Args: {
           p_attacker_hero_id: string
@@ -21536,6 +21555,20 @@ export type Database = {
       }
       get_report_page_copy: { Args: { p_locale?: string }; Returns: Json }
       get_report_page_copy_legacy_static: { Args: never; Returns: Json }
+      get_reports_center_action_target_rows: {
+        Args: { p_hero_id: string; p_report_ids: string[] }
+        Returns: {
+          input_report_id: string
+          input_sort_order: number
+          is_selected_report: boolean
+          relation_kind: string
+          sort_order: number
+          target_report_id: string
+          target_report_type_key: string
+          target_source_entity_type: string
+          target_title: string
+        }[]
+      }
       get_reports_center_filtered_report_rows: {
         Args: {
           p_hero_id: string

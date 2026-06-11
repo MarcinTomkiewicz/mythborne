@@ -1,0 +1,118 @@
+@if (state.error()) {
+  <section class="mg-card flex-col gap-sm p-lg">
+    <p class="error-text mb-0">{{ state.error() }}</p>
+  </section>
+} @else {
+  @if (state.copy(); as copy) {
+    @if (state.context(); as context) {
+      <div class="flex-col gap-lg min-w-0">
+        <app-game-page-header
+          [eyebrowLabel]="copy.header.eyebrow"
+          [title]="copy.header.title"
+          [description]="copy.header.intro"
+          [summaryRows]="state.headerSummaryRows()"
+        />
+
+        <section class="grid-3-1 gap-lg w-100">
+          <section class="mg-card flex-col gap-md p-lg min-w-0 w-100">
+            <div class="flex-row-between-start flex-wrap gap-md">
+              <div class="flex-col gap-xs">
+                <h2 class="color-heading text-lg mb-0">{{ copy.ranking.title }}</h2>
+                <p class="muted-text mb-0">{{ copy.ranking.description }}</p>
+              </div>
+            </div>
+
+            <div class="flex-row-end-end flex-wrap gap-md w-100">
+              @if (context.capabilities.canFilterDistrict) {
+                <div class="flex-col gap-xs min-w-200">
+                  <label
+                    class="color-muted small-caps uppercase text-xs"
+                    for="pvp-ranking-district-filter"
+                  >
+                    {{ copy.filters.districtLabel }}
+                  </label>
+                  <p-select
+                    inputId="pvp-ranking-district-filter"
+                    class="w-100"
+                    [formControl]="state.districtControl"
+                    [options]="state.districtOptions()"
+                    [placeholder]="copy.filters.districtLabel"
+                    [showClear]="true"
+                    optionLabel="label"
+                    optionValue="value"
+                    optionDisabled="disabled"
+                  />
+                </div>
+              }
+
+              @if (context.capabilities.canSearch) {
+                <label class="flex-col gap-xs min-w-300">
+                  <span class="color-muted small-caps uppercase text-xs">{{ copy.filters.searchLabel }}</span>
+                  <input
+                    pInputText
+                    type="search"
+                    class="w-100"
+                    [formControl]="state.searchControl"
+                    [placeholder]="copy.filters.searchPlaceholder"
+                    autocomplete="off"
+                    (keydown.enter)="state.applySearch()"
+                  />
+                </label>
+
+                <p-button
+                  [label]="copy.filters.searchAction"
+                  severity="secondary"
+                  [loading]="state.isLoading()"
+                  (onClick)="state.applySearch()"
+                />
+              }
+
+              @if (context.capabilities.canJumpToMyPosition) {
+                <p-button
+                  [label]="copy.filters.myPositionAction"
+                  severity="secondary"
+                  [disabled]="state.isLoading()"
+                  (onClick)="state.jumpToMyPosition()"
+                />
+              }
+            </div>
+
+            @if (actions.actionFeedback(); as feedback) {
+              <section class="mg-card flex-col gap-xs p-md">
+                <strong class="error-text">{{ feedback.summary }}</strong>
+                <p class="error-text mb-0">{{ feedback.detail }}</p>
+              </section>
+            }
+
+            <app-vicinity-address-list
+              variant="ranking"
+              [rows]="state.rankingRows()"
+              [columnLabels]="state.rankingColumnLabels()"
+              [emptyLabel]="copy.table.emptyState.text"
+              [tableLabel]="copy.ranking.title"
+              [selectedRow]="state.selectedTargetRow()"
+              (selectRow)="state.selectRow($event)"
+              (startAction)="startAction($event.row, $event.actionKind)"
+            />
+
+            <div class="flex-row-end-center flex-wrap gap-sm mt-md w-100">
+              <p-paginator
+                [first]="context.ranking.offset"
+                [rows]="context.ranking.limit"
+                [totalRecords]="context.ranking.totalCount"
+                (onPageChange)="state.changePage($event)"
+              />
+            </div>
+          </section>
+
+          <app-pvp-ranking-target-panel
+            [selected]="state.selectedTarget()"
+            [selectedActionRow]="state.selectedTargetRow()"
+            [copy]="copy"
+            (startAction)="startAction($event.row, $event.actionKind)"
+          />
+        </section>
+      </div>
+    }
+  }
+}

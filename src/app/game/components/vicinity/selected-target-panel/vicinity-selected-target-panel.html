@@ -24,16 +24,12 @@
 
       @if (actionButtons().length > 0) {
         <div class="flex-row-start-center flex-wrap gap-sm">
-          @for (action of actionButtons(); track action.kind) {
-            <p-button
-              [icon]="action.icon"
-              [label]="action.label"
-              [severity]="action.severity"
-              [disabled]="action.disabled"
-              [loading]="action.pending"
-              (onClick)="startAction.emit({ row, actionKind: action.kind })"
-            />
-          }
+          <app-vicinity-row-actions
+            [row]="row"
+            [actions]="actionButtons()"
+            [showLabels]="true"
+            (startAction)="startAction.emit($event)"
+          />
         </div>
       }
 

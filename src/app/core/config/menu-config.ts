@@ -7,6 +7,7 @@ export const MENU_LOGGED_IN_GROUPS: readonly SidebarNavGroup[] = [
       { kind: 'link', label: 'Panel', route: '/hero/dashboard', iconClass: 'pi pi-helmet' },
       { kind: 'link', label: 'Atrybuty', route: '/hero/attributes', iconClass: 'pi pi-skills' },
       { kind: 'link', label: 'Eksploracja', route: '/game/exploration', iconClass: 'pi pi-hydra' },
+      { kind: 'link', label: 'Walka', route: '/game/ranking', iconClass: 'pi pi-report-combat' },
       { kind: 'link', label: 'Zbrojownia', route: '/game/armory', iconClass: 'pi pi-chest' },
       { kind: 'link', label: 'Posiadłość', route: '/game/mansion', iconClass: 'pi pi-capitol' },
     ],

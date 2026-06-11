@@ -5,8 +5,8 @@ import type {
   PlayerVicinityCopyReadModel,
 } from '../../../../core/domain/vicinity/player-vicinity-page-context.model';
 import {
+  VicinityAddressListRow,
   VicinityAddressRow,
-  VicinityListRow,
   VicinityListRowKind,
 } from '../../../../core/types/vicinity.types';
 import {
@@ -30,7 +30,7 @@ export function toVicinityListRow(
   selectedTargetCopy: PlayerVicinityCopyReadModel['selectedTarget'],
   selfHeroName?: string,
   selfProtectionDisplay?: string | null,
-): VicinityListRow {
+): VicinityAddressListRow {
   const kind = row.kind === 'self' || row.kind === 'empty'
     ? row.kind
     : 'occupied';
@@ -64,7 +64,7 @@ export function toVicinityListRow(
       copy.metricUnavailableLabel,
     ),
   };
-  const listRow: VicinityListRow = {
+  const listRow: VicinityAddressListRow = {
     key: vicinityAddressKey(row.districtCode, row.addressNumber),
     kind,
     addressLabel: row.addressLabel,
@@ -128,7 +128,7 @@ export function vicinityAddressKey(districtCode: string, addressNumber: number):
 }
 
 function rowDetailLabel(
-  row: VicinityListRow,
+  row: VicinityAddressListRow,
   copy: PlayerVicinityCopyReadModel['addressList'],
 ): string {
   if (row.kind === 'self' || row.kind === 'empty') {
@@ -157,7 +157,7 @@ function playerSafeReason(
 }
 
 function protectionLabel(
-  row: VicinityListRow,
+  row: VicinityAddressListRow,
   copy: PlayerVicinityCopyReadModel['addressList'],
   summaryCopy: PlayerVicinityCopyReadModel['summary'],
   selfProtectionDisplay: string | null,
@@ -218,7 +218,7 @@ function toRowStatus(
 
 function claimEstateAction(
   copy: PlayerVicinityCopyReadModel['addressList'],
-): VicinityListRow['actions'][number] {
+): VicinityAddressListRow['actions'][number] {
   return {
     kind: 'claimEstate',
     icon: 'pi pi-settle',

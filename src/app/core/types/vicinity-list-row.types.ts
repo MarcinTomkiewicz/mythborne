@@ -3,14 +3,19 @@ import type { PvpEligibilityDisplay } from '../utils/pvp-eligibility-display';
 import type { VicinityRowAction } from './vicinity-action.types';
 
 export type VicinityListRowKind = 'self' | 'empty' | 'occupied';
+export type VicinityAddressListVariant = 'vicinity' | 'ranking';
 
-export interface VicinityListRow {
+export interface VicinityListMetricCell {
+  key: string;
+  value: string;
+}
+
+export interface VicinityListRowBase {
   key: string;
   kind: VicinityListRowKind;
   addressLabel: string;
   districtCode: string;
   districtLabel: string;
-  addressNumber: number;
   address: string;
   displayLabel: string;
   isOccupied: boolean;
@@ -33,12 +38,19 @@ export interface VicinityListRow {
   levelDisplay: string;
   attackTravelDisplay: string;
   spyTravelDisplay: string;
-  metricCells: readonly {
-    key: string;
-    value: string;
-  }[];
+  metricCells: readonly VicinityListMetricCell[];
   protectionDisplay: string | null;
   playerSafeAttackReason: PvpEligibilityDisplay | null;
   playerSafeSpyReason: PvpEligibilityDisplay | null;
   actions: VicinityRowAction[];
 }
+
+export interface VicinityAddressListRow extends VicinityListRowBase {
+  addressNumber: number;
+}
+
+export interface VicinityRankingListRow extends VicinityListRowBase {
+  addressNumber?: undefined;
+}
+
+export type VicinityListRow = VicinityAddressListRow | VicinityRankingListRow;

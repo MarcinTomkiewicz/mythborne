@@ -101,6 +101,10 @@ $grid-common-patterns: (
   "data-list-row": (
     columns: 6.5rem minmax(8rem, 1fr) 4rem 5.75rem 5.75rem 13rem,
     collapse-bp: "md"
+  ),
+  "data-list-row-ranking": (
+    columns: 6.5rem minmax(7rem, 0.9fr) 4rem 5.75rem 5.75rem 5.75rem 13rem,
+    collapse-bp: "md"
   )
 );
 

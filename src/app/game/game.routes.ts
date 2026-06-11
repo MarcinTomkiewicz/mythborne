@@ -51,6 +51,11 @@ export const gameRoutes: Routes = [
       import('./pages/vicinity/vicinity-page').then((m) => m.VicinityPage),
   },
   {
+    path: 'ranking',
+    loadComponent: () =>
+      import('./pages/pvp-ranking/pvp-ranking-page').then((m) => m.PvpRankingPage),
+  },
+  {
     path: 'reports',
     loadComponent: () =>
       import('./pages/reports/reports-page').then((m) => m.ReportsPage),

@@ -9928,7 +9928,8 @@ Sprawdzić, czy istnieje backend/read model dla PvP ranking listy graczy, zanim 
 
 **Goal**
 
-Dodać Ranking jako drugi target source obok Vicinity, z paginowaną listą graczy i akcjami zgodnymi z backendową eligibility.
+Dodać link do Menu bocznego gry o nazwie: "Walka" w sekcji "Bohater". Wykorzystać komponenty Vicinity do zbudowania rankingu graczy. Wyświetlanie wszystkich graczy sortowanych po poziomie, w przypadku remisów poziomów, według adresów. Jeśli sortowanie nie przychodzi z backendu - zgłosić gap. Dane w rankingu wyświetlane są w wariancie data-row używanego w Vicinity, z kolejnością: `POZYCJA | BOHATER | POZIOM | ADRES | ATAK | SZPIEGUJ | AKCJE |` szerokość pól Pozycja oraz Bohater zostają takie jak były, trzeba dołożyć jedną kolumną z prawej strony data-row. Dla przejrzystości można nieco zwęzić szerokość kolumny "Bohater", żeby dodatkowa kolumna się zmieściła, ale należy do tego wykorzystać wariant odpowiedniego data-row, bez tworzenia nowego layoutu. Spodziewane LOC po tym tasku: +5.
+Dla copy użyj dostarczonego `docs\database-shapes\player_ranking_copy_contract_v1.md`, dla read modelu użyj: `docs\database-shapes\player_ranking_read_model_contract_v1.md`
 
 **Scope**
 

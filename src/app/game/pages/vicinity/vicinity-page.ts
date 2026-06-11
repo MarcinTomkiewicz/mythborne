@@ -32,6 +32,7 @@ import type {
 import { GamePageHeader } from '../../../shared/game-page-header/game-page-header';
 import { EstateRelocationRunner } from '../../workflows/estate-relocation/estate-relocation-runner';
 import {
+  VicinityAddressListRow,
   VicinityListRow,
   VicinityRowActionKind,
 } from '../../../core/types/vicinity.types';
@@ -175,7 +176,19 @@ export class VicinityPage implements OnInit {
     this.relocationConfirmationSegments.set([]);
   }
 
+  selectRow(row: VicinityListRow): void {
+    if (!isVicinityAddressListRow(row)) {
+      return;
+    }
+
+    this.rowsState.selectRow(row);
+  }
+
   handleRowAction(row: VicinityListRow, actionKind: VicinityRowActionKind): void {
+    if (!isVicinityAddressListRow(row)) {
+      return;
+    }
+
     if (actionKind === 'claimEstate') {
       this.confirmClaimEstate(row);
       return;
@@ -184,7 +197,7 @@ export class VicinityPage implements OnInit {
     this.rowsState.startRowAction(row, actionKind);
   }
 
-  private confirmClaimEstate(row: VicinityListRow): void {
+  private confirmClaimEstate(row: VicinityAddressListRow): void {
     const copy = this.page.copyJson()?.relocation;
 
     if (row.kind !== 'empty' || !copy || this.page.isRelocating()) {
@@ -213,6 +226,10 @@ export class VicinityPage implements OnInit {
       reject: () => this.page.setDestructiveConfirmed(false),
     });
   }
+}
+
+function isVicinityAddressListRow(row: VicinityListRow): row is VicinityAddressListRow {
+  return typeof row.addressNumber === 'number';
 }
 
 function buildRelocationConfirmationSegments(

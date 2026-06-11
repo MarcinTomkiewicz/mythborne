@@ -113,6 +113,8 @@ export const RPC = {
   inspect_pvp_foundation_integration_state:
     'inspect_pvp_foundation_integration_state',
   get_hero_pvp_daily_attack_state: 'get_hero_pvp_daily_attack_state',
+  get_pvp_ranking_context: 'get_pvp_ranking_context',
+  get_pvp_ranking_copy: 'get_pvp_ranking_copy',
   get_pvp_target_candidates: 'get_pvp_target_candidates',
   get_pvp_visible_address_target_overlay:
     'get_pvp_visible_address_target_overlay',

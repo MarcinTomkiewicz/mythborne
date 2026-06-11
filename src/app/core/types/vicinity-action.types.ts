@@ -21,6 +21,11 @@ export interface VicinityRowAction {
   pending: boolean;
 }
 
+export interface VicinityRowActionEvent<Row> {
+  row: Row;
+  actionKind: VicinityRowActionKind;
+}
+
 export interface PendingPvpAction {
   actionKind: PvpStartActionKind;
   targetHeroId: string;

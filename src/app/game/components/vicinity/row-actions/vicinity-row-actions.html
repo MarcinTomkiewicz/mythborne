@@ -1,0 +1,16 @@
+@for (action of actions(); track action.kind) {
+  <p-button
+    [icon]="action.icon"
+    [label]="showLabels() ? action.label : undefined"
+    [size]="showLabels() ? undefined : 'small'"
+    [outlined]="!action.primary"
+    [severity]="action.severity"
+    [styleClass]="showLabels() ? undefined : 'mg-compact-icon-button square-9 radius-sm'"
+    [ariaLabel]="action.tooltip"
+    [pTooltip]="action.tooltip"
+    tooltipPosition="top"
+    [disabled]="action.disabled"
+    [loading]="action.pending"
+    (onClick)="startAction.emit({ row: row(), actionKind: action.kind }); $event.stopPropagation()"
+  />
+}

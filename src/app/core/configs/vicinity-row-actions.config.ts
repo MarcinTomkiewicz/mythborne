@@ -1,6 +1,6 @@
 import type { VicinityRowActionConfig } from '../types/vicinity.types';
 
-export const VICINITY_ROW_ACTION_CONFIGS: readonly VicinityRowActionConfig[] = [
+export const VICINITY_ROW_ACTION_CONFIGS = [
   {
     kind: 'spy',
     icon: 'pi pi-spy',
@@ -22,4 +22,4 @@ export const VICINITY_ROW_ACTION_CONFIGS: readonly VicinityRowActionConfig[] = [
     availability: 'never',
     primaryWhenAvailable: false,
   },
-];
+] as const satisfies readonly VicinityRowActionConfig[];

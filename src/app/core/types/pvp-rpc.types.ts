@@ -27,6 +27,9 @@ export type GetHeroPvpDailyAttackStateRpcArgs =
 export type GetHeroPvpDailyAttackStateRpcRow =
   Database['public']['Functions']['get_hero_pvp_daily_attack_state']['Returns'][number];
 
+export type GetPvpRankingContextRpcArgs =
+  Database['public']['Functions']['get_pvp_ranking_context']['Args'];
+
 export type StartPvpActionRpcArgs =
   Database['public']['Functions']['start_pvp_action']['Args'];
 export type StartPvpActionRpcRow =
