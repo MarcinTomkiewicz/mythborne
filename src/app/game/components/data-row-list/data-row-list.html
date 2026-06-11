@@ -21,16 +21,16 @@
       (keydown.enter)="selectRow.emit(row)"
       (keydown.space)="selectRow.emit(row)"
     >
-      <span class="color-heading flex-row-start-center text-center">{{ row.addressLabel }}</span>
+      <span class="color-heading flex-row-start-center text-center">{{ row.leadingLabel }}</span>
       <span class="flex-col-center-start gap-xs min-h-lines-2">
         @if (row.kind === 'empty') {
-          <span class="flex-row-start-center min-h-lines-2">{{ row.occupantLabel }}</span>
+          <span class="flex-row-start-center min-h-lines-2">{{ row.title }}</span>
         } @else {
-          @if (row.occupantLabel) {
-            <span>{{ row.occupantLabel }}</span>
+          @if (row.title) {
+            <span>{{ row.title }}</span>
           }
-          @if (row.detailLabel) {
-            <span class="muted-text text-xs">{{ row.detailLabel }}</span>
+          @if (row.subtitle) {
+            <span class="muted-text text-xs">{{ row.subtitle }}</span>
           } @else {
             <span class="muted-text text-xs" aria-hidden="true">&nbsp;</span>
           }
@@ -48,7 +48,7 @@
           } @else if (row.statusLabel) {
             <span class="color-muted text-xs">{{ row.statusLabel }}</span>
           }
-          <app-vicinity-row-actions
+          <app-data-row-actions
             [row]="row"
             [actions]="row.actions"
             (startAction)="startAction.emit($event)"

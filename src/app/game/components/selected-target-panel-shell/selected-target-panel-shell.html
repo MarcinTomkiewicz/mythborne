@@ -1,0 +1,55 @@
+<aside class="flex-col gap-md min-w-0 w-100">
+  <section class="mg-card flex-col gap-md p-lg w-100">
+    @if (title(); as targetTitle) {
+      <div class="flex-col gap-xs min-w-0">
+        @if (eyebrowLabel()) {
+          <p class="color-muted small-caps uppercase text-xs mb-0">{{ eyebrowLabel() }}</p>
+        }
+        <h3 class="color-heading text-lg mb-0">{{ targetTitle }}</h3>
+        @if (subtitle()) {
+          <p class="muted-text mb-0">{{ subtitle() }}</p>
+        } @else if (reserveSubtitle()) {
+          <p class="muted-text mb-0" aria-hidden="true">&nbsp;</p>
+        }
+      </div>
+
+      @if (factRows().length > 0) {
+        <div class="flex-col gap-sm w-100">
+          @for (fact of factRows(); track fact.key) {
+            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
+              <span class="color-muted small-caps uppercase text-xs">{{ fact.label }}</span>
+              <strong class="color-heading text-sm text-right">{{ fact.value }}</strong>
+            </div>
+          }
+        </div>
+      }
+
+      @if (actionRow(); as row) {
+        @if (row.actions.length > 0) {
+          <div class="flex-row-start-center flex-wrap gap-sm">
+            <app-data-row-actions
+              [row]="row"
+              [actions]="row.actions"
+              [showLabels]="true"
+              (startAction)="startAction.emit($event)"
+            />
+          </div>
+        }
+      }
+
+      @if (error()) {
+        <p class="error-text mb-0">{{ error() }}</p>
+      }
+      @if (success()) {
+        <p class="success-text mb-0">{{ success() }}</p>
+      }
+    } @else if (emptyTitle()) {
+      <div class="flex-col gap-xs min-w-0">
+        <h3 class="color-heading text-lg mb-0">{{ emptyTitle() }}</h3>
+        @if (emptyText()) {
+          <p class="muted-text mb-0">{{ emptyText() }}</p>
+        }
+      </div>
+    }
+  </section>
+</aside>

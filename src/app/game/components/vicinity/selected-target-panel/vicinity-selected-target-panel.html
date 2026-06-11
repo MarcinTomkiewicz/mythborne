@@ -1,44 +1,13 @@
-@if (selected(); as row) {
-  <aside class="flex-col gap-md min-w-0 w-100">
-    <section class="mg-card flex-col gap-md p-lg w-100">
-      <div class="flex-col gap-xs min-w-0">
-        <p class="color-muted small-caps uppercase text-xs mb-0">{{ selectedTargetCopy().targetLabel }}</p>
-        <h3 class="color-heading text-lg mb-0">{{ row.occupantLabel || row.displayLabel }}</h3>
-        @if (row.kind === 'empty') {
-          <p class="muted-text mb-0" aria-hidden="true">&nbsp;</p>
-        } @else {
-          <p class="muted-text mb-0">{{ row.detailLabel || addressListCopy().noGuildLabel }}</p>
-        }
-      </div>
-
-      @if (factRows().length > 0) {
-        <div class="flex-col gap-sm w-100">
-          @for (fact of factRows(); track fact.key) {
-            <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-              <span class="color-muted small-caps uppercase text-xs">{{ fact.label }}</span>
-              <strong class="color-heading text-sm">{{ fact.value }}</strong>
-            </div>
-          }
-        </div>
-      }
-
-      @if (actionButtons().length > 0) {
-        <div class="flex-row-start-center flex-wrap gap-sm">
-          <app-vicinity-row-actions
-            [row]="row"
-            [actions]="actionButtons()"
-            [showLabels]="true"
-            (startAction)="startAction.emit($event)"
-          />
-        </div>
-      }
-
-      @if (relocationError()) {
-        <p class="error-text mb-0">{{ relocationError() }}</p>
-      }
-      @if (relocationSuccess()) {
-        <p class="success-text mb-0">{{ relocationSuccess() }}</p>
-      }
-    </section>
-  </aside>
+@if (selected()) {
+  <app-selected-target-panel-shell
+    [eyebrowLabel]="selectedTargetCopy().targetLabel"
+    [title]="targetTitle()"
+    [subtitle]="targetSubtitle()"
+    [reserveSubtitle]="true"
+    [factRows]="factRows()"
+    [actionRow]="selected()"
+    [error]="relocationError()"
+    [success]="relocationSuccess()"
+    (startAction)="startAction.emit($event)"
+  />
 }

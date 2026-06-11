@@ -1,18 +1,18 @@
-import { VICINITY_ROW_ACTION_CONFIGS } from '../configs/vicinity-row-actions.config';
+import { DATA_ROW_ACTION_CONFIGS } from '../configs/data-row-actions.config';
 import { PvpTargetCandidate } from '../domain/pvp/pvp.model';
 import type { PlayerVicinityCopyReadModel } from '../domain/vicinity/player-vicinity-page-context.model';
 import {
-  VicinityRowAction,
-  VicinityRowActionAvailability,
-} from '../types/vicinity.types';
+  DataRowAction,
+  DataRowActionAvailability,
+} from '../types/data-row.types';
 
-export function toVicinityRowActions(
+export function toVicinityDataRowActions(
   candidate: PvpTargetCandidate,
   addressListCopy: PlayerVicinityCopyReadModel['addressList'],
   selectedTargetCopy: PlayerVicinityCopyReadModel['selectedTarget'],
-): VicinityRowAction[] {
-  return VICINITY_ROW_ACTION_CONFIGS.map((config) => {
-    const disabled = isVicinityRowActionDisabled(candidate, config.availability);
+): DataRowAction[] {
+  return DATA_ROW_ACTION_CONFIGS.map((config) => {
+    const disabled = isDataRowActionDisabled(candidate, config.availability);
 
     return {
       kind: config.kind,
@@ -27,9 +27,9 @@ export function toVicinityRowActions(
   });
 }
 
-function isVicinityRowActionDisabled(
+function isDataRowActionDisabled(
   candidate: PvpTargetCandidate,
-  availability: VicinityRowActionAvailability,
+  availability: DataRowActionAvailability,
 ): boolean {
   if (availability === 'spy') {
     return !candidate.spyEligibility.canStart;
@@ -43,7 +43,7 @@ function isVicinityRowActionDisabled(
 }
 
 function rowActionLabel(
-  kind: VicinityRowAction['kind'],
+  kind: DataRowAction['kind'],
   addressListCopy: PlayerVicinityCopyReadModel['addressList'],
   selectedTargetCopy: PlayerVicinityCopyReadModel['selectedTarget'],
 ): string {
@@ -59,7 +59,7 @@ function rowActionLabel(
 }
 
 function rowActionTooltip(
-  kind: VicinityRowAction['kind'],
+  kind: DataRowAction['kind'],
   copy: PlayerVicinityCopyReadModel['addressList'],
 ): string {
   if (kind === 'spy') {

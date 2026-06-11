@@ -1,92 +1,59 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
-import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
-import {
-  PvpActionStartResult,
-  PvpTargetCandidate,
-} from '../../../../core/domain/pvp/pvp.model';
-import { ActiveHero } from '../../../../core/services/hero/active-hero';
-import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
-import {
-  PendingPvpAction,
-  PvpStartActionKind,
-} from '../../../../core/types/vicinity.types';
+import { inject, Injectable, signal } from '@angular/core';
+import { PvpTargetCandidate } from '../../../../core/domain/pvp/pvp.model';
+import { PvpActionRunner } from '../../../../core/services/pvp/pvp-action-runner';
+import { PvpStartActionKind } from '../../../../core/types/pvp-action.types';
 import { getErrorMessage } from '../../../../core/utils/error-message';
-import { createRequestId } from '../../../../core/utils/request-id';
+import type { VicinityPvpActionStartInput } from '../types/vicinity-pvp-actions.types';
 import { VicinityRangeState } from './vicinity-range.state';
 
 @Injectable()
 export class VicinityPvpActionsState {
-  private readonly activeHero = inject(ActiveHero);
-  private readonly playerPvp = inject(PlayerPvp);
+  private readonly actionRunner = inject(PvpActionRunner);
   private readonly range = inject(VicinityRangeState);
-  private requestId = 0;
 
   readonly error = signal<string | null>(null);
   readonly success = signal<string | null>(null);
-  readonly pendingAction = signal<PendingPvpAction | null>(null);
-  readonly pendingAttackTargetIds = signal<ReadonlySet<string>>(new Set<string>());
-  readonly pendingSpyTargetIds = signal<ReadonlySet<string>>(new Set<string>());
-  readonly isStartingAction = computed(() => this.pendingAction() !== null);
+  readonly pendingAction = this.actionRunner.pendingAction;
+  readonly pendingAttackTargetIds = this.actionRunner.pendingAttackTargetIds;
+  readonly pendingSpyTargetIds = this.actionRunner.pendingSpyTargetIds;
+  readonly isStartingAction = this.actionRunner.isStartingAction;
 
   isSpyPending(targetHeroId: string): boolean {
-    return this.pendingSpyTargetIds().has(targetHeroId);
+    return this.actionRunner.isSpyPending(targetHeroId);
   }
 
   isAttackPending(targetHeroId: string): boolean {
-    return this.pendingAttackTargetIds().has(targetHeroId);
+    return this.actionRunner.isAttackPending(targetHeroId);
   }
 
-  start(input: {
-    candidate: PvpTargetCandidate;
-    actionKind: PvpStartActionKind;
-    refreshAfterStart: (result: PvpActionStartResult) => void;
-  }): void {
+  start(input: VicinityPvpActionStartInput): void {
     const { candidate, actionKind, refreshAfterStart } = input;
 
     if (!this.canStart(candidate, actionKind)) {
       return;
     }
 
-    const requestId = ++this.requestId;
-    const requestContextKey = activeHeroContextKey(this.activeHero.state());
     const targetHeroId = candidate.targetHeroId;
 
     this.error.set(null);
     this.success.set(null);
 
-    if (!requestContextKey) {
-      this.error.set(this.range.copyJson()?.page.errorLabel ?? null);
-      return;
-    }
-
-    this.setPendingAction(actionKind, targetHeroId);
-
-    this.playerPvp.startAction({
+    this.actionRunner.start({
       actionKind,
       targetHeroId,
-      requestId: createRequestId(`pvp-${actionKind}:${targetHeroId}`),
-    }).subscribe({
-      next: (result) => {
-        if (!this.isCurrentAction(requestId, requestContextKey)) {
-          this.clearPendingAction(actionKind, targetHeroId);
-          return;
-        }
-
+      requestIdPrefix: 'pvp',
+      onMissingContext: () => {
+        this.error.set(this.range.copyJson()?.page.errorLabel ?? null);
+      },
+      onSuccess: (result) => {
         this.success.set(null);
         refreshAfterStart(result);
-        this.clearPendingAction(actionKind, targetHeroId);
       },
-      error: (error: unknown) => {
-        if (!this.isCurrentAction(requestId, requestContextKey)) {
-          this.clearPendingAction(actionKind, targetHeroId);
-          return;
-        }
-
+      onError: (error: unknown) => {
         this.error.set(getErrorMessage(
           error,
           this.range.copyJson()?.page.errorLabel ?? '',
         ));
-        this.clearPendingAction(actionKind, targetHeroId);
       },
     });
   }
@@ -103,38 +70,5 @@ export class VicinityPvpActionsState {
 
     return candidate.spyEligibility.canStart
       && !this.isSpyPending(candidate.targetHeroId);
-  }
-
-  private currentContextKey(): string | null {
-    return activeHeroContextKey(this.activeHero.state());
-  }
-
-  private isCurrentAction(requestId: number, contextKey: string): boolean {
-    return requestId === this.requestId && contextKey === this.currentContextKey();
-  }
-
-  private setPendingAction(actionKind: PvpStartActionKind, targetHeroId: string): void {
-    this.pendingAction.set({ actionKind, targetHeroId });
-    this.pendingSignal(actionKind).update((current) => new Set([...current, targetHeroId]));
-  }
-
-  private clearPendingAction(actionKind: PvpStartActionKind, targetHeroId: string): void {
-    const pending = this.pendingAction();
-
-    if (pending?.actionKind === actionKind && pending.targetHeroId === targetHeroId) {
-      this.pendingAction.set(null);
-    }
-
-    this.pendingSignal(actionKind).update((current) => {
-      const next = new Set(current);
-      next.delete(targetHeroId);
-      return next;
-    });
-  }
-
-  private pendingSignal(actionKind: PvpStartActionKind) {
-    return actionKind === 'attack'
-      ? this.pendingAttackTargetIds
-      : this.pendingSpyTargetIds;
   }
 }

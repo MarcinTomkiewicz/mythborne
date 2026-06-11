@@ -2,20 +2,20 @@ import { Component, input, output } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 import type {
-  VicinityRowAction,
-  VicinityRowActionEvent,
-} from '../../../../core/types/vicinity.types';
+  DataRowAction,
+  DataRowActionEvent,
+} from '../../../core/types/data-row.types';
 
 @Component({
-  selector: 'app-vicinity-row-actions',
+  selector: 'app-data-row-actions',
   standalone: true,
   imports: [ButtonModule, TooltipModule],
   host: { class: 'd-contents' },
-  templateUrl: './vicinity-row-actions.html',
+  templateUrl: './data-row-actions.html',
 })
-export class VicinityRowActions<Row> {
+export class DataRowActions<Row> {
   readonly row = input.required<Row>();
-  readonly actions = input.required<readonly VicinityRowAction[]>();
+  readonly actions = input.required<readonly DataRowAction[]>();
   readonly showLabels = input(false);
-  readonly startAction = output<VicinityRowActionEvent<Row>>();
+  readonly startAction = output<DataRowActionEvent<Row>>();
 }

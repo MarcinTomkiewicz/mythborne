@@ -4,18 +4,20 @@ import type {
   PlayerVicinityEstateSummaryReadModel,
 } from '../../../../core/domain/vicinity/player-vicinity-page-context.model';
 import {
+  AddressDataRow,
+  DataRowAction,
+  DataRowActionKind,
+} from '../../../../core/types/data-row.types';
+import {
   PvpStartActionKind,
-  VicinityAddressListRow,
-  VicinityRowAction,
-  VicinityRowActionKind,
-} from '../../../../core/types/vicinity.types';
+} from '../../../../core/types/pvp-action.types';
 import { formatTimeOfDayLabel } from '../../../../core/utils/pending-timer';
 import { replaceTemplateTokens } from '../../../../core/utils/token-template';
 import {
-  toVicinityListRow,
+  toVicinityAddressDataRow,
   vicinityAddressKey,
 } from '../utils/vicinity-list-row';
-import { VicinityActivePvpActionState } from './vicinity-active-pvp-action.state';
+import { PvpActiveActionState } from '../../pvp/state/pvp-active-action.state';
 import { VicinityPageState } from './vicinity-page.state';
 import { VicinityPvpActionsState } from './vicinity-pvp-actions.state';
 import { VicinityPvpMetadataState } from './vicinity-pvp-metadata.state';
@@ -25,7 +27,7 @@ import { VicinityVisibleTargetOverlayState } from './vicinity-visible-target-ove
 export class VicinityRowsState {
   private readonly metadata = inject(VicinityPvpMetadataState);
   private readonly page = inject(VicinityPageState);
-  private readonly activePvpAction = inject(VicinityActivePvpActionState);
+  private readonly activePvpAction = inject(PvpActiveActionState);
   private readonly actions = inject(VicinityPvpActionsState);
   private readonly overlay = inject(VicinityVisibleTargetOverlayState);
 
@@ -58,7 +60,7 @@ export class VicinityRowsState {
         ?? null;
 
       return this.withActionState(
-        toVicinityListRow(
+        toVicinityAddressDataRow(
           row,
           candidate,
           metadataEntries,
@@ -82,7 +84,7 @@ export class VicinityRowsState {
       ?? null;
   });
 
-  selectRow(row: VicinityAddressListRow): void {
+  selectRow(row: AddressDataRow): void {
     this.selectedRowKey.set(row.key);
 
     if (row.kind === 'empty') {
@@ -91,7 +93,7 @@ export class VicinityRowsState {
         districtLabel: row.districtLabel,
         addressNumber: row.addressNumber,
         address: row.address,
-        addressLabel: row.addressLabel,
+        addressLabel: row.leadingLabel,
         displayLabel: row.displayLabel,
         kind: 'empty',
         isSelectable: true,
@@ -103,7 +105,7 @@ export class VicinityRowsState {
         serverId: row.serverId,
         heroId: row.heroId,
         estateRank: row.estateRank,
-        occupantLabel: row.occupantLabel,
+        occupantLabel: row.title,
       });
       return;
     }
@@ -123,7 +125,7 @@ export class VicinityRowsState {
     );
   }
 
-  startRowAction(row: VicinityAddressListRow, actionKind: VicinityRowActionKind): void {
+  startRowAction(row: AddressDataRow, actionKind: DataRowActionKind): void {
     if (actionKind === 'claimEstate') {
       this.selectRow(row);
       return;
@@ -146,7 +148,7 @@ export class VicinityRowsState {
     });
   }
 
-  private withActionState(row: VicinityAddressListRow): VicinityAddressListRow {
+  private withActionState(row: AddressDataRow): AddressDataRow {
     if (!row.candidate) {
       return row;
     }
@@ -158,9 +160,9 @@ export class VicinityRowsState {
   }
 
   private withSingleActionState(
-    row: VicinityAddressListRow,
-    action: VicinityRowAction,
-  ): VicinityRowAction {
+    row: AddressDataRow,
+    action: DataRowAction,
+  ): DataRowAction {
     const candidate = row.candidate;
     const pvpActionKind = toPvpStartActionKind(action.kind);
 
@@ -191,7 +193,7 @@ export class VicinityRowsState {
 }
 
 function toPvpStartActionKind(
-  actionKind: VicinityRowActionKind,
+  actionKind: DataRowActionKind,
 ): PvpStartActionKind | null {
   return actionKind === 'attack' || actionKind === 'spy' ? actionKind : null;
 }

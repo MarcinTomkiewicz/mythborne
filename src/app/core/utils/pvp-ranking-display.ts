@@ -1,17 +1,17 @@
 import {
-  VICINITY_ROW_ACTION_CONFIGS,
-} from '../configs/vicinity-row-actions.config';
+  DATA_ROW_ACTION_CONFIGS,
+} from '../configs/data-row-actions.config';
 import {
   PvpRankingActionKind,
   PvpRankingActionState,
   PvpRankingCopy,
-  PvpRankingPendingAction,
   PvpRankingRow,
 } from '../domain/pvp/pvp-ranking.model';
 import {
-  VicinityListRow,
-  VicinityRowAction,
-} from '../types/vicinity.types';
+  DataRowAction,
+  RankingDataRow,
+} from '../types/data-row.types';
+import type { PendingPvpAction } from '../types/pvp-action.types';
 
 export function pvpRankingActionTooltip(
   actionKind: PvpRankingActionKind,
@@ -59,36 +59,21 @@ export function pvpRankingTargetProtectionDisplay(
     ?? copy.common.emptyValues[copy.targetPanel.emptyValueKeys.protection];
 }
 
-export function toPvpRankingVicinityListRow(
+export function toPvpRankingDataRow(
   row: PvpRankingRow,
   copy: PvpRankingCopy,
-  pendingAction: PvpRankingPendingAction | null,
-): VicinityListRow {
+  pendingAction: PendingPvpAction | null,
+): RankingDataRow {
   return {
     key: row.heroId,
     kind: row.isSelf ? 'self' : 'occupied',
-    addressLabel: String(row.rankPosition),
-    districtCode: row.districtKey,
-    districtLabel: copy.filters.districtOptions[row.districtKey],
-    address: row.addressDisplay,
-    displayLabel: row.addressDisplay,
-    isOccupied: true,
-    isCurrentHeroEstate: row.isSelf,
-    occupancyStatusKey: row.isSelf ? 'current' : 'occupied',
-    occupancyLabel: row.heroName,
-    heroId: row.heroId,
-    occupantLabel: row.heroName,
-    candidate: null,
-    attackDisplay: null,
-    spyDisplay: null,
+    leadingLabel: String(row.rankPosition),
+    title: row.heroName,
     statusLabel: null,
     statusIndicatorIcon: null,
     statusIndicatorAriaLabel: null,
     isDangerState: false,
-    detailLabel: pvpRankingGuildDisplay(row, copy),
-    levelDisplay: String(row.level),
-    attackTravelDisplay: pvpRankingTableValue(row.attackDurationDisplay, copy),
-    spyTravelDisplay: pvpRankingTableValue(row.spyDurationDisplay, copy),
+    subtitle: pvpRankingGuildDisplay(row, copy),
     metricCells: [
       {
         key: 'level',
@@ -107,19 +92,17 @@ export function toPvpRankingVicinityListRow(
         value: pvpRankingTableValue(row.spyDurationDisplay, copy),
       },
     ],
-    protectionDisplay: row.protectionDisplay,
-    playerSafeAttackReason: null,
-    playerSafeSpyReason: null,
-    actions: toPvpRankingVicinityActions(row, copy, pendingAction),
+    actions: toPvpRankingDataRowActions(row, copy, pendingAction),
+    rankingRow: row,
   };
 }
 
-function toPvpRankingVicinityActions(
+function toPvpRankingDataRowActions(
   row: PvpRankingRow,
   copy: PvpRankingCopy,
-  pendingAction: PvpRankingPendingAction | null,
-): VicinityRowAction[] {
-  return VICINITY_ROW_ACTION_CONFIGS.map((config) => {
+  pendingAction: PendingPvpAction | null,
+): DataRowAction[] {
+  return DATA_ROW_ACTION_CONFIGS.map((config) => {
     const actionKind = config.kind;
     const action = row.actions[actionKind];
     const pending = pendingAction?.targetHeroId === row.heroId

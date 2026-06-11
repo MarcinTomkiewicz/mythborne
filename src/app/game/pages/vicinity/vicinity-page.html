@@ -29,8 +29,9 @@
         }
       </section>
 
-      <app-vicinity-active-pvp-action-panel
+      <app-pvp-active-action-panel
         [offer]="activePvpAction.visibleOffer()"
+        [copy]="pvpActiveActionCopy.panel"
         [timer]="activePvpAction.timer()"
         [factRows]="activePvpAction.factRows()"
         [helperText]="activePvpAction.helperText()"
@@ -67,7 +68,7 @@
               (focusCurrentAddress)="rowsState.focusCurrentAddress()"
             />
 
-            <app-vicinity-address-list
+            <app-data-row-list
               [rows]="rowsState.rows()"
               [columnLabels]="page.addressListColumnLabels()"
               [emptyLabel]="copy.empty.districtAddresses"

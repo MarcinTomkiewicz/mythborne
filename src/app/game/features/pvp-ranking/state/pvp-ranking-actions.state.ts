@@ -1,93 +1,66 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
+import type { PvpActionStartResult } from '../../../../core/domain/pvp/pvp.model';
 import {
   PvpRankingActionFeedback,
-  PvpRankingActionKind,
-  PvpRankingActionRequest,
-  PvpRankingContext,
   PvpRankingCopy,
-  PvpRankingPendingAction,
-  PvpRankingRow,
 } from '../../../../core/domain/pvp/pvp-ranking.model';
-import { ActiveHero } from '../../../../core/services/hero/active-hero';
-import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
-import { createRequestId } from '../../../../core/utils/request-id';
+import { PvpActionRunner } from '../../../../core/services/pvp/pvp-action-runner';
 import type {
-  VicinityListRow,
-  VicinityRowActionKind,
-} from '../../../../core/types/vicinity.types';
+  DataRow,
+  DataRowActionKind,
+} from '../../../../core/types/data-row.types';
+import { isRankingDataRow } from '../../../../core/utils/data-row';
 
 @Injectable()
 export class PvpRankingActionsState {
-  private readonly activeHero = inject(ActiveHero);
-  private readonly playerPvp = inject(PlayerPvp);
-  private actionRequest: PvpRankingActionRequest | null = null;
+  private readonly actionRunner = inject(PvpActionRunner);
 
   readonly actionFeedback = signal<PvpRankingActionFeedback | null>(null);
-  readonly pendingAction = signal<PvpRankingPendingAction | null>(null);
+  readonly pendingAction = this.actionRunner.pendingAction;
 
   clearFeedback(): void {
     this.actionFeedback.set(null);
   }
 
   startAction(
-    row: VicinityListRow,
-    actionKind: VicinityRowActionKind,
-    context: PvpRankingContext | null,
+    row: DataRow,
+    actionKind: DataRowActionKind,
     copy: PvpRankingCopy | null,
+    handleStartedAction: (result: PvpActionStartResult) => void,
     reloadAfterAction: () => void,
   ): void {
     if (actionKind !== 'attack' && actionKind !== 'spy') {
       return;
     }
 
-    const targetRow = this.findRankingRow(row, context);
-    const action = targetRow?.actions[actionKind];
-
-    if (!targetRow || !action?.enabled) {
+    if (!isRankingDataRow(row)) {
       this.setTargetUnavailableFeedback(copy);
       return;
     }
 
-    const requestId = (this.actionRequest?.requestId ?? 0) + 1;
-    const contextKey = activeHeroContextKey(this.activeHero.state());
+    const targetRow = row.rankingRow;
+    const action = targetRow?.actions[actionKind];
 
-    if (!contextKey) {
+    if (!action?.enabled) {
       this.setTargetUnavailableFeedback(copy);
       return;
     }
 
     this.actionFeedback.set(null);
-    this.actionRequest = {
-      requestId,
-      contextKey,
+
+    this.actionRunner.start({
       actionKind,
       targetHeroId: targetRow.heroId,
-    };
-    this.pendingAction.set(this.actionRequest);
-
-    this.playerPvp.startAction({
-      actionKind,
-      targetHeroId: targetRow.heroId,
-      requestId: createRequestId(`ranking-${actionKind}:${targetRow.heroId}`),
-    }).subscribe({
-      next: () => {
-        if (!this.isCurrentActionRequest(requestId, contextKey, targetRow.heroId, actionKind)) {
-          this.clearPendingAction(targetRow.heroId, actionKind);
-          return;
-        }
-
-        this.clearPendingAction(targetRow.heroId, actionKind);
+      requestIdPrefix: 'ranking',
+      onMissingContext: () => {
+        this.setTargetUnavailableFeedback(copy);
+      },
+      onSuccess: (result) => {
+        handleStartedAction(result);
         reloadAfterAction();
       },
-      error: () => {
-        if (!this.isCurrentActionRequest(requestId, contextKey, targetRow.heroId, actionKind)) {
-          this.clearPendingAction(targetRow.heroId, actionKind);
-          return;
-        }
-
+      onError: () => {
         this.setTargetUnavailableFeedback(copy);
-        this.clearPendingAction(targetRow.heroId, actionKind);
         reloadAfterAction();
       },
     });
@@ -103,40 +76,5 @@ export class PvpRankingActionsState {
       detail: copy.feedback.targetUnavailable.detail,
       severity: 'error',
     });
-  }
-
-  private isCurrentActionRequest(
-    requestId: number,
-    contextKey: string,
-    targetHeroId: string,
-    actionKind: PvpRankingActionKind,
-  ): boolean {
-    const pending = this.actionRequest;
-
-    return pending?.requestId === requestId
-      && contextKey === activeHeroContextKey(this.activeHero.state())
-      && pending?.targetHeroId === targetHeroId
-      && pending.actionKind === actionKind;
-  }
-
-  private clearPendingAction(
-    targetHeroId: string,
-    actionKind: PvpRankingActionKind,
-  ): void {
-    const pending = this.pendingAction();
-
-    if (pending?.targetHeroId === targetHeroId && pending.actionKind === actionKind) {
-      this.actionRequest = null;
-      this.pendingAction.set(null);
-    }
-  }
-
-  private findRankingRow(row: VicinityListRow, context: PvpRankingContext | null): PvpRankingRow | null {
-    const heroId = row.heroId ?? null;
-
-    return heroId
-      ? context?.ranking.rows.find((rankingRow) => rankingRow.heroId === heroId)
-        ?? (context?.selectedTarget?.heroId === heroId ? context?.selectedTarget ?? null : null)
-      : null;
   }
 }

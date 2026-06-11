@@ -3,8 +3,9 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
+import { PVP_ACTIVE_ACTION_COPY } from '../../../core/configs/pvp-active-action-ui.config';
 import { CombatReportHandoffCard } from '../../components/combat/combat-report-handoff-card';
-import { VicinityActivePvpActionPanel } from '../../components/vicinity/active-pvp-action-panel/vicinity-active-pvp-action-panel';
+import { PvpActiveActionPanel } from '../../components/pvp-active-action-panel/pvp-active-action-panel';
 import { MinigameHost } from '../../components/minigame-host/minigame-host';
 import {
   MINIGAME_KEY,
@@ -23,7 +24,7 @@ import { CombatPvpActionState } from './combat-pvp-action.state';
     CombatReportHandoffCard,
     MinigameHost,
     RouterLink,
-    VicinityActivePvpActionPanel,
+    PvpActiveActionPanel,
   ],
   providers: [CombatPvpActionState],
   templateUrl: './combat-page.html',
@@ -43,6 +44,7 @@ export class CombatPage {
   );
 
   readonly minigameKey = MINIGAME_KEY.combat;
+  readonly pvpActiveActionCopy = PVP_ACTIVE_ACTION_COPY;
   readonly completion = signal<MinigameCompletionEvent | null>(null);
   readonly sourceRef = computed<MinigameSourceRef | null>(() => {
     const query = this.query();

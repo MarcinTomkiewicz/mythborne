@@ -5,27 +5,33 @@ import {
 } from '../../../../core/domain/pvp/pvp-ranking.model';
 import type { GamePageSummaryRow } from '../../../../core/interfaces/game-page-summary-row.interface';
 import type {
-  VicinityListRow,
-  VicinityRowActionEvent,
-} from '../../../../core/types/vicinity.types';
+  DataRow,
+  DataRowActionEvent,
+} from '../../../../core/types/data-row.types';
 import {
   pvpRankingTargetGenericValue,
   pvpRankingTargetGuildDisplay,
   pvpRankingTargetProtectionDisplay,
 } from '../../../../core/utils/pvp-ranking-display';
-import { VicinityRowActions } from '../../vicinity/row-actions/vicinity-row-actions';
+import { SelectedTargetPanelShell } from '../../selected-target-panel-shell/selected-target-panel-shell';
 
 @Component({
   selector: 'app-pvp-ranking-target-panel',
   standalone: true,
-  imports: [VicinityRowActions],
+  imports: [SelectedTargetPanelShell],
   host: { class: 'd-contents' },
   templateUrl: './pvp-ranking-target-panel.html',
 })
 export class PvpRankingTargetPanel {
   readonly selected = input<PvpRankingRow | null>(null);
-  readonly selectedActionRow = input<VicinityListRow | null>(null);
+  readonly selectedActionRow = input<DataRow | null>(null);
   readonly copy = input.required<PvpRankingCopy>();
+  readonly targetTitle = computed(() => this.selected()?.heroName ?? null);
+  readonly targetSubtitle = computed(() => {
+    const row = this.selected();
+
+    return row ? pvpRankingTargetGuildDisplay(row, this.copy()) : null;
+  });
   readonly factRows = computed<readonly GamePageSummaryRow[]>(() => {
     const row = this.selected();
     const copy = this.copy();
@@ -35,11 +41,6 @@ export class PvpRankingTargetPanel {
     }
 
     return [
-      {
-        key: 'guild',
-        label: copy.targetPanel.labels.guild,
-        value: pvpRankingTargetGuildDisplay(row, copy),
-      },
       {
         key: 'address',
         label: copy.targetPanel.labels.address,
@@ -62,5 +63,5 @@ export class PvpRankingTargetPanel {
       },
     ];
   });
-  readonly startAction = output<VicinityRowActionEvent<VicinityListRow>>();
+  readonly startAction = output<DataRowActionEvent<DataRow>>();
 }

@@ -174,16 +174,6 @@ export interface PvpRankingContextInput {
   selectedTargetHeroId?: string | null;
 }
 
-export interface PvpRankingPendingAction {
-  actionKind: Exclude<PvpRankingActionKind, 'siege'>;
-  targetHeroId: string;
-}
-
-export interface PvpRankingActionRequest extends PvpRankingPendingAction {
-  requestId: number;
-  contextKey: string;
-}
-
 export interface PvpRankingActionFeedback {
   summary: string;
   detail: string;

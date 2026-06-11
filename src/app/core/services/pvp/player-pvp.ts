@@ -20,13 +20,18 @@ import {
   GetPvpTargetCandidatesRpcRow,
   GetPvpVisibleAddressTargetOverlayRpcArgs,
   GetPvpVisibleAddressTargetOverlayRpcRow,
-  PvpActionKindKey,
   SettleDuePvpSpyActionRpcArgs,
   SettleDuePvpSpyActionRpcRow,
   StartPvpActionRpcArgs,
   StartPvpActionRpcRow,
 } from '../../types/pvp-rpc.types';
-import { PvpVisibleAddressTargetOverlayInput } from '../../types/vicinity.types';
+import type {
+  CreatePvpSpyGameReportInput,
+  PvpTargetCandidateFilters,
+  PvpVisibleAddressTargetOverlayInput,
+  SettleDuePvpSpyActionInput,
+  StartPvpActionInput,
+} from '../../types/pvp-action.types';
 import { positiveInteger } from '../../utils/number';
 import { requiredTrimmedText, trimToNull } from '../../utils/normalize-text';
 import {
@@ -43,30 +48,6 @@ import { Backend } from '../backend/backend';
 import { ActiveHero } from '../hero/active-hero';
 
 const DEFAULT_PVP_TARGET_LIMIT = 50;
-
-export interface PvpTargetCandidateFilters {
-  districtCode: string | null;
-  limit: number;
-  offset: number;
-  search: string | null;
-}
-
-export interface StartPvpActionInput {
-  actionKind: PvpActionKindKey;
-  targetHeroId: string;
-  reason?: string | null;
-  requestId?: string | null;
-}
-
-export interface SettleDuePvpSpyActionInput {
-  pvpActionId: string;
-  requestId?: string | null;
-}
-
-export interface CreatePvpSpyGameReportInput {
-  pvpSpyResultId: string;
-  requestId?: string | null;
-}
 
 @Injectable({ providedIn: 'root' })
 export class PlayerPvp {

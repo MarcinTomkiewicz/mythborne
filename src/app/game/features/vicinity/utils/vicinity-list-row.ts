@@ -5,9 +5,11 @@ import type {
   PlayerVicinityCopyReadModel,
 } from '../../../../core/domain/vicinity/player-vicinity-page-context.model';
 import {
-  VicinityAddressListRow,
+  AddressDataRow,
+  DataRowKind,
+} from '../../../../core/types/data-row.types';
+import {
   VicinityAddressRow,
-  VicinityListRowKind,
 } from '../../../../core/types/vicinity.types';
 import {
   PvpEligibilityDisplay,
@@ -18,9 +20,9 @@ import {
   formatTimeOfDayLabel,
 } from '../../../../core/utils/pending-timer';
 import { replaceTemplateTokens } from '../../../../core/utils/token-template';
-import { toVicinityRowActions } from '../../../../core/utils/vicinity-row-actions.mapper';
+import { toVicinityDataRowActions } from '../../../../core/utils/vicinity-row-actions.mapper';
 
-export function toVicinityListRow(
+export function toVicinityAddressDataRow(
   row: VicinityAddressRow,
   candidate: PvpTargetCandidate | null,
   metadataEntries: readonly UiMetadataEntryReadModel[],
@@ -30,7 +32,7 @@ export function toVicinityListRow(
   selectedTargetCopy: PlayerVicinityCopyReadModel['selectedTarget'],
   selfHeroName?: string,
   selfProtectionDisplay?: string | null,
-): VicinityAddressListRow {
+): AddressDataRow {
   const kind = row.kind === 'self' || row.kind === 'empty'
     ? row.kind
     : 'occupied';
@@ -64,10 +66,10 @@ export function toVicinityListRow(
       copy.metricUnavailableLabel,
     ),
   };
-  const listRow: VicinityAddressListRow = {
+  const listRow: AddressDataRow = {
     key: vicinityAddressKey(row.districtCode, row.addressNumber),
     kind,
-    addressLabel: row.addressLabel,
+    leadingLabel: row.addressLabel,
     districtCode: row.districtCode,
     districtLabel: row.districtLabel,
     addressNumber: row.addressNumber,
@@ -81,7 +83,7 @@ export function toVicinityListRow(
     serverId: row.serverId,
     heroId: row.heroId,
     estateRank: row.estateRank,
-    occupantLabel: row.kind === 'empty'
+    title: row.kind === 'empty'
       ? labelsCopy.empty
       : targetCandidate?.targetDisplayName
         ?? (row.kind === 'self' ? selfHeroName : null)
@@ -93,7 +95,7 @@ export function toVicinityListRow(
     statusIndicatorIcon: isProtected ? 'pi pi-shield' : null,
     statusIndicatorAriaLabel: isProtected ? copy.protectedTargetAriaLabel : null,
     isDangerState: isProtected,
-    detailLabel: '',
+    subtitle: '',
     levelDisplay: metricDisplays.level,
     attackTravelDisplay: metricDisplays.attackTravel,
     spyTravelDisplay: metricDisplays.spyTravel,
@@ -107,13 +109,13 @@ export function toVicinityListRow(
     actions: row.kind === 'empty'
       ? [claimEstateAction(copy)]
       : targetCandidate
-        ? toVicinityRowActions(targetCandidate, copy, selectedTargetCopy)
+        ? toVicinityDataRowActions(targetCandidate, copy, selectedTargetCopy)
         : [],
   };
 
   return {
     ...listRow,
-    detailLabel: rowDetailLabel(listRow, copy),
+    subtitle: rowDetailLabel(listRow, copy),
     protectionDisplay: protectionLabel(
       listRow,
       copy,
@@ -128,7 +130,7 @@ export function vicinityAddressKey(districtCode: string, addressNumber: number):
 }
 
 function rowDetailLabel(
-  row: VicinityAddressListRow,
+  row: AddressDataRow,
   copy: PlayerVicinityCopyReadModel['addressList'],
 ): string {
   if (row.kind === 'self' || row.kind === 'empty') {
@@ -157,7 +159,7 @@ function playerSafeReason(
 }
 
 function protectionLabel(
-  row: VicinityAddressListRow,
+  row: AddressDataRow,
   copy: PlayerVicinityCopyReadModel['addressList'],
   summaryCopy: PlayerVicinityCopyReadModel['summary'],
   selfProtectionDisplay: string | null,
@@ -193,7 +195,7 @@ function isSameGuildCandidate(candidate: PvpTargetCandidate | null): boolean {
 
 function toRowStatus(
   row: VicinityAddressRow,
-  kind: VicinityListRowKind,
+  kind: DataRowKind,
   candidate: PvpTargetCandidate | null,
   copy: PlayerVicinityCopyReadModel['addressList'],
 ): string | null {
@@ -218,7 +220,7 @@ function toRowStatus(
 
 function claimEstateAction(
   copy: PlayerVicinityCopyReadModel['addressList'],
-): VicinityAddressListRow['actions'][number] {
+): AddressDataRow['actions'][number] {
   return {
     kind: 'claimEstate',
     icon: 'pi pi-settle',

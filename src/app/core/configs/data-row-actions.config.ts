@@ -1,6 +1,6 @@
-import type { VicinityRowActionConfig } from '../types/vicinity.types';
+import type { DataRowActionConfig } from '../types/data-row.types';
 
-export const VICINITY_ROW_ACTION_CONFIGS = [
+export const DATA_ROW_ACTION_CONFIGS = [
   {
     kind: 'spy',
     icon: 'pi pi-spy',
@@ -22,4 +22,4 @@ export const VICINITY_ROW_ACTION_CONFIGS = [
     availability: 'never',
     primaryWhenAvailable: false,
   },
-] as const satisfies readonly VicinityRowActionConfig[];
+] as const satisfies readonly DataRowActionConfig[];
