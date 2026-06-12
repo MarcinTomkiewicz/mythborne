@@ -34,13 +34,22 @@ export function mapParticipant(record: JsonRecord): CombatLiveParticipantReadMod
     record,
     'displayName',
     'display_name',
-  ))) ?? participantId;
+  )));
+
+  if (!displayName) {
+    return null;
+  }
 
   return {
     participantId,
     previewParticipantKey: participantId,
     participantKey: participantId,
     participantKind: trimToNull(optionalText(read(record, 'participantKind', 'participant_kind', 'kind'))),
+    isPlayerControlled: optionalBoolean(read(
+      record,
+      'isPlayerControlled',
+      'is_player_controlled',
+    )) ?? false,
     side: trimToNull(optionalText(read(record, 'side', 'participantSide', 'participant_side'))),
     displayName,
     statusKey: trimToNull(optionalText(read(record, 'statusKey', 'status_key', 'status'))),

@@ -3,7 +3,8 @@ import type { StatCardRow } from '../../types/stat-card.types';
 export type CombatDisplayValueTone = 'danger' | 'golden' | 'info' | 'success' | 'muted';
 export type CombatDisplayBadgeTone = 'success' | 'danger' | 'warn' | 'muted' | 'golden';
 export type CombatSurfaceCenterState =
-  'decision' | 'loading' | 'error' | 'live_manual' | 'timing_ready' | 'completed' | 'idle';
+  'decision' | 'loading' | 'error' | 'live_manual';
+export type CombatSurfaceActionId = 'start-combat' | 'auto-resolve';
 
 export interface CombatDisplayPortrait {
   src: string;
@@ -13,7 +14,7 @@ export interface CombatDisplayPortrait {
 export interface CombatDisplayParticipant {
   id: string;
   displayName: string;
-  kindLabel: string;
+  kindLabel: string | null;
   metaLabel: string | null;
   badgeLabel: string | null;
   badgeTone: CombatDisplayBadgeTone;
@@ -29,7 +30,7 @@ export interface CombatDisplayParticipant {
 
 export interface CombatDisplayLogGroup {
   id: string;
-  label: string;
+  label: string | null;
   rows: CombatDisplayLogRow[];
 }
 
@@ -45,7 +46,7 @@ export interface CombatDisplayLogRow {
 }
 
 export interface CombatSurfaceAction {
-  id: string;
+  id: CombatSurfaceActionId;
   label: string;
   loading?: boolean;
   disabled?: boolean;
@@ -60,8 +61,13 @@ export interface CombatSurfaceTimingMeter {
   zoneStart: number;
   zoneEnd: number;
   disabled: boolean;
-  actionLabel: string;
+  actionLabel: string | null;
   actionLoading: boolean;
+  title: string | null;
+  helperText: string | null;
+  earlyLabel: string | null;
+  hitZoneLabel: string | null;
+  lateLabel: string | null;
 }
 
 export interface CombatTimingStrikeSnapshot {
@@ -78,9 +84,9 @@ export interface CombatSurfaceDecisionDeadline {
 
 export interface CombatSurfaceCenterPanel {
   state: CombatSurfaceCenterState;
-  contextLabel: string;
-  title: string;
-  helperText: string;
+  contextLabel: string | null;
+  title: string | null;
+  helperText: string | null;
   detailText?: string | null;
   primaryAction?: CombatSurfaceAction | null;
   secondaryAction?: CombatSurfaceAction | null;

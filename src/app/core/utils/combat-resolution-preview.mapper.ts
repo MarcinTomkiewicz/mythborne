@@ -7,6 +7,7 @@ import { GetCombatResolutionPreviewRpcRow } from '../types/combat-live-rpc.types
 import {
   JsonRecord,
   jsonRecord,
+  optionalBoolean,
   optionalNumber,
   optionalText,
   read,
@@ -97,6 +98,11 @@ function mapCombatResolutionPreviewParticipant(
       `${participantKind ?? fallbackParticipantKind(heroId, opponentDefinitionId)}:${index}`,
     participantKey,
     participantKind,
+    isPlayerControlled: optionalBoolean(read(
+      record,
+      'isPlayerControlled',
+      'is_player_controlled',
+    )) ?? false,
     side,
     displayName,
     statusKey: trimToNull(optionalText(read(record, 'statusKey', 'status_key', 'status'))),

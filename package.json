@@ -9,7 +9,8 @@
     "test": "ng test",
     "serve:ssr:mythos-hunter-2-0": "node dist/mythos-hunter-2-0/server/server.mjs",
     "build:ssr": "node scripts/build-ssr.mjs",
-    "db:types": "powershell -ExecutionPolicy Bypass -File ./scripts/gen-database-types.ps1"
+    "db:types": "powershell -ExecutionPolicy Bypass -File ./scripts/gen-database-types.ps1",
+    "review:dirty": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/export-dirty-files.ps1"
   },
   "prettier": {
     "overrides": [

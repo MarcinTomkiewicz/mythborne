@@ -4,20 +4,11 @@ import {
   CombatSurfaceDecisionDeadline,
   CombatSurfaceCenterPanel,
 } from './combat-display.model';
-import { PvpActionCopy } from '../pvp/pvp-action-copy.model';
 import {
   CombatLiveParticipantReadModel,
   CombatTimingManifestReadModel,
 } from './combat-live.model';
-
-export interface CombatStageHeaderViewModel {
-  label: string;
-  title: string;
-  modeBadgeLabel: string;
-  statusLabel: string | null;
-  roundLabel: string | null;
-  waitingLabel: string;
-}
+import { CombatSourcePresentation } from './combat-source-presentation.model';
 
 export interface CombatStageLogViewModel {
   show: boolean;
@@ -28,14 +19,13 @@ export interface CombatStageLogViewModel {
 }
 
 export interface CombatStageEmptyParticipantViewModel {
-  leftTitle: string;
-  leftText: string;
-  rightTitle: string;
-  rightText: string;
+  leftTitle: string | null;
+  leftText: string | null;
+  rightTitle: string | null;
+  rightText: string | null;
 }
 
 export interface CombatStageViewModel {
-  header: CombatStageHeaderViewModel | null;
   ariaLabel: string;
   leftParticipant: CombatDisplayParticipant | null;
   rightParticipant: CombatDisplayParticipant | null;
@@ -48,8 +38,6 @@ export interface CombatLiveCenterPanelInput {
   previewStatus: string | null;
   liveStatusKey: string | null;
   roundLabel: string | null;
-  currentActorName: string | null;
-  heroParticipant: CombatLiveParticipantReadModel | null;
   timingManifest: CombatTimingManifestReadModel | null;
   timing: {
     isCombatRunning: boolean;
@@ -67,22 +55,21 @@ export interface CombatLiveCenterPanelInput {
   actions: {
     canShowStartAction: boolean;
     canStartAction: boolean;
-    canShowTimingAction: boolean;
     canShowAutoResolveAction: boolean;
     canAutoResolveAction: boolean;
     isAutoResolving: boolean;
   };
   decisionDeadline: CombatSurfaceDecisionDeadline | null;
-  pvpActionCopy?: PvpActionCopy | null;
+  sourcePresentation: CombatSourcePresentation;
 }
 
 export interface CombatLiveStageViewInput extends Omit<
   CombatLiveCenterPanelInput,
-  'heroParticipant' | 'roundLabel'
+  'roundLabel'
 > {
-  header: CombatStageHeaderViewModel;
   ariaLabel: string;
   participants: readonly CombatLiveParticipantReadModel[];
+  emptyParticipants: CombatStageEmptyParticipantViewModel;
   activeHeroId?: string | null;
   activeHeroPortraitSrc?: string | null;
   log: {

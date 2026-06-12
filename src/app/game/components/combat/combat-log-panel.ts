@@ -11,7 +11,7 @@ import { CombatLogRow } from './combat-log-row';
 })
 export class CombatLogPanel {
   readonly groups = input.required<readonly CombatDisplayLogGroup[]>();
-  readonly title = input('Przebieg starcia');
+  readonly title = input.required<string>();
   readonly subtitle = input<string | null>(null);
-  readonly emptyText = input('Przebieg starcia pojawi się po pierwszej akcji.');
+  readonly emptyText = input.required<string>();
 }

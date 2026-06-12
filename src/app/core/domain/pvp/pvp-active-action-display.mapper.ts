@@ -78,7 +78,6 @@ export function pvpActiveActionFactRows(
   const labels = copy.common.labels;
   const baseRows: Array<{ label: string; value: string | null }> = [
     { label: labels.action, value: pvpActiveActionKindLabel(offer, copy) },
-    { label: labels.state, value: pvpActiveActionPhaseText(offer, copy) },
     { label: labels.target, value: offer.targetHeroDisplayName },
     { label: labels.targetAddress, value: offer.targetAddressLabel },
     { label: labels.yourAddress, value: offer.attackerAddressLabel },
@@ -132,23 +131,6 @@ export function pvpActiveActionPhaseText(
   return offer.isResolved
     ? copy.activeAction.phaseText.spyResolved
     : copy.activeAction.phaseText.spyTravel;
-}
-
-export function pvpActiveActionPendingHelperText(
-  offer: ActivePvpActionOffer,
-  copy: PvpActionCopy,
-): string {
-  if (isPvpReturnRuntimePhase(offer)) {
-    return copy.activeAction.loading.refreshReturnState;
-  }
-
-  if (offer.isManualWindow) {
-    return copy.activeAction.loading.refreshDecisionState;
-  }
-
-  return offer.actionKind === 'attack'
-    ? copy.activeAction.loading.refreshAttackState
-    : copy.activeAction.loading.refreshSpyState;
 }
 
 export function pvpActiveActionErrorMessage(_error: unknown, fallback: string): string {

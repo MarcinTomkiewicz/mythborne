@@ -80,6 +80,7 @@ export interface CombatLiveParticipantReadModel {
   previewParticipantKey?: string;
   participantKey?: string | null;
   participantKind?: string | null;
+  isPlayerControlled: boolean;
   side: string | null;
   displayName: string;
   statusKey: string | null;
