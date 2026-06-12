@@ -6,6 +6,7 @@ import {
 } from '../../../core/domain/game-copy/exploration-difficulty-copy.model';
 import { HeroExplorationDifficultyCardPreview } from '../../../core/domain/exploration/exploration-preview.model';
 import { HeroExplorationStateReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
+import { explorationDifficultyCardBackgroundClass } from '../../../core/config/exploration-card-backgrounds.config';
 import {
   requiredSemanticIconClass,
   semanticIconToneClass,
@@ -37,6 +38,9 @@ export class ExplorationDifficultyPreviewCard {
   );
   readonly cardCopy = computed(() =>
     explorationDifficultyCardCopy(this.copy(), this.difficulty().difficultyKey),
+  );
+  readonly backgroundClass = computed(() =>
+    explorationDifficultyCardBackgroundClass(this.difficulty().difficultyKey),
   );
 
   readonly actionLabel = computed(() => {

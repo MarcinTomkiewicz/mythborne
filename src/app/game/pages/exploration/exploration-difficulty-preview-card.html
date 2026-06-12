@@ -5,7 +5,8 @@
 @let card = cardCopy();
 
 <article
-  class="mg-card p-md w-100 h-100"
+  class="mg-card mg-card--image-bg p-md w-100 h-100"
+  [class]="backgroundClass()"
   [class.mg-card--selected]="selected"
   [class.cursor-pointer]="selectable"
   [attr.role]="selectable ? 'button' : null"

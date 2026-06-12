@@ -1,0 +1,20 @@
+$card-background-base-url: "https://acxrgywwpzlhuoklpxrn.supabase.co/storage/v1/object/public/assets";
+
+$card-background-assets: (
+  "difficulty-peloponese-hills": "backgrounds/trials/difficulty/peloponese-hills.png",
+  "difficulty-heracles-pillars": "backgrounds/trials/difficulty/heracles-pillars.png",
+  "difficulty-near-styx": "backgrounds/trials/difficulty/near-styx.png",
+  "trial-ares": "backgrounds/trials/ares.png",
+  "trial-artemis": "backgrounds/trials/artemis.png",
+  "trial-apollo": "backgrounds/trials/apollo.png",
+  "trial-aphrodite": "backgrounds/trials/aphrodite.png",
+  "trial-athena": "backgrounds/trials/athena.png",
+  "trial-hephaestus": "backgrounds/trials/hephaestus.png",
+  "trial-hera": "backgrounds/trials/hera.png",
+  "trial-hermes": "backgrounds/trials/hermes.png",
+  "trial-zeus": "backgrounds/trials/zeus.png"
+);
+
+@mixin card-background-image-value($asset-path) {
+  --mg-card-bg-image: url("#{$card-background-base-url}/#{$asset-path}");
+}

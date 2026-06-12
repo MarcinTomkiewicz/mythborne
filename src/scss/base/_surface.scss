@@ -1,5 +1,13 @@
 @use "sass:map";
+@use "abstracts/card-background-assets" as cardBackgrounds;
 @use "abstracts/variables" as v;
+
+@mixin card-image-background {
+  background: var(--mg-card-bg-image);
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
 
 .mg-card {
   border-radius: v.$radius-lg;
@@ -38,12 +46,22 @@
     v.$color-shell-surface;
 }
 
+.mg-card.mg-card--image-bg {
+  @include card-image-background;
+}
+
+@each $name, $asset-path in cardBackgrounds.$card-background-assets {
+  .mg-card-bg--#{$name} {
+    @include cardBackgrounds.card-background-image-value($asset-path);
+  }
+}
+
 .mg-card--legend {
   position: relative;
   padding-top: 1.35rem;
 }
 
-@mixin selected-card {
+@mixin selected-card($background-layers...) {
   border-color: color-mix(in srgb, v.$color-secondary 46%, transparent);
   background:
     radial-gradient(
@@ -55,7 +73,8 @@
       180deg,
       color-mix(in srgb, v.$color-bg-surface 88%, v.$color-secondary),
       v.$color-bg-surface
-    );
+    ),
+    $background-layers;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, v.$color-secondary 24%, transparent),
     inset 0 0 1.15rem color-mix(in srgb, v.$color-secondary 8%, transparent),
@@ -63,7 +82,7 @@
     v.$shadow-soft;
 }
 
-@mixin game-shell-selected-card {
+@mixin game-shell-selected-card($background-layers...) {
   border-color: color-mix(in srgb, v.$color-progress-gold-end 38%, transparent);
   background:
     radial-gradient(
@@ -76,7 +95,7 @@
       color-mix(in srgb, v.$color-shell-surface-elevated 88%, v.$color-progress-gold-end),
       color-mix(in srgb, v.$color-shell-surface 86%, transparent)
     ),
-    v.$color-shell-surface;
+    $background-layers;
   box-shadow:
     inset 0 1px 0 color-mix(in srgb, v.$color-progress-gold-end 28%, transparent),
     inset 0 0 1.25rem color-mix(in srgb, v.$color-progress-gold-end 9%, transparent),
@@ -88,14 +107,25 @@
 .mg-card.mg-card--selected:hover,
 .mg-card.mg-card--selected:focus-visible,
 .mg-card.mg-card--selected:focus-within {
-  @include selected-card;
+  @include selected-card(v.$color-bg-surface);
 }
 
 .mg-game-shell .mg-card--selected,
 .mg-game-shell .mg-card.mg-card--selected:hover,
 .mg-game-shell .mg-card.mg-card--selected:focus-visible,
 .mg-game-shell .mg-card.mg-card--selected:focus-within {
-  @include game-shell-selected-card;
+  @include game-shell-selected-card(v.$color-shell-surface);
+}
+
+.mg-card.mg-card--image-bg.mg-card--selected,
+.mg-card.mg-card--image-bg.mg-card--selected:hover,
+.mg-card.mg-card--image-bg.mg-card--selected:focus-visible,
+.mg-card.mg-card--image-bg.mg-card--selected:focus-within,
+.mg-game-shell .mg-card.mg-card--image-bg.mg-card--selected,
+.mg-game-shell .mg-card.mg-card--image-bg.mg-card--selected:hover,
+.mg-game-shell .mg-card.mg-card--image-bg.mg-card--selected:focus-visible,
+.mg-game-shell .mg-card.mg-card--image-bg.mg-card--selected:focus-within {
+  @include card-image-background;
 }
 
 @mixin semantic-card($color, $surface) {

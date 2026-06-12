@@ -1,10 +1,10 @@
-import { Component, computed, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import {
   ExplorationDifficultyCopy,
-  explorationDifficultyCardCopy,
   explorationDifficultyTrialLabel,
 } from '../../../core/domain/game-copy/exploration-difficulty-copy.model';
 import { HeroExplorationDifficultyCardPreview } from '../../../core/domain/exploration/exploration-preview.model';
+import { explorationTrialCardBackgroundClass } from '../../../core/config/exploration-card-backgrounds.config';
 import {
   requiredSemanticIconClass,
   semanticIconToneClass,
@@ -23,12 +23,12 @@ export class ExplorationTrialDetailSection {
   readonly copy = input.required<ExplorationDifficultyCopy>();
   readonly difficulty = input.required<HeroExplorationDifficultyCardPreview>();
 
-  readonly selectedDifficultyCopy = computed(() =>
-    explorationDifficultyCardCopy(this.copy(), this.difficulty().difficultyKey),
-  );
-
   trialLabel(statKey: string): string {
     return explorationDifficultyTrialLabel(this.copy(), statKey);
+  }
+
+  trialBackgroundClass(statKey: string): string {
+    return explorationTrialCardBackgroundClass(statKey);
   }
 
   trialCompletionIconClass(iconKey: string): string {

@@ -19,7 +19,10 @@
 
   <div class="mg-grid grid-cols-3 grid-cols-1-md gap-sm w-100">
     @for (row of preview.statDetails; track row.statKey) {
-      <article class="mg-card p-md w-100 h-100">
+      <article
+        class="mg-card mg-card--image-bg p-md w-100 h-100"
+        [class]="trialBackgroundClass(row.statKey)"
+      >
         <div class="flex-col gap-sm w-100 h-100">
           <div class="flex-row-between-start gap-sm w-100">
             <strong>{{ trialLabel(row.statKey) }}</strong>
