@@ -15,8 +15,10 @@ export function mapLiveCombatCenterPanel(
     return {
       state: 'loading',
       contextLabel: actionContextLabel(input),
-      title: 'Ładowanie podglądu walki',
-      helperText: 'Uczestnicy i statystyki zostaną pobrane przed decyzją Manual/Auto.',
+      title: input.pvpActionCopy?.combatHandoff.decisionWindow.waitingForDecision
+        ?? 'Ładowanie podglądu walki',
+      helperText: input.pvpActionCopy?.activeAction.loading.refreshDecisionState
+        ?? 'Uczestnicy i statystyki zostaną pobrane przed decyzją Manual/Auto.',
       footerAction,
     };
   }
@@ -25,8 +27,10 @@ export function mapLiveCombatCenterPanel(
     return {
       state: 'error',
       contextLabel: actionContextLabel(input),
-      title: 'Nie udało się odczytać podglądu walki',
-      helperText: 'Spróbuj odświeżyć widok po potwierdzeniu stanu serwera gry.',
+      title: input.pvpActionCopy?.common.emptyValues.noData
+        ?? 'Nie udało się odczytać podglądu walki',
+      helperText: input.pvpActionCopy?.activeAction.loading.refreshUnknownState
+        ?? 'Spróbuj odświeżyć widok po potwierdzeniu stanu serwera gry.',
       footerAction,
     };
   }
@@ -51,7 +55,7 @@ export function mapLiveCombatCenterPanel(
   }
 
   if (input.actions.canShowStartAction) {
-    const secondaryAction = autoResolveButton(input);
+    const pvpCopy = input.pvpActionCopy;
 
     return {
       state: 'decision',
@@ -61,11 +65,12 @@ export function mapLiveCombatCenterPanel(
       detailText: timingManifestHelper(timing),
       primaryAction: {
         id: 'start-combat',
-        label: 'Walcz ręcznie',
+        label: pvpCopy?.common.actionLabels.resolveManual ?? 'Walcz ręcznie',
         loading: input.loading.isPreparingSession || input.loading.isRecoveringState,
         disabled: !input.actions.canStartAction,
+        helperText: pvpCopy?.common.actionTooltips.resolveManual ?? null,
       },
-      secondaryAction,
+      secondaryAction: autoResolveButton(input),
       decisionDeadline: input.decisionDeadline,
     };
   }
@@ -101,12 +106,20 @@ export function mapLiveCombatCenterPanel(
 }
 
 function actionContextLabel(input: CombatLiveCenterPanelInput): string {
+  if (input.pvpActionCopy && isDecisionPreview(input)) {
+    return input.pvpActionCopy.combatHandoff.decisionWindow.eyebrow;
+  }
+
   return isDecisionPreview(input)
     ? 'Decyzja przed walką'
     : input.roundLabel ?? 'Runda N/D';
 }
 
 function currentActionTitle(input: CombatLiveCenterPanelInput): string {
+  if (input.pvpActionCopy && isDecisionPreview(input)) {
+    return input.pvpActionCopy.combatHandoff.decisionWindow.title;
+  }
+
   if (isDecisionPreview(input)) {
     return 'Wybierz sposób rozstrzygnięcia';
   }
@@ -118,6 +131,10 @@ function currentActionTitle(input: CombatLiveCenterPanelInput): string {
 }
 
 function currentActionHelper(input: CombatLiveCenterPanelInput): string {
+  if (input.pvpActionCopy && isDecisionPreview(input)) {
+    return input.pvpActionCopy.combatHandoff.decisionWindow.description;
+  }
+
   if (isDecisionPreview(input)) {
     return 'Wybierz ręczną walkę albo auto rozstrzygnięcie.';
   }
@@ -152,10 +169,11 @@ function autoResolveButton(input: CombatLiveCenterPanelInput): CombatSurfaceActi
 
   return {
     id: 'auto-resolve',
-    label: 'Rozstrzygnij auto',
+    label: input.pvpActionCopy?.common.actionLabels.resolveAuto ?? 'Rozstrzygnij auto',
     severity: 'secondary',
     loading: input.actions.isAutoResolving,
     disabled: !input.actions.canAutoResolveAction,
+    helperText: input.pvpActionCopy?.common.actionTooltips.resolveAuto ?? null,
   };
 }
 

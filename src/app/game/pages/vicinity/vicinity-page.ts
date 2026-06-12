@@ -2,7 +2,6 @@ import { Component, DestroyRef, OnInit, computed, effect, inject, signal } from 
 import { ConfirmationService } from 'primeng/api';
 import { RouteBackgroundOverride } from '../../../core/services/ui/route-background-override';
 import {
-  PVP_ACTIVE_ACTION_COPY,
   PVP_SPY_BACKGROUND_IMAGE,
   PVP_SPY_BACKGROUND_SOURCE,
 } from '../../../core/configs/pvp-active-action-ui.config';
@@ -83,7 +82,6 @@ export class VicinityPage implements OnInit {
   private readonly pvpActiveActionNavigation = inject(PvpActiveActionNavigationState);
   private readonly routeBackgroundOverride = inject(RouteBackgroundOverride);
 
-  readonly pvpActiveActionCopy = PVP_ACTIVE_ACTION_COPY;
   readonly page = inject(VicinityPageState);
   readonly activePvpAction = inject(PvpActiveActionState);
   readonly actions = inject(VicinityPvpActionsState);
@@ -110,7 +108,6 @@ export class VicinityPage implements OnInit {
 
   constructor() {
     effect(() => {
-      this.activePvpAction.setCopy(this.pvpActiveActionCopy.state);
       this.activePvpAction.setGenericErrorLabel(this.page.copyJson()?.page.errorLabel ?? null);
     });
 

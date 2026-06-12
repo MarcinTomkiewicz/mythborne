@@ -1,5 +1,6 @@
 import { VICINITY_ADDRESS_LIST_METRIC_KEYS } from '../../../../core/configs/vicinity.config';
 import { UiMetadataEntryReadModel } from '../../../../core/domain/admin-ui-metadata.model';
+import type { PvpActionCopy } from '../../../../core/domain/pvp/pvp-action-copy.model';
 import { PvpTargetCandidate } from '../../../../core/domain/pvp/pvp.model';
 import type {
   PlayerVicinityCopyReadModel,
@@ -27,9 +28,9 @@ export function toVicinityAddressDataRow(
   candidate: PvpTargetCandidate | null,
   metadataEntries: readonly UiMetadataEntryReadModel[],
   copy: PlayerVicinityCopyReadModel['addressList'],
+  pvpActionCopy: PvpActionCopy,
   labelsCopy: PlayerVicinityCopyReadModel['labels'],
   summaryCopy: PlayerVicinityCopyReadModel['summary'],
-  selectedTargetCopy: PlayerVicinityCopyReadModel['selectedTarget'],
   selfHeroName?: string,
   selfProtectionDisplay?: string | null,
 ): AddressDataRow {
@@ -44,6 +45,7 @@ export function toVicinityAddressDataRow(
         eligibility: targetCandidate.attackEligibility,
         targetLevel: targetCandidate.targetLevel,
         metadataEntries,
+        copy: pvpActionCopy.eligibility,
       })
     : null;
   const spyDisplay = targetCandidate
@@ -52,6 +54,7 @@ export function toVicinityAddressDataRow(
         eligibility: targetCandidate.spyEligibility,
         targetLevel: targetCandidate.targetLevel,
         metadataEntries,
+        copy: pvpActionCopy.eligibility,
       })
     : null;
   const isProtected = !!targetCandidate?.underProtection;
@@ -109,7 +112,7 @@ export function toVicinityAddressDataRow(
     actions: row.kind === 'empty'
       ? [claimEstateAction(copy)]
       : targetCandidate
-        ? toVicinityDataRowActions(targetCandidate, copy, selectedTargetCopy)
+        ? toVicinityDataRowActions(targetCandidate, pvpActionCopy.common)
         : [],
   };
 

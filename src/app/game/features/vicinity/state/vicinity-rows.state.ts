@@ -34,8 +34,9 @@ export class VicinityRowsState {
   readonly selectedRowKey = signal<string | null>(null);
   readonly rows = computed(() => {
     const copy = this.page.copyJson();
+    const pvpActionCopy = this.activePvpAction.copy();
 
-    if (!copy) {
+    if (!copy || !pvpActionCopy) {
       return [];
     }
 
@@ -65,9 +66,9 @@ export class VicinityRowsState {
           candidate,
           metadataEntries,
           copy.addressList,
+          pvpActionCopy,
           copy.labels,
           copy.summary,
-          copy.selectedTarget,
           this.page.currentHeroName(),
           selfProtectionDisplay,
         ),

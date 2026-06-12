@@ -1,6 +1,6 @@
 import { DATA_ROW_ACTION_CONFIGS } from '../configs/data-row-actions.config';
+import type { PvpActionCopy } from '../domain/pvp/pvp-action-copy.model';
 import { PvpTargetCandidate } from '../domain/pvp/pvp.model';
-import type { PlayerVicinityCopyReadModel } from '../domain/vicinity/player-vicinity-page-context.model';
 import {
   DataRowAction,
   DataRowActionAvailability,
@@ -8,8 +8,7 @@ import {
 
 export function toVicinityDataRowActions(
   candidate: PvpTargetCandidate,
-  addressListCopy: PlayerVicinityCopyReadModel['addressList'],
-  selectedTargetCopy: PlayerVicinityCopyReadModel['selectedTarget'],
+  copy: PvpActionCopy['common'],
 ): DataRowAction[] {
   return DATA_ROW_ACTION_CONFIGS.map((config) => {
     const disabled = isDataRowActionDisabled(candidate, config.availability);
@@ -17,8 +16,8 @@ export function toVicinityDataRowActions(
     return {
       kind: config.kind,
       icon: config.icon,
-      label: rowActionLabel(config.kind, addressListCopy, selectedTargetCopy),
-      tooltip: rowActionTooltip(config.kind, addressListCopy),
+      label: rowActionLabel(config.kind, copy),
+      tooltip: rowActionTooltip(config.kind, copy),
       severity: config.severity,
       disabled,
       primary: config.primaryWhenAvailable && !disabled,
@@ -44,31 +43,30 @@ function isDataRowActionDisabled(
 
 function rowActionLabel(
   kind: DataRowAction['kind'],
-  addressListCopy: PlayerVicinityCopyReadModel['addressList'],
-  selectedTargetCopy: PlayerVicinityCopyReadModel['selectedTarget'],
+  copy: PvpActionCopy['common'],
 ): string {
   if (kind === 'spy') {
-    return addressListCopy.columnSpy;
+    return copy.actionLabels.spy;
   }
 
   if (kind === 'attack') {
-    return addressListCopy.columnAttack;
+    return copy.actionLabels.attack;
   }
 
-  return selectedTargetCopy.siegeLabel;
+  return copy.actionLabels.siege;
 }
 
 function rowActionTooltip(
   kind: DataRowAction['kind'],
-  copy: PlayerVicinityCopyReadModel['addressList'],
+  copy: PvpActionCopy['common'],
 ): string {
   if (kind === 'spy') {
-    return copy.spyTooltip;
+    return copy.actionTooltips.spy;
   }
 
   if (kind === 'attack') {
-    return copy.attackTooltip;
+    return copy.actionTooltips.attack;
   }
 
-  return copy.siegeTooltip;
+  return copy.actionTooltips.siegeUnavailable;
 }

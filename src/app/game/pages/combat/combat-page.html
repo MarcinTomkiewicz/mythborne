@@ -1,64 +1,20 @@
 <div class="flex-col gap-lg min-w-0">
-  @if (completion()?.reportId) {
-    <div class="flex-row-start-center">
-      <p-button
-        label="Wróć do okolicy"
-        icon="pi pi-arrow-left"
-        severity="secondary"
-        routerLink="/game/vicinity"
-      />
-    </div>
-
-    <app-combat-report-handoff-card [completion]="completion()" />
-
-    <app-pvp-active-action-panel
-      [offer]="pvpAction.visibleOffer()"
-      [copy]="pvpActiveActionCopy.panel"
-      [timer]="pvpAction.timer()"
-      [factRows]="pvpAction.factRows()"
-      [helperText]="pvpAction.helperText()"
-      [pendingHelperText]="pvpAction.pendingHelperText()"
-      [isLoading]="pvpAction.isLoading()"
-      [isTimerReady]="pvpAction.isTimerReady()"
-      (refresh)="refreshActivePvpOffer()"
-    />
-    @if (pvpAction.error()) {
-      <p class="warn-text mb-0">{{ pvpAction.error() }}</p>
-    }
-  } @else if (sourceRef(); as source) {
-    <section class="mg-card p-lg w-100">
-      <div class="flex-row-between-start flex-wrap gap-md w-100">
-        <div class="flex-col gap-xs">
-          <p class="color-muted small-caps uppercase text-xs mb-0">Walka</p>
-          <h2 class="color-heading text-xl mb-0">{{ contextTitle() }}</h2>
-          <p class="muted-text mb-0">
-            Rozstrzygnięcie korzysta z aktualnego stanu walki i prowadzi do raportu gracza.
-          </p>
-        </div>
+  @if (pvpAction.copy(); as actionCopy) {
+    @if (completion()?.reportId) {
+      <div class="flex-row-start-center">
         <p-button
-          label="Wróć do okolicy"
+          [label]="actionCopy.common.actionLabels.backToVicinity"
           icon="pi pi-arrow-left"
           severity="secondary"
           routerLink="/game/vicinity"
         />
       </div>
-    </section>
 
-    <app-minigame-host
-      [minigameKey]="minigameKey"
-      [sourceRef]="source"
-      [contextTitle]="contextTitle()"
-      contextLabel="PvP"
-      [combatDecisionDeadline]="pvpAction.decisionDeadline()"
-      (completed)="acceptCompletion($event)"
-    />
-
-    @if (completion(); as completed) {
-      <app-combat-report-handoff-card [completion]="completed" />
+      <app-combat-report-handoff-card [completion]="completion()" />
 
       <app-pvp-active-action-panel
         [offer]="pvpAction.visibleOffer()"
-        [copy]="pvpActiveActionCopy.panel"
+        [copy]="actionCopy"
         [timer]="pvpAction.timer()"
         [factRows]="pvpAction.factRows()"
         [helperText]="pvpAction.helperText()"
@@ -70,13 +26,56 @@
       @if (pvpAction.error()) {
         <p class="warn-text mb-0">{{ pvpAction.error() }}</p>
       }
+    } @else if (sourceRef(); as source) {
+      <section class="mg-card p-lg w-100">
+        <div class="flex-row-between-start flex-wrap gap-md w-100">
+          <div class="flex-col gap-xs">
+            <p class="color-muted small-caps uppercase text-xs mb-0">{{ actionCopy.common.labels.combat }}</p>
+            <h2 class="color-heading text-xl mb-0">{{ contextTitle() }}</h2>
+            <p class="muted-text mb-0">{{ actionCopy.combatHandoff.header.description }}</p>
+          </div>
+          <p-button
+            [label]="actionCopy.common.actionLabels.backToVicinity"
+            icon="pi pi-arrow-left"
+            severity="secondary"
+            routerLink="/game/vicinity"
+          />
+        </div>
+      </section>
+
+      <app-minigame-host
+        [minigameKey]="minigameKey"
+        [sourceRef]="source"
+        [contextTitle]="contextTitle()"
+        [contextLabel]="actionCopy.common.labels.combat"
+        [pvpActionCopy]="actionCopy"
+        [combatDecisionDeadline]="pvpAction.decisionDeadline()"
+        (completed)="acceptCompletion($event)"
+      />
+
+      @if (completion(); as completed) {
+        <app-combat-report-handoff-card [completion]="completed" />
+
+        <app-pvp-active-action-panel
+          [offer]="pvpAction.visibleOffer()"
+          [copy]="actionCopy"
+          [timer]="pvpAction.timer()"
+          [factRows]="pvpAction.factRows()"
+          [helperText]="pvpAction.helperText()"
+          [pendingHelperText]="pvpAction.pendingHelperText()"
+          [isLoading]="pvpAction.isLoading()"
+          [isTimerReady]="pvpAction.isTimerReady()"
+          (refresh)="refreshActivePvpOffer()"
+        />
+        @if (pvpAction.error()) {
+          <p class="warn-text mb-0">{{ pvpAction.error() }}</p>
+        }
+      }
+    } @else {
+      <section class="mg-card p-lg flex-col gap-sm w-100">
+        <p class="small-caps color-muted text-xs mb-0">{{ actionCopy.common.labels.combat }}</p>
+        <p class="warn-text mb-0">{{ actionCopy.common.emptyValues.noData }}</p>
+      </section>
     }
-  } @else {
-    <section class="mg-card p-lg flex-col gap-sm w-100">
-      <p class="small-caps color-muted text-xs mb-0">Brak aktywnej walki</p>
-      <p class="warn-text mb-0">
-        Nie udało się rozpoznać źródła walki. Wróć do okolicy i otwórz walkę z aktywnej akcji PvP.
-      </p>
-    </section>
   }
 </div>

@@ -4,6 +4,7 @@ import {
   CombatSurfaceDecisionDeadline,
   CombatSurfaceCenterPanel,
 } from './combat-display.model';
+import { PvpActionCopy } from '../pvp/pvp-action-copy.model';
 import {
   CombatLiveParticipantReadModel,
   CombatTimingManifestReadModel,
@@ -72,6 +73,7 @@ export interface CombatLiveCenterPanelInput {
     isAutoResolving: boolean;
   };
   decisionDeadline: CombatSurfaceDecisionDeadline | null;
+  pvpActionCopy?: PvpActionCopy | null;
 }
 
 export interface CombatLiveStageViewInput extends Omit<

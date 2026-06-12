@@ -18,6 +18,7 @@ import {
   CombatLiveStageViewInput,
   CombatStageViewModel,
 } from '../domain/combat/combat-stage.model';
+import { PvpActionCopy } from '../domain/pvp/pvp-action-copy.model';
 import {
   mapLiveCombatCenterPanel,
 } from './combat-stage-center-panel.mapper';
@@ -80,6 +81,7 @@ export function mapCombatSessionStageView(input: {
   walkingPosition: number;
   canSubmitStrike: boolean;
   decisionDeadline?: CombatSurfaceDecisionDeadline | null;
+  pvpActionCopy?: PvpActionCopy | null;
   activeHeroId?: string | null;
   activeHeroPortraitSrc?: string | null;
 }): CombatStageViewModel | null {
@@ -142,6 +144,7 @@ export function mapCombatSessionStageView(input: {
       isAutoResolving: input.isAutoResolving,
     },
     decisionDeadline: input.decisionDeadline ?? null,
+    pvpActionCopy: input.pvpActionCopy ?? null,
     log: {
       show: true,
       title: state ? 'Przebieg walki' : 'Przebieg',

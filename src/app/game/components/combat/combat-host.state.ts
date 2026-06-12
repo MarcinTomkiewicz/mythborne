@@ -5,6 +5,7 @@ import {
   CombatTimingStrikeSnapshot,
   CombatSurfaceDecisionDeadline,
 } from '../../../core/domain/combat/combat-display.model';
+import { PvpActionCopy } from '../../../core/domain/pvp/pvp-action-copy.model';
 import {
   CombatLiveStateReadModel,
   CombatResolutionPreviewReadModel,
@@ -37,6 +38,7 @@ export class CombatHostState {
   private readonly sourceRef = signal<MinigameSourceRef | null>(null);
   private readonly contextTitle = signal('');
   private readonly contextLabel = signal('Walka');
+  private readonly pvpActionCopy = signal<PvpActionCopy | null>(null);
   private readonly externalDecisionDeadline = signal<CombatSurfaceDecisionDeadline | null>(null);
   private walkingAnimationFrame: number | null = null;
   private walkingManifestId: string | null = null;
@@ -80,6 +82,7 @@ export class CombatHostState {
     walkingPosition: this.walkingFrame().positionPercent,
     canSubmitStrike: this.canSubmitStrike(),
     decisionDeadline: this.visibleDecisionDeadline(),
+    pvpActionCopy: this.pvpActionCopy(),
     activeHeroId: this.activeHero.state()?.heroId ?? null,
     activeHeroPortraitSrc: this.activeHeroPortrait.portraitSrc(),
   }));
@@ -108,9 +111,15 @@ export class CombatHostState {
     });
   }
 
-  setContext(input: { sourceRef: MinigameSourceRef; contextTitle: string; contextLabel: string }): void {
+  setContext(input: {
+    sourceRef: MinigameSourceRef;
+    contextTitle: string;
+    contextLabel: string;
+    pvpActionCopy: PvpActionCopy | null;
+  }): void {
     this.contextTitle.set(input.contextTitle);
     this.contextLabel.set(input.contextLabel);
+    this.pvpActionCopy.set(input.pvpActionCopy);
 
     if (!this.sameSourceRef(this.sourceRef(), input.sourceRef)) {
       this.sourceRef.set(input.sourceRef);

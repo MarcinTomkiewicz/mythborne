@@ -3,17 +3,19 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { CombatSurfaceDecisionDeadline } from '../../../core/domain/combat/combat-display.model';
 import { activeHeroContextKey } from '../../../core/domain/hero/active-hero-context';
-import { ActivePvpActionOffer } from '../../../core/domain/pvp/pvp.model';
 import {
   pvpActiveActionErrorMessage,
   pvpActiveActionFactRows,
-  pvpActiveActionHelperText,
   pvpActiveActionManualDecisionDeadlineAt,
   pvpActiveActionPendingHelperText,
+  pvpActiveActionPhaseText,
   pvpActiveActionRefreshAt,
   pvpActiveActionTiming,
   shouldShowActivePvpOffer,
 } from '../../../core/domain/pvp/pvp-active-action-display.mapper';
+import { PvpActionCopy } from '../../../core/domain/pvp/pvp-action-copy.model';
+import { ActivePvpActionOffer } from '../../../core/domain/pvp/pvp.model';
+import { GameCopyService } from '../../../core/services/game-copy/game-copy.service';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../core/services/pvp/player-pvp';
 import {
@@ -33,6 +35,7 @@ const ACTIVE_OFFER_REFRESH_INTERVAL_MS = 5000;
 export class CombatPvpActionState {
   private readonly activeHero = inject(ActiveHero);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly gameCopy = inject(GameCopyService);
   private readonly playerPvp = inject(PlayerPvp);
   private readonly requests = new RequestToken();
   private readonly sourceRef = signal<MinigameSourceRef | null>(null);
@@ -41,6 +44,7 @@ export class CombatPvpActionState {
   private elapsedRefreshKey: string | null = null;
   private lastElapsedRefreshMs = 0;
 
+  readonly copy = signal<PvpActionCopy | null>(null);
   readonly offer = signal<ActivePvpActionOffer | null>(null);
   readonly error = signal<string | null>(null);
   readonly isLoading = signal(false);
@@ -77,18 +81,21 @@ export class CombatPvpActionState {
   });
   readonly factRows = computed(() => {
     const offer = this.visibleOffer();
+    const copy = this.copy();
 
-    return offer ? pvpActiveActionFactRows(offer) : [];
+    return offer && copy ? pvpActiveActionFactRows(offer, copy) : [];
   });
   readonly helperText = computed(() => {
     const offer = this.visibleOffer();
+    const copy = this.copy();
 
-    return offer ? pvpActiveActionHelperText(offer) : '';
+    return offer && copy ? pvpActiveActionPhaseText(offer, copy) : '';
   });
   readonly pendingHelperText = computed(() => {
     const offer = this.visibleOffer();
+    const copy = this.copy();
 
-    return offer ? pvpActiveActionPendingHelperText(offer) : '';
+    return offer && copy ? pvpActiveActionPendingHelperText(offer, copy) : '';
   });
   readonly decisionDeadline = computed<CombatSurfaceDecisionDeadline | null>(() => {
     const offer = this.currentSourceOffer();
@@ -118,7 +125,7 @@ export class CombatPvpActionState {
     });
 
     return {
-      label: 'Okno decyzji',
+      label: this.copy()?.common.labels.decisionTime ?? '',
       countdownLabel: timer.countdownLabel,
       progressPercent: timer.isCoherent ? Math.max(0, 100 - timer.progressPercent) : 0,
       isUpdating: this.isLoading() || timer.isReady,
@@ -156,6 +163,8 @@ export class CombatPvpActionState {
       this.lastElapsedRefreshMs = nowMs;
       queueMicrotask(() => this.load());
     });
+
+    this.loadCopy();
   }
 
   setSourceRef(sourceRef: MinigameSourceRef | null): void {
@@ -205,7 +214,7 @@ export class CombatPvpActionState {
 
     if (!requestContextKey) {
       this.offer.set(null);
-      this.error.set('Brak aktywnego bohatera do sprawdzenia aktywnego stanu PvP.');
+      this.error.set(this.copy()?.common.emptyValues.noData ?? null);
       this.isLoading.set(false);
       return;
     }
@@ -235,9 +244,18 @@ export class CombatPvpActionState {
           this.offer.set(null);
           this.error.set(pvpActiveActionErrorMessage(
             error,
-            'Nie udało się sprawdzić aktywnego stanu PvP.',
+            this.copy()?.common.emptyValues.noData ?? '',
           ));
         },
+      });
+  }
+
+  private loadCopy(): void {
+    this.gameCopy.getCopy('player.pvp.action', { locale: 'pl' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (copy) => this.copy.set(copy),
+        error: () => this.copy.set(null),
       });
   }
 

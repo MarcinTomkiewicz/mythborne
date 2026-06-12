@@ -1,5 +1,6 @@
 import { Component, effect, inject, input, output } from '@angular/core';
 import { CombatSurfaceDecisionDeadline } from '../../../core/domain/combat/combat-display.model';
+import { PvpActionCopy } from '../../../core/domain/pvp/pvp-action-copy.model';
 import { MinigameCompletionEvent, MinigameSourceRef } from '../minigame-host/minigame-host.model';
 import { CombatStage } from './combat-stage';
 import { CombatHostState } from './combat-host.state';
@@ -48,6 +49,7 @@ export class CombatHost {
   readonly sourceRef = input.required<MinigameSourceRef>();
   readonly contextTitle = input.required<string>();
   readonly contextLabel = input('Walka');
+  readonly pvpActionCopy = input<PvpActionCopy | null>(null);
   readonly decisionDeadline = input<CombatSurfaceDecisionDeadline | null>(null);
   readonly completed = output<MinigameCompletionEvent>();
 
@@ -57,6 +59,7 @@ export class CombatHost {
         sourceRef: this.sourceRef(),
         contextTitle: this.contextTitle(),
         contextLabel: this.contextLabel(),
+        pvpActionCopy: this.pvpActionCopy(),
       });
     });
 
