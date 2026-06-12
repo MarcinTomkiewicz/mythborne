@@ -1,65 +1,64 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, finalize } from 'rxjs';
 import {
-  CombatTimingStrikeSnapshot,
   CombatSurfaceDecisionDeadline,
+  CombatTimingStrikeSnapshot,
 } from '../../../core/domain/combat/combat-display.model';
-import { PvpActionCopy } from '../../../core/domain/pvp/pvp-action-copy.model';
 import {
   CombatLiveStateReadModel,
   CombatResolutionPreviewReadModel,
 } from '../../../core/domain/combat/combat-live.model';
+import { CombatSourcePresentation } from '../../../core/domain/combat/combat-source-presentation.model';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { ActiveHeroPortraitState } from '../../../core/services/hero/active-hero-portrait.state';
-import { CombatSessions } from '../../../core/services/combat/combat-sessions';
-import { mergeCombatLiveEvents } from '../../../core/utils/combat-live-mappers';
 import { mapCombatSessionStageView } from '../../../core/utils/combat-stage-display.mapper';
-import { walkingDeadTimingFrameAt } from '../../../core/utils/combat-walking-dead';
-import { createRequestId } from '../../../core/utils/request-id';
 import { RequestToken } from '../../../core/utils/request-token';
+import { sameSourceRef } from '../../../core/utils/source-ref';
+import { MinigameCompletionEvent, MinigameSourceRef } from '../minigame-host/minigame-host.model';
+import { CombatHostPreviewLoader } from './combat-host-preview-loader';
 import {
-  MINIGAME_KEY,
-  MinigameCompletionEvent,
-  MinigameSourceRef,
-} from '../minigame-host/minigame-host.model';
+  CombatHostSessionRunner,
+  CombatHostSessionRunnerContext,
+} from './combat-host-session-runner';
+import { CombatHostTimingState } from './combat-host-timing.state';
 
 @Injectable()
 export class CombatHostState {
   private readonly activeHero = inject(ActiveHero);
   private readonly activeHeroPortrait = inject(ActiveHeroPortraitState);
-  private readonly combatSessions = inject(CombatSessions);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly previewToken = new RequestToken();
+  private readonly previewLoader = inject(CombatHostPreviewLoader);
+  private readonly sessionRunner = inject(CombatHostSessionRunner);
+  private readonly timingState = inject(CombatHostTimingState);
+
   private readonly manualStartToken = new RequestToken();
   private readonly autoResolveToken = new RequestToken();
   private readonly submitActionToken = new RequestToken();
   private readonly finalizeResultToken = new RequestToken();
   private readonly sourceRef = signal<MinigameSourceRef | null>(null);
   private readonly contextTitle = signal('');
-  private readonly contextLabel = signal('Walka');
-  private readonly pvpActionCopy = signal<PvpActionCopy | null>(null);
+  private readonly sourcePresentation = signal<CombatSourcePresentation | null>(null);
   private readonly externalDecisionDeadline = signal<CombatSurfaceDecisionDeadline | null>(null);
-  private walkingAnimationFrame: number | null = null;
-  private walkingManifestId: string | null = null;
-  private walkingSpeedMultiplier: number | null = null;
-  private walkingAnimationStartedAtMs: number | null = null;
-
   private readonly preview = signal<CombatResolutionPreviewReadModel | null>(null);
   private readonly liveState = signal<CombatLiveStateReadModel | null>(null);
   private readonly isLoadingPreview = signal(false);
   private readonly isPreparingSession = signal(false);
   private readonly isAutoResolving = signal(false);
   private readonly isSubmittingAction = signal(false);
+
   readonly isFinalizingResult = signal(false);
-  private readonly walkingFrame = signal({
-    manifestId: null as string | null,
-    positionPercent: 0,
-  });
   readonly previewErrorMessage = signal<string | null>(null);
   readonly actionErrorMessage = signal<string | null>(null);
   readonly finalizeErrorMessage = signal<string | null>(null);
   readonly completion = signal<MinigameCompletionEvent | null>(null);
+  readonly finalizingResultPanel = computed(() =>
+    this.sourcePresentation()?.workflow.finalizingResult ?? null,
+  );
+  readonly finalizeErrorPanel = computed(() => {
+    const message = this.finalizeErrorMessage();
+    const panel = this.sourcePresentation()?.workflow.finalizeUnavailable ?? null;
+
+    return message && panel ? { title: panel.title, text: message } : null;
+  });
   private readonly visibleDecisionDeadline = computed(() =>
     this.liveState() ||
     this.completion() ||
@@ -69,23 +68,28 @@ export class CombatHostState {
       : this.externalDecisionDeadline(),
   );
 
-  readonly stage = computed(() => mapCombatSessionStageView({
-    liveState: this.liveState(),
-    preview: this.preview(),
-    contextLabel: this.contextLabel(),
-    contextTitle: this.contextTitle(),
-    isLoadingPreview: this.isLoadingPreview(),
-    previewFailed: Boolean(this.previewErrorMessage()),
-    isPreparingSession: this.isPreparingSession(),
-    isAutoResolving: this.isAutoResolving(),
-    isSubmittingAction: this.isSubmittingAction(),
-    walkingPosition: this.walkingFrame().positionPercent,
-    canSubmitStrike: this.canSubmitStrike(),
-    decisionDeadline: this.visibleDecisionDeadline(),
-    pvpActionCopy: this.pvpActionCopy(),
-    activeHeroId: this.activeHero.state()?.heroId ?? null,
-    activeHeroPortraitSrc: this.activeHeroPortrait.portraitSrc(),
-  }));
+  readonly stage = computed(() => {
+    const sourcePresentation = this.sourcePresentation();
+
+    return sourcePresentation
+      ? mapCombatSessionStageView({
+          liveState: this.liveState(),
+          preview: this.preview(),
+          contextTitle: this.contextTitle(),
+          isLoadingPreview: this.isLoadingPreview(),
+          previewFailed: Boolean(this.previewErrorMessage()),
+          isPreparingSession: this.isPreparingSession(),
+          isAutoResolving: this.isAutoResolving(),
+          isSubmittingAction: this.isSubmittingAction(),
+          walkingPosition: this.timingState.frame().positionPercent,
+          canSubmitStrike: this.canSubmitStrike(),
+          decisionDeadline: this.visibleDecisionDeadline(),
+          sourcePresentation,
+          activeHeroId: this.activeHero.state()?.heroId ?? null,
+          activeHeroPortraitSrc: this.activeHeroPortrait.portraitSrc(),
+        })
+      : null;
+  });
 
   constructor() {
     effect(() => {
@@ -99,31 +103,37 @@ export class CombatHostState {
         !manifest ||
         this.isSubmittingAction()
       ) {
-        this.stopCombatTiming();
+        this.timingState.stop();
         return;
       }
 
-      this.startCombatTiming(manifest.manifestId, manifest.speedMultiplier);
+      this.timingState.start(manifest.manifestId, manifest.speedMultiplier);
     });
 
     this.destroyRef.onDestroy(() => {
-      this.stopCombatTiming();
+      this.timingState.stop();
     });
   }
 
   setContext(input: {
     sourceRef: MinigameSourceRef;
     contextTitle: string;
-    contextLabel: string;
-    pvpActionCopy: PvpActionCopy | null;
+    sourcePresentation: CombatSourcePresentation;
   }): void {
     this.contextTitle.set(input.contextTitle);
-    this.contextLabel.set(input.contextLabel);
-    this.pvpActionCopy.set(input.pvpActionCopy);
+    this.sourcePresentation.set(input.sourcePresentation);
 
-    if (!this.sameSourceRef(this.sourceRef(), input.sourceRef)) {
+    if (!sameSourceRef(this.sourceRef(), input.sourceRef)) {
       this.sourceRef.set(input.sourceRef);
-      this.loadPreview(input.sourceRef);
+      this.previewLoader.load({
+        sourceRef: input.sourceRef,
+        currentSourceRef: () => this.sourceRef(),
+        unavailableText: () => this.sourcePresentation()?.unavailablePreview.text ?? null,
+        resetForPreviewLoad: () => this.resetForPreviewLoad(),
+        setPreview: (preview) => this.preview.set(preview),
+        setPreviewError: (message) => this.previewErrorMessage.set(message),
+        setIsLoadingPreview: (value) => this.isLoadingPreview.set(value),
+      });
     }
   }
 
@@ -135,60 +145,19 @@ export class CombatHostState {
     this.completion.set(null);
   }
 
-  submitCombatStrike(snapshot: CombatTimingStrikeSnapshot): void {
-    const state = this.liveState();
-    const sourceRef = this.sourceRef();
-
-    if (!sourceRef || !state || !this.canSubmitStrike()) {
-      return;
-    }
-
-    const sessionId = state.sessionId;
-    const actionIndex = state.currentActionIndex;
-    const manifestId = state.currentTimingManifest?.manifestId ?? null;
-
-    if (!manifestId || snapshot.manifestId !== manifestId) {
-      return;
-    }
-
-    const positionPercent = snapshot.positionPercent;
-    const requestId = createRequestId(
-      `combat:${sourceRef.sourceEntityType}:submit-action:${sourceRef.sourceEntityId}`,
-    );
-    let acceptedSubmitResponse = false;
-
-    this.actionErrorMessage.set(null);
-    this.isSubmittingAction.set(true);
-    this.runSourceRequest({
-      requestToken: this.submitActionToken,
-      sourceRef,
-      request: this.combatSessions.submitCombatPlayerAction({
-        combatSessionId: sessionId,
-        positionPercent,
-        requestId,
-      }),
-      isCurrent: () => {
-        if (acceptedSubmitResponse) {
-          return true;
-        }
-
-        const current = this.liveState();
-
-        return current?.sessionId === sessionId &&
-          current.currentActionIndex === actionIndex &&
-          current.currentTimingManifest?.manifestId === manifestId;
-      },
-      onSuccess: (nextState) => {
-        acceptedSubmitResponse = true;
-        this.setLiveState(nextState, true);
-        this.completeManualCombatIfNeeded(nextState);
-      },
-      onError: () => this.actionErrorMessage.set('Nie udało się wykonać akcji walki.'),
-      onFinalize: () => this.isSubmittingAction.set(false),
-    });
+  startManualCombat(): void {
+    this.sessionRunner.startManualCombat(this.sessionContext());
   }
 
-  private loadPreview(sourceRef: MinigameSourceRef): void {
+  autoResolveCombat(): void {
+    this.sessionRunner.autoResolveCombat(this.sessionContext());
+  }
+
+  submitCombatStrike(snapshot: CombatTimingStrikeSnapshot): void {
+    this.sessionRunner.submitCombatStrike(this.sessionContext(), snapshot);
+  }
+
+  private resetForPreviewLoad(): void {
     this.manualStartToken.next();
     this.autoResolveToken.next();
     this.submitActionToken.next();
@@ -203,134 +172,8 @@ export class CombatHostState {
     this.isAutoResolving.set(false);
     this.isSubmittingAction.set(false);
     this.isFinalizingResult.set(false);
-    this.resetWalkingFrame();
-    this.stopCombatTiming();
-    this.isLoadingPreview.set(true);
-
-    this.runSourceRequest({
-      requestToken: this.previewToken,
-      sourceRef,
-      request: this.combatSessions.getCombatResolutionPreview({
-        sourceEntityType: sourceRef.sourceEntityType,
-        sourceEntityId: sourceRef.sourceEntityId,
-        localeKey: 'pl',
-      }),
-      onSuccess: (preview) => this.preview.set(preview),
-      onError: () => this.previewErrorMessage.set('Nie udało się odczytać podglądu walki.'),
-      onFinalize: () => this.isLoadingPreview.set(false),
-    });
-  }
-
-  startManualCombat(): void {
-    const preview = this.preview();
-    const sourceRef = this.sourceRef();
-
-    if (
-      !sourceRef ||
-      !preview?.canStartManual ||
-      this.liveState() ||
-      this.isPreparingSession() ||
-      this.isAutoResolving()
-    ) {
-      return;
-    }
-
-    this.actionErrorMessage.set(null);
-    this.isPreparingSession.set(true);
-    this.runSourceRequest({
-      requestToken: this.manualStartToken,
-      sourceRef,
-      request: this.combatSessions.startManualCombatSession({
-        sourceEntityType: sourceRef.sourceEntityType,
-        sourceEntityId: sourceRef.sourceEntityId,
-        requestId: createRequestId(
-          `combat:${sourceRef.sourceEntityType}:manual-start:${sourceRef.sourceEntityId}`,
-        ),
-      }),
-      onSuccess: (state) => {
-        this.setLiveState(state, false);
-        this.completeManualCombatIfNeeded(state);
-      },
-      onError: () => this.actionErrorMessage.set('Nie udało się rozpocząć ręcznej walki.'),
-      onFinalize: () => this.isPreparingSession.set(false),
-    });
-  }
-
-  autoResolveCombat(): void {
-    const preview = this.preview();
-    const sourceRef = this.sourceRef();
-
-    if (
-      !sourceRef ||
-      !preview?.canAutoResolve ||
-      this.liveState() ||
-      this.isPreparingSession() ||
-      this.isAutoResolving()
-    ) {
-      return;
-    }
-
-    this.actionErrorMessage.set(null);
-    this.finalizeErrorMessage.set(null);
-    this.isAutoResolving.set(true);
-    this.runSourceRequest({
-      requestToken: this.autoResolveToken,
-      sourceRef,
-      request: this.combatSessions.autoResolveCombatSession({
-        sourceEntityType: sourceRef.sourceEntityType,
-        sourceEntityId: sourceRef.sourceEntityId,
-        requestId: createRequestId(
-          `combat:${sourceRef.sourceEntityType}:auto-resolve:${sourceRef.sourceEntityId}`,
-        ),
-      }),
-      onSuccess: (result) => this.completion.set({
-        minigameKey: MINIGAME_KEY.combat,
-        sourceEntityId: result.sourceEntityId,
-        resultId: result.sourceResultId ?? result.combatResultId,
-        reportId: result.gameReportId,
-        rewardGrantId: result.rewardGrantId,
-      }),
-      onError: () => this.actionErrorMessage.set('Nie udało się automatycznie rozstrzygnąć walki.'),
-      onFinalize: () => this.isAutoResolving.set(false),
-    });
-  }
-
-  private runSourceRequest<T>(input: {
-    requestToken: RequestToken;
-    sourceRef: MinigameSourceRef;
-    request: Observable<T>;
-    onSuccess: (result: T) => void;
-    onError: () => void;
-    onFinalize?: () => void;
-    isCurrent?: () => boolean;
-  }): void {
-    const token = input.requestToken.next();
-    const isCurrent = () =>
-      input.requestToken.isCurrent(token) &&
-      this.sameSourceRef(this.sourceRef(), input.sourceRef) &&
-      (input.isCurrent?.() ?? true);
-
-    input.request
-      .pipe(
-        finalize(() => {
-          if (isCurrent()) {
-            input.onFinalize?.();
-          }
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: (result) => {
-          if (isCurrent()) {
-            input.onSuccess(result);
-          }
-        },
-        error: (error: unknown) => {
-          if (isCurrent()) {
-            input.onError();
-          }
-        },
-      });
+    this.timingState.resetFrame();
+    this.timingState.stop();
   }
 
   private canSubmitStrike(): boolean {
@@ -344,123 +187,42 @@ export class CombatHostState {
       !this.isAutoResolving());
   }
 
-  private setLiveState(state: CombatLiveStateReadModel, mergeEvents: boolean): void {
-    this.liveState.set(mergeEvents ? mergeCombatLiveEvents(this.liveState(), state) : state);
+  private actionUnavailableText(): string | null {
+    return this.sourcePresentation()?.workflow.actionUnavailable?.text ??
+      this.sourcePresentation()?.unavailablePreview.text ??
+      null;
   }
 
-  private completeManualCombatIfNeeded(state: CombatLiveStateReadModel): void {
-    const sourceRef = this.sourceRef();
-
-    if (
-      state.statusKey !== 'completed' ||
-      !state.finalCombatResultId ||
-      !sourceRef ||
-      this.isFinalizingResult() ||
-      this.completion() ||
-      !this.sameSourceRef(sourceRef, {
-        sourceEntityType: state.sourceEntityType,
-        sourceEntityId: state.sourceEntityId,
-      })
-    ) {
-      return;
-    }
-
-    this.finalizeErrorMessage.set(null);
-    this.isFinalizingResult.set(true);
-    this.runSourceRequest({
-      requestToken: this.finalizeResultToken,
-      sourceRef,
-      request: this.combatSessions.finalizeCombatSourceResult({
-        combatSessionId: state.sessionId,
-        requestId: createRequestId(
-          `combat:${sourceRef.sourceEntityType}:finalize:${sourceRef.sourceEntityId}`,
-        ),
-        resolutionMode: 'manual',
-      }),
-      isCurrent: () => this.liveState()?.sessionId === state.sessionId,
-      onSuccess: (result) => this.completion.set({
-        minigameKey: MINIGAME_KEY.combat,
-        sourceEntityId: result.sourceEntityId,
-        resultId: result.sourceResultId ?? result.combatResultId,
-        reportId: result.gameReportId,
-        rewardGrantId: result.rewardGrantId,
-      }),
-      onError: () => this.finalizeErrorMessage.set(
-        'Walka została zakończona, ale nie udało się przygotować przejścia do raportu.',
-      ),
-      onFinalize: () => this.isFinalizingResult.set(false),
-    });
+  private finalizeUnavailableText(): string | null {
+    return this.sourcePresentation()?.workflow.finalizeUnavailable?.text ?? null;
   }
 
-  private sameSourceRef(
-    current: { sourceEntityType: string; sourceEntityId: string } | null,
-    next: { sourceEntityType: string; sourceEntityId: string },
-  ): boolean {
-    return current?.sourceEntityType === next.sourceEntityType &&
-      current.sourceEntityId === next.sourceEntityId;
-  }
-
-  private startCombatTiming(manifestId: string, speed: number): void {
-    if (
-      this.walkingAnimationFrame !== null &&
-      this.walkingManifestId === manifestId &&
-      this.walkingSpeedMultiplier === speed
-    ) {
-      return;
-    }
-
-    this.stopCombatTiming();
-    this.walkingManifestId = manifestId;
-    this.walkingSpeedMultiplier = speed;
-    this.walkingAnimationStartedAtMs = null;
-    this.walkingFrame.set({
-      manifestId,
-      positionPercent: 0,
-    });
-    this.walkingAnimationFrame = window.requestAnimationFrame((timestamp) =>
-      this.runWalkingDeadTimingFrame(timestamp),
-    );
-  }
-
-  private stopCombatTiming(): void {
-    if (this.walkingAnimationFrame !== null) {
-      window.cancelAnimationFrame(this.walkingAnimationFrame);
-      this.walkingAnimationFrame = null;
-    }
-
-    this.walkingManifestId = null;
-    this.walkingSpeedMultiplier = null;
-    this.walkingAnimationStartedAtMs = null;
-  }
-
-  private runWalkingDeadTimingFrame(timestamp: number): void {
-    const manifestId = this.walkingManifestId;
-    const speed = this.walkingSpeedMultiplier;
-
-    if (!manifestId || speed === null) {
-      return;
-    }
-
-    if (this.walkingAnimationStartedAtMs === null) {
-      this.walkingAnimationStartedAtMs = timestamp;
-    }
-
-    const elapsedMs = Math.max(0, timestamp - this.walkingAnimationStartedAtMs);
-    const frame = walkingDeadTimingFrameAt(elapsedMs, speed);
-
-    this.walkingFrame.set({
-      manifestId,
-      positionPercent: frame.position,
-    });
-    this.walkingAnimationFrame = window.requestAnimationFrame((nextTimestamp) =>
-      this.runWalkingDeadTimingFrame(nextTimestamp),
-    );
-  }
-
-  private resetWalkingFrame(): void {
-    this.walkingFrame.set({
-      manifestId: null,
-      positionPercent: 0,
-    });
+  private sessionContext(): CombatHostSessionRunnerContext {
+    return {
+      sourceRef: () => this.sourceRef(),
+      preview: () => this.preview(),
+      liveState: () => this.liveState(),
+      completion: () => this.completion(),
+      isPreparingSession: () => this.isPreparingSession(),
+      isAutoResolving: () => this.isAutoResolving(),
+      isSubmittingAction: () => this.isSubmittingAction(),
+      isFinalizingResult: () => this.isFinalizingResult(),
+      actionUnavailableText: () => this.actionUnavailableText(),
+      finalizeUnavailableText: () => this.finalizeUnavailableText(),
+      tokens: {
+        manualStart: this.manualStartToken,
+        autoResolve: this.autoResolveToken,
+        submitAction: this.submitActionToken,
+        finalizeResult: this.finalizeResultToken,
+      },
+      setLiveState: (state: CombatLiveStateReadModel) => this.liveState.set(state),
+      setCompletion: (completion: MinigameCompletionEvent) => this.completion.set(completion),
+      setActionError: (message: string | null) => this.actionErrorMessage.set(message),
+      setFinalizeError: (message: string | null) => this.finalizeErrorMessage.set(message),
+      setIsPreparingSession: (value: boolean) => this.isPreparingSession.set(value),
+      setIsAutoResolving: (value: boolean) => this.isAutoResolving.set(value),
+      setIsSubmittingAction: (value: boolean) => this.isSubmittingAction.set(value),
+      setIsFinalizingResult: (value: boolean) => this.isFinalizingResult.set(value),
+    };
   }
 }

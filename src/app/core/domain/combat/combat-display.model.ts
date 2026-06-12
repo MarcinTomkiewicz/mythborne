@@ -3,7 +3,7 @@ import type { StatCardRow } from '../../types/stat-card.types';
 export type CombatDisplayValueTone = 'danger' | 'golden' | 'info' | 'success' | 'muted';
 export type CombatDisplayBadgeTone = 'success' | 'danger' | 'warn' | 'muted' | 'golden';
 export type CombatSurfaceCenterState =
-  'decision' | 'loading' | 'error' | 'live_manual';
+  'decision' | 'loading' | 'error' | 'live_manual' | 'report_result';
 export type CombatSurfaceActionId = 'start-combat' | 'auto-resolve';
 
 export interface CombatDisplayPortrait {
@@ -22,6 +22,10 @@ export interface CombatDisplayParticipant {
   portrait: CombatDisplayPortrait | null;
   hpCurrent: number | null;
   hpMax: number | null;
+  healthLabel: string | null;
+  baseStatsTitle: string | null;
+  combatStatsTitle: string | null;
+  emptyStatsTitle: string | null;
   baseStatRows: readonly StatCardRow[];
   combatStatRows: readonly StatCardRow[];
   emptyStatsMessage: string | null;

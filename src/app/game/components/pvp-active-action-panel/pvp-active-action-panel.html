@@ -7,9 +7,8 @@
             <div class="flex-col gap-xs">
               <p class="color-muted small-caps uppercase text-xs mb-0">{{ copy().common.labels.action }}</p>
               <h2 class="color-heading text-lg mb-0">{{ title(active) }}</h2>
-              <p class="color-text mb-0">{{ helperText() }}</p>
             </div>
-            <span class="tag-badge tag-badge--info">{{ phaseText(active) }}</span>
+            <span class="tag-badge tag-badge--info">{{ actionKindLabel(active) }}</span>
           </div>
 
           <div class="grid-3-1 gap-lg w-100 grid-items-center">
@@ -26,13 +25,6 @@
                 [compact]="true"
                 [showValue]="false"
               />
-              <p class="color-text text-sm mb-0">
-                @if (timer().isCoherent) {
-                  {{ pendingHelperText() }}
-                } @else {
-                  {{ copy().activeAction.loading.refreshSpyState }}
-                }
-              </p>
             </div>
 
             <aside class="flex-col gap-sm w-100" [attr.aria-label]="copy().common.labels.action">
@@ -52,7 +44,6 @@
           <div class="flex-col gap-xs">
             <p class="color-muted small-caps uppercase text-xs mb-0">{{ copy().common.labels.action }}</p>
             <h2 class="color-heading text-lg mb-0">{{ title(active) }}</h2>
-            <p class="muted-text mb-0">{{ helperText() }}</p>
           </div>
           <span class="tag-badge tag-badge--warn">{{ actionKindLabel(active) }}</span>
         </div>
@@ -67,8 +58,6 @@
               [timerAriaLabel]="timeLabel(active)"
               [progressAriaLabel]="copy().common.labels.remainingTime"
               [pendingLabel]="timeLabel(active)"
-              [pendingHelperText]="pendingHelperText()"
-              [pendingNeutralHelperText]="copy().activeAction.loading.refreshUnknownState"
               [readyLabel]="copy().activeAction.readyStates.decisionReady"
               [readyTitle]="active.isResolved ? copy().activeAction.readyStates.heroReturned : copy().activeAction.readyStates.targetReached"
               [readyHelperText]="active.isResolved ? copy().activeAction.readyStates.reportReady : copy().activeAction.phaseText.attackManualWindow"
@@ -79,7 +68,6 @@
           } @else {
             <div class="p-lg flex-col gap-sm w-100">
               <span class="color-muted small-caps uppercase text-xs">{{ phaseText(active) }}</span>
-              <p class="muted-text mb-0">{{ helperText() }}</p>
             </div>
           }
 

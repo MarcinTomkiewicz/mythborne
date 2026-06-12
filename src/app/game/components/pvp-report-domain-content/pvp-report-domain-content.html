@@ -1,5 +1,143 @@
-<app-report-detail-preview-display
-  [label]="detail().report.reportTypeLabel"
-  [view]="preview()"
-  [showActions]="false"
-/>
+<div class="flex-col gap-lg w-100 min-w-0">
+  @if (attackCopy(); as copy) {
+    <section class="mg-card p-lg flex-col gap-md w-100">
+      <div class="flex-col gap-xs">
+        <p class="text-sm font-bold color-accent m-0">{{ copy.sections.result }}</p>
+        <h2 class="color-heading text-xl m-0">{{ copy.attackReport.result.title }}</h2>
+        <p class="color-text text-md lh-16 m-0">{{ copy.attackReport.result.narrativePlainText }}</p>
+      </div>
+    </section>
+
+    @if (copy.attackReport.experience.lines.length > 0) {
+      <section class="mg-card p-lg flex-col gap-sm w-100">
+        <h3 class="color-heading text-lg m-0">{{ copy.sections.experience }}</h3>
+        <div class="flex-col gap-xs">
+          @for (line of copy.attackReport.experience.lines; track trackByKey($index, line)) {
+            <p class="color-text text-md lh-16 m-0">{{ line.text }}</p>
+          }
+        </div>
+      </section>
+    }
+
+    <section class="mg-card p-lg flex-col gap-sm w-100">
+      <h3 class="color-heading text-lg m-0">{{ copy.sections.resources }}</h3>
+      <p class="color-text text-md lh-16 m-0">{{ copy.attackReport.resources.line }}</p>
+
+      @if (hasResourceRows()) {
+        <div class="grid gap-sm">
+          @for (row of copy.attackReport.resources.gainRows; track trackByKey($index, row)) {
+            <div class="flex-row align-center justify-between gap-md">
+              <span class="color-text text-sm">{{ row.label }}</span>
+              <span class="color-success font-bold">{{ row.displayValue }}</span>
+            </div>
+          }
+          @for (row of copy.attackReport.resources.lossRows; track trackByKey($index, row)) {
+            <div class="flex-row align-center justify-between gap-md">
+              <span class="color-text text-sm">{{ row.label }}</span>
+              <span class="color-danger font-bold">{{ row.displayValue }}</span>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <section class="mg-card p-lg flex-col gap-sm w-100">
+      <h3 class="color-heading text-lg m-0">{{ copy.sections.glory }}</h3>
+      <p class="color-text text-md lh-16 m-0">
+        <app-rich-text [fragments]="copy.attackReport.glory.lineRichText" />
+      </p>
+    </section>
+
+    @if (combatStage(); as stage) {
+      <app-combat-stage [stage]="stage" />
+    }
+  }
+
+  @if (spyCopy(); as copy) {
+    <section class="mg-card p-lg flex-col gap-md w-100">
+      <div class="flex-col gap-xs">
+        <p class="text-sm font-bold color-accent m-0">{{ copy.sections.result }}</p>
+        <h2 class="color-heading text-xl m-0">{{ copy.spyReport.result.title }}</h2>
+        <p class="color-text text-md lh-16 m-0">{{ copy.spyReport.result.summary }}</p>
+      </div>
+    </section>
+
+    @if (spySection(); as section) {
+      @if (showSpyResources(section)) {
+        <section class="mg-card p-lg flex-col gap-sm w-100">
+          <h3 class="color-heading text-lg m-0">{{ copy.sections.resources }}</h3>
+          @if (section.resources.length > 0) {
+            @for (row of section.resources; track row.resourceType) {
+              <div class="flex-row align-center justify-between gap-md">
+                <span class="color-text text-sm">{{ row.resourceLabel }}</span>
+                <span class="color-heading font-bold">{{ row.displayValue }}</span>
+              </div>
+            }
+          } @else {
+            <p class="color-text text-md lh-16 m-0">{{ copy.spyReport.emptyStates.noResources }}</p>
+          }
+        </section>
+      }
+
+      @if (showSpyBuildings(section)) {
+        <section class="mg-card p-lg flex-col gap-sm w-100">
+          <h3 class="color-heading text-lg m-0">{{ copy.sections.buildings }}</h3>
+          @if (section.buildings.length > 0) {
+            @for (row of section.buildings; track row.buildingKey ?? row.displayValue) {
+              <div class="flex-row align-center justify-between gap-md">
+                <span class="color-text text-sm">{{ row.buildingName }}</span>
+                <span class="color-heading font-bold">{{ row.displayValue }}</span>
+              </div>
+            }
+          } @else {
+            <p class="color-text text-md lh-16 m-0">{{ copy.spyReport.emptyStates.noBuildings }}</p>
+          }
+        </section>
+      }
+
+      @if (showSpyEquipment(section)) {
+        <section class="mg-card p-lg flex-col gap-sm w-100">
+          <h3 class="color-heading text-lg m-0">{{ copy.sections.equipment }}</h3>
+          @if (section.equipment.length > 0) {
+            @for (row of section.equipment; track row.slotKey ?? row.displayName) {
+              <div class="flex-row align-center justify-between gap-md">
+                <span class="color-text text-sm">{{ row.slotLabel }}</span>
+                <span class="color-heading font-bold">{{ row.displayName }}</span>
+              </div>
+            }
+          } @else {
+            <p class="color-text text-md lh-16 m-0">{{ copy.spyReport.emptyStates.noEquipment }}</p>
+          }
+        </section>
+      }
+
+      @if (showSpyStats(section)) {
+        <section class="mg-card p-lg flex-col gap-sm w-100">
+          <h3 class="color-heading text-lg m-0">{{ copy.sections.stats }}</h3>
+          @if (section.baseStats.length > 0) {
+            @for (row of section.baseStats; track row.key) {
+              <div class="flex-row align-center justify-between gap-md">
+                <span class="color-text text-sm">{{ row.label }}</span>
+                <span class="color-heading font-bold">{{ row.displayValue }}</span>
+              </div>
+            }
+          } @else {
+            <p class="color-text text-md lh-16 m-0">{{ copy.spyReport.emptyStates.noVisibleData }}</p>
+          }
+        </section>
+      }
+
+      @if (showNoVisibleSpyData(section)) {
+        <section class="mg-card p-lg flex-col gap-sm w-100">
+          <h3 class="color-heading text-lg m-0">{{ copy.sections.spy }}</h3>
+          <p class="color-text text-md lh-16 m-0">{{ copy.spyReport.emptyStates.noVisibleData }}</p>
+        </section>
+      }
+    } @else {
+      <section class="mg-card p-lg flex-col gap-sm w-100">
+        <h3 class="color-heading text-lg m-0">{{ copy.sections.spy }}</h3>
+        <p class="color-text text-md lh-16 m-0">{{ copy.spyReport.emptyStates.noVisibleData }}</p>
+      </section>
+    }
+  }
+</div>

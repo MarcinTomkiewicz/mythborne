@@ -4,8 +4,6 @@ import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-c
 import {
   pvpActiveActionErrorMessage,
   pvpActiveActionFactRows,
-  pvpActiveActionPhaseText,
-  pvpActiveActionPendingHelperText,
   pvpActiveActionRefreshAt,
   pvpActiveActionTiming,
   shouldShowActivePvpOffer,
@@ -29,6 +27,7 @@ import { RequestToken } from '../../../../core/utils/request-token';
 import { PvpSpyReportState } from './pvp-spy-report.state';
 
 const ELAPSED_REFRESH_INTERVAL_MS = 5000;
+const PVP_ACTION_COPY_CONTRACT_ERROR = 'player.pvp.action copy unavailable';
 
 @Injectable()
 export class PvpActiveActionState {
@@ -81,18 +80,6 @@ export class PvpActiveActionState {
     const copy = this.copy();
 
     return offer && copy ? pvpActiveActionFactRows(offer, copy) : [];
-  });
-  readonly helperText = computed(() => {
-    const offer = this.visibleOffer();
-    const copy = this.copy();
-
-    return offer && copy ? pvpActiveActionPhaseText(offer, copy) : '';
-  });
-  readonly pendingHelperText = computed(() => {
-    const offer = this.visibleOffer();
-    const copy = this.copy();
-
-    return offer && copy ? pvpActiveActionPendingHelperText(offer, copy) : '';
   });
 
   constructor() {
@@ -232,10 +219,7 @@ export class PvpActiveActionState {
           this.copy.set(copy);
           this.spyReport.setGenericErrorLabel(this.errorLabel());
         },
-        error: () => {
-          this.copy.set(null);
-          this.error.set(this.errorLabel());
-        },
+        error: () => this.error.set(this.errorLabel() || PVP_ACTION_COPY_CONTRACT_ERROR),
       });
   }
 }

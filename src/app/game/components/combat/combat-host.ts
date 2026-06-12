@@ -1,15 +1,28 @@
 import { Component, effect, inject, input, output } from '@angular/core';
-import { CombatSurfaceDecisionDeadline } from '../../../core/domain/combat/combat-display.model';
-import { PvpActionCopy } from '../../../core/domain/pvp/pvp-action-copy.model';
+import {
+  CombatSurfaceActionId,
+  CombatSurfaceDecisionDeadline,
+} from '../../../core/domain/combat/combat-display.model';
+import { CombatSourcePresentation } from '../../../core/domain/combat/combat-source-presentation.model';
 import { MinigameCompletionEvent, MinigameSourceRef } from '../minigame-host/minigame-host.model';
-import { CombatStage } from './combat-stage';
+import { CombatHostPreviewLoader } from './combat-host-preview-loader';
+import { CombatHostRequestRunner } from './combat-host-request-runner';
+import { CombatHostSessionRunner } from './combat-host-session-runner';
 import { CombatHostState } from './combat-host.state';
+import { CombatHostTimingState } from './combat-host-timing.state';
+import { CombatStage } from './combat-stage';
 
 @Component({
   selector: 'app-combat-host',
   standalone: true,
   imports: [CombatStage],
-  providers: [CombatHostState],
+  providers: [
+    CombatHostState,
+    CombatHostRequestRunner,
+    CombatHostPreviewLoader,
+    CombatHostSessionRunner,
+    CombatHostTimingState,
+  ],
   template: `
     <section class="flex-col gap-sm w-100">
       @if (flow.previewErrorMessage(); as message) {
@@ -26,17 +39,17 @@ import { CombatHostState } from './combat-host.state';
           />
         }
         @if (flow.isFinalizingResult()) {
-          <section class="mg-card p-md flex-col gap-xs w-100">
-            <p class="small-caps color-muted text-xs mb-0">Zapisywanie wyniku</p>
-            <p class="color-text text-md lh-16 mb-0">
-              Wynik walki jest utrwalany. Za chwilę pojawi się przejście do raportu.
-            </p>
-          </section>
+          @if (flow.finalizingResultPanel(); as panel) {
+            <section class="mg-card p-md flex-col gap-xs w-100">
+              <p class="small-caps color-muted text-xs mb-0">{{ panel.title }}</p>
+              <p class="color-text text-md lh-16 mb-0">{{ panel.text }}</p>
+            </section>
+          }
         }
-        @if (flow.finalizeErrorMessage(); as message) {
+        @if (flow.finalizeErrorPanel(); as panel) {
           <section class="mg-card p-md flex-col gap-xs w-100">
-            <p class="small-caps color-muted text-xs mb-0">Raport niedostępny</p>
-            <p class="warn-text text-md lh-16 mb-0">{{ message }}</p>
+            <p class="small-caps color-muted text-xs mb-0">{{ panel.title }}</p>
+            <p class="warn-text text-md lh-16 mb-0">{{ panel.text }}</p>
           </section>
         }
       }
@@ -48,8 +61,7 @@ export class CombatHost {
   readonly flow = inject(CombatHostState);
   readonly sourceRef = input.required<MinigameSourceRef>();
   readonly contextTitle = input.required<string>();
-  readonly contextLabel = input('Walka');
-  readonly pvpActionCopy = input<PvpActionCopy | null>(null);
+  readonly sourcePresentation = input.required<CombatSourcePresentation>();
   readonly decisionDeadline = input<CombatSurfaceDecisionDeadline | null>(null);
   readonly completed = output<MinigameCompletionEvent>();
 
@@ -58,8 +70,7 @@ export class CombatHost {
       this.flow.setContext({
         sourceRef: this.sourceRef(),
         contextTitle: this.contextTitle(),
-        contextLabel: this.contextLabel(),
-        pvpActionCopy: this.pvpActionCopy(),
+        sourcePresentation: this.sourcePresentation(),
       });
     });
 
@@ -73,12 +84,13 @@ export class CombatHost {
       if (!completion) {
         return;
       }
+
       this.completed.emit(completion);
       this.flow.clearCompletion();
     });
   }
 
-  handleStageAction(actionId: string): void {
+  handleStageAction(actionId: CombatSurfaceActionId): void {
     if (actionId === 'start-combat') {
       this.flow.startManualCombat();
       return;

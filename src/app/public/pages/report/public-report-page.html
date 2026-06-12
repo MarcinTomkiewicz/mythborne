@@ -1,8 +1,56 @@
 <main class="py-lg w-100">
   <app-loading-overlay [visible]="page.isLoading()" />
 
-  @if (page.copy(); as copy) {
-    @if (page.detail(); as detail) {
+  @if (page.pvpPublicReportCopy(); as pvpCopy) {
+    @if (pvpCopy.access.isAvailable) {
+      @if (pvpCopy.shell; as shell) {
+        <div class="mg-container flex-col gap-lg w-100 min-w-0">
+          <app-game-page-header
+            [eyebrowLabel]="shell.eyebrow"
+            [title]="shell.title"
+            [description]="shell.summary"
+            [summaryRows]="headerSummaryRows()"
+          />
+
+          <app-pvp-public-report-domain-content [copy]="pvpCopy" />
+        </div>
+      }
+    } @else if (!page.detail()?.report || isPublicPvpDetail(page.detail())) {
+      <div class="mg-container flex-col gap-lg w-100 min-w-0">
+        <app-pvp-public-report-domain-content [copy]="pvpCopy" />
+      </div>
+    } @else if (page.copy(); as copy) {
+      @if (page.detail(); as detail) {
+        @if (detail.report) {
+          <div class="mg-container flex-col gap-lg w-100 min-w-0">
+            <app-game-page-header
+              [eyebrowLabel]="detail.report.reportTypeLabel"
+              [title]="detail.report.title || copy.reportShell.public.titleFallback"
+              [description]="detail.report.summary"
+              [summaryRows]="headerSummaryRows()"
+            />
+
+            <app-report-detail-sections
+              [detail]="detail"
+              [shellCopy]="copy.reportShell"
+            />
+          </div>
+        }
+      }
+    }
+  } @else if (page.copy(); as copy) {
+    @if (page.hasError()) {
+      <section class="mg-container mg-card flex-col gap-sm p-lg w-100">
+        <h1 class="color-heading text-xl m-0">{{ copy.reportShell.public.notFoundTitle }}</h1>
+        <p class="color-text text-md lh-16 m-0">{{ copy.reportShell.public.notFoundText }}</p>
+        <p-button
+          [label]="copy.reportShell.header.backAction"
+          icon="pi pi-home"
+          severity="secondary"
+          routerLink="/"
+        />
+      </section>
+    } @else if (page.detail(); as detail) {
       @if (detail.report) {
         <div class="mg-container flex-col gap-lg w-100 min-w-0">
           <app-game-page-header

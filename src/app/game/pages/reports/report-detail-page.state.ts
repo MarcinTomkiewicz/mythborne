@@ -1,12 +1,14 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
+import { PvpPrivateReportCopy } from '../../../core/domain/pvp/pvp-private-report-copy.model';
 import { PrivateReportDetailPage } from '../../../core/domain/reports/report-detail.model';
 import { ReportPageCopy } from '../../../core/domain/reports/report-page-copy.model';
 import { GameCopyService } from '../../../core/services/game-copy/game-copy.service';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
 import { toDateTimeLabel } from '../../../core/utils/date-display';
+import { isPrivatePvpReportDetail } from '../../../core/utils/pvp-report-domain-context';
 import { RequestToken } from '../../../core/utils/request-token';
 
 @Injectable()
@@ -22,15 +24,26 @@ export class ReportDetailPageState {
 
   readonly copy = signal<ReportPageCopy | null>(null);
   readonly detail = signal<PrivateReportDetailPage | null>(null);
+  readonly pvpPrivateReportCopy = signal<PvpPrivateReportCopy | null>(null);
   readonly hasError = signal(false);
   readonly pendingRequestCount = signal(0);
   readonly isLoading = computed(() => this.pendingRequestCount() > 0);
+  readonly canRenderDetail = computed(() => {
+    const detail = this.detail();
+
+    if (!detail) {
+      return false;
+    }
+
+    return !isPrivatePvpReportDetail(detail) || this.pvpPrivateReportCopy() !== null;
+  });
 
   loadData(reportId: string): void {
     const token = this.beginDetailLoadToken();
 
     this.copy.set(null);
     this.detail.set(null);
+    this.pvpPrivateReportCopy.set(null);
     this.hasError.set(false);
 
     this.startRequest(token);
@@ -126,6 +139,10 @@ export class ReportDetailPageState {
           }
 
           this.detail.set(detail);
+
+          if (isPrivatePvpReportDetail(detail)) {
+            this.loadPvpPrivateReportCopy(heroId, serverId, reportId, token);
+          }
         },
         error: () => {
           if (!this.isCurrentRequest(token, heroId, serverId)) {
@@ -135,6 +152,40 @@ export class ReportDetailPageState {
           this.hasError.set(true);
         },
       });
+  }
+
+  private loadPvpPrivateReportCopy(
+    heroId: string,
+    serverId: string,
+    reportId: string,
+    token: number,
+  ): void {
+    this.startRequest(token);
+
+    this.gameCopy.getCopy('player.pvp.report.private', {
+      locale: 'pl',
+      reportId,
+    }).pipe(
+      takeUntilDestroyed(this.destroyRef),
+      finalize(() => {
+        this.finishRequest(token);
+      }),
+    ).subscribe({
+      next: (copy) => {
+        if (!this.isCurrentRequest(token, heroId, serverId)) {
+          return;
+        }
+
+        this.pvpPrivateReportCopy.set(copy);
+      },
+      error: () => {
+        if (!this.isCurrentRequest(token, heroId, serverId)) {
+          return;
+        }
+
+        this.hasError.set(true);
+      },
+    });
   }
 
   private isCurrentRequest(token: number, heroId: string, serverId: string): boolean {

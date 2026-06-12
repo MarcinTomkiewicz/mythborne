@@ -12,6 +12,9 @@ import {
   MinigameCompletionEvent,
   MinigameSourceRef,
 } from '../../components/minigame-host/minigame-host.model';
+import { CombatSourcePresentation } from '../../../core/domain/combat/combat-source-presentation.model';
+import { pvpCombatSourcePresentation } from '../../../core/domain/pvp/pvp-combat-source-presentation.mapper';
+import { PvpActionCopy } from '../../../core/domain/pvp/pvp-action-copy.model';
 import { trimToNull } from '../../../core/utils/normalize-text';
 import { CombatPvpActionState } from './combat-pvp-action.state';
 
@@ -54,12 +57,6 @@ export class CombatPage {
         }
       : null;
   });
-  readonly contextTitle = computed(() =>
-    this.sourceRef()?.sourceEntityType === MINIGAME_SOURCE_ENTITY_TYPE.pvpAction
-      ? this.pvpAction.copy()?.common.labels.heroCombat ?? ''
-      : this.pvpAction.copy()?.common.labels.combat ?? '',
-  );
-
   constructor() {
     effect(() => {
       this.pvpAction.setSourceRef(this.sourceRef());
@@ -73,5 +70,9 @@ export class CombatPage {
 
   refreshActivePvpOffer(): void {
     this.pvpAction.refresh();
+  }
+
+  combatSourcePresentation(copy: PvpActionCopy): CombatSourcePresentation {
+    return pvpCombatSourcePresentation(copy);
   }
 }

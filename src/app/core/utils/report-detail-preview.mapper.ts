@@ -17,7 +17,7 @@ import type {
   ReportCombatSection,
 } from '../domain/reports/report-section.model';
 import { uniqueInOrder } from './collection';
-import { mapCanonicalReportCombatStageView } from './combat-report-display.mapper';
+import { mapNonPvpCanonicalReportCombatStageView } from './combat-report-display.mapper';
 import { mapReportHandoffActions } from './report-handoff-actions.mapper';
 import { mapReportPvpRewardPreview } from './report-pvp-reward-preview.mapper';
 import { presentReportSection } from './report-section-common.mapper';
@@ -27,6 +27,12 @@ export function mapReportDetailPreviewView(input: {
   activeHeroId: string | null;
   showRewardResult: boolean;
 }): ReportDetailPreviewView {
+  if (input.detail.domainContextJson.reportDomainKey === 'pvp') {
+    throw new Error(
+      'Private PvP report detail must use player.pvp.report.private copy-backed rendering.',
+    );
+  }
+
   const report = input.detail.report;
   const trialManifestationNarrative = reportTrialManifestationNarrative(report);
   const encounterCombatHandoffNarrative = reportEncounterCombatHandoffNarrative(report);
@@ -162,10 +168,10 @@ function reportCombatStage(input: {
   detail: PrivateReportDetailPage;
   activeHeroId: string | null;
 }): CombatStageViewModel | null {
-  return mapCanonicalReportCombatStageView(input.detail.report, {
+  return mapNonPvpCanonicalReportCombatStageView(input.detail.report, {
     activeHeroId: input.activeHeroId,
     activeHeroPortraitSrc: null,
-    reportId: input.detail.access.reportId,
+    combatResultId: input.detail.domainContextJson.combat?.combatResultId ?? null,
   });
 }
 
@@ -278,7 +284,7 @@ function requiredReportRewardResult(report: ReportDetailCore | null) {
 
   if (!section) {
     throw new Error(
-      'get_report_detail.report.rewardSectionJson is required for PvP/Vicinity combat reward preview.',
+      'get_report_detail.report.rewardSectionJson is required for combat reward preview.',
     );
   }
 

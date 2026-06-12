@@ -3,7 +3,9 @@
 <article class="mg-card p-md flex-col gap-md w-100">
   <div class="flex-row-between-start gap-md">
     <div class="flex-col gap-xs min-w-0">
-      <p class="small-caps color-muted text-xs mb-0">{{ row.kindLabel }}</p>
+      @if (row.kindLabel) {
+        <p class="small-caps color-muted text-xs mb-0">{{ row.kindLabel }}</p>
+      }
       <h3 class="color-heading text-xl mb-0">{{ row.displayName }}</h3>
       @if (row.metaLabel) {
         <span
@@ -55,24 +57,29 @@
   <div class="flex-col gap-md">
     @if (row.hpCurrent !== null && row.hpMax !== null) {
       <app-game-bar
-        label="Zdrowie"
+        [label]="row.healthLabel ?? ''"
         type="hp"
         [value]="row.hpCurrent"
         [max]="row.hpMax"
       />
     }
 
-    @if (row.baseStatRows.length) {
-      <app-stat-card title="Cechy" [rows]="row.baseStatRows" [compact]="true" />
+    @if (row.baseStatRows.length && row.baseStatsTitle) {
+      <app-stat-card [title]="row.baseStatsTitle" [rows]="row.baseStatRows" [compact]="true" />
     }
 
-    @if (row.combatStatRows.length) {
-      <app-stat-card class="stat-card--derived" title="Statystyki walki" [rows]="row.combatStatRows" [compact]="true" />
+    @if (row.combatStatRows.length && row.combatStatsTitle) {
+      <app-stat-card
+        class="stat-card--derived"
+        [title]="row.combatStatsTitle"
+        [rows]="row.combatStatRows"
+        [compact]="true"
+      />
     }
 
-    @if (!row.baseStatRows.length && !row.combatStatRows.length && row.emptyStatsMessage) {
+    @if (!row.baseStatRows.length && !row.combatStatRows.length && row.emptyStatsMessage && row.emptyStatsTitle) {
       <div class="mg-card flex-col gap-xs text-center radius-md p-md">
-        <strong class="color-heading">Brak statystyk uczestnika</strong>
+        <strong class="color-heading">{{ row.emptyStatsTitle }}</strong>
         <span class="color-text text-sm">{{ row.emptyStatsMessage }}</span>
       </div>
     }

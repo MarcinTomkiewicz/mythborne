@@ -25,8 +25,6 @@ export class PvpActiveActionPanel {
   readonly copy = input.required<PvpActionCopy>();
   readonly timer = input.required<PendingTimerDisplay>();
   readonly factRows = input.required<readonly PvpActiveActionFactRow[]>();
-  readonly helperText = input('');
-  readonly pendingHelperText = input('');
   readonly isLoading = input(false);
   readonly isTimerReady = input(false);
   readonly refresh = output<void>();

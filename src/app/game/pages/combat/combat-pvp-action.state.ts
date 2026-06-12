@@ -7,8 +7,6 @@ import {
   pvpActiveActionErrorMessage,
   pvpActiveActionFactRows,
   pvpActiveActionManualDecisionDeadlineAt,
-  pvpActiveActionPendingHelperText,
-  pvpActiveActionPhaseText,
   pvpActiveActionRefreshAt,
   pvpActiveActionTiming,
   shouldShowActivePvpOffer,
@@ -23,6 +21,7 @@ import {
   pendingTimerHasElapsed,
 } from '../../../core/utils/pending-timer';
 import { RequestToken } from '../../../core/utils/request-token';
+import { sameSourceRef } from '../../../core/utils/source-ref';
 import {
   MINIGAME_SOURCE_ENTITY_TYPE,
   MinigameCompletionEvent,
@@ -30,6 +29,7 @@ import {
 } from '../../components/minigame-host/minigame-host.model';
 
 const ACTIVE_OFFER_REFRESH_INTERVAL_MS = 5000;
+const PVP_ACTION_COPY_CONTRACT_ERROR = 'player.pvp.action copy unavailable';
 
 @Injectable()
 export class CombatPvpActionState {
@@ -84,18 +84,6 @@ export class CombatPvpActionState {
     const copy = this.copy();
 
     return offer && copy ? pvpActiveActionFactRows(offer, copy) : [];
-  });
-  readonly helperText = computed(() => {
-    const offer = this.visibleOffer();
-    const copy = this.copy();
-
-    return offer && copy ? pvpActiveActionPhaseText(offer, copy) : '';
-  });
-  readonly pendingHelperText = computed(() => {
-    const offer = this.visibleOffer();
-    const copy = this.copy();
-
-    return offer && copy ? pvpActiveActionPendingHelperText(offer, copy) : '';
   });
   readonly decisionDeadline = computed<CombatSurfaceDecisionDeadline | null>(() => {
     const offer = this.currentSourceOffer();
@@ -168,7 +156,7 @@ export class CombatPvpActionState {
   }
 
   setSourceRef(sourceRef: MinigameSourceRef | null): void {
-    if (this.sameSourceRef(this.sourceRef(), sourceRef)) {
+    if (sameSourceRef(this.sourceRef(), sourceRef)) {
       return;
     }
 
@@ -255,7 +243,7 @@ export class CombatPvpActionState {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (copy) => this.copy.set(copy),
-        error: () => this.copy.set(null),
+        error: () => this.error.set(this.copy()?.common.emptyValues.noData ?? PVP_ACTION_COPY_CONTRACT_ERROR),
       });
   }
 
@@ -278,14 +266,6 @@ export class CombatPvpActionState {
   ): boolean {
     return this.requests.isCurrent(requestId) &&
       contextKey === activeHeroContextKey(this.activeHero.state()) &&
-      this.sameSourceRef(this.sourceRef(), sourceRef);
-  }
-
-  private sameSourceRef(
-    current: MinigameSourceRef | null,
-    next: MinigameSourceRef | null,
-  ): boolean {
-    return current?.sourceEntityType === next?.sourceEntityType &&
-      current?.sourceEntityId === next?.sourceEntityId;
+      sameSourceRef(this.sourceRef(), sourceRef);
   }
 }
