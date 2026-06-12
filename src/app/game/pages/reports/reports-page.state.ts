@@ -116,9 +116,8 @@ export class ReportsPageState {
   });
 
   loadData(): void {
-    const token = this.beginRequestToken();
+    const token = this.beginPageLoadToken();
 
-    this.pendingRequestCount.set(0);
     this.copy.set(null);
     this.context.set(null);
     this.selectedReportId.set(null);
@@ -141,7 +140,9 @@ export class ReportsPageState {
       .requireActiveHero()
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.finishRequest(token)),
+        finalize(() => {
+          this.finishRequest(token);
+        }),
       )
       .subscribe({
         next: (state) => {
@@ -285,7 +286,7 @@ export class ReportsPageState {
       return;
     }
 
-    const token = this.beginRequestToken();
+    const token = this.beginPageLoadToken();
 
     this.hasError.set(false);
     this.loadReportsCenterPage(this.activeHeroId, this.activeServerId, token);
@@ -307,7 +308,9 @@ export class ReportsPageState {
       .getCopy('player.reports.page', { locale: 'pl' })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.finishRequest(token)),
+        finalize(() => {
+          this.finishRequest(token);
+        }),
       )
       .subscribe({
         next: (copy) => {
@@ -352,7 +355,9 @@ export class ReportsPageState {
       })
       .pipe(
         takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.finishRequest(token)),
+        finalize(() => {
+          this.finishRequest(token);
+        }),
       )
       .subscribe({
         next: (context) => {
@@ -462,7 +467,7 @@ export class ReportsPageState {
             return;
           }
 
-          this.loadReportsCenterPage(heroId, serverId, this.beginRequestToken());
+          this.loadReportsCenterPage(heroId, serverId, this.beginPageLoadToken());
         },
         error: (error: unknown) => {
           if (!this.isCurrentReportAction(token, heroId, serverId)) {
@@ -513,8 +518,12 @@ export class ReportsPageState {
     );
   }
 
-  private beginRequestToken(): number {
-    return this.requestToken.next();
+  private beginPageLoadToken(): number {
+    const token = this.requestToken.next();
+
+    this.pendingRequestCount.set(0);
+
+    return token;
   }
 
   private startRequest(token: number): void {
@@ -522,7 +531,9 @@ export class ReportsPageState {
       return;
     }
 
-    this.pendingRequestCount.update((count) => count + 1);
+    this.pendingRequestCount.update((count) => {
+      return count + 1;
+    });
   }
 
   private finishRequest(token: number): void {
@@ -530,6 +541,8 @@ export class ReportsPageState {
       return;
     }
 
-    this.pendingRequestCount.update((count) => Math.max(0, count - 1));
+    this.pendingRequestCount.update((count) => {
+      return Math.max(0, count - 1);
+    });
   }
 }

@@ -14,12 +14,12 @@ const SEMANTIC_ICON_CLASS_BY_KEY: Readonly<Record<string, string>> = {
   'report-debuff': 'pi pi-report-debuff',
   'report-exploration': 'pi pi-report-exploration',
   'report-resource': 'pi pi-report-resource',
+  'spy': 'pi pi-report-spy',
   'report-trial': 'pi pi-report-trial',
   resource: 'pi pi-report-resource',
   trial: 'pi pi-trial',
   workforce: 'pi pi-workforce',
 };
-const warnedUnknownSemanticIconKeys = new Set<string>();
 
 export function semanticIconClass(iconKey: string): string | null {
   const key = iconKey.trim();
@@ -28,10 +28,6 @@ export function semanticIconClass(iconKey: string): string | null {
   }
 
   const iconClass = SEMANTIC_ICON_CLASS_BY_KEY[key] ?? null;
-
-  if (!iconClass) {
-    warnUnknownSemanticIconKey(key);
-  }
 
   return iconClass;
 }
@@ -66,13 +62,4 @@ export function semanticIconToneClass(
   }
 
   return 'color-heading';
-}
-
-function warnUnknownSemanticIconKey(iconKey: string): void {
-  if (warnedUnknownSemanticIconKeys.has(iconKey)) {
-    return;
-  }
-
-  warnedUnknownSemanticIconKeys.add(iconKey);
-  console.warn('Unsupported semantic icon key.', iconKey);
 }

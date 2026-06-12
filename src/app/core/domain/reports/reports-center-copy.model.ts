@@ -144,6 +144,11 @@ export function reportsCenterEventTypeCopyByKey(
   key: string,
 ): ReportsCenterEventTypeCopy {
   const copy = eventTypes.byKey[key];
+  const temporarySpyCopy = eventTypes.byKey['pvp_spy'];
+
+  if (!copy && key === 'spy' && temporarySpyCopy) {
+    return temporarySpyCopy;
+  }
 
   if (!copy) {
     throw new Error(`reportsCenter.eventTypes.byKey.${key} is missing.`);

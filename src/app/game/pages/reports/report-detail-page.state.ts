@@ -1,5 +1,6 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs';
 import { PrivateReportDetailPage } from '../../../core/domain/reports/report-detail.model';
 import { ReportPageCopy } from '../../../core/domain/reports/report-page-copy.model';
 import { GameCopyService } from '../../../core/services/game-copy/game-copy.service';
@@ -26,20 +27,23 @@ export class ReportDetailPageState {
   readonly isLoading = computed(() => this.pendingRequestCount() > 0);
 
   loadData(reportId: string): void {
-    const token = this.requestToken.next();
+    const token = this.beginDetailLoadToken();
 
     this.copy.set(null);
     this.detail.set(null);
     this.hasError.set(false);
-    this.pendingRequestCount.set(1);
 
+    this.startRequest(token);
     this.activeHero
       .requireActiveHero()
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.finishRequest(token);
+        }),
+      )
       .subscribe({
         next: (state) => {
-          this.finishRequest(token);
-
           if (!this.requestToken.isCurrent(token)) {
             return;
           }
@@ -48,9 +52,7 @@ export class ReportDetailPageState {
           this.activeServerId = state.serverId;
           this.loadReportFoundation(state.heroId, state.serverId, reportId, token);
         },
-        error: (error: unknown) => {
-          this.finishRequest(token);
-
+        error: () => {
           if (!this.requestToken.isCurrent(token)) {
             return;
           }
@@ -78,20 +80,21 @@ export class ReportDetailPageState {
     this.startRequest(token);
 
     this.gameCopy.getCopy('player.reports.page', { locale: 'pl' })
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.finishRequest(token);
+        }),
+      )
       .subscribe({
         next: (copy) => {
-          this.finishRequest(token);
-
           if (!this.isCurrentRequest(token, heroId, serverId)) {
             return;
           }
 
           this.copy.set(copy);
         },
-        error: (error: unknown) => {
-          this.finishRequest(token);
-
+        error: () => {
           if (!this.isCurrentRequest(token, heroId, serverId)) {
             return;
           }
@@ -110,20 +113,21 @@ export class ReportDetailPageState {
     this.startRequest(token);
 
     this.reports.getDetailPage({ heroId, reportId })
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => {
+          this.finishRequest(token);
+        }),
+      )
       .subscribe({
         next: (detail) => {
-          this.finishRequest(token);
-
           if (!this.isCurrentRequest(token, heroId, serverId)) {
             return;
           }
 
           this.detail.set(detail);
         },
-        error: (error: unknown) => {
-          this.finishRequest(token);
-
+        error: () => {
           if (!this.isCurrentRequest(token, heroId, serverId)) {
             return;
           }
@@ -146,7 +150,9 @@ export class ReportDetailPageState {
       return;
     }
 
-    this.pendingRequestCount.update((count) => count + 1);
+    this.pendingRequestCount.update((count) => {
+      return count + 1;
+    });
   }
 
   private finishRequest(token: number): void {
@@ -154,6 +160,16 @@ export class ReportDetailPageState {
       return;
     }
 
-    this.pendingRequestCount.update((count) => Math.max(0, count - 1));
+    this.pendingRequestCount.update((count) => {
+      return Math.max(0, count - 1);
+    });
+  }
+
+  private beginDetailLoadToken(): number {
+    const token = this.requestToken.next();
+
+    this.pendingRequestCount.set(0);
+
+    return token;
   }
 }
