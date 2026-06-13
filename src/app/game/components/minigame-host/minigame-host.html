@@ -2,17 +2,8 @@
   <app-combat-host
     [sourceRef]="sourceRef()"
     [contextTitle]="contextTitle()"
-    [contextLabel]="contextLabel()"
-    [pvpActionCopy]="pvpActionCopy()"
+    [sourcePresentation]="sourcePresentation()"
     [decisionDeadline]="combatDecisionDeadline()"
     (completed)="completed.emit($event)"
   />
-} @else {
-  <section class="mg-card p-lg flex-col gap-sm w-100">
-    <p class="small-caps color-muted text-xs m-0">{{ contextLabel() }}</p>
-    <h3 class="color-heading text-xl font-black m-0">{{ contextTitle() }}</h3>
-    <p class="color-text text-md lh-16 m-0">
-      To wyzwanie wymaga minigierki. Moduł minigierki zostanie podłączony w następnym kroku.
-    </p>
-  </section>
 }

@@ -64,14 +64,18 @@
       />
     }
 
-    @if (row.baseStatRows.length && row.baseStatsTitle) {
-      <app-stat-card [title]="row.baseStatsTitle" [rows]="row.baseStatRows" [compact]="true" />
+    @if (row.baseStatRows.length) {
+      <app-stat-card
+        [title]="row.baseStatsTitle ?? ''"
+        [rows]="row.baseStatRows"
+        [compact]="true"
+      />
     }
 
-    @if (row.combatStatRows.length && row.combatStatsTitle) {
+    @if (row.combatStatRows.length) {
       <app-stat-card
         class="stat-card--derived"
-        [title]="row.combatStatsTitle"
+        [title]="row.combatStatsTitle ?? ''"
         [rows]="row.combatStatRows"
         [compact]="true"
       />

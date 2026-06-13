@@ -12,6 +12,7 @@ import {
   ExplorationDifficultyCopy,
   explorationDifficultyCardCopy,
 } from '../../../core/domain/game-copy/exploration-difficulty-copy.model';
+import { ExplorationRuntimeCopy } from '../../../core/domain/exploration/exploration-runtime-copy.model';
 import { GameCopyService } from '../../../core/services/game-copy/game-copy.service';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationChallengeState } from './exploration-challenge.state';
@@ -27,6 +28,7 @@ import { ExplorationStepState } from './exploration-step.state';
 @Injectable()
 export class ExplorationPageState {
   private readonly copyToken = new RequestToken();
+  private readonly runtimeCopyToken = new RequestToken();
   private readonly destroyRef = inject(DestroyRef);
   private readonly gameCopy = inject(GameCopyService);
 
@@ -44,7 +46,11 @@ export class ExplorationPageState {
     this.preview.difficultyCardPreview(this.overview.selectedDifficultyKey()),
   );
   readonly difficultyCopy = signal<ExplorationDifficultyCopy | null>(null);
+  readonly runtimeCopy = signal<ExplorationRuntimeCopy | null>(null);
   readonly isDifficultyCopyLoading = signal(false);
+  readonly isRuntimeCopyLoading = signal(false);
+  readonly runtimeCopyError = signal(false);
+  readonly hasRuntimeCopyError = computed(() => this.runtimeCopyError());
   readonly selectedDifficultyCopy = computed(() => {
     const copy = this.difficultyCopy();
     const difficultyKey = this.overview.selectedDifficultyKey();
@@ -105,6 +111,7 @@ export class ExplorationPageState {
 
   loadData(): void {
     this.loadDifficultyCopy();
+    this.loadRuntimeCopy();
     this.overview.loadData();
   }
 
@@ -164,6 +171,47 @@ export class ExplorationPageState {
           }
 
           this.difficultyCopy.set(null);
+        },
+      });
+  }
+
+  private loadRuntimeCopy(): void {
+    const token = this.runtimeCopyToken.next();
+
+    this.isRuntimeCopyLoading.set(true);
+    this.runtimeCopyError.set(false);
+    this.runtimeCopy.set(null);
+
+    this.gameCopy
+      .getCopy('player.exploration.runtime', { locale: 'pl' })
+      .pipe(
+        finalize(() => {
+          if (this.runtimeCopyToken.isCurrent(token)) {
+            this.isRuntimeCopyLoading.set(false);
+          }
+        }),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (copy) => {
+          if (!this.runtimeCopyToken.isCurrent(token)) {
+            return;
+          }
+
+          this.runtimeCopyError.set(false);
+          this.runtimeCopy.set(copy);
+        },
+        error: (error: unknown) => {
+          if (!this.runtimeCopyToken.isCurrent(token)) {
+            return;
+          }
+
+          if (isDevMode()) {
+            console.error('Exploration runtime copy load failed.', error);
+          }
+
+          this.runtimeCopyError.set(true);
+          this.runtimeCopy.set(null);
         },
       });
   }

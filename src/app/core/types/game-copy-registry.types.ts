@@ -1,4 +1,5 @@
 import { ExplorationDifficultyCopy } from '../domain/game-copy/exploration-difficulty-copy.model';
+import { ExplorationRuntimeCopy } from '../domain/exploration/exploration-runtime-copy.model';
 import { PvpActionCopy } from '../domain/pvp/pvp-action-copy.model';
 import { PvpPrivateReportCopy } from '../domain/pvp/pvp-private-report-copy.model';
 import { PvpPublicReportCopy } from '../domain/pvp/pvp-public-report-copy.model';
@@ -8,6 +9,7 @@ import { ReportPageCopy } from '../domain/reports/report-page-copy.model';
 
 export type GameCopyRegistry = {
   'player.exploration.difficulty': ExplorationDifficultyCopy;
+  'player.exploration.runtime': ExplorationRuntimeCopy;
   'player.pvp.action': PvpActionCopy;
   'player.pvp.report.private': PvpPrivateReportCopy;
   'player.pvp.report.public': PvpPublicReportCopy;
@@ -20,6 +22,9 @@ export type GameCopyRegistryKind = keyof GameCopyRegistry;
 
 export type GameCopyRegistryArgs = {
   'player.exploration.difficulty': {
+    locale: string;
+  };
+  'player.exploration.runtime': {
     locale: string;
   };
   'player.pvp.action': {

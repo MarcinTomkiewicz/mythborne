@@ -1,0 +1,65 @@
+<div class="flex-col gap-lg w-100 min-w-0">
+  @if (!copy().access.isAvailable) {
+    <section class="mg-card p-lg flex-col gap-sm w-100">
+      <h1 class="color-heading text-xl m-0">{{ copy().sections.notFound.title }}</h1>
+      <p class="color-text text-md lh-16 m-0">{{ copy().sections.notFound.text }}</p>
+      @if (notFoundLabel(); as label) {
+        <p class="color-text text-md lh-16 m-0">{{ label }}</p>
+      }
+    </section>
+  } @else {
+    @if (copy().attackReport; as attack) {
+      <section class="mg-card p-lg flex-col gap-md w-100">
+        <div class="flex-col gap-xs">
+          <p class="text-sm font-bold color-accent m-0">{{ copy().sections.result.label }}</p>
+          <h2 class="color-heading text-xl m-0">{{ attack.resultTitle }}</h2>
+          <p class="color-text text-md lh-16 m-0">{{ attack.resultNarrative }}</p>
+        </div>
+        <p class="color-text text-md lh-16 m-0">{{ attack.privateDetailsOmittedLabel }}</p>
+      </section>
+
+      <section class="mg-card p-lg flex-col gap-sm w-100">
+        <h3 class="color-heading text-lg m-0">{{ copy().sections.resources.label }}</h3>
+        <p class="color-text text-md lh-16 m-0">{{ copy().sections.resources.privateOmittedLabel }}</p>
+      </section>
+
+      <section class="mg-card p-lg flex-col gap-sm w-100">
+        <h3 class="color-heading text-lg m-0">{{ copy().sections.experience.label }}</h3>
+        <p class="color-text text-md lh-16 m-0">{{ copy().sections.experience.privateOmittedLabel }}</p>
+      </section>
+    }
+
+    @if (copy().spyReport; as spy) {
+      <section class="mg-card p-lg flex-col gap-md w-100">
+        <div class="flex-col gap-xs">
+          <p class="text-sm font-bold color-accent m-0">{{ copy().sections.spy.label }}</p>
+          <h2 class="color-heading text-xl m-0">{{ spy.title }}</h2>
+          <p class="color-text text-md lh-16 m-0">{{ spy.summary }}</p>
+        </div>
+        <p class="color-text text-md lh-16 m-0">{{ spy.emptyStates.noVisibleData }}</p>
+        <p class="color-text text-md lh-16 m-0">{{ spy.privateDetailsOmittedLabel }}</p>
+      </section>
+    }
+
+    @if (copy().shell; as shell) {
+      <section class="mg-card p-lg flex-col gap-sm w-100">
+        <h3 class="color-heading text-lg m-0">{{ copy().sections.participants.label }}</h3>
+        <div class="flex-col gap-xs">
+          @for (participant of shell.participants; track participant.displayName + ':' + $index) {
+            <div class="flex-row align-center justify-between gap-md">
+              <span class="color-heading font-bold">{{ participant.displayName }}</span>
+              @if (participant.sideLabel) {
+                <span class="color-text text-sm">{{ participant.sideLabel }}</span>
+              }
+            </div>
+          }
+        </div>
+      </section>
+    }
+
+    <section class="mg-card p-lg flex-col gap-sm w-100">
+      <h3 class="color-heading text-lg m-0">{{ copy().sections.publicNotice.title }}</h3>
+      <p class="color-text text-md lh-16 m-0">{{ copy().sections.publicNotice.text }}</p>
+    </section>
+  }
+</div>

@@ -5,6 +5,9 @@ import { GamePageSummaryRow } from '../../../core/interfaces/game-page-summary-r
 import { GamePageHeader } from '../../../shared/game-page-header/game-page-header';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { ReportDetailSections } from '../../../game/pages/reports/report-detail-sections';
+import { PublicReportDetailV2 } from '../../../core/domain/reports/report-detail.model';
+import { isPublicPvpReportDetail } from '../../../core/utils/pvp-report-domain-context';
+import { PvpPublicReportDomainContent } from '../../components/pvp-public-report-domain-content/pvp-public-report-domain-content';
 import { PublicReportPageState } from './public-report-page.state';
 
 @Component({
@@ -14,6 +17,7 @@ import { PublicReportPageState } from './public-report-page.state';
     ButtonModule,
     GamePageHeader,
     LoadingOverlay,
+    PvpPublicReportDomainContent,
     ReportDetailSections,
     RouterLink,
   ],
@@ -27,11 +31,41 @@ export class PublicReportPage implements OnInit {
 
   readonly headerSummaryRows = computed<readonly GamePageSummaryRow[]>(() => {
     const copy = this.page.copy();
+    const pvpCopy = this.page.pvpPublicReportCopy();
+
+    if (pvpCopy?.access.isAvailable) {
+      return pvpCopy.shell && copy
+        ? [
+            {
+              key: 'reportType',
+              label: copy.reportShell.meta.eventTypeLabel,
+              value: pvpCopy.shell.reportTypeLabel,
+            },
+            {
+              key: 'source',
+              label: copy.reportShell.meta.sourceLabel,
+              value: pvpCopy.shell.sourceLabel,
+            },
+            {
+              key: 'createdAt',
+              label: copy.reportShell.meta.reportDateLabel,
+              value: pvpCopy.shell.createdAt,
+            },
+          ]
+        : [];
+    }
+
     const detail = this.page.detail();
+
+    if (pvpCopy && (!detail?.report || isPublicPvpReportDetail(detail))) {
+      return [];
+    }
 
     if (!copy || !detail?.report) {
       return [];
     }
+
+    const sourceValue = detail.report.sourceLabel;
 
     return [
       {
@@ -39,11 +73,11 @@ export class PublicReportPage implements OnInit {
         label: copy.reportShell.meta.eventTypeLabel,
         value: detail.report.reportTypeLabel,
       },
-      ...(detail.report.sourceLabel
+      ...(sourceValue
         ? [{
           key: 'source',
           label: copy.reportShell.meta.sourceLabel,
-          value: detail.report.sourceLabel,
+          value: sourceValue,
         }]
         : []),
       {
@@ -60,5 +94,9 @@ export class PublicReportPage implements OnInit {
     if (publicToken) {
       this.page.loadData(publicToken);
     }
+  }
+
+  isPublicPvpDetail(detail: PublicReportDetailV2 | null): boolean {
+    return !!detail?.report && isPublicPvpReportDetail(detail);
   }
 }

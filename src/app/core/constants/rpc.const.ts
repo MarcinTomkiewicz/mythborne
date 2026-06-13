@@ -51,6 +51,7 @@ export const RPC = {
   get_player_armory_page_context: 'get_player_armory_page_context',
   get_player_topbar_display_contract: 'get_player_topbar_display_contract',
   get_player_exploration_difficulty_copy: 'get_player_exploration_difficulty_copy',
+  get_player_exploration_runtime_copy: 'get_player_exploration_runtime_copy',
   get_player_estate_page_context: 'get_player_estate_page_context',
   get_auction_page_copy: 'get_auction_page_copy',
   get_auction_page_context: 'get_auction_page_context',
