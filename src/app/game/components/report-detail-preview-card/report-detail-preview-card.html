@@ -10,6 +10,25 @@
       <p class="small-caps color-muted text-xs m-0">{{ label }}</p>
     }
   </section>
+} @else if (pvpPrivateReportDetail(); as pvpDetail) {
+  @if (pvpPrivateReportCopy(); as pvpCopy) {
+    <div class="flex-col gap-lg w-100">
+      <app-pvp-report-domain-content
+        [detail]="pvpDetail"
+        [copy]="pvpCopy"
+        [activeHeroId]="activeHeroId()"
+      />
+
+      @if (pvpReportActions(); as actions) {
+        <app-report-handoff-actions
+          [actions]="actions"
+          [heading]="label() ?? ''"
+          [directReportLabel]="directReportLabel()"
+          [publicReportCopyLabel]="publicReportCopyLabel()"
+        />
+      }
+    </div>
+  }
 } @else if (pvpReportActions(); as actions) {
   <app-report-handoff-actions
     [actions]="actions"

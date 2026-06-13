@@ -1,4 +1,6 @@
-import { Component, input, output } from '@angular/core';
+import { Component, effect, input, output, signal } from '@angular/core';
+import { CombatSurfaceDecisionDeadline } from '../../../core/domain/combat/combat-display.model';
+import { CombatSourcePresentation } from '../../../core/domain/combat/combat-source-presentation.model';
 import {
   pvpActiveActionAriaLabel,
   pvpActiveActionKindLabel,
@@ -6,17 +8,29 @@ import {
   pvpActiveActionTitle,
   PvpActiveActionFactRow,
 } from '../../../core/domain/pvp/pvp-active-action-display.mapper';
+import { pvpCombatSourcePresentation } from '../../../core/domain/pvp/pvp-combat-source-presentation.mapper';
 import { PvpActionCopy } from '../../../core/domain/pvp/pvp-action-copy.model';
 import { ActivePvpActionOffer } from '../../../core/domain/pvp/pvp.model';
 import type { PendingTimerDisplay } from '../../../core/types/pending-timer.types';
 import { formatPendingDurationLabel } from '../../../core/utils/pending-timer';
 import { GameBar } from '../../../shared/game-bar/game-bar';
 import { PendingTimerOracle } from '../../../shared/pending-timer-oracle/pending-timer-oracle';
+import {
+  isManualPvpCombatOffer,
+  pvpCombatSourceRef,
+} from '../../features/pvp/utils/pvp-combat-source-ref';
+import { MinigameHost } from '../minigame-host/minigame-host';
+import {
+  MINIGAME_KEY,
+  MinigameCompletionEvent,
+  MinigameSourceRef,
+} from '../minigame-host/minigame-host.model';
+import { ReportDetailPreviewCard } from '../report-detail-preview-card/report-detail-preview-card';
 
 @Component({
   selector: 'app-pvp-active-action-panel',
   standalone: true,
-  imports: [GameBar, PendingTimerOracle],
+  imports: [GameBar, MinigameHost, PendingTimerOracle, ReportDetailPreviewCard],
   host: { class: 'd-contents' },
   templateUrl: './pvp-active-action-panel.html',
 })
@@ -27,7 +41,57 @@ export class PvpActiveActionPanel {
   readonly factRows = input.required<readonly PvpActiveActionFactRow[]>();
   readonly isLoading = input(false);
   readonly isTimerReady = input(false);
+  readonly renderCombatHost = input(false);
   readonly refresh = output<void>();
+  readonly combatCompletion = signal<MinigameCompletionEvent | null>(null);
+  private readonly completedActionId = signal<string | null>(null);
+
+  readonly minigameKey = MINIGAME_KEY.combat;
+
+  constructor() {
+    effect(() => {
+      const offerId = this.offer()?.pvpActionId ?? null;
+      const completedActionId = this.completedActionId();
+
+      if (offerId && completedActionId && offerId !== completedActionId) {
+        this.combatCompletion.set(null);
+        this.completedActionId.set(null);
+      }
+    });
+  }
+
+  acceptCombatCompletion(event: MinigameCompletionEvent): void {
+    this.combatCompletion.set(event);
+    this.completedActionId.set(this.offer()?.pvpActionId ?? null);
+    this.refresh.emit();
+  }
+
+  combatSourceRef(active: ActivePvpActionOffer): MinigameSourceRef | null {
+    return pvpCombatSourceRef(active);
+  }
+
+  combatSourcePresentation(): CombatSourcePresentation {
+    return pvpCombatSourcePresentation(this.copy());
+  }
+
+  combatDecisionDeadline(active: ActivePvpActionOffer): CombatSurfaceDecisionDeadline | null {
+    if (!this.isManualAttackWindow(active)) {
+      return null;
+    }
+
+    const timer = this.timer();
+
+    return {
+      label: this.copy().common.labels.decisionTime,
+      countdownLabel: timer.countdownLabel,
+      progressPercent: timer.isCoherent ? Math.max(0, 100 - timer.progressPercent) : 0,
+      isUpdating: this.isLoading() || timer.isReady,
+    };
+  }
+
+  isManualAttackWindow(active: ActivePvpActionOffer): boolean {
+    return isManualPvpCombatOffer(active);
+  }
 
   spyRemainingLabel(active: ActivePvpActionOffer): string {
     const timer = this.timer();

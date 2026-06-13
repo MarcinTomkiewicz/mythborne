@@ -1,19 +1,34 @@
 <div class="flex-col gap-lg min-w-0">
+  <app-loading-overlay [visible]="pvpAction.isLoading()" label="" />
+
   @if (pvpAction.copy(); as actionCopy) {
     @if (completion()?.reportId) {
-      <div class="flex-row-start-center">
-        <p-button
-          [label]="actionCopy.common.actionLabels.backToVicinity"
-          icon="pi pi-arrow-left"
-          severity="secondary"
-          routerLink="/game/vicinity"
-        />
-      </div>
-
       <app-combat-report-handoff-card [completion]="completion()" />
+    } @else if (pvpAction.combatSourceRef(); as source) {
+      <section class="mg-card p-lg flex-col gap-sm w-100">
+        <p class="small-caps color-muted text-xs mb-0">{{ actionCopy.common.labels.combat }}</p>
+        <h1 class="color-heading text-xl mb-0">{{ actionCopy.common.labels.heroCombat }}</h1>
+        <p class="color-text text-md lh-16 mb-0">{{ actionCopy.combatHandoff.header.description }}</p>
+      </section>
 
+      <app-minigame-host
+        [minigameKey]="minigameKey"
+        [sourceRef]="source"
+        [contextTitle]="actionCopy.common.labels.heroCombat"
+        [sourcePresentation]="combatSourcePresentation(actionCopy)"
+        [combatDecisionDeadline]="pvpAction.decisionDeadline()"
+        (completed)="acceptCompletion($event)"
+      />
+    } @else if (!pvpAction.isLoading() && !pvpAction.visibleOffer()) {
+      <section class="mg-card p-lg flex-col gap-sm w-100">
+        <p class="small-caps color-muted text-xs mb-0">{{ actionCopy.common.labels.combat }}</p>
+        <p class="warn-text mb-0">{{ actionCopy.common.emptyValues.noData }}</p>
+      </section>
+    }
+
+    @if (pvpAction.visibleOffer(); as offer) {
       <app-pvp-active-action-panel
-        [offer]="pvpAction.visibleOffer()"
+        [offer]="offer"
         [copy]="actionCopy"
         [timer]="pvpAction.timer()"
         [factRows]="pvpAction.factRows()"
@@ -21,50 +36,15 @@
         [isTimerReady]="pvpAction.isTimerReady()"
         (refresh)="refreshActivePvpOffer()"
       />
-      @if (pvpAction.error()) {
-        <p class="warn-text mb-0">{{ pvpAction.error() }}</p>
-      }
-    } @else if (sourceRef(); as source) {
-      <div class="flex-row-start-center">
-        <p-button
-          [label]="actionCopy.common.actionLabels.backToVicinity"
-          icon="pi pi-arrow-left"
-          severity="secondary"
-          routerLink="/game/vicinity"
-        />
-      </div>
-
-        <app-minigame-host
-          [minigameKey]="minigameKey"
-          [sourceRef]="source"
-          [contextTitle]="actionCopy.common.labels.heroCombat"
-          [sourcePresentation]="combatSourcePresentation(actionCopy)"
-          [combatDecisionDeadline]="pvpAction.decisionDeadline()"
-          (completed)="acceptCompletion($event)"
-        />
-
-      @if (completion(); as completed) {
-        <app-combat-report-handoff-card [completion]="completed" />
-
-        <app-pvp-active-action-panel
-          [offer]="pvpAction.visibleOffer()"
-          [copy]="actionCopy"
-          [timer]="pvpAction.timer()"
-          [factRows]="pvpAction.factRows()"
-          [isLoading]="pvpAction.isLoading()"
-          [isTimerReady]="pvpAction.isTimerReady()"
-          (refresh)="refreshActivePvpOffer()"
-        />
-        @if (pvpAction.error()) {
-          <p class="warn-text mb-0">{{ pvpAction.error() }}</p>
-        }
-      }
-    } @else {
-      <section class="mg-card p-lg flex-col gap-sm w-100">
-        <p class="small-caps color-muted text-xs mb-0">{{ actionCopy.common.labels.combat }}</p>
-        <p class="warn-text mb-0">{{ actionCopy.common.emptyValues.noData }}</p>
-      </section>
     }
+
+    @if (pvpAction.error()) {
+      <p class="warn-text mb-0">{{ pvpAction.error() }}</p>
+    }
+  } @else if (pvpAction.hasCopyLoadError()) {
+    <section class="mg-card p-lg flex-row-center-center w-100 error-text" role="alert">
+      <span class="pi pi-exclamation-triangle" aria-hidden="true"></span>
+    </section>
   } @else if (pvpAction.error()) {
     <p class="warn-text mb-0">{{ pvpAction.error() }}</p>
   }

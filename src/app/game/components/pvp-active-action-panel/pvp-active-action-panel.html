@@ -1,4 +1,29 @@
 @if (offer(); as active) {
+  @if (renderCombatHost()) {
+    @if (combatCompletion()?.reportId; as reportId) {
+      <app-report-detail-preview-card
+        [reportId]="reportId"
+        [label]="copy().common.labels.combatReport"
+        [directReportLabel]="copy().common.actionLabels.openReport"
+      />
+    } @else if (combatSourceRef(active); as source) {
+      <section class="mg-card p-lg flex-col gap-sm w-100">
+        <p class="small-caps color-muted text-xs mb-0">{{ copy().common.labels.combat }}</p>
+        <h1 class="color-heading text-xl mb-0">{{ copy().common.labels.heroCombat }}</h1>
+        <p class="color-text text-md lh-16 mb-0">{{ copy().combatHandoff.header.description }}</p>
+      </section>
+
+      <app-minigame-host
+        [minigameKey]="minigameKey"
+        [sourceRef]="source"
+        [contextTitle]="copy().common.labels.heroCombat"
+        [sourcePresentation]="combatSourcePresentation()"
+        [combatDecisionDeadline]="combatDecisionDeadline(active)"
+        (completed)="acceptCombatCompletion($event)"
+      />
+    }
+  }
+
   @if (active.isTravelPhase || active.actionKind !== 'attack' || !active.isManualWindow) {
     @if (active.actionKind === 'spy') {
       @if (!timer().isReady) {

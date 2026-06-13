@@ -8,16 +8,22 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import type { PvpPrivateReportCopy } from '../../../core/domain/pvp/pvp-private-report-copy.model';
 import type { PrivateReportDetailPage } from '../../../core/domain/reports/report-detail.model';
 import type {
   ReportDetailPreviewExplorationSourceKind,
 } from '../../../core/domain/reports/report-detail-preview.model';
 import type { ReportHandoffActionsViewModel } from '../../../core/domain/reports/report-handoff.model';
+import { GameCopyService } from '../../../core/services/game-copy/game-copy.service';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
 import { mapReportHandoffActions } from '../../../core/utils/report-handoff-actions.mapper';
 import { mapReportDetailPreviewView } from '../../../core/utils/report-detail-preview.mapper';
-import { isPvpReportDomainDetail } from '../../../core/utils/pvp-report-domain-context';
+import {
+  isPrivatePvpReportDetail,
+  isPvpReportDomainDetail,
+} from '../../../core/utils/pvp-report-domain-context';
+import { PvpReportDomainContent } from '../pvp-report-domain-content/pvp-report-domain-content';
 import { ReportHandoffActions } from '../report-handoff-actions/report-handoff-actions';
 import { ReportDetailPreviewDisplay } from './report-detail-preview-display';
 
@@ -25,6 +31,7 @@ import { ReportDetailPreviewDisplay } from './report-detail-preview-display';
   selector: 'app-report-detail-preview-card',
   standalone: true,
   imports: [
+    PvpReportDomainContent,
     ReportDetailPreviewDisplay,
     ReportHandoffActions,
   ],
@@ -34,6 +41,7 @@ import { ReportDetailPreviewDisplay } from './report-detail-preview-display';
 export class ReportDetailPreviewCard {
   private readonly activeHero = inject(ActiveHero);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly gameCopy = inject(GameCopyService);
   private readonly reports = inject(PlayerReports);
   private loadRequestId = 0;
 
@@ -43,9 +51,15 @@ export class ReportDetailPreviewCard {
   readonly publicReportCopyLabel = input<string | null>(null);
 
   readonly detail = signal<PrivateReportDetailPage | null>(null);
+  readonly pvpPrivateReportCopy = signal<PvpPrivateReportCopy | null>(null);
   readonly activeHeroId = signal<string | null>(null);
   readonly isLoading = signal(false);
   readonly hasError = signal(false);
+  readonly pvpPrivateReportDetail = computed(() => {
+    const detail = this.detail();
+
+    return detail && isPrivatePvpReportDetail(detail) ? detail : null;
+  });
 
   readonly view = computed(() => {
     const detail = this.detail();
@@ -79,6 +93,7 @@ export class ReportDetailPreviewCard {
     const requestId = ++this.loadRequestId;
 
     this.detail.set(null);
+    this.pvpPrivateReportCopy.set(null);
     this.hasError.set(false);
     this.isLoading.set(true);
 
@@ -131,6 +146,12 @@ export class ReportDetailPreviewCard {
 
           this.detail.set(detail);
           this.hasError.set(false);
+
+          if (isPrivatePvpReportDetail(detail)) {
+            this.loadPvpPrivateReportCopy(detail.access.reportId, requestId);
+            return;
+          }
+
           this.isLoading.set(false);
         },
         error: () => {
@@ -143,6 +164,37 @@ export class ReportDetailPreviewCard {
           this.isLoading.set(false);
         },
       });
+  }
+
+  private loadPvpPrivateReportCopy(
+    reportId: string,
+    requestId: number,
+  ): void {
+    this.gameCopy.getCopy('player.pvp.report.private', {
+      locale: 'pl',
+      reportId,
+    }).pipe(
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe({
+      next: (copy) => {
+        if (requestId !== this.loadRequestId || this.detail()?.access.reportId !== reportId) {
+          return;
+        }
+
+        this.pvpPrivateReportCopy.set(copy);
+        this.hasError.set(false);
+        this.isLoading.set(false);
+      },
+      error: () => {
+        if (requestId !== this.loadRequestId) {
+          return;
+        }
+
+        this.pvpPrivateReportCopy.set(null);
+        this.hasError.set(true);
+        this.isLoading.set(false);
+      },
+    });
   }
 }
 

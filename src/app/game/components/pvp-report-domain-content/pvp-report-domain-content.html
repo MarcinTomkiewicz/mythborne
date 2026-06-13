@@ -8,48 +8,41 @@
       </div>
     </section>
 
-    @if (copy.attackReport.experience.lines.length > 0) {
-      <section class="mg-card p-lg flex-col gap-sm w-100">
-        <h3 class="color-heading text-lg m-0">{{ copy.sections.experience }}</h3>
-        <div class="flex-col gap-xs">
-          @for (line of copy.attackReport.experience.lines; track trackByKey($index, line)) {
-            <p class="color-text text-md lh-16 m-0">{{ line.text }}</p>
-          }
-        </div>
-      </section>
-    }
-
-    <section class="mg-card p-lg flex-col gap-sm w-100">
-      <h3 class="color-heading text-lg m-0">{{ copy.sections.resources }}</h3>
-      <p class="color-text text-md lh-16 m-0">{{ copy.attackReport.resources.line }}</p>
-
-      @if (hasResourceRows()) {
-        <div class="grid gap-sm">
-          @for (row of copy.attackReport.resources.gainRows; track trackByKey($index, row)) {
-            <div class="flex-row align-center justify-between gap-md">
-              <span class="color-text text-sm">{{ row.label }}</span>
-              <span class="color-success font-bold">{{ row.displayValue }}</span>
-            </div>
-          }
-          @for (row of copy.attackReport.resources.lossRows; track trackByKey($index, row)) {
-            <div class="flex-row align-center justify-between gap-md">
-              <span class="color-text text-sm">{{ row.label }}</span>
-              <span class="color-danger font-bold">{{ row.displayValue }}</span>
-            </div>
-          }
-        </div>
-      }
-    </section>
-
-    <section class="mg-card p-lg flex-col gap-sm w-100">
-      <h3 class="color-heading text-lg m-0">{{ copy.sections.glory }}</h3>
-      <p class="color-text text-md lh-16 m-0">
-        <app-rich-text [fragments]="copy.attackReport.glory.lineRichText" />
-      </p>
-    </section>
-
     @if (combatStage(); as stage) {
       <app-combat-stage [stage]="stage" />
+    }
+
+    @if (
+      copy.attackReport.experience.lines.length > 0 ||
+      copy.attackReport.resources.line ||
+      copy.attackReport.glory.lineRichText.length > 0
+    ) {
+      <section class="mg-card p-lg flex-col gap-md w-100">
+        @if (copy.attackReport.experience.lines.length > 0) {
+          <div class="flex-col gap-xs">
+            <h3 class="color-heading text-lg m-0">{{ copy.sections.experience }}</h3>
+            @for (line of copy.attackReport.experience.lines; track trackByKey($index, line)) {
+              <p class="color-text text-md lh-16 m-0">{{ line.text }}</p>
+            }
+          </div>
+        }
+
+        @if (copy.attackReport.resources.line) {
+          <div class="flex-col gap-xs">
+            <h3 class="color-heading text-lg m-0">{{ copy.sections.resources }}</h3>
+            <p class="color-text text-md lh-16 m-0">{{ copy.attackReport.resources.line }}</p>
+          </div>
+        }
+
+        @if (copy.attackReport.glory.lineRichText.length > 0) {
+          <div class="flex-col gap-xs">
+            <h3 class="color-heading text-lg m-0">{{ copy.sections.glory }}</h3>
+            <p class="color-text text-md lh-16 m-0">
+              <app-rich-text [fragments]="copy.attackReport.glory.lineRichText" />
+            </p>
+          </div>
+        }
+      </section>
     }
   }
 

@@ -57,12 +57,6 @@ export class PvpReportDomainContent {
     })(),
   );
 
-  readonly hasResourceRows = computed(() => {
-    const resources = this.attackCopy()?.attackReport.resources;
-
-    return Boolean(resources && (resources.gainRows.length > 0 || resources.lossRows.length > 0));
-  });
-
   trackByKey(index: number, item: { key: string }): string {
     return `${item.key}:${index}`;
   }
