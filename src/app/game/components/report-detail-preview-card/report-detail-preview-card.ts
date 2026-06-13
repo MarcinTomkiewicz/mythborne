@@ -12,15 +12,22 @@ import type { PrivateReportDetailPage } from '../../../core/domain/reports/repor
 import type {
   ReportDetailPreviewExplorationSourceKind,
 } from '../../../core/domain/reports/report-detail-preview.model';
+import type { ReportHandoffActionsViewModel } from '../../../core/domain/reports/report-handoff.model';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
+import { mapReportHandoffActions } from '../../../core/utils/report-handoff-actions.mapper';
 import { mapReportDetailPreviewView } from '../../../core/utils/report-detail-preview.mapper';
+import { isPvpReportDomainDetail } from '../../../core/utils/pvp-report-domain-context';
+import { ReportHandoffActions } from '../report-handoff-actions/report-handoff-actions';
 import { ReportDetailPreviewDisplay } from './report-detail-preview-display';
 
 @Component({
   selector: 'app-report-detail-preview-card',
   standalone: true,
-  imports: [ReportDetailPreviewDisplay],
+  imports: [
+    ReportDetailPreviewDisplay,
+    ReportHandoffActions,
+  ],
   templateUrl: './report-detail-preview-card.html',
   host: { class: 'd-block w-100' },
 })
@@ -31,7 +38,7 @@ export class ReportDetailPreviewCard {
   private loadRequestId = 0;
 
   readonly reportId = input.required<string>();
-  readonly label = input('Raport');
+  readonly label = input<string | null>(null);
   readonly directReportLabel = input<string | null>(null);
   readonly publicReportCopyLabel = input<string | null>(null);
 
@@ -43,11 +50,21 @@ export class ReportDetailPreviewCard {
   readonly view = computed(() => {
     const detail = this.detail();
 
-    return detail
+    return detail && !isPvpReportDomainDetail(detail)
       ? mapReportDetailPreviewView({
           detail,
           activeHeroId: this.activeHeroId(),
           showRewardResult: true,
+        })
+      : null;
+  });
+  readonly pvpReportActions = computed<ReportHandoffActionsViewModel | null>(() => {
+    const detail = this.detail();
+
+    return detail && isPvpReportDomainDetail(detail)
+      ? mapReportHandoffActions({
+          reportId: detail.access.reportId,
+          publicToken: detail.report.publicToken ?? null,
         })
       : null;
   });

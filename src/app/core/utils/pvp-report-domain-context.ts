@@ -16,6 +16,10 @@ export function isPrivatePvpReportDetail(
     context.missingContextReason === null;
 }
 
+export function isPvpReportDomainDetail(detail: ReportDetailV2): boolean {
+  return detail.domainContextJson.reportDomainKey === 'pvp';
+}
+
 export function isPrivatePvpAttackReportDetail(
   detail: ReportDetailV2,
 ): detail is PrivateReportDetailPage {
