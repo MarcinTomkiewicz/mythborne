@@ -1,5 +1,4 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { CombatReportHandoffCard } from '../../components/combat/combat-report-handoff-card';
 import { PvpActiveActionPanel } from '../../components/pvp-active-action-panel/pvp-active-action-panel';
 import { MinigameHost } from '../../components/minigame-host/minigame-host';
 import {
@@ -7,16 +6,17 @@ import {
   MinigameCompletionEvent,
 } from '../../components/minigame-host/minigame-host.model';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import { ReportDetailPreviewCard } from '../../components/report-detail-preview-card/report-detail-preview-card';
 import { PvpCombatActionState } from './pvp-combat-action.state';
 
 @Component({
   selector: 'app-combat-page',
   standalone: true,
   imports: [
-    CombatReportHandoffCard,
     LoadingOverlay,
     MinigameHost,
     PvpActiveActionPanel,
+    ReportDetailPreviewCard,
   ],
   providers: [PvpCombatActionState],
   templateUrl: './combat-page.html',

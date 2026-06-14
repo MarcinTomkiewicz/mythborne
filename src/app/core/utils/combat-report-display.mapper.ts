@@ -1,9 +1,10 @@
 import { CombatResultDetailReadModel } from '../domain/combat/combat-live.model';
 import { CombatStageViewModel } from '../domain/combat/combat-stage.model';
+import type { PvpCombatContextPresentation } from '../domain/pvp/pvp-combat-context.model';
 import {
-  PvpPrivateAttackReportAvailableCopy,
-} from '../domain/pvp/pvp-private-report-copy.model';
-import { ReportDetailCore } from '../domain/reports/report-detail.model';
+  ReportDetailCore,
+  ReportShellContextV1,
+} from '../domain/reports/report-detail.model';
 import { ReportCombatSection } from '../domain/reports/report-section.model';
 import type { Json } from '../types/database.types';
 import { mapCompletedCombatStageView } from './combat-stage-display.mapper';
@@ -13,15 +14,16 @@ import {
   mapCompletedCombatParticipants,
 } from './combat-report-participant.mapper';
 
-export function mapPrivatePvpAttackCombatStageView(input: {
+export function mapPvpAttackCombatStageView(input: {
   report: ReportDetailCore | null;
-  copy: PvpPrivateAttackReportAvailableCopy;
+  shell: ReportShellContextV1;
   combatResultId?: string | null;
   activeHeroId?: string | null;
   activeHeroPortraitSrc?: string | null;
+  pvpCombatContext?: PvpCombatContextPresentation | null;
 },
 ): CombatStageViewModel | null {
-  const { report, copy } = input;
+  const { report, shell } = input;
   const section = presentReportCombatSection(report);
   const detail = report && section && input.combatResultId
     ? combatDetailFromCanonicalReport(
@@ -30,7 +32,6 @@ export function mapPrivatePvpAttackCombatStageView(input: {
         input.combatResultId,
       )
     : null;
-  const attack = copy.attackReport;
 
   if (!detail) {
     return null;
@@ -45,19 +46,19 @@ export function mapPrivatePvpAttackCombatStageView(input: {
   const pair = combatParticipantPair(participants);
 
   const stage = mapCompletedCombatStageView({
-    ariaLabel: copy.shell.title,
+    ariaLabel: shell.title,
     leftParticipant: pair.left,
     rightParticipant: pair.right,
     emptyParticipants: {
-      leftTitle: copy.shell.title,
-      leftText: copy.shell.summary,
-      rightTitle: copy.shell.title,
-      rightText: copy.shell.summary,
+      leftTitle: shell.title,
+      leftText: shell.summary,
+      rightTitle: shell.title,
+      rightText: shell.summary,
     },
     log: {
-      title: copy.sections.combat,
-      subtitle: copy.shell.sourceLabel,
-      emptyText: attack.result.narrativePlainText,
+      title: shell.eventType.label,
+      subtitle: shell.source.label,
+      emptyText: shell.summary ?? '',
       groups: mapCompletedCombatLogGroups({
         detail,
         liveEvents: [],
@@ -70,7 +71,7 @@ export function mapPrivatePvpAttackCombatStageView(input: {
 
   return {
     ...stage,
-    centerPanel: pvpPrivateAttackCombatCenterPanel(copy),
+    centerPanel: pvpPrivateAttackCombatCenterPanel(input.pvpCombatContext ?? null),
   };
 }
 
@@ -149,15 +150,21 @@ function combatDetailFromCanonicalReport(
 }
 
 function pvpPrivateAttackCombatCenterPanel(
-  copy: PvpPrivateAttackReportAvailableCopy,
+  pvpCombatContext: PvpCombatContextPresentation | null,
 ): CombatStageViewModel['centerPanel'] {
-  return {
-    state: 'report_result',
-    contextLabel: copy.sections.result,
-    title: copy.attackReport.result.title,
-    helperText: copy.attackReport.result.narrativePlainText,
-    detailText: null,
-  };
+  const richTextRows = pvpCombatContext?.participantEffects
+    .map((effect) => effect.summaryRichText) ?? [];
+
+  return richTextRows.length
+    ? {
+        state: 'report_result',
+        contextLabel: null,
+        title: null,
+        helperText: null,
+        detailText: null,
+        richTextRows,
+      }
+    : null;
 }
 
 function canonicalReportCombatCenterPanel(

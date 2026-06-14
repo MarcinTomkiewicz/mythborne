@@ -19,13 +19,11 @@ import type {
 import { uniqueInOrder } from './collection';
 import { mapNonPvpCanonicalReportCombatStageView } from './combat-report-display.mapper';
 import { mapReportHandoffActions } from './report-handoff-actions.mapper';
-import { mapReportPvpRewardPreview } from './report-pvp-reward-preview.mapper';
 import { presentReportSection } from './report-section-common.mapper';
 
 export function mapReportDetailPreviewView(input: {
   detail: PrivateReportDetailPage;
   activeHeroId: string | null;
-  showRewardResult: boolean;
 }): ReportDetailPreviewView {
   if (input.detail.domainContextJson.reportDomainKey === 'pvp') {
     throw new Error(
@@ -66,16 +64,12 @@ export function mapReportDetailPreviewView(input: {
     combatStage,
     narrativeLines: isExplorationSource ? [] : reportNarrativeLines(report),
     sections: isExplorationSource ? [] : reportPreviewSections(report),
-    rewardResult: !isExplorationSource && input.showRewardResult
-      ? requiredReportRewardResult(report)
-      : null,
     actions: mapReportHandoffActions({
       reportId: input.detail.access.reportId,
       publicToken: report.publicToken ?? null,
     }),
   };
 }
-
 function reportExplorationSourceKind(
   report: ReportDetailCore | null,
 ): ReportDetailPreviewExplorationSourceKind | null {
@@ -277,16 +271,4 @@ function reportPreviewSections(report: ReportDetailCore | null): readonly Report
   ];
 
   return sections.filter((section): section is ReportDetailPreviewSection => section !== null);
-}
-
-function requiredReportRewardResult(report: ReportDetailCore | null) {
-  const section = presentReportSection(report?.rewardSectionJson);
-
-  if (!section) {
-    throw new Error(
-      'get_report_detail.report.rewardSectionJson is required for combat reward preview.',
-    );
-  }
-
-  return mapReportPvpRewardPreview(section);
 }
