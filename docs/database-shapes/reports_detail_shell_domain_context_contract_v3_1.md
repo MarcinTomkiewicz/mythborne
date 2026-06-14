@@ -1,9 +1,9 @@
-# Mythsworn Reports - Report Detail Shell + Domain Context Contract v3
+# Mythsworn Reports - Report Detail Shell + Domain Context Contract v3.1
 
-Status: DB/RPC contract after report detail shell/domain context v2 and Reports copy v3 work  
+Status: DB/RPC contract after report detail shell/domain context v2, Reports copy v3 and pvp.result read-model exposure work  
 Audience: Codex, Reviewer, Migrator  
-Scope: private/public report detail shell, domain-context routing, parent/child contextual report handling, report content snapshot usage, Reports copy v3 integration  
-Out of scope: Reports Center list/root context, source-domain renderer implementation, source-domain result narrative/reward/effect copy
+Scope: private/public report detail shell, domain-context routing, parent/child contextual report handling, report content snapshot usage, Reports copy v3 integration, and pvp.result snapshot pass-through for PvP combat reports  
+Out of scope: Reports Center list/root context, source-domain renderer implementation, source-domain result narrative/reward/effect copy authoring
 
 ---
 
@@ -16,6 +16,7 @@ Report detail renders:
 1. Report shell/header/actions owned by Reports.
 2. Domain content owned by the source-domain renderer, selected using `domainContextJson`.
 3. Existing persisted report snapshot content when domain private reads are not allowed, especially in public reports.
+4. For PvP combat reports, the already-built source-domain `pvp.result` snapshot exposed as `domainContextJson.pvpResult`.
 
 Reports copy is now locale-backed:
 
@@ -31,6 +32,8 @@ contractVersion: 'report_page_copy_v3'
 
 The copy RPC covers Reports Center and thin report shell only. It must not duplicate Exploration/PvP/Combat/Reward/Spy/Argonautics result narratives.
 
+PvP combat result text is owned by `pvp.result`, not Reports copy and not legacy PvP report copy. Report detail only passes the `pvpResult` snapshot through to frontend.
+
 ---
 
 ## 1. Hard rules for Codex / Frontend
@@ -45,6 +48,9 @@ The copy RPC covers Reports Center and thin report shell only. It must not dupli
 - Do not use legacy `detail.sections.*` copy to create a new report detail UI.
 - Keep private `access.isUnread/readAt` as logic state only; do not show read state in report detail meta.
 - Use `get_report_page_copy(locale).reportShell` for shell labels/actions.
+- For PvP combat reports, use `domainContextJson.pvpResult` as the final PvP result source when present.
+- Do not use legacy `get_pvp_report_copy` / `get_public_pvp_report_copy` fields as the primary final PvP result source once `pvpResult` is exposed.
+- Do not direct-read `pvp_attack_results` from Angular to obtain `pvpResult`.
 - Generated Supabase types will only say `jsonb`; this document is the authoritative recursive JSON contract.
 
 ---
@@ -53,15 +59,26 @@ The copy RPC covers Reports Center and thin report shell only. It must not dupli
 
 | RPC | Return | Grants | Purpose |
 |---|---|---|---|
-| `get_report_detail(p_hero_id uuid, p_report_id uuid)` | `jsonb` | `authenticated` | Private report detail. Returns private access state, `domainContextJson`, `reportShellContextJson` and report content snapshot. |
-| `get_public_report_detail(p_public_token text)` | `jsonb` | `anon`, `authenticated` | Public report detail. Returns public-safe `domainContextJson`, `reportShellContextJson`, redacted source IDs and report content snapshot. |
+| `get_report_detail(p_hero_id uuid, p_report_id uuid)` | `jsonb` | `authenticated` | Private report detail wrapper. Calls `get_report_detail_legacy_v1(...)`, then attaches `domainContextJson.pvpResult` for PvP combat reports. |
+| `get_public_report_detail(p_public_token text)` | `jsonb` | `anon`, `authenticated` | Public report detail wrapper. Calls `get_public_report_detail_legacy_v1(...)`, then attaches public-safe `domainContextJson.pvpResult.public.neutral` for public PvP combat reports. |
 | `get_report_page_copy(p_locale text default 'pl')` | `jsonb` | `anon`, `authenticated` | Locale-backed DB copy for Reports Center and report shell. Unsupported locales fall back to `en`. |
-| `build_report_domain_context_json(p_report_id uuid, p_public_safe boolean default false)` | `jsonb` | no frontend grants | Internal helper used by detail RPCs only. |
-| `build_report_shell_context_json(p_report_id uuid, p_public_safe boolean default false)` | `jsonb` | no frontend grants | Internal helper used by detail RPCs only. |
+| `build_report_domain_context_json(p_report_id uuid, p_public_safe boolean default false)` | `jsonb` | no frontend grants | Internal helper used by legacy detail implementations only. |
+| `build_report_shell_context_json(p_report_id uuid, p_public_safe boolean default false)` | `jsonb` | no frontend grants | Internal helper used by legacy detail implementations only. |
+| `attach_pvp_result_to_report_detail_payload(p_payload jsonb, p_report_id uuid, p_public_token text)` | `jsonb` | no frontend grants | Internal read-model helper. Attaches `pvp_attack_results.report_context_json.pvpResult` to report detail payload `domainContextJson` for PvP combat reports. |
+| `get_report_detail_legacy_v1(p_hero_id uuid, p_report_id uuid)` | `jsonb` | no frontend use | Legacy internal implementation retained under wrapper. Do not call from frontend. |
+| `get_public_report_detail_legacy_v1(p_public_token text)` | `jsonb` | no frontend use | Legacy internal implementation retained under wrapper. Do not call from frontend. |
 
-Codex must not call internal helpers directly.
+Codex must not call internal helpers or legacy implementations directly.
 
----
+The public wrapper names and signatures did not change, so frontend still calls the same RPC names:
+
+```ts
+get_report_detail(p_hero_id, p_report_id)
+get_public_report_detail(p_public_token)
+```
+
+The payload shape is extended for PvP combat reports by `domainContextJson.pvpResult`.
+
 
 ## 3. Private report detail RPC
 
@@ -524,6 +541,10 @@ interface ReportDomainContextV1 {
   spy: SpyReportDomainContext | null;
   combat: CombatReportDomainContext | null;
 
+  // Present for PvP combat reports when the source pvp_attack_result has a pvp.result snapshot.
+  // Public detail must render only pvpResult.public.neutral.
+  pvpResult?: PvpResultSnapshotV1 | null;
+
   missingContextReason: MissingContextReason | null;
 }
 ```
@@ -656,6 +677,127 @@ Rules:
 - `combat.isChildCombatReport=true` means the low-level combat report has a contextual parent.
 - Child combat reports should not be promoted as primary Reports Center list rows.
 
+
+### 14.1 PvP result snapshot extension
+
+For PvP combat reports, report detail now exposes the source-domain `pvp.result` snapshot under:
+
+```ts
+payload.domainContextJson.pvpResult
+```
+
+This snapshot is copied from:
+
+```text
+pvp_attack_results.report_context_json.pvpResult
+```
+
+by the internal helper `attach_pvp_result_to_report_detail_payload(...)`. Frontend must not direct-read `pvp_attack_results`.
+
+```ts
+interface PvpResultSnapshotV1 {
+  contractKey: 'pvp_result_snapshot';
+  contractVersion: 'pvp_result_snapshot_v1';
+  sourceOwner: 'pvp.result';
+  refreshedAt: string;
+  requestId: string;
+
+  private: {
+    attacker: PvpResultSummaryV1;
+    defender: PvpResultSummaryV1;
+  };
+
+  public: {
+    neutral: PvpResultSummaryV1;
+    includesGlory: false;
+    glory: null;
+  };
+
+  legacy: {
+    reportCopyRpcsDeprecated: true;
+    deprecatedPrivateReportCopyRpc: 'get_pvp_report_copy';
+    deprecatedPublicReportCopyRpc: 'get_public_pvp_report_copy';
+    genericCombatSectionIsDetailOnly: true;
+  };
+}
+
+interface PvpResultSummaryV1 {
+  contractKey: 'pvp_result_summary';
+  contractVersion: 'pvp_result_summary_v1';
+  sourceOwner: 'pvp.result';
+
+  locale: 'pl';
+  outcomeKey: 'attacker_victory' | 'defender_victory' | 'draw';
+  perspective: 'attacker' | 'defender' | 'neutral';
+
+  title: string;
+  summaryPlainText: string;
+  summaryRichText: RichTextFragment[];
+
+  includesGlory: boolean;
+  glorySentence: PvpResultGlorySentenceV1 | null;
+
+  technicalContext: {
+    pvpAttackResultId: string;
+    combatResultId: string;
+    attackerHeroId: string;
+    defenderHeroId: string;
+  };
+}
+
+interface PvpResultGlorySentenceV1 {
+  contractKey: 'pvp_result_glory_sentence';
+  contractVersion: 'pvp_result_glory_sentence_v1';
+  messageKind: string;
+  plainText: string;
+  richText: RichTextFragment[];
+}
+
+interface RichTextFragment {
+  kind: 'text' | 'value';
+  text: string;
+  tone?: 'heading' | 'info' | 'warn' | 'success' | 'danger' | 'muted';
+}
+```
+
+Private rendering rule:
+
+```ts
+const pvpResult = payload.domainContextJson.pvpResult;
+
+if (activeHeroId === pvpResult.private.attacker.technicalContext.attackerHeroId) {
+  render(pvpResult.private.attacker.title, pvpResult.private.attacker.summaryRichText);
+} else if (activeHeroId === pvpResult.private.defender.technicalContext.defenderHeroId) {
+  render(pvpResult.private.defender.title, pvpResult.private.defender.summaryRichText);
+} else {
+  render(pvpResult.public.neutral.title, pvpResult.public.neutral.summaryRichText);
+}
+```
+
+Public rendering rule:
+
+```ts
+render(
+  payload.domainContextJson.pvpResult.public.neutral.title,
+  payload.domainContextJson.pvpResult.public.neutral.summaryRichText,
+);
+```
+
+Public/neutral perspective must not render Chwała:
+
+```ts
+payload.domainContextJson.pvpResult.public.includesGlory === false
+payload.domainContextJson.pvpResult.public.glory === null
+payload.domainContextJson.pvpResult.public.neutral.includesGlory === false
+```
+
+If `pvpResult` is present, it is the source of the final PvP result summary. Do not use legacy fields such as `report.title`, `report.summary`, `get_pvp_report_copy(...).experienceLines`, `resourceLine`, or `gloryLine` as the primary final PvP result.
+
+`payload.report.combatSectionJson` remains the combat-log/detail source. It is not the owner of PvP result/reward/Chwała copy.
+
+PvP spy reports are unchanged by this extension. They are not expected to have `domainContextJson.pvpResult`.
+
+
 ---
 
 ## 15. Missing context reason
@@ -707,6 +849,7 @@ Codex should:
 - use `get_report_page_copy(locale)` v3 keys for report shell labels/actions;
 - use `get_report_detail(...)` and `get_public_report_detail(...)` v2;
 - use `domainContextJson` to select source-domain renderer/report mode;
+- for PvP combat reports, render final result summary from `domainContextJson.pvpResult`;
 - keep report shell separate from source-domain content;
 - keep private read state as logic state, not important visible shell meta;
 - redirect or link from child combat reports to parent contextual reports where UI requires contextual detail;
@@ -715,15 +858,29 @@ Codex should:
 Codex should not:
 
 - edit or regenerate generated database types unless explicitly asked;
-- direct-read source tables;
-- call internal helper `build_report_domain_context_json(...)`;
+- direct-read source tables, including `pvp_attack_results`;
+- call internal helpers such as `build_report_domain_context_json(...)` or `attach_pvp_result_to_report_detail_payload(...)`;
 - create a generic report-section renderer;
 - create one bespoke component per report type;
 - add local Polish fallback copy for domain content;
+- reconstruct PvP result from legacy report copy fields when `pvpResult` is present;
 - use legacy `report.reportTypeLabel`, `report.title`, `report.summary`, or `report.sourceLabel` as shell/header source.
+
 
 ---
 
-## 18. Generated types note
+## 18. Verification status after pvp.result exposure
+
+Latest DB checks confirmed:
+
+- source `pvp_attack_results.report_context_json.pvpResult` snapshots exist and are valid for 50/50 checked PvP attack results;
+- `attach_pvp_result_to_report_detail_payload(...)` attaches `pvp_result_snapshot_v1` with private attacker, private defender and public neutral summaries;
+- `get_public_report_detail(...)` exposes `pvpResult.public.neutral` for a public PvP combat sample;
+- 50/50 checked `pvp_combat` reports link to `pvp_attack_results` rows that contain `pvp_result_snapshot_v1`;
+- `pvp_spy` reports are not expected to link to `pvp_attack_results` and are not part of this `pvpResult` extension.
+
+The old broad link check that included `pvp_spy` reports can return a partial diagnostic; use the combat-only check for this contract.
+
+## 19. Generated types note
 
 The public RPCs return `jsonb`, so generated types will not describe recursive JSON payloads. Regenerate generated types after signature changes, but use this document as the authoritative recursive detail shell/domain context contract.
