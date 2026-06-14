@@ -1,4 +1,5 @@
 import type { StatCardRow } from '../../types/stat-card.types';
+import type { RichTextFragment } from '../rich-text/rich-text.model';
 
 export type CombatDisplayValueTone = 'danger' | 'golden' | 'info' | 'success' | 'muted';
 export type CombatDisplayBadgeTone = 'success' | 'danger' | 'warn' | 'muted' | 'golden';
@@ -92,6 +93,7 @@ export interface CombatSurfaceCenterPanel {
   title: string | null;
   helperText: string | null;
   detailText?: string | null;
+  richTextRows?: readonly (readonly RichTextFragment[])[];
   primaryAction?: CombatSurfaceAction | null;
   secondaryAction?: CombatSurfaceAction | null;
   footerAction?: CombatSurfaceAction | null;

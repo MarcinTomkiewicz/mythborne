@@ -43,6 +43,7 @@ export function mapLiveCombatStageView(input: CombatLiveStageViewInput): CombatS
       : null,
     centerPanel: mapLiveCombatCenterPanel({
       ...input,
+      participants: input.participants,
       roundLabel: null,
     }),
     emptyParticipants: input.emptyParticipants,

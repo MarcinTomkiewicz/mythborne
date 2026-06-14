@@ -1,4 +1,8 @@
 import { Json } from '../../types/database.types';
+import type {
+  PvpCombatContextPresentation,
+  PvpCombatParticipantEffect,
+} from '../pvp/pvp-combat-context.model';
 import type { CombatDisplayValueTone } from './combat-display.model';
 import type { StatTone } from '../../utils/stat-tone-class';
 
@@ -54,6 +58,7 @@ export interface CombatTimingManifestReadModel {
   zoneEndPercent: number;
   zoneWidthPercent: number;
   label: string | null;
+  pvpCombatContext: PvpCombatContextPresentation | null;
   luckRng: CombatLuckRngReadModel | null;
   rawJson: Json;
 }
@@ -89,6 +94,7 @@ export interface CombatLiveParticipantReadModel {
   maxHp: number | null;
   baseStatRows: CombatLiveParticipantStatRow[];
   combatStatRows: CombatLiveParticipantStatRow[];
+  participantEffects: PvpCombatParticipantEffect[];
   heroId: string | null;
   opponentDefinitionId: string | null;
   rawJson: Json;

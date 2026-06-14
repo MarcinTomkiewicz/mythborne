@@ -37,6 +37,7 @@ export interface CombatStageViewModel {
 export interface CombatLiveCenterPanelInput {
   previewStatus: string | null;
   liveStatusKey: string | null;
+  participants: readonly CombatLiveParticipantReadModel[];
   roundLabel: string | null;
   timingManifest: CombatTimingManifestReadModel | null;
   timing: {
@@ -65,7 +66,7 @@ export interface CombatLiveCenterPanelInput {
 
 export interface CombatLiveStageViewInput extends Omit<
   CombatLiveCenterPanelInput,
-  'roundLabel'
+  'roundLabel' | 'participants'
 > {
   ariaLabel: string;
   participants: readonly CombatLiveParticipantReadModel[];

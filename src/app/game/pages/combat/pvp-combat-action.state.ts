@@ -26,6 +26,7 @@ import {
   isManualPvpCombatOffer,
   pvpCombatSourceRef,
 } from '../../features/pvp/utils/pvp-combat-source-ref';
+import { PvpCombatCopyState } from '../../features/pvp/state/pvp-combat-copy.state';
 
 const ACTIVE_OFFER_REFRESH_INTERVAL_MS = 5000;
 
@@ -33,6 +34,7 @@ const ACTIVE_OFFER_REFRESH_INTERVAL_MS = 5000;
 export class PvpCombatActionState {
   private readonly activeHero = inject(ActiveHero);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly combatCopy = inject(PvpCombatCopyState);
   private readonly gameCopy = inject(GameCopyService);
   private readonly playerPvp = inject(PlayerPvp);
   private readonly requests = new RequestToken();
@@ -42,6 +44,9 @@ export class PvpCombatActionState {
   private activeContextKey: string | null = null;
 
   readonly copy = signal<PvpActionCopy | null>(null);
+  readonly combatCommonCopy = this.combatCopy.combatCommonCopy;
+  readonly pvpCombatCopy = this.combatCopy.pvpCombatCopy;
+  readonly combatCopyError = this.combatCopy.error;
   readonly offer = signal<ActivePvpActionOffer | null>(null);
   readonly error = signal<string | null>(null);
   readonly hasCopyLoadError = signal(false);
@@ -60,6 +65,11 @@ export class PvpCombatActionState {
   });
   readonly combatSourceRef = computed<MinigameSourceRef | null>(() => {
     return pvpCombatSourceRef(this.combatOffer());
+  });
+  readonly combatSourcePresentation = computed(() => {
+    const copy = this.copy();
+
+    return copy ? this.combatCopy.sourcePresentation(copy) : null;
   });
   readonly timer = computed(() => {
     const offer = this.visibleOffer();

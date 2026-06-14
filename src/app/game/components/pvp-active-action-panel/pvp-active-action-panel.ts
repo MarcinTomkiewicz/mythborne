@@ -8,7 +8,6 @@ import {
   pvpActiveActionTitle,
   PvpActiveActionFactRow,
 } from '../../../core/domain/pvp/pvp-active-action-display.mapper';
-import { pvpCombatSourcePresentation } from '../../../core/domain/pvp/pvp-combat-source-presentation.mapper';
 import { PvpActionCopy } from '../../../core/domain/pvp/pvp-action-copy.model';
 import { ActivePvpActionOffer } from '../../../core/domain/pvp/pvp.model';
 import type { PendingTimerDisplay } from '../../../core/types/pending-timer.types';
@@ -37,6 +36,7 @@ import { ReportDetailPreviewCard } from '../report-detail-preview-card/report-de
 export class PvpActiveActionPanel {
   readonly offer = input<ActivePvpActionOffer | null>(null);
   readonly copy = input.required<PvpActionCopy>();
+  readonly sourcePresentation = input<CombatSourcePresentation | null>(null);
   readonly timer = input.required<PendingTimerDisplay>();
   readonly factRows = input.required<readonly PvpActiveActionFactRow[]>();
   readonly isLoading = input(false);
@@ -68,10 +68,6 @@ export class PvpActiveActionPanel {
 
   combatSourceRef(active: ActivePvpActionOffer): MinigameSourceRef | null {
     return pvpCombatSourceRef(active);
-  }
-
-  combatSourcePresentation(): CombatSourcePresentation {
-    return pvpCombatSourcePresentation(this.copy());
   }
 
   combatDecisionDeadline(active: ActivePvpActionOffer): CombatSurfaceDecisionDeadline | null {

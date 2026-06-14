@@ -18,6 +18,7 @@ import {
   sortBySortOrder,
 } from './stat-row-display';
 import { statTone } from './stat-tone-class';
+import { mapPvpCombatParticipantEffects } from './pvp-combat-context.mapper';
 
 export function mapParticipant(record: JsonRecord): CombatLiveParticipantReadModel | null {
   const participantId = trimToNull(optionalText(read(
@@ -66,6 +67,10 @@ export function mapParticipant(record: JsonRecord): CombatLiveParticipantReadMod
     )),
     baseStatRows: mapParticipantStatRows(read(record, 'baseStatRows', 'base_stat_rows')),
     combatStatRows: mapParticipantStatRows(read(record, 'combatStatRows', 'combat_stat_rows')),
+    participantEffects: mapPvpCombatParticipantEffects(
+      read(record, 'participantEffects', 'participant_effects'),
+      'combat_live.participants_json.participantEffects',
+    ),
     heroId: trimToNull(optionalText(read(record, 'heroId', 'hero_id'))),
     opponentDefinitionId: trimToNull(optionalText(read(
       record,

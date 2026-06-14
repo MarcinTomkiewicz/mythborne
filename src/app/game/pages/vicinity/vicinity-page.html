@@ -33,6 +33,7 @@
         <app-pvp-active-action-panel
           [offer]="activePvpAction.visibleOffer()"
           [copy]="actionCopy"
+          [sourcePresentation]="activePvpAction.combatSourcePresentation()"
           [timer]="activePvpAction.timer()"
           [factRows]="activePvpAction.factRows()"
           [isLoading]="activePvpAction.isLoading()"
@@ -43,6 +44,9 @@
       }
       @if (activePvpAction.error()) {
         <p class="warn-text mb-0">{{ activePvpAction.error() }}</p>
+      }
+      @if (activePvpAction.combatCopyError()) {
+        <p class="warn-text mb-0">{{ activePvpAction.combatCopyError() }}</p>
       }
       @if (spyReport.error()) {
         <p class="warn-text mb-0">{{ spyReport.error() }}</p>

@@ -1,4 +1,5 @@
 export interface CombatSourcePresentation {
+  header?: CombatSourceHeaderPresentation | null;
   decision: CombatSourceDecisionPresentation;
   loadingPreview: CombatSourcePanelPresentation;
   unavailablePreview: CombatSourcePanelPresentation;
@@ -6,6 +7,10 @@ export interface CombatSourcePresentation {
   emptyParticipants: CombatSourceEmptyParticipantsPresentation;
   live: CombatSourceLivePresentation;
   workflow: CombatSourceWorkflowPresentation;
+}
+
+export interface CombatSourceHeaderPresentation extends CombatSourcePanelPresentation {
+  eyebrow: string;
 }
 
 export interface CombatSourceDecisionPresentation {
@@ -44,6 +49,7 @@ export interface CombatSourceParticipantEmptyStatePresentation {
 export interface CombatSourceLivePresentation {
   contextLabel: string | null;
   title: string | null;
+  text?: string | null;
   helperText: string | null;
   submittingHelperText: string | null;
   preparingHelperText: string | null;

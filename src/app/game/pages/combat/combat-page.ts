@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CombatReportHandoffCard } from '../../components/combat/combat-report-handoff-card';
 import { PvpActiveActionPanel } from '../../components/pvp-active-action-panel/pvp-active-action-panel';
 import { MinigameHost } from '../../components/minigame-host/minigame-host';
@@ -6,9 +6,6 @@ import {
   MINIGAME_KEY,
   MinigameCompletionEvent,
 } from '../../components/minigame-host/minigame-host.model';
-import { CombatSourcePresentation } from '../../../core/domain/combat/combat-source-presentation.model';
-import { pvpCombatSourcePresentation } from '../../../core/domain/pvp/pvp-combat-source-presentation.mapper';
-import { PvpActionCopy } from '../../../core/domain/pvp/pvp-action-copy.model';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { PvpCombatActionState } from './pvp-combat-action.state';
 
@@ -30,6 +27,14 @@ export class CombatPage {
 
   readonly minigameKey = MINIGAME_KEY.combat;
   readonly completion = signal<MinigameCompletionEvent | null>(null);
+  readonly currentCompletion = computed(() => {
+    const completion = this.completion();
+    const source = this.pvpAction.combatSourceRef();
+
+    return completion && source && completion.sourceEntityId === source.sourceEntityId
+      ? completion
+      : null;
+  });
 
   acceptCompletion(event: MinigameCompletionEvent): void {
     this.completion.set(event);
@@ -40,7 +45,4 @@ export class CombatPage {
     this.pvpAction.refresh();
   }
 
-  combatSourcePresentation(copy: PvpActionCopy): CombatSourcePresentation {
-    return pvpCombatSourcePresentation(copy);
-  }
 }

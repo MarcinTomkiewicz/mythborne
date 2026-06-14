@@ -14,6 +14,7 @@ import {
 } from './json-read';
 import { mapParticipantStatRows } from './combat-live-participant.mapper';
 import { trimToNull } from './normalize-text';
+import { mapPvpCombatParticipantEffects } from './pvp-combat-context.mapper';
 
 export function mapCombatResolutionPreview(
   row: GetCombatResolutionPreviewRpcRow,
@@ -123,6 +124,10 @@ function mapCombatResolutionPreviewParticipant(
     )),
     baseStatRows: mapParticipantStatRows(read(record, 'baseStatRows', 'base_stat_rows')),
     combatStatRows: mapParticipantStatRows(read(record, 'combatStatRows', 'combat_stat_rows')),
+    participantEffects: mapPvpCombatParticipantEffects(
+      read(record, 'participantEffects', 'participant_effects'),
+      'combat_resolution_preview.participants_json.participantEffects',
+    ),
     heroId,
     opponentDefinitionId,
     rawJson: record as unknown as Json,

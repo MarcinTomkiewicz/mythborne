@@ -25,7 +25,7 @@
         </div>
 
         <p class="color-text text-md lh-16 m-0">
-          <app-rich-text [fragments]="manifestation.narrativeRichText" />
+          <app-rich-text [fragments]="manifestation.narrativeRichText" itemPopoverContext="exploration" />
         </p>
       </section>
     } @else if (missingTrialManifestationNarrative()) {
@@ -42,7 +42,7 @@
         </div>
 
         <p class="color-text text-md lh-16 m-0">
-          <app-rich-text [fragments]="handoff.narrativeRichText" />
+          <app-rich-text [fragments]="handoff.narrativeRichText" itemPopoverContext="exploration" />
         </p>
       </section>
     } @else if (missingEncounterCombatHandoffNarrative()) {
@@ -61,18 +61,18 @@
         }
 
         <p class="color-text text-md lh-16 m-0">
-          <app-rich-text [fragments]="result.narrativeRichText" />
+          <app-rich-text [fragments]="result.narrativeRichText" itemPopoverContext="exploration" />
         </p>
 
         @if (rewardRichText(); as rewardFragments) {
           <p class="color-text text-md lh-16 m-0">
-            <app-rich-text [fragments]="rewardFragments" />
+            <app-rich-text [fragments]="rewardFragments" itemPopoverContext="exploration" />
           </p>
         }
 
         @if (effectRichText(); as effectFragments) {
           <p class="color-text text-md lh-16 m-0">
-            <app-rich-text [fragments]="effectFragments" />
+            <app-rich-text [fragments]="effectFragments" itemPopoverContext="exploration" />
           </p>
         }
       </section>

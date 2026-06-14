@@ -7,24 +7,33 @@
         [directReportLabel]="copy().common.actionLabels.openReport"
       />
     } @else if (combatSourceRef(active); as source) {
-      <section class="mg-card p-lg flex-col gap-sm w-100">
-        <p class="small-caps color-muted text-xs mb-0">{{ copy().common.labels.combat }}</p>
-        <h1 class="color-heading text-xl mb-0">{{ copy().common.labels.heroCombat }}</h1>
-        <p class="color-text text-md lh-16 mb-0">{{ copy().combatHandoff.header.description }}</p>
-      </section>
+      @if (sourcePresentation(); as presentation) {
+        @if (presentation.header; as header) {
+          <section class="mg-card p-lg flex-col gap-sm w-100">
+            <p class="small-caps color-muted text-xs mb-0">{{ header.eyebrow }}</p>
+            <h1 class="color-heading text-xl mb-0">{{ header.title }}</h1>
+            <p class="color-text text-md lh-16 mb-0">{{ header.text }}</p>
+          </section>
+        }
 
-      <app-minigame-host
-        [minigameKey]="minigameKey"
-        [sourceRef]="source"
-        [contextTitle]="copy().common.labels.heroCombat"
-        [sourcePresentation]="combatSourcePresentation()"
-        [combatDecisionDeadline]="combatDecisionDeadline(active)"
-        (completed)="acceptCombatCompletion($event)"
-      />
+        <app-minigame-host
+          [minigameKey]="minigameKey"
+          [sourceRef]="source"
+          [contextTitle]="presentation.header?.title ?? copy().common.labels.heroCombat"
+          [sourcePresentation]="presentation"
+          [combatDecisionDeadline]="combatDecisionDeadline(active)"
+          (completed)="acceptCombatCompletion($event)"
+        />
+      }
     }
   }
 
-  @if (active.isTravelPhase || active.actionKind !== 'attack' || !active.isManualWindow) {
+  @if (
+    active.isTravelPhase ||
+    active.actionKind !== 'attack' ||
+    !active.isManualWindow ||
+    (renderCombatHost() && !sourcePresentation())
+  ) {
     @if (active.actionKind === 'spy') {
       @if (!timer().isReady) {
         <section class="mg-card flex-col gap-md p-lg w-100" [attr.aria-label]="ariaLabel(active)">
