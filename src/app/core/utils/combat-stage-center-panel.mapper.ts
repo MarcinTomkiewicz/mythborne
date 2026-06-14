@@ -88,11 +88,7 @@ export function mapLiveCombatCenterPanel(
 function pvpCombatEffectRows(
   input: CombatLiveCenterPanelInput,
 ): PvpCombatParticipantEffect['summaryRichText'][] {
-  const contextEffects = input.timingManifest?.pvpCombatContext?.participantEffects ?? [];
-  const participantEffects = input.participants.flatMap((participant) => participant.participantEffects);
-  const effects = contextEffects.length ? contextEffects : participantEffects;
-
-  return effects
+  return (input.timingManifest?.pvpCombatContext?.participantEffects ?? [])
     .slice()
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .map((effect) => effect.summaryRichText);
