@@ -3,6 +3,7 @@ import {
   CombatSurfaceCenterPanel,
 } from '../domain/combat/combat-display.model';
 import { CombatLiveCenterPanelInput } from '../domain/combat/combat-stage.model';
+import { PvpCombatParticipantEffect } from '../domain/pvp/pvp-combat-context.model';
 
 export function mapLiveCombatCenterPanel(
   input: CombatLiveCenterPanelInput,
@@ -41,6 +42,8 @@ export function mapLiveCombatCenterPanel(
       contextLabel: actionContextLabel(input),
       title: currentActionTitle(input),
       helperText: currentActionHelper(input),
+      detailText: input.sourcePresentation.live.text ?? null,
+      richTextRows: pvpCombatEffectRows(input),
       meter: {
         manifestId: input.timingManifest.manifestId,
         position: input.timing.walkingPosition,
@@ -66,6 +69,7 @@ export function mapLiveCombatCenterPanel(
       contextLabel: actionContextLabel(input),
       title: decision.title,
       helperText: decision.description,
+      richTextRows: pvpCombatEffectRows(input),
       primaryAction: {
         id: 'start-combat',
         label: decision.manualActionLabel,
@@ -79,6 +83,19 @@ export function mapLiveCombatCenterPanel(
   }
 
   return null;
+}
+
+function pvpCombatEffectRows(
+  input: CombatLiveCenterPanelInput,
+): PvpCombatParticipantEffect['summaryRichText'][] {
+  const contextEffects = input.timingManifest?.pvpCombatContext?.participantEffects ?? [];
+  const participantEffects = input.participants.flatMap((participant) => participant.participantEffects);
+  const effects = contextEffects.length ? contextEffects : participantEffects;
+
+  return effects
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((effect) => effect.summaryRichText);
 }
 
 function actionContextLabel(input: CombatLiveCenterPanelInput): string | null {

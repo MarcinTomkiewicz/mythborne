@@ -9,6 +9,10 @@ import {
   ReportDomainKey,
   ReportDomainContextV1,
   ReportDomainFrontendUsage,
+  ReportShellContextDate,
+  ReportShellContextV1,
+  ReportShellContextValue,
+  ReportShellLegacySnapshot,
   SpyReportDomainContext,
 } from '../domain/reports/report-detail.model';
 import { Json } from '../types/database.types';
@@ -22,6 +26,8 @@ import {
   requiredText,
 } from './json-read';
 import { mapReportDetailCore } from './report-detail-core.mapper';
+import { mapOptionalPvpCombatContextPresentation } from './pvp-combat-context.mapper';
+import { mapOptionalPvpResultSnapshot } from './pvp-result-snapshot.mapper';
 
 export function mapReportDetailPage(
   value: Json,
@@ -34,6 +40,10 @@ export function mapReportDetailPage(
     access: mapPrivateAccess(
       requiredRecord(read(root, 'access'), 'get_report_detail.access'),
       expected,
+    ),
+    reportShellContextJson: mapReportShellContext(
+      requiredRecord(read(root, 'reportShellContextJson'), 'get_report_detail.reportShellContextJson'),
+      'get_report_detail.reportShellContextJson',
     ),
     domainContextJson: mapReportDomainContext(
       requiredRecord(read(root, 'domainContextJson'), 'get_report_detail.domainContextJson'),
@@ -80,6 +90,7 @@ export function mapPublicReportDetailPage(value: Json): PublicReportDetailV2 {
           'get_public_report_detail.access.notFoundLabel',
         ),
       },
+      reportShellContextJson: null,
       domainContextJson: null,
       report: null,
     };
@@ -103,6 +114,13 @@ export function mapPublicReportDetailPage(value: Json): PublicReportDetailV2 {
       ),
       isAvailable,
     },
+    reportShellContextJson: mapReportShellContext(
+      requiredRecord(
+        read(root, 'reportShellContextJson'),
+        'get_public_report_detail.reportShellContextJson',
+      ),
+      'get_public_report_detail.reportShellContextJson',
+    ),
     domainContextJson: mapReportDomainContext(
       requiredRecord(
         read(root, 'domainContextJson'),
@@ -112,6 +130,67 @@ export function mapPublicReportDetailPage(value: Json): PublicReportDetailV2 {
     ),
     report: mapReportDetailCore(
       requiredRecord(read(root, 'report'), 'get_public_report_detail.report'),
+    ),
+  };
+}
+
+function mapReportShellContext(context: JsonRecord, field: string): ReportShellContextV1 {
+  return {
+    contractVersion: requireReportShellContextVersion(
+      requiredText(read(context, 'contractVersion'), `${field}.contractVersion`),
+    ),
+    eyebrow: requiredText(read(context, 'eyebrow'), `${field}.eyebrow`),
+    title: requiredText(read(context, 'title'), `${field}.title`),
+    summary: requiredNullableText(read(context, 'summary'), `${field}.summary`),
+    source: mapShellContextValue(
+      requiredRecord(read(context, 'source'), `${field}.source`),
+      `${field}.source`,
+    ),
+    eventType: mapShellContextValue(
+      requiredRecord(read(context, 'eventType'), `${field}.eventType`),
+      `${field}.eventType`,
+    ),
+    reportDate: mapShellContextDate(
+      requiredRecord(read(context, 'reportDate'), `${field}.reportDate`),
+      `${field}.reportDate`,
+    ),
+    legacyReportSnapshot: mapShellLegacySnapshot(
+      requiredRecord(read(context, 'legacyReportSnapshot'), `${field}.legacyReportSnapshot`),
+      `${field}.legacyReportSnapshot`,
+    ),
+    missingShellContextReason: requiredNullableText(
+      read(context, 'missingShellContextReason'),
+      `${field}.missingShellContextReason`,
+    ),
+  };
+}
+
+function mapShellContextValue(record: JsonRecord, field: string): ReportShellContextValue {
+  return {
+    key: requiredText(read(record, 'key'), `${field}.key`),
+    label: requiredText(read(record, 'label'), `${field}.label`),
+  };
+}
+
+function mapShellContextDate(record: JsonRecord, field: string): ReportShellContextDate {
+  return {
+    value: requiredNullableText(read(record, 'value'), `${field}.value`),
+    displayValue: requiredNullableText(read(record, 'displayValue'), `${field}.displayValue`),
+  };
+}
+
+function mapShellLegacySnapshot(record: JsonRecord, field: string): ReportShellLegacySnapshot {
+  return {
+    reportTypeKey: requiredNullableText(read(record, 'reportTypeKey'), `${field}.reportTypeKey`),
+    sourceEntityType: requiredNullableText(
+      read(record, 'sourceEntityType'),
+      `${field}.sourceEntityType`,
+    ),
+    title: requiredNullableText(read(record, 'title'), `${field}.title`),
+    summary: requiredNullableText(read(record, 'summary'), `${field}.summary`),
+    hiddenFromShell: requireTrue(
+      requiredBoolean(read(record, 'hiddenFromShell'), `${field}.hiddenFromShell`),
+      `${field}.hiddenFromShell`,
     ),
   };
 }
@@ -153,6 +232,17 @@ function mapPrivateAccess(
 }
 
 function mapReportDomainContext(context: JsonRecord, field: string): ReportDomainContextV1 {
+  const contentKind = requireReportContentKind(
+    requiredText(read(context, 'contentKind'), `${field}.contentKind`),
+    `${field}.contentKind`,
+  );
+  const pvp = mapOptionalRecord(read(context, 'pvp'), `${field}.pvp`, mapPvpContext);
+  const pvpResult = mapOptionalPvpResultSnapshot(read(context, 'pvpResult'), `${field}.pvpResult`);
+
+  if (contentKind === 'pvp_combat' && pvp?.sourceKind === 'pvp_attack' && !pvpResult) {
+    throw new Error(`${field}.pvpResult is required for PvP combat reports.`);
+  }
+
   return {
     contractVersion: requireDomainContextVersion(
       requiredText(read(context, 'contractVersion'), `${field}.contractVersion`),
@@ -161,10 +251,7 @@ function mapReportDomainContext(context: JsonRecord, field: string): ReportDomai
       requiredText(read(context, 'reportDomainKey'), `${field}.reportDomainKey`),
       `${field}.reportDomainKey`,
     ),
-    contentKind: requireReportContentKind(
-      requiredText(read(context, 'contentKind'), `${field}.contentKind`),
-      `${field}.contentKind`,
-    ),
+    contentKind,
     resultKind: requiredNullableText(read(context, 'resultKind'), `${field}.resultKind`),
     gameReportId: requiredNullableText(read(context, 'gameReportId'), `${field}.gameReportId`),
     publicToken: requiredNullableText(read(context, 'publicToken'), `${field}.publicToken`),
@@ -183,9 +270,14 @@ function mapReportDomainContext(context: JsonRecord, field: string): ReportDomai
       `${field}.exploration`,
       mapExplorationContext,
     ),
-    pvp: mapOptionalRecord(read(context, 'pvp'), `${field}.pvp`, mapPvpContext),
+    pvp,
     spy: mapOptionalRecord(read(context, 'spy'), `${field}.spy`, mapSpyContext),
     combat: mapOptionalRecord(read(context, 'combat'), `${field}.combat`, mapCombatContext),
+    pvpCombatContext: mapOptionalPvpCombatContextPresentation(
+      read(context, 'pvpCombatContext'),
+      `${field}.pvpCombatContext`,
+    ),
+    pvpResult,
     missingContextReason: requiredNullableText(
       read(context, 'missingContextReason'),
       `${field}.missingContextReason`,
@@ -367,6 +459,14 @@ function requireReportContentKind(value: string, field: string): ReportContentKi
 function requireDomainContextVersion(value: string): 'report_domain_context_v1' {
   if (value !== 'report_domain_context_v1') {
     throw new Error(`report domain context has unsupported contract version: ${value}.`);
+  }
+
+  return value;
+}
+
+function requireReportShellContextVersion(value: string): 'report_shell_context_v1' {
+  if (value !== 'report_shell_context_v1') {
+    throw new Error(`report shell context has unsupported contract version: ${value}.`);
   }
 
   return value;

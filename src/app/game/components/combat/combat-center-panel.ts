@@ -6,13 +6,14 @@ import {
 } from '../../../core/domain/combat/combat-display.model';
 import { CombatCenterActionButton } from './combat-center-action-button';
 import { WalkingDeadMeter } from './walking-dead-meter';
+import { RichText } from '../../../shared/rich-text/rich-text';
 
 @Component({
   selector: 'app-combat-center-panel',
   standalone: true,
-  imports: [CombatCenterActionButton, WalkingDeadMeter],
+  imports: [CombatCenterActionButton, RichText, WalkingDeadMeter],
   template: `
-    <section class="mg-card p-lg flex-col gap-lg flex-1 min-w-0">
+    <section class="mg-card p-lg flex-col gap-lg flex-1 min-w-0 w-100 h-100">
       @if (panel(); as model) {
         <div class="mg-card flex-col gap-sm text-center radius-md p-md">
           @if (model.contextLabel) {
@@ -26,6 +27,15 @@ import { WalkingDeadMeter } from './walking-dead-meter';
           }
           @if (model.detailText) {
             <span class="color-muted text-sm">{{ model.detailText }}</span>
+          }
+          @if (model.richTextRows?.length) {
+            <div class="flex-col gap-xs text-left w-100">
+              @for (row of model.richTextRows; track $index) {
+                <p class="color-text text-sm lh-16 m-0">
+                  <app-rich-text [fragments]="row" />
+                </p>
+              }
+            </div>
           }
         </div>
 
@@ -96,6 +106,7 @@ import { WalkingDeadMeter } from './walking-dead-meter';
       }
     </section>
   `,
+  host: { class: 'd-flex flex-1 min-w-0 h-100' },
 })
 export class CombatCenterPanel {
   readonly panel = input<CombatSurfaceCenterPanelModel | null>(null);

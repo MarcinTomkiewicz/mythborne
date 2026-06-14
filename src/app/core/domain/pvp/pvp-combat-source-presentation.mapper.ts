@@ -1,60 +1,57 @@
 import { CombatSourcePresentation } from '../combat/combat-source-presentation.model';
+import { CombatCommonCopy } from '../combat/combat-common-copy.model';
 import { PvpActionCopy } from './pvp-action-copy.model';
+import { PvpCombatCopy } from './pvp-combat-copy.model';
 
-export function pvpCombatSourcePresentation(copy: PvpActionCopy): CombatSourcePresentation {
+export function pvpCombatSourcePresentation(
+  actionCopy: PvpActionCopy,
+  combatCommonCopy: CombatCommonCopy,
+  pvpCombatCopy: PvpCombatCopy,
+): CombatSourcePresentation {
+  const pvpPresentation = pvpCombatCopy.sourcePresentation;
+  const workflow = pvpPresentation.workflow ?? combatCommonCopy.workflow;
+
   return {
+    header: pvpPresentation.header,
     decision: {
-      eyebrow: copy.combatHandoff.decisionWindow.eyebrow,
-      title: copy.combatHandoff.decisionWindow.title,
-      description: copy.combatHandoff.decisionWindow.description,
-      manualActionLabel: copy.common.actionLabels.resolveManual,
-      manualActionTooltip: copy.common.actionTooltips.resolveManual,
-      autoActionLabel: copy.common.actionLabels.resolveAuto,
-      autoActionTooltip: copy.common.actionTooltips.resolveAuto,
-      waitingForDecision: copy.combatHandoff.decisionWindow.waitingForDecision,
+      eyebrow: actionCopy.combatHandoff.decisionWindow.eyebrow,
+      title: actionCopy.combatHandoff.decisionWindow.title,
+      description: actionCopy.combatHandoff.decisionWindow.description,
+      manualActionLabel: actionCopy.common.actionLabels.resolveManual,
+      manualActionTooltip: actionCopy.common.actionTooltips.resolveManual,
+      autoActionLabel: actionCopy.common.actionLabels.resolveAuto,
+      autoActionTooltip: actionCopy.common.actionTooltips.resolveAuto,
+      waitingForDecision: actionCopy.combatHandoff.decisionWindow.waitingForDecision,
     },
     loadingPreview: {
-      title: copy.combatHandoff.decisionWindow.waitingForDecision,
-      text: copy.activeAction.loading.refreshDecisionState,
+      title: actionCopy.combatHandoff.decisionWindow.waitingForDecision,
+      text: actionCopy.activeAction.loading.refreshDecisionState,
     },
     unavailablePreview: {
-      title: copy.common.emptyValues.noData,
-      text: copy.activeAction.loading.refreshUnknownState,
+      title: actionCopy.common.emptyValues.noData,
+      text: actionCopy.activeAction.loading.refreshUnknownState,
     },
-    emptyLog: {
-      title: copy.common.labels.combatLog,
-      text: copy.combatHandoff.emptyCombatLog.text,
-    },
-    emptyParticipants: {
-      loading: null,
-      unavailable: {
-        leftTitle: copy.common.emptyValues.noData,
-        leftText: copy.activeAction.loading.refreshUnknownState,
-        rightTitle: copy.common.emptyValues.noData,
-        rightText: copy.activeAction.loading.refreshUnknownState,
-      },
-    },
+    emptyLog: pvpPresentation.emptyLog,
+    emptyParticipants: combatCommonCopy.emptyParticipants,
     live: {
       contextLabel: null,
-      title: null,
-      helperText: null,
-      submittingHelperText: null,
-      preparingHelperText: copy.activeAction.loading.refreshDecisionState,
-      completedHelperText: copy.activeAction.readyStates.reportReady,
-      timingActionLabel: null,
-      meterTitle: null,
-      meterHelperText: null,
-      meterEarlyLabel: null,
-      meterHitZoneLabel: null,
-      meterLateLabel: null,
+      title: pvpPresentation.live.title,
+      text: pvpPresentation.live.text,
+      helperText: pvpPresentation.live.helperText,
+      submittingHelperText: combatCommonCopy.live.submittingHelperText,
+      preparingHelperText: combatCommonCopy.live.preparingHelperText,
+      completedHelperText: combatCommonCopy.live.completedHelperText,
+      timingActionLabel: combatCommonCopy.live.timingActionLabel,
+      meterTitle: combatCommonCopy.live.meterTitle,
+      meterHelperText: combatCommonCopy.live.meterHelperText,
+      meterEarlyLabel: combatCommonCopy.live.meterEarlyLabel,
+      meterHitZoneLabel: combatCommonCopy.live.meterHitZoneLabel,
+      meterLateLabel: combatCommonCopy.live.meterLateLabel,
     },
     workflow: {
-      finalizingResult: null,
-      finalizeUnavailable: null,
-      actionUnavailable: {
-        title: copy.common.emptyValues.noData,
-        text: copy.activeAction.loading.refreshUnknownState,
-      },
+      finalizingResult: workflow.finalizingResult,
+      finalizeUnavailable: workflow.finalizeUnavailable,
+      actionUnavailable: workflow.actionUnavailable,
     },
   };
 }

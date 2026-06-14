@@ -46,10 +46,8 @@ export class PvpCombatActionState {
   readonly copy = signal<PvpActionCopy | null>(null);
   readonly combatCommonCopy = this.combatCopy.combatCommonCopy;
   readonly pvpCombatCopy = this.combatCopy.pvpCombatCopy;
-  readonly combatCopyError = this.combatCopy.error;
   readonly offer = signal<ActivePvpActionOffer | null>(null);
   readonly error = signal<string | null>(null);
-  readonly hasCopyLoadError = signal(false);
   private readonly isOfferLoading = signal(false);
   private readonly isCopyLoading = signal(false);
   readonly isLoading = computed(() => this.isOfferLoading() || this.isCopyLoading());
@@ -230,7 +228,6 @@ export class PvpCombatActionState {
   }
 
   private loadCopy(): void {
-    this.hasCopyLoadError.set(false);
     this.isCopyLoading.set(true);
     this.gameCopy.getCopy('player.pvp.action', { locale: 'pl' })
       .pipe(
@@ -240,9 +237,8 @@ export class PvpCombatActionState {
       .subscribe({
         next: (copy) => {
           this.copy.set(copy);
-          this.hasCopyLoadError.set(false);
         },
-        error: () => this.hasCopyLoadError.set(true),
+        error: () => this.copy.set(null),
       });
   }
 
