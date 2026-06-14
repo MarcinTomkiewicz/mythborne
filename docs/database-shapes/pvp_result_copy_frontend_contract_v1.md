@@ -186,7 +186,7 @@ export interface PvpResultGlorySentenceV1 {
 Preferred private report detail exposure:
 
 ```text
-get_report_detail(...).report.domainContextJson.pvpResult
+get_report_detail(...).domainContextJson.pvpResult
 ```
 
 or equivalent explicit path.
@@ -194,7 +194,7 @@ or equivalent explicit path.
 Preferred public report detail exposure:
 
 ```text
-get_public_report_detail(...).report.domainContextJson.pvpResult
+get_public_report_detail(...).domainContextJson.pvpResult
 ```
 
 or equivalent explicit path.
@@ -393,14 +393,14 @@ Legacy wrappers may still exist for compatibility, but frontend should not use t
 Required private exposure:
 
 ```ts
-report.domainContextJson.pvpResult.private.attacker
-report.domainContextJson.pvpResult.private.defender
+payload.domainContextJson.pvpResult.private.attacker
+payload.domainContextJson.pvpResult.private.defender
 ```
 
 Required public exposure:
 
 ```ts
-report.domainContextJson.pvpResult.public.neutral
+payload.domainContextJson.pvpResult.public.neutral
 ```
 
 If this is missing, Codex must report a DB/RPC gap.
