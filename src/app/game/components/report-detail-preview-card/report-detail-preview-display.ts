@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import type {
-  ExplorationResultNarrativeSnapshotV1,
+  ExplorationResultNarrativeSnapshot,
   ExplorationRichTextFragment,
 } from '../../../core/domain/exploration/exploration-result-copy.model';
 import {
@@ -65,7 +65,7 @@ export class ReportDetailPreviewDisplay {
   }
 
   rewardRichText(
-    result: ExplorationResultNarrativeSnapshotV1,
+    result: ExplorationResultNarrativeSnapshot,
   ): readonly ExplorationRichTextFragment[] | null {
     return canRenderExplorationRewardSupplement(result) && result.rewardRichText?.length
       ? result.rewardRichText
@@ -73,7 +73,7 @@ export class ReportDetailPreviewDisplay {
   }
 
   effectRichText(
-    result: ExplorationResultNarrativeSnapshotV1,
+    result: ExplorationResultNarrativeSnapshot,
   ): readonly ExplorationRichTextFragment[] | null {
     return canRenderExplorationEffectSupplement(result) && result.effectRichText?.length
       ? result.effectRichText

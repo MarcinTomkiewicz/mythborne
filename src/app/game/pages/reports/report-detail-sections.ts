@@ -2,7 +2,7 @@ import { Component, computed, input } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import type {
   PrivateReportDetailPage,
-  ReportDetailV2,
+  ReportDetail,
 } from '../../../core/domain/reports/report-detail.model';
 import { PvpPrivateReportCopy } from '../../../core/domain/pvp/pvp-private-report-copy.model';
 import type { ReportShellCopy } from '../../../core/domain/reports/report-page-copy.model';
@@ -29,7 +29,7 @@ import { PvpReportDomainContent } from '../../components/pvp-report-domain-conte
   host: { class: 'd-block w-100 min-w-0' },
 })
 export class ReportDetailSections {
-  readonly detail = input.required<ReportDetailV2>();
+  readonly detail = input.required<ReportDetail>();
   readonly activeHeroId = input<string | null>(null);
   readonly pvpPrivateReportCopy = input<PvpPrivateReportCopy | null>(null);
   readonly shellCopy = input.required<ReportShellCopy>();
