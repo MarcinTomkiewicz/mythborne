@@ -15206,6 +15206,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      attach_pvp_combat_context_to_report_detail_payload: {
+        Args: { p_payload: Json; p_public_token?: string; p_report_id?: string }
+        Returns: Json
+      }
       attach_pvp_result_to_report_detail_payload: {
         Args: { p_payload: Json; p_public_token?: string; p_report_id?: string }
         Returns: Json
@@ -15751,6 +15755,36 @@ export type Database = {
           p_pvp_attack_result_id: string
           p_report_id?: string
           p_request_id?: string
+        }
+        Returns: Json
+      }
+      build_pvp_combat_context_from_live_session: {
+        Args: { p_session_id: string }
+        Returns: Json
+      }
+      build_pvp_combat_context_from_pvp_action: {
+        Args: { p_pvp_action_id: string }
+        Returns: Json
+      }
+      build_pvp_combat_context_from_pvp_attack_result: {
+        Args: { p_pvp_attack_result_id: string }
+        Returns: Json
+      }
+      build_pvp_combat_exploration_effect_json: {
+        Args: {
+          p_effect_kind: string
+          p_hero_name: string
+          p_participant_role: string
+          p_value_display: string
+        }
+        Returns: Json
+      }
+      build_pvp_combat_role_health_effect_json: {
+        Args: {
+          p_building_level: number
+          p_health_bonus: number
+          p_hero_name: string
+          p_participant_role: string
         }
         Returns: Json
       }
@@ -19017,6 +19051,29 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_combat_live_state_legacy_v1: {
+        Args: { p_session_id: string; p_since_event_index?: number }
+        Returns: {
+          awaiting_player_action: boolean
+          combat_session_id: string
+          current_action_index: number
+          current_actor_participant_id: string
+          current_round_number: number
+          current_timing_manifest_json: Json
+          event_count: number
+          events_json: Json
+          final_combat_result_id: string
+          participants_json: Json
+          round_order_json: Json
+          server_id: string
+          source_entity_id: string
+          source_entity_type: string
+          source_type: Database["public"]["Enums"]["combat_source_type"]
+          status_key: string
+          status_label: string
+          updated_at: string
+        }[]
+      }
       get_combat_resolution_preview: {
         Args: {
           p_locale_key?: string
@@ -19033,6 +19090,7 @@ export type Database = {
           metadata_json: Json
           participants_json: Json
           preview_status: string
+          pvp_combat_context: Json
           source_entity_id: string
           source_entity_type: string
           source_type: Database["public"]["Enums"]["combat_source_type"]
@@ -23496,6 +23554,33 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: number
       }
+      pvp_combat_context_effect_target_phrase_pl: {
+        Args: { p_fallback?: string; p_target_key: string }
+        Returns: string
+      }
+      pvp_combat_context_effect_value_display_pl: {
+        Args: {
+          p_target_key: string
+          p_target_label?: string
+          p_type_key: string
+          p_value: number
+        }
+        Returns: string
+      }
+      pvp_combat_context_safe_effect_value_display_pl: {
+        Args: {
+          p_candidate_display: string
+          p_target_key: string
+          p_target_label?: string
+          p_type_key: string
+          p_value: number
+        }
+        Returns: string
+      }
+      pvp_combat_context_signed_display_value: {
+        Args: { p_value: number }
+        Returns: string
+      }
       pvp_report_copy_format_experience_en: {
         Args: { p_amount: number }
         Returns: string
@@ -23666,6 +23751,39 @@ export type Database = {
           server_id: string
           updated_at: string
         }[]
+      }
+      refresh_pvp_attack_result_combat_context: {
+        Args: { p_pvp_attack_result_id: string; p_request_id?: string }
+        Returns: {
+          attacker_estate_id: string | null
+          attacker_hero_id: string
+          attacker_level_snapshot: number
+          combat_outcome: Database["public"]["Enums"]["combat_outcome"]
+          combat_result_id: string
+          created_at: string
+          defender_estate_id: string | null
+          defender_hero_id: string
+          defender_level_snapshot: number
+          id: string
+          level_difference: number
+          loser_hero_id: string | null
+          metadata_json: Json
+          notification_context_json: Json
+          outcome_key: string
+          prestige_context_json: Json
+          pvp_action_id: string
+          report_context_json: Json
+          resource_outcome_json: Json
+          reward_context_json: Json
+          server_id: string
+          winner_hero_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pvp_attack_results"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       refresh_pvp_attack_result_prestige_context: {
         Args: { p_pvp_attack_result_id: string; p_reason?: string }
