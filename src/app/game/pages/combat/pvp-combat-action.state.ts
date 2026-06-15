@@ -3,57 +3,72 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import { CombatSurfaceDecisionDeadline } from '../../../core/domain/combat/combat-display.model';
 import { activeHeroContextKey } from '../../../core/domain/hero/active-hero-context';
-import { ActivePvpActionOffer } from '../../../core/domain/pvp/pvp.model';
 import {
   pvpActiveActionErrorMessage,
   pvpActiveActionFactRows,
-  pvpActiveActionHelperText,
   pvpActiveActionManualDecisionDeadlineAt,
-  pvpActiveActionPendingHelperText,
   pvpActiveActionRefreshAt,
   pvpActiveActionTiming,
   shouldShowActivePvpOffer,
 } from '../../../core/domain/pvp/pvp-active-action-display.mapper';
+import { PvpActionCopy } from '../../../core/domain/pvp/pvp-action-copy.model';
+import { ActivePvpActionOffer } from '../../../core/domain/pvp/pvp.model';
+import { GameCopyService } from '../../../core/services/game-copy/game-copy.service';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../core/services/pvp/player-pvp';
 import {
   pendingTimerDisplay,
   pendingTimerHasElapsed,
 } from '../../../core/utils/pending-timer';
+import { pvpActionCopyKeyFallback } from '../../../core/utils/pvp-action-copy-key-fallback';
 import { RequestToken } from '../../../core/utils/request-token';
+import { MinigameSourceRef } from '../../components/minigame-host/minigame-host.model';
 import {
-  MINIGAME_SOURCE_ENTITY_TYPE,
-  MinigameCompletionEvent,
-  MinigameSourceRef,
-} from '../../components/minigame-host/minigame-host.model';
+  isManualPvpCombatOffer,
+  pvpCombatSourceRef,
+} from '../../features/pvp/utils/pvp-combat-source-ref';
+import { PvpCombatCopyState } from '../../features/pvp/state/pvp-combat-copy.state';
 
 const ACTIVE_OFFER_REFRESH_INTERVAL_MS = 5000;
 
 @Injectable()
-export class CombatPvpActionState {
+export class PvpCombatActionState {
   private readonly activeHero = inject(ActiveHero);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly combatCopy = inject(PvpCombatCopyState);
+  private readonly gameCopy = inject(GameCopyService);
   private readonly playerPvp = inject(PlayerPvp);
   private readonly requests = new RequestToken();
-  private readonly sourceRef = signal<MinigameSourceRef | null>(null);
-  private readonly completion = signal<MinigameCompletionEvent | null>(null);
   private readonly nowMs = signal(Date.now());
   private elapsedRefreshKey: string | null = null;
   private lastElapsedRefreshMs = 0;
+  private activeContextKey: string | null = null;
 
+  readonly copy = signal<PvpActionCopy | null>(pvpActionCopyKeyFallback());
+  readonly combatCommonCopy = this.combatCopy.combatCommonCopy;
+  readonly pvpCombatCopy = this.combatCopy.pvpCombatCopy;
   readonly offer = signal<ActivePvpActionOffer | null>(null);
   readonly error = signal<string | null>(null);
-  readonly isLoading = signal(false);
+  private readonly isOfferLoading = signal(false);
+  private readonly isCopyLoading = signal(false);
+  readonly isLoading = computed(() => this.isOfferLoading() || this.isCopyLoading());
   readonly visibleOffer = computed(() => {
-    const offer = this.currentSourceOffer();
-    const completion = this.completion();
+    const offer = this.offer();
 
-    return completion &&
-      offer &&
-      offer.pvpActionId === completion.sourceEntityId &&
-      shouldShowActivePvpOffer(offer)
-      ? offer
-      : null;
+    return offer && shouldShowActivePvpOffer(offer) ? offer : null;
+  });
+  readonly combatOffer = computed(() => {
+    const offer = this.offer();
+
+    return isManualPvpCombatOffer(offer) ? offer : null;
+  });
+  readonly combatSourceRef = computed<MinigameSourceRef | null>(() => {
+    return pvpCombatSourceRef(this.combatOffer());
+  });
+  readonly combatSourcePresentation = computed(() => {
+    const copy = this.copy();
+
+    return copy ? this.combatCopy.sourcePresentation(copy) : null;
   });
   readonly timer = computed(() => {
     const offer = this.visibleOffer();
@@ -77,29 +92,14 @@ export class CombatPvpActionState {
   });
   readonly factRows = computed(() => {
     const offer = this.visibleOffer();
+    const copy = this.copy();
 
-    return offer ? pvpActiveActionFactRows(offer) : [];
-  });
-  readonly helperText = computed(() => {
-    const offer = this.visibleOffer();
-
-    return offer ? pvpActiveActionHelperText(offer) : '';
-  });
-  readonly pendingHelperText = computed(() => {
-    const offer = this.visibleOffer();
-
-    return offer ? pvpActiveActionPendingHelperText(offer) : '';
+    return offer && copy ? pvpActiveActionFactRows(offer, copy) : [];
   });
   readonly decisionDeadline = computed<CombatSurfaceDecisionDeadline | null>(() => {
-    const offer = this.currentSourceOffer();
+    const offer = this.combatOffer();
 
-    if (
-      !offer ||
-      this.completion() ||
-      offer.actionKind !== 'attack' ||
-      !offer.isManualWindow ||
-      offer.isResolved
-    ) {
+    if (!offer) {
       return null;
     }
 
@@ -118,7 +118,7 @@ export class CombatPvpActionState {
     });
 
     return {
-      label: 'Okno decyzji',
+      label: this.copy()?.common.labels.decisionTime ?? '',
       countdownLabel: timer.countdownLabel,
       progressPercent: timer.isCoherent ? Math.max(0, 100 - timer.progressPercent) : 0,
       isUpdating: this.isLoading() || timer.isReady,
@@ -130,7 +130,7 @@ export class CombatPvpActionState {
     this.destroyRef.onDestroy(() => clearInterval(intervalId));
 
     effect(() => {
-      const offer = this.currentSourceOffer();
+      const offer = this.offer();
       const nowMs = this.nowMs();
       const refreshAt = offer ? pvpActiveActionRefreshAt(offer) : null;
 
@@ -156,31 +156,27 @@ export class CombatPvpActionState {
       this.lastElapsedRefreshMs = nowMs;
       queueMicrotask(() => this.load());
     });
-  }
+    effect(() => {
+      const contextKey = activeHeroContextKey(this.activeHero.state());
 
-  setSourceRef(sourceRef: MinigameSourceRef | null): void {
-    if (this.sameSourceRef(this.sourceRef(), sourceRef)) {
-      return;
-    }
+      if (contextKey === this.activeContextKey) {
+        return;
+      }
 
-    this.requests.next();
-    this.sourceRef.set(sourceRef);
-    this.completion.set(null);
-    this.offer.set(null);
-    this.error.set(null);
-    this.elapsedRefreshKey = null;
-    this.lastElapsedRefreshMs = 0;
+      this.activeContextKey = contextKey;
+      this.requests.next();
+      this.offer.set(null);
+      this.error.set(null);
+      this.elapsedRefreshKey = null;
+      this.lastElapsedRefreshMs = 0;
 
-    if (sourceRef?.sourceEntityType === MINIGAME_SOURCE_ENTITY_TYPE.pvpAction) {
-      this.load();
-    } else {
-      this.isLoading.set(false);
-    }
-  }
-
-  acceptCompletion(event: MinigameCompletionEvent): void {
-    this.completion.set(event);
-    this.load();
+      if (contextKey) {
+        queueMicrotask(() => this.load());
+      } else {
+        this.isOfferLoading.set(false);
+      }
+    });
+    this.loadCopy();
   }
 
   refresh(): void {
@@ -188,86 +184,70 @@ export class CombatPvpActionState {
   }
 
   private load(): void {
-    const sourceRef = this.sourceRef();
-
-    if (sourceRef?.sourceEntityType !== MINIGAME_SOURCE_ENTITY_TYPE.pvpAction) {
-      this.offer.set(null);
-      this.error.set(null);
-      this.isLoading.set(false);
-      return;
-    }
-
     const requestId = this.requests.next();
     const requestContextKey = activeHeroContextKey(this.activeHero.state());
 
-    this.isLoading.set(true);
+    this.isOfferLoading.set(true);
     this.error.set(null);
 
     if (!requestContextKey) {
       this.offer.set(null);
-      this.error.set('Brak aktywnego bohatera do sprawdzenia aktywnego stanu PvP.');
-      this.isLoading.set(false);
+      this.error.set(this.copy()?.common.emptyValues.noData ?? null);
+      this.isOfferLoading.set(false);
       return;
     }
 
     this.playerPvp.getActivePvpActionOffer()
       .pipe(
         finalize(() => {
-          if (this.isCurrentRequest(requestId, requestContextKey, sourceRef)) {
-            this.isLoading.set(false);
+          if (this.isCurrentRequest(requestId, requestContextKey)) {
+            this.isOfferLoading.set(false);
           }
         }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: (offer) => {
-          if (!this.isCurrentRequest(requestId, requestContextKey, sourceRef)) {
+          if (!this.isCurrentRequest(requestId, requestContextKey)) {
             return;
           }
 
-          this.offer.set(offer?.pvpActionId === sourceRef.sourceEntityId ? offer : null);
+          this.offer.set(offer ?? null);
         },
         error: (error: unknown) => {
-          if (!this.isCurrentRequest(requestId, requestContextKey, sourceRef)) {
+          if (!this.isCurrentRequest(requestId, requestContextKey)) {
             return;
           }
 
           this.offer.set(null);
           this.error.set(pvpActiveActionErrorMessage(
             error,
-            'Nie udało się sprawdzić aktywnego stanu PvP.',
+            this.copy()?.common.emptyValues.noData ?? '',
           ));
         },
       });
   }
 
-  private currentSourceOffer(): ActivePvpActionOffer | null {
-    const sourceRef = this.sourceRef();
-    const offer = this.offer();
-
-    return sourceRef &&
-      offer &&
-      sourceRef.sourceEntityType === MINIGAME_SOURCE_ENTITY_TYPE.pvpAction &&
-      offer.pvpActionId === sourceRef.sourceEntityId
-      ? offer
-      : null;
+  private loadCopy(): void {
+    this.isCopyLoading.set(true);
+    this.gameCopy.getCopy('player.pvp.action', { locale: 'pl' })
+      .pipe(
+        finalize(() => this.isCopyLoading.set(false)),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe({
+        next: (copy) => {
+          this.copy.set(copy);
+        },
+        error: () => this.copy.set(pvpActionCopyKeyFallback()),
+      });
   }
 
   private isCurrentRequest(
     requestId: number,
     contextKey: string,
-    sourceRef: MinigameSourceRef,
   ): boolean {
     return this.requests.isCurrent(requestId) &&
-      contextKey === activeHeroContextKey(this.activeHero.state()) &&
-      this.sameSourceRef(this.sourceRef(), sourceRef);
-  }
-
-  private sameSourceRef(
-    current: MinigameSourceRef | null,
-    next: MinigameSourceRef | null,
-  ): boolean {
-    return current?.sourceEntityType === next?.sourceEntityType &&
-      current?.sourceEntityId === next?.sourceEntityId;
+      contextKey === activeHeroContextKey(this.activeHero.state());
   }
 }

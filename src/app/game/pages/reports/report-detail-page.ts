@@ -3,8 +3,11 @@ import { ActivatedRoute } from '@angular/router';
 import { GamePageSummaryRow } from '../../../core/interfaces/game-page-summary-row.interface';
 import { GamePageHeader } from '../../../shared/game-page-header/game-page-header';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import { PrivateReportDetailPage } from '../../../core/domain/reports/report-detail.model';
+import { isPrivatePvpReportDetail } from '../../../core/utils/pvp-report-domain-context';
 import { ReportDetailSections } from './report-detail-sections';
 import { ReportDetailPageState } from './report-detail-page.state';
+import { PvpReportDomainContent } from '../../components/pvp-report-domain-content/pvp-report-domain-content';
 
 @Component({
   selector: 'app-report-detail-page',
@@ -12,6 +15,7 @@ import { ReportDetailPageState } from './report-detail-page.state';
   imports: [
     GamePageHeader,
     LoadingOverlay,
+    PvpReportDomainContent,
     ReportDetailSections,
   ],
   providers: [ReportDetailPageState],
@@ -28,23 +32,28 @@ export class ReportDetailPage implements OnInit {
       return [];
     }
 
+    const shell = detail.reportShellContextJson;
+    const sourceValue = shell.source.label;
+
     return [
       {
         key: 'reportType',
         label: copy.reportShell.meta.eventTypeLabel,
-        value: detail.report.reportTypeLabel,
+        value: shell.eventType.label,
       },
-      ...(detail.report.sourceLabel
+      ...(sourceValue
         ? [{
           key: 'source',
           label: copy.reportShell.meta.sourceLabel,
-          value: detail.report.sourceLabel,
+          value: sourceValue,
         }]
         : []),
       {
         key: 'createdAt',
         label: copy.reportShell.meta.reportDateLabel,
-        value: this.page.formatDateTime(detail.report.createdAt),
+        value: shell.reportDate.displayValue ?? (
+          shell.reportDate.value ? this.page.formatDateTime(shell.reportDate.value) : ''
+        ),
       },
       {
         key: 'reportsCenter',
@@ -61,5 +70,9 @@ export class ReportDetailPage implements OnInit {
     if (reportId) {
       this.page.loadData(reportId);
     }
+  }
+
+  isPrivatePvpDetail(detail: PrivateReportDetailPage): boolean {
+    return isPrivatePvpReportDetail(detail);
   }
 }

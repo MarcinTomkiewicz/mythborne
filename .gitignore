@@ -48,3 +48,4 @@ supabase/.env
 supabase/.env.*
 .env
 .env.*
+.review-dirty-files/

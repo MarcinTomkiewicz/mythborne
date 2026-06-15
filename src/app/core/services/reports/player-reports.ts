@@ -132,12 +132,10 @@ export class PlayerReports {
       RPC.get_report_detail,
       args,
     ).pipe(
-      map((value) =>
-        mapReportDetailPage(value, {
-          heroId: input.heroId,
-          reportId: input.reportId,
-        }),
-      ),
+      map((value) => mapReportDetailPage(value, {
+        heroId: input.heroId,
+        reportId: input.reportId,
+      })),
     );
   }
 

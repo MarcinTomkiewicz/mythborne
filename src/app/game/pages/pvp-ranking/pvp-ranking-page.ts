@@ -12,7 +12,6 @@ import type {
   DataRow,
   DataRowActionKind,
 } from '../../../core/types/data-row.types';
-import { PVP_ACTIVE_ACTION_COPY } from '../../../core/configs/pvp-active-action-ui.config';
 import { PvpActionRunner } from '../../../core/services/pvp/pvp-action-runner';
 import { PvpActiveActionNavigationState } from '../../features/pvp/state/pvp-active-action-navigation.state';
 import { PvpActiveActionState } from '../../features/pvp/state/pvp-active-action.state';
@@ -50,7 +49,6 @@ import { PvpRankingPageState } from '../../features/pvp-ranking/state/pvp-rankin
 export class PvpRankingPage implements OnInit {
   private readonly pvpActiveActionNavigation = inject(PvpActiveActionNavigationState);
 
-  readonly pvpActiveActionCopy = PVP_ACTIVE_ACTION_COPY;
   readonly activePvpAction = inject(PvpActiveActionState);
   readonly actions = inject(PvpRankingActionsState);
   readonly spyReport = inject(PvpSpyReportState);
@@ -60,7 +58,6 @@ export class PvpRankingPage implements OnInit {
     effect(() => {
       const copy = this.state.copy();
 
-      this.activePvpAction.setCopy(this.pvpActiveActionCopy.state);
       this.activePvpAction.setGenericErrorLabel(copy
         ? `${copy.feedback.searchFailed.summary}. ${copy.feedback.searchFailed.detail}`
         : null);

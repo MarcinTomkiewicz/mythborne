@@ -1,8 +1,14 @@
-<section class="walking-dead-meter flex-col gap-sm w-100 p-sm radius-lg" aria-label="Walking Dead timing">
-  <div class="flex-row-between-center flex-col-sm gap-sm">
-    <strong class="color-heading font-display">Walking Dead timing</strong>
-    <span class="color-muted text-sm">Zatrzymaj wskaźnik w strefie trafienia</span>
-  </div>
+<section class="walking-dead-meter flex-col gap-sm w-100 p-sm radius-lg">
+  @if (title() || helperText()) {
+    <div class="flex-row-between-center flex-col-sm gap-sm">
+      @if (title()) {
+        <strong class="color-heading font-display">{{ title() }}</strong>
+      }
+      @if (helperText()) {
+        <span class="color-muted text-sm">{{ helperText() }}</span>
+      }
+    </div>
+  }
 
   <button
     type="button"
@@ -25,19 +31,29 @@
     </span>
   </button>
 
-  <div class="flex-row-center-center flex-wrap gap-sm">
-    <p-button
-      type="button"
-      [label]="actionLabel()"
-      [loading]="actionLoading()"
-      [disabled]="disabled()"
-      (onClick)="onFieldClick()"
-    />
-  </div>
+  @if (actionLabel(); as label) {
+    <div class="flex-row-center-center flex-wrap gap-sm">
+      <p-button
+        type="button"
+        [label]="label"
+        [loading]="actionLoading()"
+        [disabled]="disabled()"
+        (onClick)="onFieldClick()"
+      />
+    </div>
+  }
 
-  <div class="flex-row-between-center gap-md w-100 color-muted text-xs">
-    <span>Za wcześnie</span>
-    <strong class="success-text">Strefa trafienia</strong>
-    <span>Za późno</span>
-  </div>
+  @if (earlyLabel() || hitZoneLabel() || lateLabel()) {
+    <div class="flex-row-between-center gap-md w-100 color-muted text-xs">
+      @if (earlyLabel()) {
+        <span>{{ earlyLabel() }}</span>
+      }
+      @if (hitZoneLabel()) {
+        <strong class="success-text">{{ hitZoneLabel() }}</strong>
+      }
+      @if (lateLabel()) {
+        <span>{{ lateLabel() }}</span>
+      }
+    </div>
+  }
 </section>

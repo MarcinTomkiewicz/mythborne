@@ -1,79 +1,48 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { map } from 'rxjs';
-import { ButtonModule } from 'primeng/button';
-import { PVP_ACTIVE_ACTION_COPY } from '../../../core/configs/pvp-active-action-ui.config';
-import { CombatReportHandoffCard } from '../../components/combat/combat-report-handoff-card';
+import { Component, computed, inject, signal } from '@angular/core';
 import { PvpActiveActionPanel } from '../../components/pvp-active-action-panel/pvp-active-action-panel';
 import { MinigameHost } from '../../components/minigame-host/minigame-host';
 import {
   MINIGAME_KEY,
-  MINIGAME_SOURCE_ENTITY_TYPE,
   MinigameCompletionEvent,
-  MinigameSourceRef,
 } from '../../components/minigame-host/minigame-host.model';
-import { trimToNull } from '../../../core/utils/normalize-text';
-import { CombatPvpActionState } from './combat-pvp-action.state';
+import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import { ReportDetailPreviewCard } from '../../components/report-detail-preview-card/report-detail-preview-card';
+import { PvpCombatActionState } from './pvp-combat-action.state';
 
 @Component({
   selector: 'app-combat-page',
   standalone: true,
   imports: [
-    ButtonModule,
-    CombatReportHandoffCard,
+    LoadingOverlay,
     MinigameHost,
-    RouterLink,
     PvpActiveActionPanel,
+    ReportDetailPreviewCard,
   ],
-  providers: [CombatPvpActionState],
+  providers: [PvpCombatActionState],
   templateUrl: './combat-page.html',
   host: { class: 'd-contents min-w-0' },
 })
 export class CombatPage {
-  private readonly route = inject(ActivatedRoute);
-  readonly pvpAction = inject(CombatPvpActionState);
-  private readonly query = toSignal(
-    this.route.queryParamMap.pipe(
-      map((params) => ({
-        sourceEntityType: trimToNull(params.get('sourceEntityType')),
-        sourceEntityId: trimToNull(params.get('sourceEntityId')),
-      })),
-    ),
-    { initialValue: { sourceEntityType: null, sourceEntityId: null } },
-  );
+  readonly pvpAction = inject(PvpCombatActionState);
 
   readonly minigameKey = MINIGAME_KEY.combat;
-  readonly pvpActiveActionCopy = PVP_ACTIVE_ACTION_COPY;
   readonly completion = signal<MinigameCompletionEvent | null>(null);
-  readonly sourceRef = computed<MinigameSourceRef | null>(() => {
-    const query = this.query();
+  readonly currentCompletion = computed(() => {
+    const completion = this.completion();
+    const source = this.pvpAction.combatSourceRef();
 
-    return query.sourceEntityType === MINIGAME_SOURCE_ENTITY_TYPE.pvpAction && query.sourceEntityId
-      ? {
-          sourceEntityType: MINIGAME_SOURCE_ENTITY_TYPE.pvpAction,
-          sourceEntityId: query.sourceEntityId,
-        }
+    return completion && source && completion.sourceEntityId === source.sourceEntityId
+      ? completion
       : null;
   });
-  readonly contextTitle = computed(() =>
-    this.sourceRef()?.sourceEntityType === MINIGAME_SOURCE_ENTITY_TYPE.pvpAction
-      ? 'Walka PvP'
-      : 'Walka',
-  );
-
-  constructor() {
-    effect(() => {
-      this.pvpAction.setSourceRef(this.sourceRef());
-    });
-  }
 
   acceptCompletion(event: MinigameCompletionEvent): void {
     this.completion.set(event);
-    this.pvpAction.acceptCompletion(event);
+    this.pvpAction.refresh();
   }
 
   refreshActivePvpOffer(): void {
     this.pvpAction.refresh();
   }
+
 }

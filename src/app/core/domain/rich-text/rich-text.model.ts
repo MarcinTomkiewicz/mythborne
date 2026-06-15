@@ -3,7 +3,8 @@ export type RichTextTone =
   | 'info'
   | 'warn'
   | 'success'
-  | 'danger';
+  | 'danger'
+  | 'muted';
 
 export interface RichTextFragment {
   kind: string;

@@ -3,6 +3,7 @@ import {
   RichTextFragment,
   RichTextItemReference,
 } from '../../core/domain/rich-text/rich-text.model';
+import type { ItemPopoverContextKey } from '../../core/domain/item/item-detail-popover.model';
 import { ItemDetailPopover } from '../item-detail-popover/item-detail-popover';
 
 @Component({
@@ -15,6 +16,7 @@ export class RichText {
   readonly fragments = input.required<readonly RichTextFragment[]>();
   readonly visibility = input<'private' | 'public'>('private');
   readonly publicToken = input<string | null>(null);
+  readonly itemPopoverContext = input<ItemPopoverContextKey | null>(null);
   readonly itemReferences = input<readonly RichTextItemReference[]>([]);
 
   fragmentTrackKey(index: number, fragment: RichTextFragment): string {
@@ -40,7 +42,7 @@ export class RichText {
     }
 
     return this.visibility() === 'private'
-      ? true
+      ? Boolean(this.itemPopoverContext()?.trim())
       : Boolean(this.publicToken()?.trim() && this.itemReferenceId(fragment));
   }
 
@@ -52,8 +54,16 @@ export class RichText {
     return this.visibility() === 'public' ? this.publicToken() : null;
   }
 
-  popoverContext(): 'exploration' | 'public_report' {
-    return this.visibility() === 'private' ? 'exploration' : 'public_report';
+  popoverContext(): ItemPopoverContextKey {
+    const context = this.visibility() === 'private'
+      ? this.itemPopoverContext()
+      : 'public_report';
+
+    if (!context) {
+      throw new Error('RichText item popover context is required for itemRef fragments.');
+    }
+
+    return context;
   }
 
   fragmentToneClass(fragment: RichTextFragment): string {
@@ -75,6 +85,10 @@ export class RichText {
 
     if (fragment.tone === 'danger') {
       return 'error-text';
+    }
+
+    if (fragment.tone === 'muted') {
+      return 'color-muted';
     }
 
     return '';

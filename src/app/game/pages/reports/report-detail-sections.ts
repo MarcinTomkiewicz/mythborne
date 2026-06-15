@@ -4,10 +4,14 @@ import type {
   PrivateReportDetailPage,
   ReportDetailV2,
 } from '../../../core/domain/reports/report-detail.model';
+import { PvpPrivateReportCopy } from '../../../core/domain/pvp/pvp-private-report-copy.model';
 import type { ReportShellCopy } from '../../../core/domain/reports/report-page-copy.model';
 import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/browser-clipboard';
-import { mapCanonicalReportCombatStageView } from '../../../core/utils/combat-report-display.mapper';
+import { mapNonPvpCanonicalReportCombatStageView } from '../../../core/utils/combat-report-display.mapper';
 import { publicReportPathFromToken } from '../../../core/utils/public-report-path';
+import {
+  isPrivatePvpReportDetail,
+} from '../../../core/utils/pvp-report-domain-context';
 import { CombatStage } from '../../components/combat/combat-stage';
 import { ExplorationReportDomainContent } from '../../components/exploration-report-domain-content/exploration-report-domain-content';
 import { PvpReportDomainContent } from '../../components/pvp-report-domain-content/pvp-report-domain-content';
@@ -27,6 +31,7 @@ import { PvpReportDomainContent } from '../../components/pvp-report-domain-conte
 export class ReportDetailSections {
   readonly detail = input.required<ReportDetailV2>();
   readonly activeHeroId = input<string | null>(null);
+  readonly pvpPrivateReportCopy = input<PvpPrivateReportCopy | null>(null);
   readonly shellCopy = input.required<ReportShellCopy>();
 
   readonly context = computed(() => this.detail().domainContextJson);
@@ -38,36 +43,21 @@ export class ReportDetailSections {
       !context.frontendUsage.sourceIdsRedacted &&
       context.missingContextReason === null;
   });
-  readonly isPrivatePvpCombat = computed(() => {
-    const context = this.context();
-    const pvp = context.pvp;
-
-    return this.detail().access.visibility === 'private' &&
-      context.reportDomainKey === 'pvp' &&
-      context.contentKind === 'pvp_combat' &&
-      context.frontendUsage.canUsePrivateDomainReads &&
-      !context.frontendUsage.sourceIdsRedacted &&
-      context.missingContextReason === null &&
-      pvp?.sourceKind === 'pvp_attack' &&
-      !!pvp.pvpAttackResultId;
-  });
-  readonly privatePvpCombatDetail = computed(() =>
-    this.isPrivatePvpCombat()
+  readonly privatePvpDetail = computed(() =>
+    isPrivatePvpReportDetail(this.detail())
       ? this.detail() as PrivateReportDetailPage
       : null,
   );
   readonly combatStage = computed(() =>
-    this.isPrivateExploration() || this.privatePvpCombatDetail()
+    this.isPrivateExploration() || this.privatePvpDetail()
       ? null
-      : mapCanonicalReportCombatStageView(this.detail().report, {
+      : mapNonPvpCanonicalReportCombatStageView(this.detail().report, {
           activeHeroId: this.activeHeroId(),
-          reportId: this.context().gameReportId,
+          combatResultId: this.context().combat?.combatResultId ?? null,
         }),
   );
   readonly publicReportPath = computed(() =>
-    publicReportPathFromToken(
-      this.detail().report.publicToken ?? this.context().publicToken,
-    ),
+    publicReportPathFromToken(this.detail().report.publicToken),
   );
 
   copyPublicReportLink(): void {

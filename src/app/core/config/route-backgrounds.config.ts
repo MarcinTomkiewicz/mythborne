@@ -54,6 +54,7 @@ export const ROUTE_BACKGROUNDS: readonly RouteBackgroundConfig[] = [
   { path: '/game/auction', image: backgroundImage('auction-background.png') },
   { path: '/game/reports', image: backgroundImage('reports-background.png') },
   { path: '/game/combat', image: backgroundImage('combat-background.png') },
+  { path: '/game/ranking', image: backgroundImage('combat-background.png') },
 ];
 
 export function resolveRouteBackgroundImage(url: string): string | null {

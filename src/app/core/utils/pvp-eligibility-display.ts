@@ -1,4 +1,5 @@
 import { UiMetadataEntryReadModel } from '../domain/admin-ui-metadata.model';
+import { PvpActionCopy } from '../domain/pvp/pvp-action-copy.model';
 import {
   PvpActionEligibility,
   PvpAttackEligibility,
@@ -19,6 +20,7 @@ export interface PvpEligibilityDisplayContext {
   eligibility: PvpActionEligibility | PvpAttackEligibility;
   targetLevel: number;
   metadataEntries: readonly UiMetadataEntryReadModel[];
+  copy: PvpActionCopy['eligibility'];
 }
 
 const METADATA_REASON_KEY_PREFIXES = [
@@ -27,40 +29,12 @@ const METADATA_REASON_KEY_PREFIXES = [
   'target_eligibility.',
 ] as const;
 
-const FALLBACK_REASON_LABELS: Record<string, string> = {
-  action_unavailable: 'Akcja niedostępna',
-  action_kind_inactive: 'Akcja niedostępna',
-  action_kind_unavailable: 'Akcja niedostępna',
-  active_target_protection: 'Cel chroniony',
-  attacker_blocking_activity: 'Bohater jest zajęty',
-  attacker_busy: 'Bohater jest zajęty',
-  attacker_has_active_activity: 'Bohater jest zajęty',
-  attacker_has_blocking_activity: 'Bohater jest zajęty',
-  below_level_range: 'Cel poniżej zakresu poziomu',
-  pvp_action_unavailable: 'Akcja niedostępna',
-  same_guild: 'Cel z twojej gildii',
-  target_above_attack_level_range: 'Cel powyżej zakresu poziomu',
-  target_above_level_range: 'Cel powyżej zakresu poziomu',
-  target_below_attack_level_range: 'Cel poniżej zakresu poziomu',
-  target_below_level_range: 'Cel poniżej zakresu poziomu',
-  target_level_above_range: 'Cel powyżej zakresu poziomu',
-  target_level_below_range: 'Cel poniżej zakresu poziomu',
-  target_protected: 'Cel chroniony',
-  target_too_high: 'Cel powyżej zakresu poziomu',
-  target_too_low: 'Cel poniżej zakresu poziomu',
-  target_guild_member: 'Cel z twojej gildii',
-  target_in_same_guild: 'Cel z twojej gildii',
-  target_is_guild_member: 'Cel z twojej gildii',
-  target_under_protection: 'Cel chroniony',
-  target_same_guild: 'Cel z twojej gildii',
-};
-
 export function pvpEligibilityDisplay(
   context: PvpEligibilityDisplayContext,
 ): PvpEligibilityDisplay {
   if (context.eligibility.canStart) {
     return {
-      statusLabel: 'dostępny',
+      statusLabel: context.copy.statusLabels.available,
       reasonLabel: null,
       reasonDetail: null,
       rawReasonKey: null,
@@ -72,27 +46,33 @@ export function pvpEligibilityDisplay(
     ?? inferredAttackReasonKey(context);
 
   if (!reasonKey) {
-    return {
-      statusLabel: 'niedostępny',
-      reasonLabel: 'Akcja niedostępna',
-      reasonDetail: null,
-      rawReasonKey: null,
-      isPlayerSafeReason: false,
-    };
+    return unavailableDisplay(context, null, null);
   }
 
   const metadata = findReasonMetadata(context.metadataEntries, reasonKey);
   const isPlayerSafeReason = isPlayerSafeEligibilityReason(reasonKey, metadata);
 
   return {
-    statusLabel: 'niedostępny',
-    reasonLabel: metadata?.label ?? FALLBACK_REASON_LABELS[reasonKey] ?? 'Akcja niedostępna',
+    ...unavailableDisplay(context, reasonKey, metadata?.label ?? null),
     reasonDetail: metadata?.description
       ?? metadata?.helperText
       ?? metadata?.impactSummary
-      ?? fallbackReasonDetail(context, reasonKey),
-    rawReasonKey: reasonKey,
+      ?? copyReasonDetail(context, reasonKey),
     isPlayerSafeReason,
+  };
+}
+
+function unavailableDisplay(
+  context: PvpEligibilityDisplayContext,
+  reasonKey: string | null,
+  reasonLabel: string | null,
+): PvpEligibilityDisplay {
+  return {
+    statusLabel: context.copy.statusLabels.unavailable,
+    reasonLabel: reasonLabel ?? context.copy.statusLabels.actionUnavailable,
+    reasonDetail: null,
+    rawReasonKey: reasonKey,
+    isPlayerSafeReason: false,
   };
 }
 
@@ -109,32 +89,32 @@ function findReasonMetadata(
   ) ?? null;
 }
 
-function fallbackReasonDetail(
+function copyReasonDetail(
   context: PvpEligibilityDisplayContext,
   reasonKey: string,
 ): string | null {
   if (isAttackerBusyReason(reasonKey)) {
-    return 'Twój bohater ma już aktywną czynność blokującą kolejną akcję.';
+    return context.copy.disabledReasonTooltips.attackerBusy;
   }
 
   if (isTargetProtectedReason(reasonKey)) {
-    return 'Cel jest obecnie chroniony przed atakami.';
+    return context.copy.disabledReasonTooltips.targetProtected;
   }
 
-  if (isTargetBelowRangeReason(reasonKey) && isAttackEligibility(context.eligibility)) {
-    return `Poziom celu ${context.targetLevel} jest poniżej twojego zakresu ataku ${context.eligibility.minTargetLevel}-${context.eligibility.maxTargetLevel}.`;
+  if (isTargetBelowRangeReason(reasonKey)) {
+    return context.copy.disabledReasonTooltips.targetLevelTooLow;
   }
 
-  if (isTargetAboveRangeReason(reasonKey) && isAttackEligibility(context.eligibility)) {
-    return `Poziom celu ${context.targetLevel} jest powyżej twojego zakresu ataku ${context.eligibility.minTargetLevel}-${context.eligibility.maxTargetLevel}.`;
+  if (isTargetAboveRangeReason(reasonKey)) {
+    return context.copy.disabledReasonTooltips.targetLevelTooHigh;
   }
 
   if (isSameGuildReason(reasonKey)) {
-    return 'Nie możesz rozpocząć tej akcji przeciwko członkowi swojej gildii.';
+    return context.copy.disabledReasonTooltips.sameGuild;
   }
 
   if (isActionUnavailableReason(reasonKey)) {
-    return `${actionLabel(context.actionKind)} jest niedostępny dla tego celu.`;
+    return context.copy.disabledReasonTooltips.actionUnavailable;
   }
 
   return null;
@@ -228,8 +208,4 @@ function isPlayerSafeEligibilityReason(
     || isTargetBelowRangeReason(reasonKey)
     || isTargetAboveRangeReason(reasonKey)
     || isSameGuildReason(reasonKey);
-}
-
-function actionLabel(actionKind: PvpEligibilityActionKind): string {
-  return actionKind === 'attack' ? 'Atak' : 'Szpieg';
 }

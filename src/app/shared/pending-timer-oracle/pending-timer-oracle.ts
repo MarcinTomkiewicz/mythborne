@@ -21,8 +21,8 @@ export class PendingTimerOracle {
   readonly timerAriaLabel = input.required<string>();
   readonly progressAriaLabel = input.required<string>();
   readonly pendingLabel = input.required<string>();
-  readonly pendingHelperText = input.required<string>();
-  readonly pendingNeutralHelperText = input.required<string>();
+  readonly pendingHelperText = input<string | null>(null);
+  readonly pendingNeutralHelperText = input<string | null>(null);
   readonly readyLabel = input.required<string>();
   readonly readyTitle = input.required<string>();
   readonly readyHelperText = input.required<string>();

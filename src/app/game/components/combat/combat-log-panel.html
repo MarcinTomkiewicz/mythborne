@@ -1,4 +1,4 @@
-<section class="mg-card p-md flex-col gap-md w-100" aria-label="Przebieg starcia">
+<section class="mg-card p-md flex-col gap-md w-100" [attr.aria-label]="title()">
   <header class="flex-col gap-xs">
     <p class="small-caps color-muted text-xs m-0">{{ title() }}</p>
     @if (subtitle(); as value) {
@@ -10,7 +10,9 @@
     <div class="mg-grid gap-sm w-100 mx-auto">
       @for (group of groups(); track group.id) {
         <section class="mg-card shadow-none mg-grid gap-sm p-sm radius-lg" [attr.aria-label]="group.label">
-          <div class="flex-row-between-center gap-md color-muted text-xs small-caps uppercase">{{ group.label }}</div>
+          @if (group.label) {
+            <div class="flex-row-between-center gap-md color-muted text-xs small-caps uppercase">{{ group.label }}</div>
+          }
 
           @for (row of group.rows; track row.id) {
             <app-combat-log-row [row]="row" />

@@ -49,13 +49,10 @@
           <strong class="pending-timer-oracle__value color-heading font-display lh-1">
             {{ timerDisplay.countdownLabel }}
           </strong>
-          <p class="color-text text-sm m-0">
-            @if (timerDisplay.isCoherent) {
-              {{ pendingHelperText() }}
-            } @else {
-              {{ pendingNeutralHelperText() }}
-            }
-          </p>
+          @let helperText = timerDisplay.isCoherent ? pendingHelperText() : pendingNeutralHelperText();
+          @if (helperText) {
+            <p class="color-text text-sm m-0">{{ helperText }}</p>
+          }
         }
       </div>
     </section>

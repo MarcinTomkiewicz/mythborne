@@ -7,12 +7,17 @@ import { GetCombatResolutionPreviewRpcRow } from '../types/combat-live-rpc.types
 import {
   JsonRecord,
   jsonRecord,
+  optionalBoolean,
   optionalNumber,
   optionalText,
   read,
 } from './json-read';
 import { mapParticipantStatRows } from './combat-live-participant.mapper';
 import { trimToNull } from './normalize-text';
+import {
+  mapOptionalPvpCombatContextPresentation,
+  mapPvpCombatParticipantEffects,
+} from './pvp-combat-context.mapper';
 
 export function mapCombatResolutionPreview(
   row: GetCombatResolutionPreviewRpcRow,
@@ -29,6 +34,10 @@ export function mapCombatResolutionPreview(
     sourceEntityType: row.source_entity_type,
     sourceEntityId: row.source_entity_id,
     participants,
+    pvpCombatContext: mapOptionalPvpCombatContextPresentation(
+      row.pvp_combat_context,
+      'get_combat_resolution_preview.pvp_combat_context',
+    ),
     updatedAt: row.updated_at,
     rawJson: row as unknown as Json,
   };
@@ -97,6 +106,11 @@ function mapCombatResolutionPreviewParticipant(
       `${participantKind ?? fallbackParticipantKind(heroId, opponentDefinitionId)}:${index}`,
     participantKey,
     participantKind,
+    isPlayerControlled: optionalBoolean(read(
+      record,
+      'isPlayerControlled',
+      'is_player_controlled',
+    )) ?? false,
     side,
     displayName,
     statusKey: trimToNull(optionalText(read(record, 'statusKey', 'status_key', 'status'))),
@@ -117,6 +131,10 @@ function mapCombatResolutionPreviewParticipant(
     )),
     baseStatRows: mapParticipantStatRows(read(record, 'baseStatRows', 'base_stat_rows')),
     combatStatRows: mapParticipantStatRows(read(record, 'combatStatRows', 'combat_stat_rows')),
+    participantEffects: mapPvpCombatParticipantEffects(
+      read(record, 'participantEffects', 'participant_effects'),
+      'combat_resolution_preview.participants_json.participantEffects',
+    ),
     heroId,
     opponentDefinitionId,
     rawJson: record as unknown as Json,

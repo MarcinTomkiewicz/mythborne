@@ -49,7 +49,8 @@ export function requireRichTextTone(
     value === 'info' ||
     value === 'warn' ||
     value === 'success' ||
-    value === 'danger'
+    value === 'danger' ||
+    value === 'muted'
   ) {
     return value;
   }

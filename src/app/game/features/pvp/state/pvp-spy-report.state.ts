@@ -1,7 +1,6 @@
 import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, Observable, switchMap } from 'rxjs';
-import { PVP_ACTIVE_ACTION_COPY } from '../../../../core/configs/pvp-active-action-ui.config';
 import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
 import { pvpActiveActionErrorMessage } from '../../../../core/domain/pvp/pvp-active-action-display.mapper';
 import {
@@ -10,7 +9,6 @@ import {
 } from '../../../../core/domain/pvp/pvp.model';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
-import type { PvpActiveActionStateCopy } from '../../../../core/types/pvp-active-action-ui.types';
 import { createRequestId } from '../../../../core/utils/request-id';
 import { RequestToken } from '../../../../core/utils/request-token';
 
@@ -21,14 +19,14 @@ export class PvpSpyReportState {
   private readonly playerPvp = inject(PlayerPvp);
   private readonly reportRequests = new RequestToken();
   private readonly reportActionId = signal<string | null>(null);
-  private readonly copy = signal<PvpActiveActionStateCopy>(PVP_ACTIVE_ACTION_COPY.state);
+  private readonly genericErrorLabel = signal('');
 
   readonly isPreparingReport = signal(false);
   readonly error = signal<string | null>(null);
   readonly reportId = signal<string | null>(null);
 
-  setCopy(copy: PvpActiveActionStateCopy): void {
-    this.copy.set(copy);
+  setGenericErrorLabel(label: string | null): void {
+    this.genericErrorLabel.set(label ?? '');
   }
 
   prepare(offer: ActivePvpActionOffer): void {
@@ -46,7 +44,7 @@ export class PvpSpyReportState {
     const requestContextKey = activeHeroContextKey(this.activeHero.state());
 
     if (!requestContextKey) {
-      this.error.set(this.copy().missingActiveHeroError);
+      this.error.set(this.genericErrorLabel());
       return;
     }
 
@@ -56,7 +54,7 @@ export class PvpSpyReportState {
     this.error.set(null);
 
     if (offer.isResolved && !existingSpyResultId) {
-      this.error.set(this.copy().spyReportMissingResultError);
+      this.error.set(this.genericErrorLabel());
       this.isPreparingReport.set(false);
       return;
     }
@@ -96,10 +94,10 @@ export class PvpSpyReportState {
 
         this.error.set(
           error instanceof Error && error.message === 'missing_pvp_spy_result_id'
-            ? this.copy().spyReportMissingResultError
+            ? this.genericErrorLabel()
             : pvpActiveActionErrorMessage(
                 error,
-                this.copy().spyReportPrepareFailedError,
+                this.genericErrorLabel(),
               ),
         );
       },

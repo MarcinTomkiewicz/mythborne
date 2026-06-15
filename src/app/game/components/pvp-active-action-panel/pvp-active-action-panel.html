@@ -1,41 +1,67 @@
 @if (offer(); as active) {
-  @if (active.isTravelPhase || active.actionKind !== 'attack' || !active.isManualWindow) {
+  @if (renderCombatHost()) {
+    @if (combatCompletion()?.reportId; as reportId) {
+      <app-report-detail-preview-card
+        [reportId]="reportId"
+        [label]="copy().common.labels.combatReport"
+        [directReportLabel]="copy().common.actionLabels.openReport"
+      />
+    } @else if (combatSourceRef(active); as source) {
+      @if (sourcePresentation(); as presentation) {
+        @if (presentation.header; as header) {
+          <section class="mg-card p-lg flex-col gap-sm w-100">
+            <p class="small-caps color-muted text-xs mb-0">{{ header.eyebrow }}</p>
+            <h1 class="color-heading text-xl mb-0">{{ header.title }}</h1>
+            <p class="color-text text-md lh-16 mb-0">{{ header.text }}</p>
+          </section>
+        }
+
+        <app-minigame-host
+          [minigameKey]="minigameKey"
+          [sourceRef]="source"
+          [contextTitle]="presentation.header?.title ?? copy().common.labels.heroCombat"
+          [sourcePresentation]="presentation"
+          [combatDecisionDeadline]="combatDecisionDeadline(active)"
+          (completed)="acceptCombatCompletion($event)"
+        />
+      }
+    }
+  }
+
+  @if (
+    active.isTravelPhase ||
+    active.actionKind !== 'attack' ||
+    !active.isManualWindow ||
+    (renderCombatHost() && !sourcePresentation())
+  ) {
     @if (active.actionKind === 'spy') {
       @if (!timer().isReady) {
-        <section class="mg-card flex-col gap-md p-lg w-100" [attr.aria-label]="copy().activeSpyAriaLabel">
+        <section class="mg-card flex-col gap-md p-lg w-100" [attr.aria-label]="ariaLabel(active)">
           <div class="flex-row-between-start flex-wrap gap-md w-100">
             <div class="flex-col gap-xs">
-              <p class="color-muted small-caps uppercase text-xs mb-0">{{ copy().activeActionEyebrow }}</p>
-              <h2 class="color-heading text-lg mb-0">{{ copy().spyTitle }}</h2>
-              <p class="color-text mb-0">{{ helperText() }}</p>
+              <p class="color-muted small-caps uppercase text-xs mb-0">{{ copy().common.labels.action }}</p>
+              <h2 class="color-heading text-lg mb-0">{{ title(active) }}</h2>
             </div>
-            <span class="tag-badge tag-badge--info">{{ active.phaseLabel }}</span>
+            <span class="tag-badge tag-badge--info">{{ actionKindLabel(active) }}</span>
           </div>
 
           <div class="grid-3-1 gap-lg w-100 grid-items-center">
             <div class="flex-col gap-sm w-100">
               <div class="flex-row-between-center flex-wrap gap-sm">
-                <span class="color-muted small-caps uppercase text-xs">{{ copy().remainingTimeLabel }}</span>
+                <span class="color-muted small-caps uppercase text-xs">{{ timeLabel(active) }}</span>
                 <strong class="color-heading text-lg">{{ spyRemainingLabel(active) }}</strong>
               </div>
               <app-game-bar
-                [label]="copy().spyProgressLabel"
+                [label]="copy().common.labels.remainingTime"
                 [value]="timer().progressPercent"
                 [max]="100"
                 type="chance"
                 [compact]="true"
                 [showValue]="false"
               />
-              <p class="color-text text-sm mb-0">
-                @if (timer().isCoherent) {
-                  {{ pendingHelperText() }}
-                } @else {
-                  {{ copy().spyTimerUpdatingText }}
-                }
-              </p>
             </div>
 
-            <aside class="flex-col gap-sm w-100" [attr.aria-label]="copy().spyDetailsAriaLabel">
+            <aside class="flex-col gap-sm w-100" [attr.aria-label]="copy().common.labels.action">
               @for (row of factRows(); track row.label) {
                 <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
                   <span class="color-muted small-caps uppercase text-xs">{{ row.label }}</span>
@@ -47,14 +73,13 @@
         </section>
       }
     } @else {
-      <section class="mg-card flex-col gap-md p-lg w-100" [attr.aria-label]="copy().activeActionAriaLabel">
+      <section class="mg-card flex-col gap-md p-lg w-100" [attr.aria-label]="ariaLabel(active)">
         <div class="flex-row-between-start flex-wrap gap-md w-100">
           <div class="flex-col gap-xs">
-            <p class="color-muted small-caps uppercase text-xs mb-0">{{ copy().activeActionEyebrow }}</p>
-            <h2 class="color-heading text-lg mb-0">{{ active.phaseLabel }}</h2>
-            <p class="muted-text mb-0">{{ helperText() }}</p>
+            <p class="color-muted small-caps uppercase text-xs mb-0">{{ copy().common.labels.action }}</p>
+            <h2 class="color-heading text-lg mb-0">{{ title(active) }}</h2>
           </div>
-          <span class="tag-badge tag-badge--warn">{{ active.actionKindLabel }}</span>
+          <span class="tag-badge tag-badge--warn">{{ actionKindLabel(active) }}</span>
         </div>
 
         <div class="grid-3-1 gap-lg w-100 grid-items-center">
@@ -64,26 +89,23 @@
               [isReady]="isTimerReady()"
               [isResolving]="false"
               [isUpdating]="isLoading()"
-              [timerAriaLabel]="copy().timerAriaLabel"
-              [progressAriaLabel]="copy().progressAriaLabel"
-              [pendingLabel]="copy().remainingTimeLabel"
-              [pendingHelperText]="pendingHelperText()"
-              [pendingNeutralHelperText]="copy().pendingNeutralHelperText"
-              [readyLabel]="copy().readyLabel"
-              [readyTitle]="active.isResolved ? copy().resolvedReadyTitle : copy().arrivalReadyTitle"
-              [readyHelperText]="active.isResolved ? copy().resolvedReadyHelperText : copy().arrivalReadyHelperText"
-              [primaryActionLabel]="copy().refreshActionLabel"
-              [decorativeLabel]="copy().decorativeLabel"
+              [timerAriaLabel]="timeLabel(active)"
+              [progressAriaLabel]="copy().common.labels.remainingTime"
+              [pendingLabel]="timeLabel(active)"
+              [readyLabel]="copy().activeAction.readyStates.decisionReady"
+              [readyTitle]="active.isResolved ? copy().activeAction.readyStates.heroReturned : copy().activeAction.readyStates.targetReached"
+              [readyHelperText]="active.isResolved ? copy().activeAction.readyStates.reportReady : copy().activeAction.phaseText.attackManualWindow"
+              [primaryActionLabel]="copy().common.actionLabels.refresh"
+              [decorativeLabel]="copy().common.labels.action"
               (primaryAction)="refresh.emit()"
             />
           } @else {
             <div class="p-lg flex-col gap-sm w-100">
-              <span class="color-muted small-caps uppercase text-xs">{{ active.phaseLabel }}</span>
-              <p class="muted-text mb-0">{{ helperText() }}</p>
+              <span class="color-muted small-caps uppercase text-xs">{{ phaseText(active) }}</span>
             </div>
           }
 
-          <aside class="p-lg flex-col gap-sm w-100" [attr.aria-label]="copy().activeDetailsAriaLabel">
+          <aside class="p-lg flex-col gap-sm w-100" [attr.aria-label]="copy().common.labels.action">
             @for (row of factRows(); track row.label) {
               <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
                 <span class="color-muted small-caps uppercase text-xs">{{ row.label }}</span>

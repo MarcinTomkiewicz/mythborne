@@ -1,7 +1,7 @@
 <div class="flex-col gap-lg w-100">
   @if (view().isExplorationSource) {
     @for (field of view().missingExplorationNarrativeFields; track field) {
-      <span hidden [attr.data-blocked]="field"></span>
+      <p class="warn-text text-sm m-0">{{ field }}</p>
     }
 
     @if (showsOutcomeStrip(view())) {
@@ -22,7 +22,7 @@
         </div>
 
         <p class="color-text text-md lh-16 m-0">
-          <app-rich-text [fragments]="manifestation.narrativeRichText" />
+          <app-rich-text [fragments]="manifestation.narrativeRichText" itemPopoverContext="exploration" />
         </p>
       </section>
     }
@@ -39,7 +39,7 @@
         </div>
 
         <p class="color-text text-md lh-16 m-0">
-          <app-rich-text [fragments]="handoff.narrativeRichText" />
+          <app-rich-text [fragments]="handoff.narrativeRichText" itemPopoverContext="exploration" />
         </p>
       </section>
     }
@@ -62,18 +62,18 @@
         }
 
         <p class="color-text text-md lh-16 m-0">
-          <app-rich-text [fragments]="result.narrativeRichText" />
+          <app-rich-text [fragments]="result.narrativeRichText" itemPopoverContext="exploration" />
         </p>
 
         @if (rewardRichText(result); as rewardFragments) {
           <p class="color-text text-md lh-16 m-0">
-            <app-rich-text [fragments]="rewardFragments" />
+            <app-rich-text [fragments]="rewardFragments" itemPopoverContext="exploration" />
           </p>
         }
 
         @if (effectRichText(result); as effectFragments) {
           <p class="color-text text-md lh-16 m-0">
-            <app-rich-text [fragments]="effectFragments" />
+            <app-rich-text [fragments]="effectFragments" itemPopoverContext="exploration" />
           </p>
         }
       </section>
@@ -126,20 +126,6 @@
       </section>
     }
 
-    @if (view().rewardResult; as reward) {
-      <section class="mg-card p-lg flex-col gap-sm w-100">
-        <p class="small-caps color-muted text-xs m-0">{{ reward.title }}</p>
-        <p class="color-text text-md lh-16 m-0">
-          @for (segment of reward.segments; track $index) {
-            @if (segment.isHighlighted) {
-              <strong class="color-heading">{{ segment.text }}</strong>
-            } @else {
-              <span>{{ segment.text }}</span>
-            }
-          }
-        </p>
-      </section>
-    }
   }
 
   @if (showActions()) {

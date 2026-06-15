@@ -1,45 +1,42 @@
-@if (state.error()) {
-  <section class="mg-card flex-col gap-sm p-lg">
-    <p class="error-text mb-0">{{ state.error() }}</p>
-  </section>
-} @else {
-  @if (state.copy(); as copy) {
-    @if (state.context(); as context) {
-      <div class="flex-col gap-lg min-w-0">
-        <app-game-page-header
-          [eyebrowLabel]="copy.header.eyebrow"
-          [title]="copy.header.title"
-          [description]="copy.header.intro"
-          [summaryRows]="state.headerSummaryRows()"
-        />
+@if (state.copy(); as copy) {
+  <div class="flex-col gap-lg min-w-0">
+    <app-game-page-header
+      [eyebrowLabel]="copy.header.eyebrow"
+      [title]="copy.header.title"
+      [description]="copy.header.intro"
+      [summaryRows]="state.headerSummaryRows()"
+    />
 
-        <app-pvp-active-action-panel
-          [offer]="activePvpAction.visibleOffer()"
-          [copy]="pvpActiveActionCopy.panel"
-          [timer]="activePvpAction.timer()"
-          [factRows]="activePvpAction.factRows()"
-          [helperText]="activePvpAction.helperText()"
-          [pendingHelperText]="activePvpAction.pendingHelperText()"
-          [isLoading]="activePvpAction.isLoading()"
-          [isTimerReady]="activePvpAction.isTimerReady()"
-          (refresh)="activePvpAction.load()"
-        />
-        @if (activePvpAction.error()) {
-          <p class="warn-text mb-0">{{ activePvpAction.error() }}</p>
-        }
-        @if (spyReport.error()) {
-          <p class="warn-text mb-0">{{ spyReport.error() }}</p>
-        }
+    @if (activePvpAction.copy(); as actionCopy) {
+      <app-pvp-active-action-panel
+        [offer]="activePvpAction.visibleOffer()"
+        [copy]="actionCopy"
+        [sourcePresentation]="activePvpAction.combatSourcePresentation()"
+        [timer]="activePvpAction.timer()"
+        [factRows]="activePvpAction.factRows()"
+        [isLoading]="activePvpAction.isLoading()"
+        [isTimerReady]="activePvpAction.isTimerReady()"
+        [renderCombatHost]="true"
+        (refresh)="activePvpAction.load()"
+      />
+    }
+    @if (activePvpAction.error()) {
+      <p class="warn-text mb-0">{{ activePvpAction.error() }}</p>
+    }
+    @if (spyReport.error()) {
+      <p class="warn-text mb-0">{{ spyReport.error() }}</p>
+    }
 
-        <section class="grid-3-1 gap-lg w-100">
-          <section class="mg-card flex-col gap-md p-lg min-w-0 w-100">
-            <div class="flex-row-between-start flex-wrap gap-md">
-              <div class="flex-col gap-xs">
-                <h2 class="color-heading text-lg mb-0">{{ copy.ranking.title }}</h2>
-                <p class="muted-text mb-0">{{ copy.ranking.description }}</p>
-              </div>
-            </div>
+    <section class="grid-3-1 gap-lg w-100">
+      <section class="mg-card flex-col gap-md p-lg min-w-0 w-100">
+        <div class="flex-row-between-start flex-wrap gap-md">
+          <div class="flex-col gap-xs">
+            <h2 class="color-heading text-lg mb-0">{{ copy.ranking.title }}</h2>
+            <p class="muted-text mb-0">{{ copy.ranking.description }}</p>
+          </div>
+        </div>
 
+        @if (state.context(); as context) {
             <div class="flex-row-end-end flex-wrap gap-md w-100">
               @if (context.capabilities.canFilterDistrict) {
                 <div class="flex-col gap-xs min-w-200">
@@ -121,16 +118,25 @@
                 (onPageChange)="state.changePage($event)"
               />
             </div>
-          </section>
+        }
 
-          <app-pvp-ranking-target-panel
-            [selected]="state.selectedTarget()"
-            [selectedActionRow]="state.selectedTargetRow()"
-            [copy]="copy"
-            (startAction)="startAction($event.row, $event.actionKind)"
-          />
-        </section>
-      </div>
-    }
-  }
+        @if (state.error()) {
+          <section class="mg-card flex-col gap-xs p-md">
+            <p class="error-text mb-0">{{ state.error() }}</p>
+          </section>
+        }
+      </section>
+
+      <app-pvp-ranking-target-panel
+        [selected]="state.selectedTarget()"
+        [selectedActionRow]="state.selectedTargetRow()"
+        [copy]="copy"
+        (startAction)="startAction($event.row, $event.actionKind)"
+      />
+    </section>
+  </div>
+} @else if (state.error()) {
+  <section class="mg-card flex-col gap-sm p-lg">
+    <p class="error-text mb-0">{{ state.error() }}</p>
+  </section>
 }

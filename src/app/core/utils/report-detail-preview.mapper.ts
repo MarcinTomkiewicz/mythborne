@@ -17,16 +17,20 @@ import type {
   ReportCombatSection,
 } from '../domain/reports/report-section.model';
 import { uniqueInOrder } from './collection';
-import { mapCanonicalReportCombatStageView } from './combat-report-display.mapper';
+import { mapNonPvpCanonicalReportCombatStageView } from './combat-report-display.mapper';
 import { mapReportHandoffActions } from './report-handoff-actions.mapper';
-import { mapReportPvpRewardPreview } from './report-pvp-reward-preview.mapper';
 import { presentReportSection } from './report-section-common.mapper';
 
 export function mapReportDetailPreviewView(input: {
   detail: PrivateReportDetailPage;
   activeHeroId: string | null;
-  showRewardResult: boolean;
 }): ReportDetailPreviewView {
+  if (input.detail.domainContextJson.reportDomainKey === 'pvp') {
+    throw new Error(
+      'Private PvP report detail must use player.pvp.report.private copy-backed rendering.',
+    );
+  }
+
   const report = input.detail.report;
   const trialManifestationNarrative = reportTrialManifestationNarrative(report);
   const encounterCombatHandoffNarrative = reportEncounterCombatHandoffNarrative(report);
@@ -60,16 +64,12 @@ export function mapReportDetailPreviewView(input: {
     combatStage,
     narrativeLines: isExplorationSource ? [] : reportNarrativeLines(report),
     sections: isExplorationSource ? [] : reportPreviewSections(report),
-    rewardResult: !isExplorationSource && input.showRewardResult
-      ? requiredReportRewardResult(report)
-      : null,
     actions: mapReportHandoffActions({
       reportId: input.detail.access.reportId,
       publicToken: report.publicToken ?? null,
     }),
   };
 }
-
 function reportExplorationSourceKind(
   report: ReportDetailCore | null,
 ): ReportDetailPreviewExplorationSourceKind | null {
@@ -162,10 +162,10 @@ function reportCombatStage(input: {
   detail: PrivateReportDetailPage;
   activeHeroId: string | null;
 }): CombatStageViewModel | null {
-  return mapCanonicalReportCombatStageView(input.detail.report, {
+  return mapNonPvpCanonicalReportCombatStageView(input.detail.report, {
     activeHeroId: input.activeHeroId,
     activeHeroPortraitSrc: null,
-    reportId: input.detail.access.reportId,
+    combatResultId: input.detail.domainContextJson.combat?.combatResultId ?? null,
   });
 }
 
@@ -271,16 +271,4 @@ function reportPreviewSections(report: ReportDetailCore | null): readonly Report
   ];
 
   return sections.filter((section): section is ReportDetailPreviewSection => section !== null);
-}
-
-function requiredReportRewardResult(report: ReportDetailCore | null) {
-  const section = presentReportSection(report?.rewardSectionJson);
-
-  if (!section) {
-    throw new Error(
-      'get_report_detail.report.rewardSectionJson is required for PvP/Vicinity combat reward preview.',
-    );
-  }
-
-  return mapReportPvpRewardPreview(section);
 }

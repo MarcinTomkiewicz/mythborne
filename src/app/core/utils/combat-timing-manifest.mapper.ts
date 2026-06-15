@@ -10,6 +10,7 @@ import {
 import { mapCombatLuckRng } from './combat-luck-rng.mapper';
 import { trimToNull } from './normalize-text';
 import { clampPercent } from './number';
+import { mapOptionalPvpCombatContextPresentation } from './pvp-combat-context.mapper';
 
 export function mapTimingManifest(value: Json): CombatTimingManifestReadModel | null {
   const record = jsonRecord(value);
@@ -82,6 +83,10 @@ export function mapTimingManifest(value: Json): CombatTimingManifestReadModel | 
     zoneEndPercent,
     zoneWidthPercent,
     label: trimToNull(optionalText(read(record, 'label'))),
+    pvpCombatContext: mapOptionalPvpCombatContextPresentation(
+      read(record, 'pvpCombatContext', 'pvp_combat_context'),
+      'combat_timing_manifest.pvpCombatContext',
+    ),
     luckRng: mapCombatLuckRng(record, zoneWidthPercent),
     rawJson: value,
   };

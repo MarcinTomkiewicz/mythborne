@@ -1,5 +1,6 @@
 import { Component, computed, input, output } from '@angular/core';
 import { CombatSurfaceDecisionDeadline } from '../../../core/domain/combat/combat-display.model';
+import { CombatSourcePresentation } from '../../../core/domain/combat/combat-source-presentation.model';
 import { CombatHost } from '../combat/combat-host';
 import { MINIGAME_KEY, MinigameCompletionEvent, MinigameSourceRef } from './minigame-host.model';
 
@@ -14,7 +15,7 @@ export class MinigameHost {
   readonly minigameKey = input.required<string>();
   readonly sourceRef = input.required<MinigameSourceRef>();
   readonly contextTitle = input.required<string>();
-  readonly contextLabel = input('Wyzwanie');
+  readonly sourcePresentation = input.required<CombatSourcePresentation>();
   readonly combatDecisionDeadline = input<CombatSurfaceDecisionDeadline | null>(null);
   readonly completed = output<MinigameCompletionEvent>();
   readonly isCombatMinigame = computed(() => this.minigameKey() === MINIGAME_KEY.combat);

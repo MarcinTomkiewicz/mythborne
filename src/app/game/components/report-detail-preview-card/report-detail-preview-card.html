@@ -1,16 +1,44 @@
 @if (isLoading()) {
-  <section class="mg-card p-lg flex-col gap-sm w-100">
-    <p class="small-caps color-muted text-xs m-0">{{ label() }}</p>
-    <p class="color-text text-md lh-16 m-0">Ładowanie raportu...</p>
+  <section class="mg-card p-lg flex-row-center-center gap-md w-100">
+    <p-progress-spinner ariaLabel="" strokeWidth="4" />
+    @if (label(); as label) {
+      <p class="small-caps color-muted text-xs m-0">{{ label }}</p>
+    }
   </section>
 } @else if (hasError()) {
-  <section class="mg-card p-lg flex-col gap-sm w-100">
-    <p class="small-caps color-muted text-xs m-0">{{ label() }}</p>
-    <p class="warn-text text-md lh-16 m-0">Nie udało się odczytać raportu.</p>
-  </section>
+  <app-report-handoff-actions
+    [actions]="fallbackReportActions()"
+    [heading]="label() ?? ''"
+    [directReportLabel]="directReportLabel()"
+    [publicReportCopyLabel]="publicReportCopyLabel()"
+  />
+} @else if (pvpPrivateReportDetail(); as pvpDetail) {
+  <div class="flex-col gap-lg w-100">
+    <app-pvp-report-domain-content
+      [detail]="pvpDetail"
+      [copy]="pvpPrivateReportCopy()"
+      [activeHeroId]="activeHeroId()"
+    />
+
+    @if (pvpReportActions(); as actions) {
+      <app-report-handoff-actions
+        [actions]="actions"
+        [heading]="label() ?? ''"
+        [directReportLabel]="directReportLabel()"
+        [publicReportCopyLabel]="publicReportCopyLabel()"
+      />
+    }
+  </div>
+} @else if (pvpReportActions(); as actions) {
+  <app-report-handoff-actions
+    [actions]="actions"
+    [heading]="label() ?? ''"
+    [directReportLabel]="directReportLabel()"
+    [publicReportCopyLabel]="publicReportCopyLabel()"
+  />
 } @else if (view(); as preview) {
   <app-report-detail-preview-display
-    [label]="label()"
+    [label]="label() ?? ''"
     [view]="preview"
     [directReportLabel]="directReportLabel()"
     [publicReportCopyLabel]="publicReportCopyLabel()"

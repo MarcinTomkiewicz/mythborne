@@ -2,143 +2,136 @@ import {
   CombatSurfaceAction,
   CombatSurfaceCenterPanel,
 } from '../domain/combat/combat-display.model';
-import { CombatTimingManifestReadModel } from '../domain/combat/combat-live.model';
 import { CombatLiveCenterPanelInput } from '../domain/combat/combat-stage.model';
+import { PvpCombatParticipantEffect } from '../domain/pvp/pvp-combat-context.model';
 
 export function mapLiveCombatCenterPanel(
   input: CombatLiveCenterPanelInput,
 ): CombatSurfaceCenterPanel | null {
-  const timing = input.timingManifest;
   const footerAction = autoResolveButton(input);
 
   if (input.loading.isLoadingPreview) {
+    const loading = input.sourcePresentation.loadingPreview;
+
     return {
       state: 'loading',
       contextLabel: actionContextLabel(input),
-      title: 'Ładowanie podglądu walki',
-      helperText: 'Uczestnicy i statystyki zostaną pobrane przed decyzją Manual/Auto.',
+      title: loading.title,
+      helperText: loading.text,
       footerAction,
     };
   }
 
   if (input.loading.previewFailed) {
+    const unavailable = input.sourcePresentation.unavailablePreview;
+
     return {
       state: 'error',
       contextLabel: actionContextLabel(input),
-      title: 'Nie udało się odczytać podglądu walki',
-      helperText: 'Spróbuj odświeżyć widok po potwierdzeniu stanu serwera gry.',
+      title: unavailable.title,
+      helperText: unavailable.text,
       footerAction,
     };
   }
 
-  if (input.timing.isCombatRunning && timing) {
+  if (input.timing.isCombatRunning && input.timingManifest) {
+    const live = input.sourcePresentation.live;
+
     return {
       state: 'live_manual',
       contextLabel: actionContextLabel(input),
       title: currentActionTitle(input),
       helperText: currentActionHelper(input),
-      detailText: timingManifestHelper(timing),
+      detailText: input.sourcePresentation.live.text ?? null,
+      richTextRows: pvpCombatEffectRows(input),
       meter: {
-        manifestId: timing.manifestId,
+        manifestId: input.timingManifest.manifestId,
         position: input.timing.walkingPosition,
         zoneStart: input.timing.hitWindow.start,
         zoneEnd: input.timing.hitWindow.end,
         disabled: !input.timing.canSubmitStrike,
-        actionLabel: 'Zatrzymaj wskaźnik',
+        actionLabel: live.timingActionLabel,
         actionLoading: input.loading.isSubmittingAction,
+        title: live.meterTitle,
+        helperText: live.meterHelperText,
+        earlyLabel: live.meterEarlyLabel,
+        hitZoneLabel: live.meterHitZoneLabel,
+        lateLabel: live.meterLateLabel,
       },
     };
   }
 
   if (input.actions.canShowStartAction) {
-    const secondaryAction = autoResolveButton(input);
+    const decision = input.sourcePresentation.decision;
 
     return {
       state: 'decision',
       contextLabel: actionContextLabel(input),
-      title: currentActionTitle(input),
-      helperText: currentActionHelper(input),
-      detailText: timingManifestHelper(timing),
+      title: decision.title,
+      helperText: decision.description,
+      richTextRows: pvpCombatEffectRows(input),
       primaryAction: {
         id: 'start-combat',
-        label: 'Walcz ręcznie',
+        label: decision.manualActionLabel,
         loading: input.loading.isPreparingSession || input.loading.isRecoveringState,
         disabled: !input.actions.canStartAction,
+        helperText: decision.manualActionTooltip,
       },
-      secondaryAction,
+      secondaryAction: autoResolveButton(input),
       decisionDeadline: input.decisionDeadline,
     };
   }
 
-  if (input.actions.canShowTimingAction) {
-    return {
-      state: 'timing_ready',
-      contextLabel: actionContextLabel(input),
-      title: currentActionTitle(input),
-      helperText: currentActionHelper(input),
-      detailText: timingManifestHelper(timing),
-      primaryAction: {
-        id: 'start-combat',
-        label: 'Rozpocznij akcję',
-        disabled: !input.actions.canStartAction,
-      },
-      footerAction,
-    };
-  }
-
-  if (input.liveStatusKey === 'completed') {
-    return null;
-  }
-
-  return {
-    state: 'idle',
-    contextLabel: actionContextLabel(input),
-    title: 'Brak okna timingu',
-    helperText: 'Akcja Walking Dead pojawi się, gdy stan walki udostępni okno akcji gracza.',
-    detailText: timingManifestHelper(timing),
-    footerAction,
-  };
+  return null;
 }
 
-function actionContextLabel(input: CombatLiveCenterPanelInput): string {
-  return isDecisionPreview(input)
-    ? 'Decyzja przed walką'
-    : input.roundLabel ?? 'Runda N/D';
+function pvpCombatEffectRows(
+  input: CombatLiveCenterPanelInput,
+): PvpCombatParticipantEffect['summaryRichText'][] {
+  return (input.pvpCombatContext?.participantEffects ??
+    input.timingManifest?.pvpCombatContext?.participantEffects ??
+    input.participants.flatMap((participant) => participant.participantEffects))
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder)
+    .map((effect) => effect.summaryRichText);
 }
 
-function currentActionTitle(input: CombatLiveCenterPanelInput): string {
+function actionContextLabel(input: CombatLiveCenterPanelInput): string | null {
   if (isDecisionPreview(input)) {
-    return 'Wybierz sposób rozstrzygnięcia';
+    return input.sourcePresentation.decision.eyebrow;
   }
 
-  const actor = input.currentActorName ?? input.heroParticipant?.displayName;
-
-  return input.timingManifest?.label ??
-    (actor ? `${actor} przygotowuje akcję.` : 'Przygotuj akcję Walking Dead.');
+  return input.sourcePresentation.live.contextLabel ?? input.roundLabel;
 }
 
-function currentActionHelper(input: CombatLiveCenterPanelInput): string {
+function currentActionTitle(input: CombatLiveCenterPanelInput): string | null {
   if (isDecisionPreview(input)) {
-    return 'Wybierz ręczną walkę albo auto rozstrzygnięcie.';
+    return input.sourcePresentation.decision.title;
   }
+
+  return input.timingManifest?.label ?? input.sourcePresentation.live.title;
+}
+
+function currentActionHelper(input: CombatLiveCenterPanelInput): string | null {
+  if (isDecisionPreview(input)) {
+    return input.sourcePresentation.decision.description;
+  }
+
+  const live = input.sourcePresentation.live;
 
   if (input.loading.isSubmittingAction) {
-    return 'Rozstrzyganie akcji.';
+    return live.submittingHelperText;
   }
 
   if (input.loading.isPreparingSession || input.loading.isRecoveringState) {
-    return 'Przygotowanie sesji walki.';
+    return live.preparingHelperText;
   }
 
   if (input.liveStatusKey === 'completed') {
-    return 'Walka została zakończona.';
+    return live.completedHelperText;
   }
 
-  if (!input.timingManifest) {
-    return 'Brak aktywnego okna timingu dla gracza.';
-  }
-
-  return 'Kliknij tor albo przycisk akcji, gdy wskaźnik przechodzi przez zieloną strefę.';
+  return live.helperText;
 }
 
 function isDecisionPreview(input: CombatLiveCenterPanelInput): boolean {
@@ -146,26 +139,18 @@ function isDecisionPreview(input: CombatLiveCenterPanelInput): boolean {
 }
 
 function autoResolveButton(input: CombatLiveCenterPanelInput): CombatSurfaceAction | null {
+  const decision = input.sourcePresentation.decision;
+
   if (input.timing.isCombatRunning || !input.actions.canShowAutoResolveAction) {
     return null;
   }
 
   return {
     id: 'auto-resolve',
-    label: 'Rozstrzygnij auto',
+    label: decision.autoActionLabel,
     severity: 'secondary',
     loading: input.actions.isAutoResolving,
     disabled: !input.actions.canAutoResolveAction,
+    helperText: decision.autoActionTooltip,
   };
-}
-
-function timingManifestHelper(manifest: CombatTimingManifestReadModel | null): string | null {
-  if (!manifest) {
-    return null;
-  }
-
-  return [
-    manifest.hitChancePercent === null ? null : `Szansa trafienia ${manifest.hitChancePercent}%`,
-    manifest.attackIndex === null ? null : `Atak ${manifest.attackIndex}`,
-  ].filter(Boolean).join(' · ') || null;
 }

@@ -8,7 +8,10 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:mythos-hunter-2-0": "node dist/mythos-hunter-2-0/server/server.mjs",
-    "build:ssr": "node scripts/build-ssr.mjs"
+    "build:ssr": "node scripts/build-ssr.mjs",
+    "db:types": "node scripts/generate-db-types.mjs",
+    "db:types:repair": "node scripts/fix-database-types-encoding.mjs",
+    "review:dirty": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/export-dirty-files.ps1"
   },
   "prettier": {
     "overrides": [

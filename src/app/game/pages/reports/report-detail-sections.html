@@ -1,9 +1,10 @@
 <div class="flex-col gap-lg w-100 min-w-0">
   @if (isPrivateExploration()) {
     <app-exploration-report-domain-content [detail]="detail()" />
-  } @else if (privatePvpCombatDetail(); as pvpDetail) {
+  } @else if (privatePvpDetail(); as pvpDetail) {
     <app-pvp-report-domain-content
       [detail]="pvpDetail"
+      [copy]="pvpPrivateReportCopy()"
       [activeHeroId]="activeHeroId()"
     />
   } @else if (combatStage(); as stage) {

@@ -1,4 +1,5 @@
 import { formatTimeOfDayLabel } from '../../utils/pending-timer';
+import { PvpActionCopy } from './pvp-action-copy.model';
 import { ActivePvpActionOffer } from './pvp.model';
 
 export interface PvpActiveActionFactRow {
@@ -70,83 +71,111 @@ export function pvpActiveActionRefreshAt(offer: ActivePvpActionOffer): string | 
   return pvpActiveActionTiming(offer).resolvesAt;
 }
 
-export function pvpActiveActionFactRows(offer: ActivePvpActionOffer): PvpActiveActionFactRow[] {
+export function pvpActiveActionFactRows(
+  offer: ActivePvpActionOffer,
+  copy: PvpActionCopy,
+): PvpActiveActionFactRow[] {
+  const labels = copy.common.labels;
   const baseRows: Array<{ label: string; value: string | null }> = [
-    { label: 'Akcja', value: offer.actionKindLabel },
-    { label: 'Stan', value: offer.phaseLabel },
-    { label: 'Cel', value: offer.targetHeroDisplayName },
-    { label: 'Adres celu', value: offer.targetAddressLabel },
-    { label: 'Twój adres', value: offer.attackerAddressLabel },
+    { label: labels.action, value: pvpActiveActionKindLabel(offer, copy) },
+    { label: labels.target, value: offer.targetHeroDisplayName },
+    { label: labels.targetAddress, value: offer.targetAddressLabel },
+    { label: labels.yourAddress, value: offer.attackerAddressLabel },
   ];
 
   if (isPvpReturnRuntimePhase(offer)) {
     return presentFactRows([
       ...baseRows,
-      { label: 'Dostępne od', value: timeDisplay(returnAvailabilityAt(offer)) },
+      { label: labels.availableFrom, value: timeDisplay(returnAvailabilityAt(offer)) },
     ]);
   }
 
   if (offer.isTravelPhase || isPvpSpyActivePhase(offer)) {
     return presentFactRows([
       ...baseRows,
-      { label: 'Dotarcie', value: timeDisplay(offer.phaseEndsAt ?? offer.arrivesAt ?? offer.availableAt) },
+      { label: labels.arrivalTime, value: timeDisplay(offer.phaseEndsAt ?? offer.arrivesAt ?? offer.availableAt) },
     ]);
   }
 
   if (offer.isManualWindow) {
     return presentFactRows([
       ...baseRows,
-      { label: 'Decyzja do', value: timeDisplay(pvpActiveActionManualDecisionDeadlineAt(offer)) },
+      { label: labels.decisionTime, value: timeDisplay(pvpActiveActionManualDecisionDeadlineAt(offer)) },
     ]);
   }
 
   return presentFactRows([
     ...baseRows,
-    { label: 'Dostępne od', value: timeDisplay(offer.availableAt ?? offer.phaseEndsAt) },
+    { label: labels.availableFrom, value: timeDisplay(offer.availableAt ?? offer.phaseEndsAt) },
   ]);
 }
 
-export function pvpActiveActionHelperText(offer: ActivePvpActionOffer): string {
+export function pvpActiveActionPhaseText(
+  offer: ActivePvpActionOffer,
+  copy: PvpActionCopy,
+): string {
   if (isPvpReturnRuntimePhase(offer)) {
-    return 'Bohater wraca do posiadłości. Kolejna blokująca akcja będzie dostępna po zakończeniu powrotu.';
+    return copy.activeAction.phaseText.attackReturn;
   }
 
   if (offer.actionKind === 'attack') {
+    if (offer.isResolved) {
+      return copy.activeAction.phaseText.attackResolved;
+    }
+
     return offer.isManualWindow
-      ? 'Atak dotarł do celu. Decyzję manual/auto podejmiesz w module walki.'
-      : 'Aktywna faza ataku jest obsługiwana przez stan gry.';
+      ? copy.activeAction.phaseText.attackManualWindow
+      : copy.activeAction.phaseText.attackTravel;
   }
 
-  return offer.isManualWindow
-    ? 'Szpiegowanie dotarło do celu. Wynik należy do przepływu raportów/wyników poza tym ekranem.'
-    : 'Aktywna faza szpiegowania jest obsługiwana przez stan gry.';
+  return offer.isResolved
+    ? copy.activeAction.phaseText.spyResolved
+    : copy.activeAction.phaseText.spyTravel;
 }
 
-export function pvpActiveActionPendingHelperText(offer: ActivePvpActionOffer): string {
-  if (isPvpReturnRuntimePhase(offer)) {
-    return 'Bohater wraca do posiadłości.';
-  }
-
-  return offer.actionKind === 'attack'
-    ? 'Atak jest w drodze do wskazanej posiadłości.'
-    : 'Szpieg jest w drodze do wskazanej posiadłości.';
-}
-
-export function pvpActiveActionErrorMessage(error: unknown, fallback: string): string {
-  const status = error && typeof error === 'object'
-    ? (error as { status?: unknown }).status
-    : null;
-  const message = error instanceof Error ? error.message : null;
-
-  if (status === 400 || message === 'Bad Request') {
-    return fallback;
-  }
-
-  if (message) {
-    return message;
-  }
-
+export function pvpActiveActionErrorMessage(_error: unknown, fallback: string): string {
   return fallback;
+}
+
+export function pvpActiveActionTitle(
+  offer: ActivePvpActionOffer,
+  copy: PvpActionCopy,
+): string {
+  if (isPvpReturnRuntimePhase(offer)) {
+    return copy.activeAction.panel.returnTitle;
+  }
+
+  if (offer.actionKind === 'spy') {
+    return copy.activeAction.panel.spyTitle;
+  }
+
+  if (offer.actionKind === 'attack') {
+    return copy.activeAction.panel.attackTitle;
+  }
+
+  return copy.activeAction.panel.defaultTitle;
+}
+
+export function pvpActiveActionAriaLabel(
+  offer: ActivePvpActionOffer,
+  copy: PvpActionCopy,
+): string {
+  if (isPvpReturnRuntimePhase(offer)) {
+    return copy.activeAction.panel.returnAriaLabel;
+  }
+
+  return offer.actionKind === 'spy'
+    ? copy.activeAction.panel.spyAriaLabel
+    : copy.activeAction.panel.attackAriaLabel;
+}
+
+export function pvpActiveActionKindLabel(
+  offer: ActivePvpActionOffer,
+  copy: PvpActionCopy,
+): string {
+  return offer.actionKind === 'spy'
+    ? copy.common.labels.spyProgress
+    : copy.common.labels.attack;
 }
 
 export function isPvpReturnRuntimePhase(offer: ActivePvpActionOffer): boolean {

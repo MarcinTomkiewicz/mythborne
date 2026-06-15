@@ -13,7 +13,6 @@ import {
   combatParticipantPortraitFromJson,
   combatParticipantPortraitFromReadModel,
 } from './combat-participant-portrait.mapper';
-import { humanizeKey } from './normalize-text';
 import { jsonRecord, optionalNumber, optionalText, read } from './json-read';
 import { combatReportParticipantsJson } from './combat-report-text.mapper';
 
@@ -43,7 +42,11 @@ export function mapCombatReportParticipants(input: {
       'name',
       'participantName',
       'participant_name',
-    )) ?? (side ? combatSideLabel(side) : 'Uczestnik walki');
+    ));
+
+    if (!name) {
+      return [];
+    }
     const hpCurrent = optionalNumber(read(
       record,
       'healthEnd',
@@ -66,10 +69,7 @@ export function mapCombatReportParticipants(input: {
       record,
       'statusLabel',
       'status_label',
-      'status',
-      'statusKey',
-      'status_key',
-    )) ?? finalParticipantStatus(hpCurrent);
+    ));
     const id = optionalText(read(record, 'participantId', 'participant_id', 'id'))
       ?? side
       ?? `${index}`;
@@ -84,13 +84,12 @@ export function mapCombatReportParticipants(input: {
     ));
     const baseStatRows = statRowsFromJson(read(record, 'baseStatRows', 'base_stat_rows'));
     const combatStatRows = statRowsFromJson(read(record, 'combatStatRows', 'combat_stat_rows'));
-    const resultLabel = participantResultLabel(isWinner, isLoser);
 
     return [{
       id,
       displayName: name,
-      kindLabel: side ? combatSideLabel(side) : 'Strona N/D',
-      metaLabel: resultLabel ?? statusLabel,
+      kindLabel: null,
+      metaLabel: statusLabel,
       badgeLabel: null,
       badgeTone: 'muted',
       avatarTone: isWinner ? 'success' : isLoser ? 'danger' : 'heading',
@@ -105,6 +104,10 @@ export function mapCombatReportParticipants(input: {
       }),
       hpCurrent,
       hpMax,
+      healthLabel: null,
+      baseStatsTitle: null,
+      combatStatsTitle: null,
+      emptyStatsTitle: null,
       baseStatRows,
       combatStatRows,
       emptyStatsMessage: emptyStatsMessage(baseStatRows, combatStatRows),
@@ -163,17 +166,6 @@ export function combatParticipantPair(
   return { left, right };
 }
 
-export function combatSideLabel(value: string): string {
-  switch (value) {
-    case 'initiator':
-      return 'bohater';
-    case 'defender':
-      return 'przeciwnik';
-    default:
-      return humanizeKey(value, 'strona');
-  }
-}
-
 function liveParticipantReportCard(
   participant: CombatLiveParticipantReadModel,
   index: number,
@@ -185,7 +177,6 @@ function liveParticipantReportCard(
 ): CombatDisplayParticipant {
   const isWinner = Boolean(participant.side && participant.side === detail?.winnerSide);
   const isLoser = Boolean(participant.side && participant.side === detail?.loserSide);
-  const resultLabel = participantResultLabel(isWinner, isLoser);
 
   return {
     id: participant.participantId ??
@@ -194,23 +185,23 @@ function liveParticipantReportCard(
       participant.side ??
       `${index}`,
     displayName: participant.displayName,
-    kindLabel: participant.side ? combatSideLabel(participant.side) : 'Strona N/D',
-    metaLabel: resultLabel ?? participant.statusLabel ?? participant.statusKey ?? 'Po walce',
+    kindLabel: null,
+    metaLabel: participant.statusLabel,
     badgeLabel: null,
     badgeTone: 'muted',
     avatarTone: isWinner ? 'success' : isLoser ? 'danger' : 'heading',
     portrait: combatParticipantPortraitFromReadModel(participant, portraitContext),
     hpCurrent: participant.currentHp,
     hpMax: participant.maxHp,
+    healthLabel: null,
+    baseStatsTitle: null,
+    combatStatsTitle: null,
+    emptyStatsTitle: null,
     baseStatRows: mapCombatParticipantBaseStatCardRows(participant.baseStatRows ?? []),
     combatStatRows: mapCombatParticipantStatCardRows(participant.combatStatRows ?? []),
     emptyStatsMessage: emptyStatsMessage(participant.baseStatRows ?? [], participant.combatStatRows ?? []),
     side: participant.side,
   };
-}
-
-function finalParticipantStatus(hpCurrent: number | null): string {
-  return hpCurrent === 0 ? 'Pokonany' : 'Po walce';
 }
 
 function withLiveStatFallback(
@@ -296,18 +287,8 @@ function statRowsFromJson(value: Json | undefined): StatCardRow[] {
 }
 
 function emptyStatsMessage(
-  baseRows: readonly unknown[],
-  combatRows: readonly unknown[],
+  _baseRows: readonly unknown[],
+  _combatRows: readonly unknown[],
 ): string | null {
-  return baseRows.length || combatRows.length
-    ? null
-    : 'Raport walki nie zawiera wierszy statystyk dla tej strony.';
-}
-
-function participantResultLabel(isWinner: boolean, isLoser: boolean): string | null {
-  return isWinner
-    ? 'Zwycięzca'
-    : isLoser
-      ? 'Pokonany'
-      : null;
+  return null;
 }

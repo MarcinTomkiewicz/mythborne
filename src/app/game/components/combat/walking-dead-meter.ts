@@ -19,12 +19,17 @@ export class WalkingDeadMeter {
   readonly zoneStart = input.required<number>();
   readonly zoneEnd = input.required<number>();
   readonly disabled = input(false);
-  readonly actionLabel = input.required<string>();
+  readonly actionLabel = input.required<string | null>();
   readonly actionLoading = input(false);
+  readonly title = input<string | null>(null);
+  readonly helperText = input<string | null>(null);
+  readonly earlyLabel = input<string | null>(null);
+  readonly hitZoneLabel = input<string | null>(null);
+  readonly lateLabel = input<string | null>(null);
 
   readonly strike = output<CombatTimingStrikeSnapshot>();
 
-  onFieldClick() {
+  onFieldClick(): void {
     if (this.disabled()) {
       return;
     }

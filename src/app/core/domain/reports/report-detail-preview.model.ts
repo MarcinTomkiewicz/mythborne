@@ -18,7 +18,6 @@ export interface ReportDetailPreviewView {
   combatStage: CombatStageViewModel | null;
   narrativeLines: readonly string[];
   sections: readonly ReportDetailPreviewSection[];
-  rewardResult: ReportDetailPreviewRewardResult | null;
   actions: ReportHandoffActionsViewModel;
 }
 
@@ -33,14 +32,4 @@ export interface ReportDetailPreviewSection {
 export interface ReportDetailPreviewOutcomeBanner {
   title: string;
   tone: ReportDetailPreviewOutcomeTone;
-}
-
-export interface ReportDetailPreviewRewardResult {
-  title: string;
-  segments: readonly ReportDetailPreviewRewardTextSegment[];
-}
-
-export interface ReportDetailPreviewRewardTextSegment {
-  text: string;
-  isHighlighted: boolean;
 }

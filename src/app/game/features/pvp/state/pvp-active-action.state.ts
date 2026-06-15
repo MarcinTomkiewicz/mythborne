@@ -1,12 +1,9 @@
 import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { PVP_ACTIVE_ACTION_COPY } from '../../../../core/configs/pvp-active-action-ui.config';
 import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
 import {
   pvpActiveActionErrorMessage,
   pvpActiveActionFactRows,
-  pvpActiveActionHelperText,
-  pvpActiveActionPendingHelperText,
   pvpActiveActionRefreshAt,
   pvpActiveActionTiming,
   shouldShowActivePvpOffer,
@@ -15,36 +12,42 @@ import {
   ActivePvpActionOffer,
   PvpActionStartResult,
 } from '../../../../core/domain/pvp/pvp.model';
+import { PvpActionCopy } from '../../../../core/domain/pvp/pvp-action-copy.model';
+import { GameCopyService } from '../../../../core/services/game-copy/game-copy.service';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
 import type {
   ExpectedPvpActiveActionOffer,
-  PvpActiveActionStateCopy,
 } from '../../../../core/types/pvp-active-action-ui.types';
 import {
   pendingTimerDisplay,
   pendingTimerHasElapsed,
 } from '../../../../core/utils/pending-timer';
+import { pvpActionCopyKeyFallback } from '../../../../core/utils/pvp-action-copy-key-fallback';
 import { RequestToken } from '../../../../core/utils/request-token';
+import { PvpCombatCopyState } from './pvp-combat-copy.state';
 import { PvpSpyReportState } from './pvp-spy-report.state';
 
 const ELAPSED_REFRESH_INTERVAL_MS = 5000;
-
 @Injectable()
 export class PvpActiveActionState {
   private readonly activeHero = inject(ActiveHero);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly gameCopy = inject(GameCopyService);
+  private readonly combatCopy = inject(PvpCombatCopyState);
   private readonly playerPvp = inject(PlayerPvp);
   private readonly spyReport = inject(PvpSpyReportState);
   private readonly requests = new RequestToken();
   private readonly nowMs = signal(Date.now());
   private readonly errorLabel = signal('');
-  private readonly copy = signal<PvpActiveActionStateCopy>(PVP_ACTIVE_ACTION_COPY.state);
   private elapsedRefreshKey: string | null = null;
   private lastElapsedRefreshMs = 0;
   private activeContextKey: string | null = null;
 
   readonly isLoading = signal(false);
+  readonly copy = signal<PvpActionCopy | null>(pvpActionCopyKeyFallback());
+  readonly combatCommonCopy = this.combatCopy.combatCommonCopy;
+  readonly pvpCombatCopy = this.combatCopy.pvpCombatCopy;
   readonly error = signal<string | null>(null);
   readonly offer = signal<ActivePvpActionOffer | null>(null);
   readonly visibleOffer = computed(() => {
@@ -77,18 +80,14 @@ export class PvpActiveActionState {
   });
   readonly factRows = computed(() => {
     const offer = this.visibleOffer();
+    const copy = this.copy();
 
-    return offer ? pvpActiveActionFactRows(offer) : [];
+    return offer && copy ? pvpActiveActionFactRows(offer, copy) : [];
   });
-  readonly helperText = computed(() => {
-    const offer = this.visibleOffer();
+  readonly combatSourcePresentation = computed(() => {
+    const copy = this.copy();
 
-    return offer ? pvpActiveActionHelperText(offer) : '';
-  });
-  readonly pendingHelperText = computed(() => {
-    const offer = this.visibleOffer();
-
-    return offer ? pvpActiveActionPendingHelperText(offer) : '';
+    return copy ? this.combatCopy.sourcePresentation(copy) : null;
   });
 
   constructor() {
@@ -129,15 +128,13 @@ export class PvpActiveActionState {
         this.load();
       });
     });
-  }
 
-  setCopy(copy: PvpActiveActionStateCopy): void {
-    this.copy.set(copy);
-    this.spyReport.setCopy(copy);
+    this.loadCopy();
   }
 
   setGenericErrorLabel(label: string | null): void {
     this.errorLabel.set(label ?? '');
+    this.spyReport.setGenericErrorLabel(label);
   }
 
   load(): void {
@@ -161,7 +158,7 @@ export class PvpActiveActionState {
       this.activeContextKey = null;
       this.spyReport.clear();
       this.setOffer(null);
-      this.error.set(this.copy().missingActiveHeroError);
+      this.error.set(this.errorLabel());
       this.isLoading.set(false);
       return;
     }
@@ -187,14 +184,14 @@ export class PvpActiveActionState {
             (!offer || offer.pvpActionId !== expected.pvpActionId || offer.actionKind !== expected.actionKind)
           ) {
             this.setOffer(offer);
-            this.error.set(this.copy().startedSpyOfferMissingError);
+            this.error.set(this.errorLabel());
             this.isLoading.set(false);
             return;
           }
 
           if (offer?.actionKind === 'spy' && offer.phase === 'returning') {
             this.setOffer(null);
-            this.error.set(this.copy().spyReturningPhaseError);
+            this.error.set(this.errorLabel());
             this.isLoading.set(false);
             return;
           }
@@ -220,5 +217,20 @@ export class PvpActiveActionState {
   private setOffer(offer: ActivePvpActionOffer | null): void {
     this.spyReport.clearIfActionChanged(offer?.pvpActionId ?? null);
     this.offer.set(offer);
+  }
+
+  private loadCopy(): void {
+    this.gameCopy.getCopy('player.pvp.action', { locale: 'pl' })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (copy) => {
+          this.copy.set(copy);
+          this.spyReport.setGenericErrorLabel(this.errorLabel());
+        },
+        error: () => {
+          this.copy.set(pvpActionCopyKeyFallback());
+          this.spyReport.setGenericErrorLabel(this.errorLabel());
+        },
+      });
   }
 }

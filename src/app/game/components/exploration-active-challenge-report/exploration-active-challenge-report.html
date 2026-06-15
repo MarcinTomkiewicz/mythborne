@@ -14,11 +14,11 @@
             </div>
 
             <p class="color-text text-md lh-16 m-0">
-              <app-rich-text [fragments]="narrative.narrativeRichText" />
+              <app-rich-text [fragments]="narrative.narrativeRichText" itemPopoverContext="exploration" />
             </p>
           </section>
         } @else if (activeChallenge.trialDefinitionId) {
-          <span hidden data-blocked="activeChallenge.trialManifestationNarrativeJson"></span>
+          <p class="warn-text text-sm m-0">activeChallenge.trialManifestationNarrativeJson</p>
         }
 
         @if (encounterCombatHandoffNarrative(); as narrative) {
@@ -33,41 +33,42 @@
             </div>
 
             <p class="color-text text-md lh-16 m-0">
-              <app-rich-text [fragments]="narrative.narrativeRichText" />
+              <app-rich-text [fragments]="narrative.narrativeRichText" itemPopoverContext="exploration" />
             </p>
           </section>
         } @else if (activeChallenge.encounterDefinitionId) {
-          <span hidden data-blocked="activeChallenge.encounterCombatHandoffNarrativeJson"></span>
+          <p class="warn-text text-sm m-0">activeChallenge.encounterCombatHandoffNarrativeJson</p>
         }
 
-        <app-minigame-host
-          [minigameKey]="activeChallenge.minigameKey"
-          [sourceRef]="sourceRef"
-          [contextTitle]="challenge.challengeTitle()"
-          contextLabel="Walka"
-          (completed)="acceptMinigameCompletion($event)"
-        />
+        @if (combatSourcePresentation(); as sourcePresentation) {
+          <app-minigame-host
+            [minigameKey]="activeChallenge.minigameKey"
+            [sourceRef]="sourceRef"
+            [contextTitle]="challenge.challengeTitle()"
+            [sourcePresentation]="sourcePresentation"
+            (completed)="acceptMinigameCompletion($event)"
+          />
+        } @else if (requiresCombatSourcePresentation() && isRuntimeCopyLoading()) {
+          <section class="mg-card p-lg flex-col-center-center gap-md w-100" aria-busy="true">
+            <p-progress-spinner strokeWidth="4" />
+          </section>
+        } @else if (requiresCombatSourcePresentation() && hasRuntimeCopyError()) {
+          <p class="warn-text text-sm m-0">exploration.runtimeCopy</p>
+        } @else if (requiresCombatSourcePresentation() && runtimeCopy(); as runtimeCopy) {
+          <section class="mg-card p-lg flex-col gap-sm w-100">
+            <h3 class="color-heading text-lg m-0">
+              {{ runtimeCopy.activeChallenge.unavailableTitle }}
+            </h3>
+            <p class="color-text text-md lh-16 m-0">
+              {{ runtimeCopy.activeChallenge.unavailableText }}
+            </p>
+          </section>
+        }
       </div>
     }
   } @else {
     <div class="flex-col gap-lg w-100">
-      <app-outcome-report-layout
-        label="Aktywne wyzwanie"
-        [statusLabel]="challenge.challengeStatusLabel()"
-        [title]="challenge.challengeTitle()"
-        description="Wyprawa czeka na Twoją akcję, zanim będzie można ruszyć dalej."
-        iconClass="pi pi-bolt"
-      />
-
       <app-exploration-challenge-details-card />
-
-      <section class="mg-card p-lg flex-col gap-sm w-100">
-        <p class="small-caps color-muted text-xs m-0">Akcja niedostępna</p>
-        <p class="color-text text-md lh-16 m-0">
-          To wyzwanie nie ma teraz dostępnej akcji w tym panelu.
-        </p>
-      </section>
-
       <app-exploration-challenge-pending-reward-card />
     </div>
   }

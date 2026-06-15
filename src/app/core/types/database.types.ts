@@ -11947,114 +11947,6 @@ export type Database = {
         }
         Relationships: []
       }
-      prestige_pvp_delta_matrix: {
-        Row: {
-          actor_role: string
-          admin_description: string
-          band_key: string
-          combat_outcome: Database["public"]["Enums"]["combat_outcome"]
-          created_at: string
-          description: string
-          id: string
-          is_active: boolean
-          label: string
-          message_kind: string
-          metadata_json: Json
-          points_delta: number
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          actor_role: string
-          admin_description: string
-          band_key: string
-          combat_outcome: Database["public"]["Enums"]["combat_outcome"]
-          created_at?: string
-          description: string
-          id?: string
-          is_active?: boolean
-          label: string
-          message_kind: string
-          metadata_json?: Json
-          points_delta: number
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          actor_role?: string
-          admin_description?: string
-          band_key?: string
-          combat_outcome?: Database["public"]["Enums"]["combat_outcome"]
-          created_at?: string
-          description?: string
-          id?: string
-          is_active?: boolean
-          label?: string
-          message_kind?: string
-          metadata_json?: Json
-          points_delta?: number
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "prestige_pvp_delta_matrix_band_key_fkey"
-            columns: ["band_key"]
-            isOneToOne: false
-            referencedRelation: "prestige_pvp_target_bands"
-            referencedColumns: ["key"]
-          },
-          {
-            foreignKeyName: "prestige_pvp_delta_matrix_message_kind_fkey"
-            columns: ["message_kind"]
-            isOneToOne: false
-            referencedRelation: "prestige_change_message_kinds"
-            referencedColumns: ["key"]
-          },
-        ]
-      }
-      prestige_pvp_target_bands: {
-        Row: {
-          created_at: string
-          description: string
-          helper_text: string
-          is_active: boolean
-          key: string
-          label: string
-          max_position_percent: number
-          metadata_json: Json
-          min_position_percent: number
-          sort_order: number
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          description: string
-          helper_text: string
-          is_active?: boolean
-          key: string
-          label: string
-          max_position_percent: number
-          metadata_json?: Json
-          min_position_percent: number
-          sort_order?: number
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          description?: string
-          helper_text?: string
-          is_active?: boolean
-          key?: string
-          label?: string
-          max_position_percent?: number
-          metadata_json?: Json
-          min_position_percent?: number
-          sort_order?: number
-          updated_at?: string
-        }
-        Relationships: []
-      }
       prestige_source_kinds: {
         Row: {
           created_at: string
@@ -12679,6 +12571,51 @@ export type Database = {
             columns: ["target_hero_id"]
             isOneToOne: false
             referencedRelation: "hero"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pvp_target_protection_test_override_backup: {
+        Row: {
+          enabled_at: string
+          enabled_by: string | null
+          metadata_json: Json
+          original_formula_id: string
+          override_formula_id: string | null
+          reason: string | null
+          target_key: string
+        }
+        Insert: {
+          enabled_at?: string
+          enabled_by?: string | null
+          metadata_json?: Json
+          original_formula_id: string
+          override_formula_id?: string | null
+          reason?: string | null
+          target_key: string
+        }
+        Update: {
+          enabled_at?: string
+          enabled_by?: string | null
+          metadata_json?: Json
+          original_formula_id?: string
+          override_formula_id?: string | null
+          reason?: string | null
+          target_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pvp_target_protection_test_override_ba_original_formula_id_fkey"
+            columns: ["original_formula_id"]
+            isOneToOne: false
+            referencedRelation: "balance_formulas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pvp_target_protection_test_override_ba_override_formula_id_fkey"
+            columns: ["override_formula_id"]
+            isOneToOne: false
+            referencedRelation: "balance_formulas"
             referencedColumns: ["id"]
           },
         ]
@@ -14981,6 +14918,14 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      apply_pvp_prestige_negative_pressure: {
+        Args: { p_current_points: number; p_raw_delta: number }
+        Returns: number
+      }
+      apply_pvp_prestige_positive_pressure: {
+        Args: { p_current_points: number; p_raw_delta: number }
+        Returns: number
+      }
       apply_pvp_resource_consequences: {
         Args: { p_pvp_attack_result_id: string; p_request_id?: string }
         Returns: {
@@ -15260,6 +15205,14 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      attach_pvp_combat_context_to_report_detail_payload: {
+        Args: { p_payload: Json; p_public_token?: string; p_report_id?: string }
+        Returns: Json
+      }
+      attach_pvp_result_to_report_detail_payload: {
+        Args: { p_payload: Json; p_public_token?: string; p_report_id?: string }
+        Returns: Json
       }
       attach_reward_drop_item_to_game_report: {
         Args: {
@@ -15795,6 +15748,46 @@ export type Database = {
         Args: { p_prefix_name: string }
         Returns: Json
       }
+      build_pvp_attack_report_context_json: {
+        Args: {
+          p_action_url?: string
+          p_public_token?: string
+          p_pvp_attack_result_id: string
+          p_report_id?: string
+          p_request_id?: string
+        }
+        Returns: Json
+      }
+      build_pvp_combat_context_from_live_session: {
+        Args: { p_session_id: string }
+        Returns: Json
+      }
+      build_pvp_combat_context_from_pvp_action: {
+        Args: { p_pvp_action_id: string }
+        Returns: Json
+      }
+      build_pvp_combat_context_from_pvp_attack_result: {
+        Args: { p_pvp_attack_result_id: string }
+        Returns: Json
+      }
+      build_pvp_combat_exploration_effect_json: {
+        Args: {
+          p_effect_kind: string
+          p_hero_name: string
+          p_participant_role: string
+          p_value_display: string
+        }
+        Returns: Json
+      }
+      build_pvp_combat_role_health_effect_json: {
+        Args: {
+          p_building_level: number
+          p_health_bonus: number
+          p_hero_name: string
+          p_participant_role: string
+        }
+        Returns: Json
+      }
       build_pvp_hero_combatant_snapshot_for_resolver: {
         Args: {
           p_hero_id: string
@@ -15804,6 +15797,26 @@ export type Database = {
       }
       build_pvp_prestige_context: {
         Args: { p_pvp_attack_result_id: string }
+        Returns: Json
+      }
+      build_pvp_report_prestige_section_json: {
+        Args: { p_pvp_attack_result_id: string }
+        Returns: Json
+      }
+      build_pvp_result_glory_sentence_json: {
+        Args: {
+          p_locale?: string
+          p_message_kind: string
+          p_rank_name?: string
+        }
+        Returns: Json
+      }
+      build_pvp_result_summary_json: {
+        Args: {
+          p_locale?: string
+          p_perspective: string
+          p_pvp_attack_result_id: string
+        }
         Returns: Json
       }
       build_pvp_spy_base_stats_snapshot: {
@@ -15990,6 +16003,13 @@ export type Database = {
           rank_uuid: string
         }[]
       }
+      calculate_pvp_attack_target_level_range: {
+        Args: { p_attacker_level: number }
+        Returns: {
+          max_target_level: number
+          min_target_level: number
+        }[]
+      }
       calculate_pvp_estate_distance_score: {
         Args: {
           p_source_address_number: number
@@ -15999,49 +16019,56 @@ export type Database = {
         }
         Returns: number
       }
-      calculate_pvp_prestige_delta: {
+      calculate_pvp_prestige_delta_pair: {
         Args: {
-          p_actor_role: string
+          p_attacker_current_points: number
           p_attacker_level: number
           p_combat_outcome: Database["public"]["Enums"]["combat_outcome"]
+          p_defender_current_points: number
           p_defender_level: number
-          p_max_target_level: number
-          p_min_target_level: number
         }
         Returns: {
+          actor_rank_number: number
           actor_role: string
           admin_context_json: Json
-          band_key: string
-          band_label: string
           combat_outcome: Database["public"]["Enums"]["combat_outcome"]
+          level_relation: string
           message_direction: string
           message_kind: string
-          player_message: string
+          opponent_rank_number: number
           player_summary_json: Json
           points_delta: number
-          target_position_percent: number
-          target_position_percent_clamped: number
+          status_relation: string
         }[]
       }
-      calculate_pvp_prestige_target_band: {
+      calculate_pvp_prestige_level_relation: {
+        Args: { p_actor_level: number; p_opponent_level: number }
+        Returns: string
+      }
+      calculate_pvp_prestige_own_negative_component: {
         Args: {
-          p_attacker_level: number
-          p_defender_level: number
-          p_max_target_level: number
-          p_min_target_level: number
+          p_current_points: number
+          p_is_draw?: boolean
+          p_level_relation: string
+          p_status_relation: string
         }
-        Returns: {
-          attacker_level: number
-          band_key: string
-          band_label: string
-          defender_level: number
-          explanation: string
-          is_out_of_range: boolean
-          max_target_level: number
-          min_target_level: number
-          target_position_percent: number
-          target_position_percent_clamped: number
-        }[]
+        Returns: number
+      }
+      calculate_pvp_prestige_own_positive_component: {
+        Args: {
+          p_current_points: number
+          p_is_draw?: boolean
+          p_level_relation: string
+          p_status_relation: string
+        }
+        Returns: number
+      }
+      calculate_pvp_prestige_status_relation: {
+        Args: {
+          p_actor_current_points: number
+          p_opponent_current_points: number
+        }
+        Returns: string
       }
       calculate_trial_power: {
         Args: { p_luck_value: number; p_tested_stat_value: number }
@@ -19024,6 +19051,29 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_combat_live_state_legacy_v1: {
+        Args: { p_session_id: string; p_since_event_index?: number }
+        Returns: {
+          awaiting_player_action: boolean
+          combat_session_id: string
+          current_action_index: number
+          current_actor_participant_id: string
+          current_round_number: number
+          current_timing_manifest_json: Json
+          event_count: number
+          events_json: Json
+          final_combat_result_id: string
+          participants_json: Json
+          round_order_json: Json
+          server_id: string
+          source_entity_id: string
+          source_entity_type: string
+          source_type: Database["public"]["Enums"]["combat_source_type"]
+          status_key: string
+          status_label: string
+          updated_at: string
+        }[]
+      }
       get_combat_resolution_preview: {
         Args: {
           p_locale_key?: string
@@ -19040,6 +19090,7 @@ export type Database = {
           metadata_json: Json
           participants_json: Json
           preview_status: string
+          pvp_combat_context: Json
           source_entity_id: string
           source_entity_type: string
           source_type: Database["public"]["Enums"]["combat_source_type"]
@@ -21333,6 +21384,10 @@ export type Database = {
         Args: { p_hero_id: string }
         Returns: Json
       }
+      get_player_combat_common_copy: {
+        Args: { p_locale?: string }
+        Returns: Json
+      }
       get_player_dashboard_copy_json: { Args: never; Returns: Json }
       get_player_dashboard_page_context: {
         Args: { p_hero_id: string }
@@ -21362,6 +21417,10 @@ export type Database = {
         Returns: Json
       }
       get_player_exploration_result_copy: {
+        Args: { p_locale?: string }
+        Returns: Json
+      }
+      get_player_exploration_runtime_copy: {
         Args: { p_locale?: string }
         Returns: Json
       }
@@ -21438,30 +21497,47 @@ export type Database = {
           trial_section_json: Json
         }[]
       }
+      get_public_pvp_report_copy: {
+        Args: { p_locale?: string; p_public_token?: string }
+        Returns: Json
+      }
       get_public_report_detail: {
         Args: { p_public_token: string }
         Returns: Json
       }
-      get_pvp_prestige_delta_matrix_entry: {
+      get_public_report_detail_legacy_v1: {
+        Args: { p_public_token: string }
+        Returns: Json
+      }
+      get_pvp_action_copy: { Args: { p_locale?: string }; Returns: Json }
+      get_pvp_combat_copy: { Args: { p_locale?: string }; Returns: Json }
+      get_pvp_combat_copy_legacy_v1: {
+        Args: { p_locale?: string }
+        Returns: Json
+      }
+      get_pvp_prestige_component_multiplier: {
+        Args: { p_component_key: string; p_current_points: number }
+        Returns: number
+      }
+      get_pvp_prestige_flat_component: {
         Args: {
           p_actor_role: string
-          p_band_key: string
-          p_combat_outcome: Database["public"]["Enums"]["combat_outcome"]
+          p_level_relation: string
+          p_result_key: string
         }
-        Returns: {
-          actor_role: string
-          admin_description: string
-          band_key: string
-          band_label: string
-          combat_outcome: Database["public"]["Enums"]["combat_outcome"]
-          description: string
-          label: string
-          message_direction: string
-          message_kind: string
-          metadata_json: Json
-          player_message: string
-          points_delta: number
-        }[]
+        Returns: number
+      }
+      get_pvp_prestige_risk_multiplier: {
+        Args: { p_level_relation: string; p_status_relation: string }
+        Returns: number
+      }
+      get_pvp_prestige_status_component: {
+        Args: {
+          p_actor_role: string
+          p_result_key: string
+          p_status_relation: string
+        }
+        Returns: number
       }
       get_pvp_ranking_context: {
         Args: {
@@ -21474,6 +21550,15 @@ export type Database = {
         Returns: Json
       }
       get_pvp_ranking_copy: { Args: { p_locale?: string }; Returns: Json }
+      get_pvp_ranking_copy_base_v1: {
+        Args: { p_locale?: string }
+        Returns: Json
+      }
+      get_pvp_report_copy: {
+        Args: { p_locale?: string; p_report_id?: string }
+        Returns: Json
+      }
+      get_pvp_result_copy: { Args: { p_locale?: string }; Returns: Json }
       get_pvp_target_candidates: {
         Args: {
           p_attacker_hero_id: string
@@ -21540,6 +21625,10 @@ export type Database = {
         }[]
       }
       get_report_detail: {
+        Args: { p_hero_id: string; p_report_id: string }
+        Returns: Json
+      }
+      get_report_detail_legacy_v1: {
         Args: { p_hero_id: string; p_report_id: string }
         Returns: Json
       }
@@ -22530,6 +22619,15 @@ export type Database = {
         Returns: Json
       }
       normalize_locale_key: { Args: { p_locale_key: string }; Returns: string }
+      notify_level_up_stat_bonus_granted: {
+        Args: {
+          p_hero_id: string
+          p_level_up_ledger_id: string
+          p_metadata_json?: Json
+          p_request_id?: string
+        }
+        Returns: string
+      }
       parse_estate_address_number: {
         Args: { p_address: string; p_district_code: string }
         Returns: number
@@ -23456,6 +23554,115 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: number
       }
+      pvp_combat_context_effect_target_phrase_pl: {
+        Args: { p_fallback?: string; p_target_key: string }
+        Returns: string
+      }
+      pvp_combat_context_effect_value_display_pl: {
+        Args: {
+          p_target_key: string
+          p_target_label?: string
+          p_type_key: string
+          p_value: number
+        }
+        Returns: string
+      }
+      pvp_combat_context_safe_effect_value_display_pl: {
+        Args: {
+          p_candidate_display: string
+          p_target_key: string
+          p_target_label?: string
+          p_type_key: string
+          p_value: number
+        }
+        Returns: string
+      }
+      pvp_combat_context_signed_display_value: {
+        Args: { p_value: number }
+        Returns: string
+      }
+      pvp_report_copy_format_experience_en: {
+        Args: { p_amount: number }
+        Returns: string
+      }
+      pvp_report_copy_format_experience_pl: {
+        Args: { p_amount: number }
+        Returns: string
+      }
+      pvp_report_copy_format_resource_amount_en: {
+        Args: { p_amount: number; p_resource_type: string }
+        Returns: string
+      }
+      pvp_report_copy_format_resource_amount_pl: {
+        Args: { p_amount: number; p_resource_type: string }
+        Returns: string
+      }
+      pvp_report_copy_glory_json_en: {
+        Args: { p_message_kind: string }
+        Returns: Json
+      }
+      pvp_report_copy_glory_json_pl: {
+        Args: { p_message_kind: string }
+        Returns: Json
+      }
+      pvp_report_copy_resource_label_en: {
+        Args: { p_resource_type: string }
+        Returns: string
+      }
+      pvp_report_copy_resource_label_pl: {
+        Args: { p_resource_type: string }
+        Returns: string
+      }
+      pvp_report_copy_resource_rows: {
+        Args: {
+          p_direction: string
+          p_hero_id: string
+          p_locale?: string
+          p_resource_outcome_json: Json
+        }
+        Returns: Json
+      }
+      pvp_report_copy_resource_text_from_rows: {
+        Args: { p_rows: Json }
+        Returns: string
+      }
+      pvp_report_copy_xp_rows: {
+        Args: { p_locale?: string; p_reward_context_json: Json }
+        Returns: Json
+      }
+      rebuild_pvp_attack_result_report_context: {
+        Args: { p_pvp_attack_result_id: string; p_reason?: string }
+        Returns: {
+          attacker_estate_id: string | null
+          attacker_hero_id: string
+          attacker_level_snapshot: number
+          combat_outcome: Database["public"]["Enums"]["combat_outcome"]
+          combat_result_id: string
+          created_at: string
+          defender_estate_id: string | null
+          defender_hero_id: string
+          defender_level_snapshot: number
+          id: string
+          level_difference: number
+          loser_hero_id: string | null
+          metadata_json: Json
+          notification_context_json: Json
+          outcome_key: string
+          prestige_context_json: Json
+          pvp_action_id: string
+          report_context_json: Json
+          resource_outcome_json: Json
+          reward_context_json: Json
+          server_id: string
+          winner_hero_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pvp_attack_results"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       record_anti_abuse_identity_observation: {
         Args: {
           p_capture_source_key?: string
@@ -23545,8 +23752,74 @@ export type Database = {
           updated_at: string
         }[]
       }
+      refresh_pvp_attack_result_combat_context: {
+        Args: { p_pvp_attack_result_id: string; p_request_id?: string }
+        Returns: {
+          attacker_estate_id: string | null
+          attacker_hero_id: string
+          attacker_level_snapshot: number
+          combat_outcome: Database["public"]["Enums"]["combat_outcome"]
+          combat_result_id: string
+          created_at: string
+          defender_estate_id: string | null
+          defender_hero_id: string
+          defender_level_snapshot: number
+          id: string
+          level_difference: number
+          loser_hero_id: string | null
+          metadata_json: Json
+          notification_context_json: Json
+          outcome_key: string
+          prestige_context_json: Json
+          pvp_action_id: string
+          report_context_json: Json
+          resource_outcome_json: Json
+          reward_context_json: Json
+          server_id: string
+          winner_hero_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pvp_attack_results"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       refresh_pvp_attack_result_prestige_context: {
         Args: { p_pvp_attack_result_id: string; p_reason?: string }
+        Returns: {
+          attacker_estate_id: string | null
+          attacker_hero_id: string
+          attacker_level_snapshot: number
+          combat_outcome: Database["public"]["Enums"]["combat_outcome"]
+          combat_result_id: string
+          created_at: string
+          defender_estate_id: string | null
+          defender_hero_id: string
+          defender_level_snapshot: number
+          id: string
+          level_difference: number
+          loser_hero_id: string | null
+          metadata_json: Json
+          notification_context_json: Json
+          outcome_key: string
+          prestige_context_json: Json
+          pvp_action_id: string
+          report_context_json: Json
+          resource_outcome_json: Json
+          reward_context_json: Json
+          server_id: string
+          winner_hero_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pvp_attack_results"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      refresh_pvp_attack_result_summary_context: {
+        Args: { p_pvp_attack_result_id: string; p_request_id?: string }
         Returns: {
           attacker_estate_id: string | null
           attacker_hero_id: string
@@ -23985,6 +24258,10 @@ export type Database = {
         Args: {
           p_action: Database["public"]["Tables"]["moderation_actions"]["Row"]
         }
+        Returns: string
+      }
+      resolve_pvp_prestige_message_kind: {
+        Args: { p_points_delta: number }
         Returns: string
       }
       resolve_reward_item_luck_context: {
