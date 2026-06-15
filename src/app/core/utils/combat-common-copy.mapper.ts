@@ -14,6 +14,7 @@ import {
   requiredRecord,
   requiredText,
 } from './json-read';
+import { copyTextOrKey } from './game-copy-key-fallback';
 
 const COMBAT_COMMON_LOCALES: readonly CombatCommonCopyLocale[] = ['pl', 'en'];
 
@@ -46,7 +47,7 @@ export function mapCombatCommonCopy(raw: Json): CombatCommonCopy {
     live: mapLive(requiredRecord(read(root, 'live'), 'get_player_combat_common_copy.live')),
     emptyLog: mapMessage(
       requiredRecord(read(root, 'emptyLog'), 'get_player_combat_common_copy.emptyLog'),
-      'get_player_combat_common_copy.emptyLog',
+      'combat.common.emptyLog',
     ),
     emptyParticipants: mapEmptyParticipants(
       requiredRecord(
@@ -62,39 +63,39 @@ export function mapCombatCommonCopy(raw: Json): CombatCommonCopy {
 
 function mapLive(record: JsonRecord): CombatCommonLiveCopy {
   return {
-    helperText: requiredText(read(record, 'helperText'), 'get_player_combat_common_copy.live.helperText'),
-    submittingHelperText: requiredText(
+    helperText: copyTextOrKey(read(record, 'helperText'), 'combat.common.live.helperText'),
+    submittingHelperText: copyTextOrKey(
       read(record, 'submittingHelperText'),
-      'get_player_combat_common_copy.live.submittingHelperText',
+      'combat.common.live.submittingHelperText',
     ),
-    preparingHelperText: requiredText(
+    preparingHelperText: copyTextOrKey(
       read(record, 'preparingHelperText'),
-      'get_player_combat_common_copy.live.preparingHelperText',
+      'combat.common.live.preparingHelperText',
     ),
-    completedHelperText: requiredText(
+    completedHelperText: copyTextOrKey(
       read(record, 'completedHelperText'),
-      'get_player_combat_common_copy.live.completedHelperText',
+      'combat.common.live.completedHelperText',
     ),
-    timingActionLabel: requiredText(
+    timingActionLabel: copyTextOrKey(
       read(record, 'timingActionLabel'),
-      'get_player_combat_common_copy.live.timingActionLabel',
+      'combat.common.live.timingActionLabel',
     ),
-    meterTitle: requiredText(read(record, 'meterTitle'), 'get_player_combat_common_copy.live.meterTitle'),
-    meterHelperText: requiredText(
+    meterTitle: copyTextOrKey(read(record, 'meterTitle'), 'combat.common.live.meterTitle'),
+    meterHelperText: copyTextOrKey(
       read(record, 'meterHelperText'),
-      'get_player_combat_common_copy.live.meterHelperText',
+      'combat.common.live.meterHelperText',
     ),
-    meterEarlyLabel: requiredText(
+    meterEarlyLabel: copyTextOrKey(
       read(record, 'meterEarlyLabel'),
-      'get_player_combat_common_copy.live.meterEarlyLabel',
+      'combat.common.live.meterEarlyLabel',
     ),
-    meterHitZoneLabel: requiredText(
+    meterHitZoneLabel: copyTextOrKey(
       read(record, 'meterHitZoneLabel'),
-      'get_player_combat_common_copy.live.meterHitZoneLabel',
+      'combat.common.live.meterHitZoneLabel',
     ),
-    meterLateLabel: requiredText(
+    meterLateLabel: copyTextOrKey(
       read(record, 'meterLateLabel'),
-      'get_player_combat_common_copy.live.meterLateLabel',
+      'combat.common.live.meterLateLabel',
     ),
   };
 }
@@ -103,14 +104,14 @@ function mapEmptyParticipants(record: JsonRecord): CombatCommonEmptyParticipants
   return {
     loading: mapParticipantPlaceholder(
       requiredRecord(read(record, 'loading'), 'get_player_combat_common_copy.emptyParticipants.loading'),
-      'get_player_combat_common_copy.emptyParticipants.loading',
+      'combat.common.emptyParticipants.loading',
     ),
     unavailable: mapParticipantPlaceholder(
       requiredRecord(
         read(record, 'unavailable'),
         'get_player_combat_common_copy.emptyParticipants.unavailable',
       ),
-      'get_player_combat_common_copy.emptyParticipants.unavailable',
+      'combat.common.emptyParticipants.unavailable',
     ),
   };
 }
@@ -120,10 +121,10 @@ function mapParticipantPlaceholder(
   field: string,
 ): CombatCommonEmptyParticipantsCopy['loading'] {
   return {
-    leftTitle: requiredText(read(record, 'leftTitle'), `${field}.leftTitle`),
-    leftText: requiredText(read(record, 'leftText'), `${field}.leftText`),
-    rightTitle: requiredText(read(record, 'rightTitle'), `${field}.rightTitle`),
-    rightText: requiredText(read(record, 'rightText'), `${field}.rightText`),
+    leftTitle: copyTextOrKey(read(record, 'leftTitle'), `${field}.leftTitle`),
+    leftText: copyTextOrKey(read(record, 'leftText'), `${field}.leftText`),
+    rightTitle: copyTextOrKey(read(record, 'rightTitle'), `${field}.rightTitle`),
+    rightText: copyTextOrKey(read(record, 'rightText'), `${field}.rightText`),
   };
 }
 
@@ -131,26 +132,26 @@ function mapWorkflow(record: JsonRecord): CombatCommonWorkflowCopy {
   return {
     finalizingResult: mapMessage(
       requiredRecord(read(record, 'finalizingResult'), 'get_player_combat_common_copy.workflow.finalizingResult'),
-      'get_player_combat_common_copy.workflow.finalizingResult',
+      'combat.common.workflow.finalizingResult',
     ),
     finalizeUnavailable: mapMessage(
       requiredRecord(
         read(record, 'finalizeUnavailable'),
         'get_player_combat_common_copy.workflow.finalizeUnavailable',
       ),
-      'get_player_combat_common_copy.workflow.finalizeUnavailable',
+      'combat.common.workflow.finalizeUnavailable',
     ),
     actionUnavailable: mapMessage(
       requiredRecord(read(record, 'actionUnavailable'), 'get_player_combat_common_copy.workflow.actionUnavailable'),
-      'get_player_combat_common_copy.workflow.actionUnavailable',
+      'combat.common.workflow.actionUnavailable',
     ),
   };
 }
 
 function mapMessage(record: JsonRecord, field: string): CombatCommonMessageCopy {
   return {
-    title: requiredText(read(record, 'title'), `${field}.title`),
-    text: requiredText(read(record, 'text'), `${field}.text`),
+    title: copyTextOrKey(read(record, 'title'), `${field}.title`),
+    text: copyTextOrKey(read(record, 'text'), `${field}.text`),
   };
 }
 

@@ -24,6 +24,7 @@ import {
   mapRichTextFragments,
   requireRichTextTone,
 } from './rich-text.mapper';
+import { copyTextOrKey } from './game-copy-key-fallback';
 
 const PVP_COMBAT_LOCALES: readonly PvpCombatCopyLocale[] = ['pl', 'en'];
 const EFFECT_SOURCE_KEYS: readonly PvpCombatParticipantEffectSourceKey[] = [
@@ -81,7 +82,7 @@ function mapSourcePresentation(record: JsonRecord): PvpCombatSourcePresentationC
     live: mapLive(requiredRecord(read(record, 'live'), 'get_pvp_combat_copy.sourcePresentation.live')),
     emptyLog: mapMessage(
       requiredRecord(read(record, 'emptyLog'), 'get_pvp_combat_copy.sourcePresentation.emptyLog'),
-      'get_pvp_combat_copy.sourcePresentation.emptyLog',
+      'pvp.combat.sourcePresentation.emptyLog',
     ),
     workflow: mapOptionalWorkflow(
       read(record, 'workflow'),
@@ -92,19 +93,19 @@ function mapSourcePresentation(record: JsonRecord): PvpCombatSourcePresentationC
 
 function mapHeader(record: JsonRecord): PvpCombatSourcePresentationCopy['header'] {
   return {
-    eyebrow: requiredText(read(record, 'eyebrow'), 'get_pvp_combat_copy.sourcePresentation.header.eyebrow'),
-    title: requiredText(read(record, 'title'), 'get_pvp_combat_copy.sourcePresentation.header.title'),
-    text: requiredText(read(record, 'text'), 'get_pvp_combat_copy.sourcePresentation.header.text'),
+    eyebrow: copyTextOrKey(read(record, 'eyebrow'), 'pvp.combat.sourcePresentation.header.eyebrow'),
+    title: copyTextOrKey(read(record, 'title'), 'pvp.combat.sourcePresentation.header.title'),
+    text: copyTextOrKey(read(record, 'text'), 'pvp.combat.sourcePresentation.header.text'),
   };
 }
 
 function mapLive(record: JsonRecord): PvpCombatSourcePresentationCopy['live'] {
   return {
-    title: requiredText(read(record, 'title'), 'get_pvp_combat_copy.sourcePresentation.live.title'),
-    text: requiredText(read(record, 'text'), 'get_pvp_combat_copy.sourcePresentation.live.text'),
-    helperText: requiredText(
+    title: copyTextOrKey(read(record, 'title'), 'pvp.combat.sourcePresentation.live.title'),
+    text: copyTextOrKey(read(record, 'text'), 'pvp.combat.sourcePresentation.live.text'),
+    helperText: copyTextOrKey(
       read(record, 'helperText'),
-      'get_pvp_combat_copy.sourcePresentation.live.helperText',
+      'pvp.combat.sourcePresentation.live.helperText',
     ),
   };
 }
@@ -116,21 +117,21 @@ function mapWorkflow(record: JsonRecord): PvpCombatWorkflowCopy {
         read(record, 'finalizingResult'),
         'get_pvp_combat_copy.sourcePresentation.workflow.finalizingResult',
       ),
-      'get_pvp_combat_copy.sourcePresentation.workflow.finalizingResult',
+      'pvp.combat.sourcePresentation.workflow.finalizingResult',
     ),
     finalizeUnavailable: mapMessage(
       requiredRecord(
         read(record, 'finalizeUnavailable'),
         'get_pvp_combat_copy.sourcePresentation.workflow.finalizeUnavailable',
       ),
-      'get_pvp_combat_copy.sourcePresentation.workflow.finalizeUnavailable',
+      'pvp.combat.sourcePresentation.workflow.finalizeUnavailable',
     ),
     actionUnavailable: mapMessage(
       requiredRecord(
         read(record, 'actionUnavailable'),
         'get_pvp_combat_copy.sourcePresentation.workflow.actionUnavailable',
       ),
-      'get_pvp_combat_copy.sourcePresentation.workflow.actionUnavailable',
+      'pvp.combat.sourcePresentation.workflow.actionUnavailable',
     ),
   };
 }
@@ -145,8 +146,8 @@ function mapOptionalWorkflow(value: Json | undefined, field: string): PvpCombatW
 
 function mapMessage(record: JsonRecord, field: string): PvpCombatWorkflowCopy['finalizingResult'] {
   return {
-    title: requiredText(read(record, 'title'), `${field}.title`),
-    text: requiredText(read(record, 'text'), `${field}.text`),
+    title: copyTextOrKey(read(record, 'title'), `${field}.title`),
+    text: copyTextOrKey(read(record, 'text'), `${field}.text`),
   };
 }
 
@@ -207,13 +208,13 @@ function mapParticipantEffectTemplate(
   field: string,
 ): PvpCombatParticipantEffectTemplateCopy {
   return {
-    key: requiredText(read(record, 'key'), `${field}.key`),
-    participantRole: requiredText(read(record, 'participantRole'), `${field}.participantRole`),
+    key: copyTextOrKey(read(record, 'key'), `${field}.key`),
+    participantRole: copyTextOrKey(read(record, 'participantRole'), `${field}.participantRole`),
     sourceKey: requireEffectSourceKey(
       requiredText(read(record, 'sourceKey'), `${field}.sourceKey`),
       `${field}.sourceKey`,
     ),
-    summaryPlainTemplate: requiredText(
+    summaryPlainTemplate: copyTextOrKey(
       read(record, 'summaryPlainTemplate'),
       `${field}.summaryPlainTemplate`,
     ),

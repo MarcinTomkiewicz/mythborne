@@ -4,7 +4,9 @@ import { CombatCommonCopy } from '../../../../core/domain/combat/combat-common-c
 import { CombatSourcePresentation } from '../../../../core/domain/combat/combat-source-presentation.model';
 import { PvpActionCopy } from '../../../../core/domain/pvp/pvp-action-copy.model';
 import { PvpCombatCopy } from '../../../../core/domain/pvp/pvp-combat-copy.model';
-import { pvpCombatSourcePresentation } from '../../../../core/domain/pvp/pvp-combat-source-presentation.mapper';
+import {
+  pvpCombatSourcePresentationWithKeyFallbacks,
+} from '../../../../core/domain/pvp/pvp-combat-source-presentation.mapper';
 import { GameCopyService } from '../../../../core/services/game-copy/game-copy.service';
 
 @Injectable({ providedIn: 'root' })
@@ -19,13 +21,12 @@ export class PvpCombatCopyState {
     this.load();
   }
 
-  sourcePresentation(actionCopy: PvpActionCopy): CombatSourcePresentation | null {
-    const combatCommonCopy = this.combatCommonCopy();
-    const pvpCombatCopy = this.pvpCombatCopy();
-
-    return combatCommonCopy && pvpCombatCopy
-      ? pvpCombatSourcePresentation(actionCopy, combatCommonCopy, pvpCombatCopy)
-      : null;
+  sourcePresentation(actionCopy: PvpActionCopy): CombatSourcePresentation {
+    return pvpCombatSourcePresentationWithKeyFallbacks(
+      actionCopy,
+      this.combatCommonCopy(),
+      this.pvpCombatCopy(),
+    );
   }
 
   private load(): void {

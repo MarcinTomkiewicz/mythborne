@@ -20,16 +20,17 @@ import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/bro
             [routerLink]="actions().directReportLink"
           />
         }
-        <p-button
-          type="button"
-          [label]="publicReportCopyLabel() ?? actions().publicReportCopyLabel"
-          icon="pi pi-link"
-          severity="secondary"
-          [text]="publicReportCopyText()"
-          [outlined]="!publicReportCopyText()"
-          [disabled]="actions().publicReportCopyDisabled"
-          (onClick)="copyPublicReportLink()"
-        />
+        @if (actions().publicReportPath) {
+          <p-button
+            type="button"
+            [label]="publicReportCopyLabel() ?? actions().publicReportCopyLabel"
+            icon="pi pi-link"
+            severity="secondary"
+            [text]="publicReportCopyText()"
+            [outlined]="!publicReportCopyText()"
+            (onClick)="copyPublicReportLink()"
+          />
+        }
       </div>
       @if (actions().directReportUnavailableMessage; as message) {
         <p class="warn-text text-sm m-0">{{ message }}</p>
@@ -44,7 +45,7 @@ import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/bro
 export class ReportHandoffActions {
   private readonly toast = inject(ToastService);
   readonly actions = input.required<ReportHandoffActionsViewModel>();
-  readonly heading = input('Akcje raportu');
+  readonly heading = input('reportHandoff.actions.heading');
   readonly directReportLabel = input<string | null>(null);
   readonly publicReportCopyLabel = input<string | null>(null);
   readonly publicReportCopyText = input(true);
@@ -53,17 +54,21 @@ export class ReportHandoffActions {
     const link = this.actions().publicReportPath;
 
     if (!link) {
-      this.toast.show('error', 'Raport', 'Nie udało się skopiować linku do raportu.');
+      this.toast.show(
+        'error',
+        'reportHandoff.toast.title',
+        'reportHandoff.toast.copyPublicReportLinkFailed',
+      );
       return;
     }
 
     void copyTextToClipboard(absoluteBrowserUrl(link))
       .then((copied) => this.toast.show(
         copied ? 'success' : 'error',
-        'Raport',
+        'reportHandoff.toast.title',
         copied
-          ? 'Link do raportu został skopiowany.'
-          : 'Nie udało się skopiować linku do raportu.',
+          ? 'reportHandoff.toast.copyPublicReportLinkSuccess'
+          : 'reportHandoff.toast.copyPublicReportLinkFailed',
       ));
   }
 }
