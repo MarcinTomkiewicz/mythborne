@@ -3,7 +3,7 @@ import { CombatStageViewModel } from '../domain/combat/combat-stage.model';
 import type { PvpCombatContextPresentation } from '../domain/pvp/pvp-combat-context.model';
 import {
   ReportDetailCore,
-  ReportShellContextV1,
+  ReportShellContext,
 } from '../domain/reports/report-detail.model';
 import { ReportCombatSection } from '../domain/reports/report-section.model';
 import type { Json } from '../types/database.types';
@@ -16,7 +16,7 @@ import {
 
 export function mapPvpAttackCombatStageView(input: {
   report: ReportDetailCore | null;
-  shell: ReportShellContextV1;
+  shell: ReportShellContext;
   combatResultId?: string | null;
   activeHeroId?: string | null;
   activeHeroPortraitSrc?: string | null;

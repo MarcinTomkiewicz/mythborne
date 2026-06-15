@@ -32,7 +32,7 @@ export interface ExplorationResultNarrativeMetadata {
   sourceId?: string | null;
 }
 
-export interface ExplorationResultNarrativeSnapshotV1 {
+export interface ExplorationResultNarrativeSnapshot {
   contractVersion: 'exploration_result_narrative_snapshot_v1';
   locale: 'pl' | string;
   selectedCopyKey: string;

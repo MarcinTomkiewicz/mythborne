@@ -1,5 +1,5 @@
 import {
-  ExplorationResultNarrativeSnapshotV1,
+  ExplorationResultNarrativeSnapshot,
 } from '../domain/exploration/exploration-result-copy.model';
 import {
   HeroDailyActionCounterReadModel,
@@ -324,7 +324,7 @@ function mapTrialManifestationNarrativeJson(
   row: JsonRecord,
   metadataJson: Json,
   field: string,
-): ExplorationResultNarrativeSnapshotV1 | null {
+): ExplorationResultNarrativeSnapshot | null {
   const direct = mapOptionalExplorationResultNarrativeSnapshot(
     read(row, 'trialManifestationNarrativeJson', 'trial_manifestation_narrative_json'),
     `${field}.trialManifestationNarrativeJson`,
@@ -344,7 +344,7 @@ function mapEncounterCombatHandoffNarrativeJson(
   row: JsonRecord,
   metadataJson: Json,
   field: string,
-): ExplorationResultNarrativeSnapshotV1 | null {
+): ExplorationResultNarrativeSnapshot | null {
   const direct = mapEncounterCombatHandoffNarrativeCandidate(
     read(row, 'encounterCombatHandoffNarrativeJson', 'encounter_combat_handoff_narrative_json'),
     `${field}.encounterCombatHandoffNarrativeJson`,
@@ -372,7 +372,7 @@ function mapEncounterCombatHandoffNarrativeJson(
 function mapEncounterCombatHandoffNarrativeCandidate(
   value: Json | undefined,
   field: string,
-): ExplorationResultNarrativeSnapshotV1 | null {
+): ExplorationResultNarrativeSnapshot | null {
   const narrative = mapOptionalExplorationResultNarrativeSnapshot(value, field);
 
   if (!narrative) {

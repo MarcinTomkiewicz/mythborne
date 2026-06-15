@@ -1,6 +1,6 @@
 import {
   ExplorationResultNarrativeMetadata,
-  ExplorationResultNarrativeSnapshotV1,
+  ExplorationResultNarrativeSnapshot,
   ExplorationRichTextFragmentKind,
 } from '../domain/exploration/exploration-result-copy.model';
 import { Json } from '../types/database.types';
@@ -21,7 +21,7 @@ import {
 export function mapOptionalExplorationResultNarrativeSnapshot(
   value: Json | undefined,
   field: string,
-): ExplorationResultNarrativeSnapshotV1 | null {
+): ExplorationResultNarrativeSnapshot | null {
   if (value === undefined || value === null) {
     return null;
   }

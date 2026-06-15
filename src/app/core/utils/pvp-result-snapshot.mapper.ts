@@ -1,12 +1,12 @@
 import {
-  PvpResultGlorySentenceV1,
+  PvpResultGlorySentence,
   PvpResultOutcomeBannerTone,
-  PvpResultOutcomeBannerV1,
+  PvpResultOutcomeBanner,
   PvpResultOutcomeKey,
   PvpResultPerspective,
-  PvpResultSnapshotV1,
-  PvpResultSummaryV1,
-  PvpResultTechnicalContextV1,
+  PvpResultSnapshot,
+  PvpResultSummary,
+  PvpResultTechnicalContext,
 } from '../domain/pvp/pvp-result-snapshot.model';
 import { Json } from '../types/database.types';
 import {
@@ -24,7 +24,7 @@ import { mapRichTextFragments } from './rich-text.mapper';
 export function mapOptionalPvpResultSnapshot(
   value: Json | undefined,
   field: string,
-): PvpResultSnapshotV1 | null {
+): PvpResultSnapshot | null {
   if (value === undefined || value === null) {
     return null;
   }
@@ -55,7 +55,7 @@ export function mapOptionalPvpResultSnapshot(
   };
 }
 
-function mapPublicSummaries(record: JsonRecord, field: string): PvpResultSnapshotV1['public'] {
+function mapPublicSummaries(record: JsonRecord, field: string): PvpResultSnapshot['public'] {
   return {
     neutral: mapPvpResultSummary(
       requiredRecord(read(record, 'neutral'), `${field}.neutral`),
@@ -66,7 +66,7 @@ function mapPublicSummaries(record: JsonRecord, field: string): PvpResultSnapsho
   };
 }
 
-function mapPvpResultSummary(record: JsonRecord, field: string): PvpResultSummaryV1 {
+function mapPvpResultSummary(record: JsonRecord, field: string): PvpResultSummary {
   requireLiteral(requiredText(read(record, 'contractKey'), `${field}.contractKey`), 'pvp_result_summary', `${field}.contractKey`);
   requireLiteral(requiredText(read(record, 'contractVersion'), `${field}.contractVersion`), 'pvp_result_summary_v1', `${field}.contractVersion`);
   requireLiteral(requiredText(read(record, 'sourceOwner'), `${field}.sourceOwner`), 'pvp.result', `${field}.sourceOwner`);
@@ -98,7 +98,7 @@ function mapPvpResultSummary(record: JsonRecord, field: string): PvpResultSummar
   };
 }
 
-function mapOutcomeBanner(record: JsonRecord, field: string): PvpResultOutcomeBannerV1 {
+function mapOutcomeBanner(record: JsonRecord, field: string): PvpResultOutcomeBanner {
   requireLiteral(requiredText(read(record, 'contractKey'), `${field}.contractKey`), 'pvp_result_outcome_banner', `${field}.contractKey`);
   requireLiteral(requiredText(read(record, 'contractVersion'), `${field}.contractVersion`), 'pvp_result_outcome_banner_v1', `${field}.contractVersion`);
   requireLiteral(requiredText(read(record, 'sourceOwner'), `${field}.sourceOwner`), 'pvp.result', `${field}.sourceOwner`);
@@ -139,7 +139,7 @@ function requiredString(value: Json | undefined, field: string): string {
 function mapOptionalGlorySentence(
   value: Json | undefined,
   field: string,
-): PvpResultGlorySentenceV1 | null {
+): PvpResultGlorySentence | null {
   if (value === undefined || value === null) {
     return null;
   }
@@ -157,7 +157,7 @@ function mapOptionalGlorySentence(
   };
 }
 
-function mapTechnicalContext(record: JsonRecord, field: string): PvpResultTechnicalContextV1 {
+function mapTechnicalContext(record: JsonRecord, field: string): PvpResultTechnicalContext {
   return {
     pvpAttackResultId: requiredText(read(record, 'pvpAttackResultId'), `${field}.pvpAttackResultId`),
     combatResultId: requiredText(read(record, 'combatResultId'), `${field}.combatResultId`),

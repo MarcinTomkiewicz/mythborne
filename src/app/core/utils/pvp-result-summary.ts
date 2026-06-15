@@ -1,13 +1,13 @@
 import {
-  PvpResultSnapshotV1,
-  PvpResultSummaryV1,
+  PvpResultSnapshot,
+  PvpResultSummary,
 } from '../domain/pvp/pvp-result-snapshot.model';
 
 export function pvpResultSummaryForHero(
-  pvpResult: PvpResultSnapshotV1 | null | undefined,
+  pvpResult: PvpResultSnapshot | null | undefined,
   activeHeroId: string | null,
   allowNeutralFallback = false,
-): PvpResultSummaryV1 | null {
+): PvpResultSummary | null {
   if (!pvpResult) {
     return null;
   }
@@ -26,7 +26,7 @@ export function pvpResultSummaryForHero(
 }
 
 export function publicPvpResultSummary(
-  pvpResult: PvpResultSnapshotV1 | null | undefined,
-): PvpResultSummaryV1 | null {
+  pvpResult: PvpResultSnapshot | null | undefined,
+): PvpResultSummary | null {
   return pvpResult?.public.neutral ?? null;
 }

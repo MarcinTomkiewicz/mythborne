@@ -4,26 +4,26 @@ export type PvpResultOutcomeKey = 'attacker_victory' | 'defender_victory' | 'dra
 export type PvpResultPerspective = 'attacker' | 'defender' | 'neutral';
 export type PvpResultOutcomeBannerTone = 'success' | 'danger' | 'warning' | 'neutral';
 
-export interface PvpResultSnapshotV1 {
+export interface PvpResultSnapshot {
   contractKey: 'pvp_result_snapshot';
   contractVersion: 'pvp_result_snapshot_v1';
   sourceOwner: 'pvp.result';
-  private: PvpResultPrivateSummariesV1;
-  public: PvpResultPublicSummariesV1;
+  private: PvpResultPrivateSummaries;
+  public: PvpResultPublicSummaries;
 }
 
-export interface PvpResultPrivateSummariesV1 {
-  attacker: PvpResultSummaryV1;
-  defender: PvpResultSummaryV1;
+export interface PvpResultPrivateSummaries {
+  attacker: PvpResultSummary;
+  defender: PvpResultSummary;
 }
 
-export interface PvpResultPublicSummariesV1 {
-  neutral: PvpResultSummaryV1;
+export interface PvpResultPublicSummaries {
+  neutral: PvpResultSummary;
   includesGlory: false;
   glory: null;
 }
 
-export interface PvpResultSummaryV1 {
+export interface PvpResultSummary {
   contractKey: 'pvp_result_summary';
   contractVersion: 'pvp_result_summary_v1';
   sourceOwner: 'pvp.result';
@@ -33,13 +33,13 @@ export interface PvpResultSummaryV1 {
   title: string;
   summaryPlainText: string;
   summaryRichText: RichTextFragment[];
-  outcomeBanner: PvpResultOutcomeBannerV1;
+  outcomeBanner: PvpResultOutcomeBanner;
   includesGlory: boolean;
-  glorySentence: PvpResultGlorySentenceV1 | null;
-  technicalContext: PvpResultTechnicalContextV1;
+  glorySentence: PvpResultGlorySentence | null;
+  technicalContext: PvpResultTechnicalContext;
 }
 
-export interface PvpResultOutcomeBannerV1 {
+export interface PvpResultOutcomeBanner {
   contractKey: 'pvp_result_outcome_banner';
   contractVersion: 'pvp_result_outcome_banner_v1';
   sourceOwner: 'pvp.result';
@@ -53,7 +53,7 @@ export interface PvpResultOutcomeBannerV1 {
   iconKey: string;
 }
 
-export interface PvpResultGlorySentenceV1 {
+export interface PvpResultGlorySentence {
   contractKey: 'pvp_result_glory_sentence';
   contractVersion: 'pvp_result_glory_sentence_v1';
   messageKind: string;
@@ -61,7 +61,7 @@ export interface PvpResultGlorySentenceV1 {
   richText: RichTextFragment[];
 }
 
-export interface PvpResultTechnicalContextV1 {
+export interface PvpResultTechnicalContext {
   pvpAttackResultId: string;
   combatResultId: string;
   attackerHeroId: string;

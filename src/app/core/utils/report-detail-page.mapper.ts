@@ -2,15 +2,15 @@ import {
   CombatReportDomainContext,
   ExplorationReportDomainContext,
   PrivateReportDetailPage,
-  PublicReportDetailV2,
+  PublicReportDetail,
   PvpReportDomainContext,
   ReportContentKind,
   ReportAccessPrivate,
   ReportDomainKey,
-  ReportDomainContextV1,
+  ReportDomainContext,
   ReportDomainFrontendUsage,
   ReportShellContextDate,
-  ReportShellContextV1,
+  ReportShellContext,
   ReportShellContextValue,
   ReportShellLegacySnapshot,
   SpyReportDomainContext,
@@ -55,7 +55,7 @@ export function mapReportDetailPage(
   };
 }
 
-export function mapPublicReportDetailPage(value: Json): PublicReportDetailV2 {
+export function mapPublicReportDetailPage(value: Json): PublicReportDetail {
   const root = requiredRecord(value, 'get_public_report_detail');
   const contractVersion = requireReportDetailVersion(root);
   const access = requiredRecord(read(root, 'access'), 'get_public_report_detail.access');
@@ -134,7 +134,7 @@ export function mapPublicReportDetailPage(value: Json): PublicReportDetailV2 {
   };
 }
 
-function mapReportShellContext(context: JsonRecord, field: string): ReportShellContextV1 {
+function mapReportShellContext(context: JsonRecord, field: string): ReportShellContext {
   return {
     contractVersion: requireReportShellContextVersion(
       requiredText(read(context, 'contractVersion'), `${field}.contractVersion`),
@@ -231,7 +231,7 @@ function mapPrivateAccess(
   };
 }
 
-function mapReportDomainContext(context: JsonRecord, field: string): ReportDomainContextV1 {
+function mapReportDomainContext(context: JsonRecord, field: string): ReportDomainContext {
   const contentKind = requireReportContentKind(
     requiredText(read(context, 'contentKind'), `${field}.contentKind`),
     `${field}.contentKind`,

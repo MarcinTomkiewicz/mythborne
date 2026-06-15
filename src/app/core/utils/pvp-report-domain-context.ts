@@ -1,11 +1,11 @@
 import {
   PrivateReportDetailPage,
-  PublicReportDetailV2Available,
-  ReportDetailV2,
+  PublicReportDetailAvailable,
+  ReportDetail,
 } from '../domain/reports/report-detail.model';
 
 export function isPrivatePvpReportDetail(
-  detail: ReportDetailV2,
+  detail: ReportDetail,
 ): detail is PrivateReportDetailPage {
   const context = detail.domainContextJson;
 
@@ -16,12 +16,12 @@ export function isPrivatePvpReportDetail(
     context.missingContextReason === null;
 }
 
-export function isPvpReportDomainDetail(detail: ReportDetailV2): boolean {
+export function isPvpReportDomainDetail(detail: ReportDetail): boolean {
   return detail.domainContextJson.reportDomainKey === 'pvp';
 }
 
 export function isPrivatePvpAttackReportDetail(
-  detail: ReportDetailV2,
+  detail: ReportDetail,
 ): detail is PrivateReportDetailPage {
   const context = detail.domainContextJson;
   const pvp = context.pvp;
@@ -33,7 +33,7 @@ export function isPrivatePvpAttackReportDetail(
 }
 
 export function isPrivatePvpSpyReportDetail(
-  detail: ReportDetailV2,
+  detail: ReportDetail,
 ): detail is PrivateReportDetailPage {
   const context = detail.domainContextJson;
   const pvp = context.pvp;
@@ -44,8 +44,8 @@ export function isPrivatePvpSpyReportDetail(
 }
 
 export function isPublicPvpReportDetail(
-  detail: ReportDetailV2,
-): detail is PublicReportDetailV2Available {
+  detail: ReportDetail,
+): detail is PublicReportDetailAvailable {
   const context = detail.domainContextJson;
 
   return detail.access.visibility === 'public' &&

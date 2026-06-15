@@ -4,7 +4,7 @@ import { of, Subject } from 'rxjs';
 import {
   EstateBuildingJob,
   EstateBuildingRow,
-  PlayerEstatePageContextV3,
+  PlayerEstatePageContext,
 } from '../../domain/estate/player-estate-page-context.model';
 import {
   ActiveHeroState,
@@ -69,8 +69,8 @@ describe('MansionPageFacade', () => {
   });
 
   it('ignores stale page-context responses from an earlier load request', () => {
-    const first = new Subject<PlayerEstatePageContextV3>();
-    const second = new Subject<PlayerEstatePageContextV3>();
+    const first = new Subject<PlayerEstatePageContext>();
+    const second = new Subject<PlayerEstatePageContext>();
     playerEstate.getPageContext.and.returnValues(
       first.asObservable(),
       second.asObservable(),
@@ -164,7 +164,7 @@ function requiredActiveHeroState(): RequiredActiveHeroState {
 function pageContext(input: {
   address?: string;
   activeJob?: EstateBuildingJob;
-} = {}): PlayerEstatePageContextV3 {
+} = {}): PlayerEstatePageContext {
   return {
     contractVersion: 'player_estate_page_context_v3',
     hero: {

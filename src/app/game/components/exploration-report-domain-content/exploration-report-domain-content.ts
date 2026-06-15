@@ -1,5 +1,5 @@
 import { Component, computed, input } from '@angular/core';
-import { ReportDetailV2 } from '../../../core/domain/reports/report-detail.model';
+import { ReportDetail } from '../../../core/domain/reports/report-detail.model';
 import { ExplorationReportResultContent } from '../exploration-report-result-content/exploration-report-result-content';
 
 @Component({
@@ -12,7 +12,7 @@ import { ExplorationReportResultContent } from '../exploration-report-result-con
   host: { class: 'd-block w-100' },
 })
 export class ExplorationReportDomainContent {
-  readonly detail = input.required<ReportDetailV2>();
+  readonly detail = input.required<ReportDetail>();
 
   readonly reportId = computed(() => this.detail().domainContextJson.gameReportId);
 }

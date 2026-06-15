@@ -4,7 +4,7 @@ import { switchMap } from 'rxjs';
 import { MansionBuildingJobFinalization } from '../../domain/building/building.model';
 import {
   EstateBuildingJob,
-  PlayerEstatePageContextV3,
+  PlayerEstatePageContext,
 } from '../../domain/estate/player-estate-page-context.model';
 import {
   ActiveJobSettlementAttempt,
@@ -204,7 +204,7 @@ export class MansionActiveJobState {
 
   private handleSettlementReloadSuccess(
     attempt: ActiveJobSettlementAttempt,
-    nextContext: PlayerEstatePageContextV3,
+    nextContext: PlayerEstatePageContext,
   ): void {
     if (
       !this.isCurrentSettlementAttempt(attempt) ||
@@ -246,7 +246,7 @@ export class MansionActiveJobState {
     );
   }
 
-  private currentConfiguredContext(): PlayerEstatePageContextV3 | null {
+  private currentConfiguredContext(): PlayerEstatePageContext | null {
     if (!this.bindings) {
       return null;
     }
@@ -353,7 +353,7 @@ export class MansionActiveJobState {
 
   private handleActiveJobSettlementReload(
     jobId: string,
-    context: PlayerEstatePageContextV3,
+    context: PlayerEstatePageContext,
   ): void {
     const estate = context.estateRuntimeState;
     const activeJob = estate ? estate.active_job_json : null;

@@ -7,8 +7,8 @@ import type {
   PrivateReportDetailPage,
 } from '../../../core/domain/reports/report-detail.model';
 import type {
-  PvpResultOutcomeBannerV1,
-  PvpResultSummaryV1,
+  PvpResultOutcomeBanner,
+  PvpResultSummary,
 } from '../../../core/domain/pvp/pvp-result-snapshot.model';
 import {
   ReportSpySection,
@@ -37,7 +37,7 @@ export class PvpReportDomainContent {
   readonly copy = input<PvpPrivateReportCopy | null>(null);
   readonly activeHeroId = input<string | null>(null);
 
-  readonly resultSummary = computed((): PvpResultSummaryV1 | null =>
+  readonly resultSummary = computed((): PvpResultSummary | null =>
     pvpResultSummaryForHero(
       this.detail().domainContextJson.pvpResult,
       this.activeHeroId(),
@@ -96,7 +96,7 @@ export class PvpReportDomainContent {
       !this.showSpyStats(section);
   }
 
-  outcomeBannerIconClass(banner: PvpResultOutcomeBannerV1): string {
+  outcomeBannerIconClass(banner: PvpResultOutcomeBanner): string {
     return semanticIconClass(banner.iconKey) ?? '';
   }
 }

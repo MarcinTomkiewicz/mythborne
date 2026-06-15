@@ -1,6 +1,6 @@
 import {
   PlayerEstateHeroRow,
-  PlayerEstatePageContextV3,
+  PlayerEstatePageContext,
 } from '../domain/estate/player-estate-page-context.model';
 import { Json } from '../types/database.types';
 import {
@@ -19,7 +19,7 @@ const PLAYER_ESTATE_CONTRACT_VERSION = 'player_estate_page_context_v3';
 
 export function mapPlayerEstatePageContext(
   value: Json,
-): PlayerEstatePageContextV3 {
+): PlayerEstatePageContext {
   const root = requiredRecord(value, 'get_player_estate_page_context');
   const contractVersion = requiredText(
     read(root, 'contractVersion'),

@@ -3,7 +3,7 @@ import { map, Observable } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
 import {
   PrivateReportDetailPage,
-  PublicReportDetailV2,
+  PublicReportDetail,
 } from '../../domain/reports/report-detail.model';
 import {
   MarkAllReportsReadResult,
@@ -139,7 +139,7 @@ export class PlayerReports {
     );
   }
 
-  getPublicDetailPage(publicToken: string): Observable<PublicReportDetailV2> {
+  getPublicDetailPage(publicToken: string): Observable<PublicReportDetail> {
     const args: GetPublicReportDetailRpcArgs = {
       p_public_token: publicToken,
     };

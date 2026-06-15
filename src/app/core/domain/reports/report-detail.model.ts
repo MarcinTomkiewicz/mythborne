@@ -11,7 +11,7 @@ import {
   ReportTrialSection,
 } from './report-section.model';
 import type { PvpCombatContextPresentation } from '../pvp/pvp-combat-context.model';
-import type { PvpResultSnapshotV1 } from '../pvp/pvp-result-snapshot.model';
+import type { PvpResultSnapshot } from '../pvp/pvp-result-snapshot.model';
 
 export type ReportDomainKey =
   | 'exploration'
@@ -94,7 +94,7 @@ export interface CombatReportDomainContext {
   isChildCombatReport: boolean;
 }
 
-export interface ReportDomainContextV1 {
+export interface ReportDomainContext {
   contractVersion: 'report_domain_context_v1';
   reportDomainKey: ReportDomainKey;
   contentKind: ReportContentKind;
@@ -110,11 +110,11 @@ export interface ReportDomainContextV1 {
   spy: SpyReportDomainContext | null;
   combat: CombatReportDomainContext | null;
   pvpCombatContext?: PvpCombatContextPresentation | null;
-  pvpResult?: PvpResultSnapshotV1 | null;
+  pvpResult?: PvpResultSnapshot | null;
   missingContextReason: MissingContextReason | null;
 }
 
-export interface ReportShellContextV1 {
+export interface ReportShellContext {
   contractVersion: 'report_shell_context_v1';
   eyebrow: string;
   title: string;
@@ -172,20 +172,20 @@ export interface ReportAccessPublicUnavailable {
 export interface PrivateReportDetailPage {
   contractVersion: 'report_detail_v2';
   access: ReportAccessPrivate;
-  reportShellContextJson: ReportShellContextV1;
-  domainContextJson: ReportDomainContextV1;
-  report: ReportContentSnapshotV1;
+  reportShellContextJson: ReportShellContext;
+  domainContextJson: ReportDomainContext;
+  report: ReportContentSnapshot;
 }
 
-export interface PublicReportDetailV2Available {
+export interface PublicReportDetailAvailable {
   contractVersion: 'report_detail_v2';
   access: ReportAccessPublicAvailable;
-  reportShellContextJson: ReportShellContextV1;
-  domainContextJson: ReportDomainContextV1;
-  report: ReportContentSnapshotV1;
+  reportShellContextJson: ReportShellContext;
+  domainContextJson: ReportDomainContext;
+  report: ReportContentSnapshot;
 }
 
-export interface PublicReportDetailV2Unavailable {
+export interface PublicReportDetailUnavailable {
   contractVersion: 'report_detail_v2';
   access: ReportAccessPublicUnavailable;
   reportShellContextJson: null;
@@ -193,13 +193,13 @@ export interface PublicReportDetailV2Unavailable {
   report: null;
 }
 
-export type PublicReportDetailV2 =
-  | PublicReportDetailV2Available
-  | PublicReportDetailV2Unavailable;
+export type PublicReportDetail =
+  | PublicReportDetailAvailable
+  | PublicReportDetailUnavailable;
 
-export type ReportDetailV2 = PrivateReportDetailPage | PublicReportDetailV2Available;
+export type ReportDetail = PrivateReportDetailPage | PublicReportDetailAvailable;
 
-export interface ReportContentSnapshotV1 {
+export interface ReportContentSnapshot {
   publicToken: string | null;
   reportTypeKey: string;
   reportTypeLabel: string;
@@ -220,4 +220,4 @@ export interface ReportContentSnapshotV1 {
   relatedReportsJson: ReportRelatedReportRow[];
 }
 
-export type ReportDetailCore = ReportContentSnapshotV1;
+export type ReportDetailCore = ReportContentSnapshot;

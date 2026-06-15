@@ -1,5 +1,5 @@
 import {
-  ExplorationResultNarrativeSnapshotV1,
+  ExplorationResultNarrativeSnapshot,
 } from '../../../core/domain/exploration/exploration-result-copy.model';
 import { HeroExplorationStepResolutionReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { mapOptionalExplorationResultNarrativeSnapshot } from '../../../core/utils/exploration-result-copy.mapper';
@@ -7,7 +7,7 @@ import { read, requiredRecord } from '../../../core/utils/json-read';
 
 export function explorationStepResultNarrativeSnapshot(
   result: HeroExplorationStepResolutionReadModel | null,
-): ExplorationResultNarrativeSnapshotV1 | null {
+): ExplorationResultNarrativeSnapshot | null {
   if (!result) {
     return null;
   }
@@ -22,7 +22,7 @@ export function explorationStepResultNarrativeSnapshot(
 
 export function explorationStepTrialManifestationNarrativeSnapshot(
   result: HeroExplorationStepResolutionReadModel | null,
-): ExplorationResultNarrativeSnapshotV1 | null {
+): ExplorationResultNarrativeSnapshot | null {
   if (!result) {
     return null;
   }
@@ -37,7 +37,7 @@ export function explorationStepTrialManifestationNarrativeSnapshot(
 
 export function explorationStepEncounterCombatHandoffNarrativeSnapshot(
   result: HeroExplorationStepResolutionReadModel | null,
-): ExplorationResultNarrativeSnapshotV1 | null {
+): ExplorationResultNarrativeSnapshot | null {
   if (!result) {
     return null;
   }

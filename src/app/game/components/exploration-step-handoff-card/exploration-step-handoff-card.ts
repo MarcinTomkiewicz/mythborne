@@ -1,6 +1,6 @@
 import { Component, computed, inject } from '@angular/core';
 import {
-  ExplorationResultNarrativeSnapshotV1,
+  ExplorationResultNarrativeSnapshot,
 } from '../../../core/domain/exploration/exploration-result-copy.model';
 import {
   canRenderExplorationEffectSupplement,
@@ -78,7 +78,7 @@ export class ExplorationStepHandoffCard {
       : null;
   });
 
-  showsOutcomeStrip(result: ExplorationResultNarrativeSnapshotV1): boolean {
+  showsOutcomeStrip(result: ExplorationResultNarrativeSnapshot): boolean {
     return isTrialResultKind(result) || isEncounterCombatResultKind(result);
   }
 }

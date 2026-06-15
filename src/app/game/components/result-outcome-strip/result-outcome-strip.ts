@@ -1,6 +1,6 @@
 import { Component, input } from '@angular/core';
 import type {
-  ExplorationResultNarrativeSnapshotV1,
+  ExplorationResultNarrativeSnapshot,
 } from '../../../core/domain/exploration/exploration-result-copy.model';
 import type {
   ReportDetailPreviewOutcomeTone,
@@ -13,7 +13,7 @@ import type {
   host: { class: 'd-block w-100' },
 })
 export class ResultOutcomeStrip {
-  readonly narrative = input.required<ExplorationResultNarrativeSnapshotV1>();
+  readonly narrative = input.required<ExplorationResultNarrativeSnapshot>();
 
   cardClass(): string {
     const tone = this.outcomeTone();

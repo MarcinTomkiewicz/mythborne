@@ -1,5 +1,5 @@
 import type {
-  ExplorationResultNarrativeSnapshotV1,
+  ExplorationResultNarrativeSnapshot,
 } from '../exploration/exploration-result-copy.model';
 
 export interface ReportParticipantRow {
@@ -59,8 +59,8 @@ export interface ReportTrialSection {
   testedStatLabel: string | null;
   createdAt: string | null;
   completedAt: string | null;
-  trialManifestationNarrativeJson: ExplorationResultNarrativeSnapshotV1 | null;
-  resultNarrativeJson: ExplorationResultNarrativeSnapshotV1 | null;
+  trialManifestationNarrativeJson: ExplorationResultNarrativeSnapshot | null;
+  resultNarrativeJson: ExplorationResultNarrativeSnapshot | null;
 }
 
 export interface ReportEncounterSection {
@@ -86,8 +86,8 @@ export interface ReportEncounterSection {
   outcomeLabel: string;
   narrativeLines: string[];
   descriptionLines: string[];
-  encounterCombatHandoffNarrativeJson: ExplorationResultNarrativeSnapshotV1 | null;
-  resultNarrativeJson: ExplorationResultNarrativeSnapshotV1 | null;
+  encounterCombatHandoffNarrativeJson: ExplorationResultNarrativeSnapshot | null;
+  resultNarrativeJson: ExplorationResultNarrativeSnapshot | null;
 }
 
 export interface ReportCombatDisplayStatRow {

@@ -1,6 +1,6 @@
 import type { CombatStageViewModel } from '../domain/combat/combat-stage.model';
 import type {
-  ExplorationResultNarrativeSnapshotV1,
+  ExplorationResultNarrativeSnapshot,
 } from '../domain/exploration/exploration-result-copy.model';
 import type {
   PrivateReportDetailPage,
@@ -86,7 +86,7 @@ function reportExplorationSourceKind(
 
 function reportTrialManifestationNarrative(
   report: ReportDetailCore | null,
-): ExplorationResultNarrativeSnapshotV1 | null {
+): ExplorationResultNarrativeSnapshot | null {
   const trial = presentReportSection(report?.trialSectionJson);
 
   return trial?.trialManifestationNarrativeJson ?? null;
@@ -94,7 +94,7 @@ function reportTrialManifestationNarrative(
 
 function reportEncounterCombatHandoffNarrative(
   report: ReportDetailCore | null,
-): ExplorationResultNarrativeSnapshotV1 | null {
+): ExplorationResultNarrativeSnapshot | null {
   const encounter = presentReportSection(report?.encounterSectionJson);
 
   return encounter?.encounterCombatHandoffNarrativeJson ?? null;
@@ -102,7 +102,7 @@ function reportEncounterCombatHandoffNarrative(
 
 function reportExplorationResultNarrative(
   report: ReportDetailCore | null,
-): ExplorationResultNarrativeSnapshotV1 | null {
+): ExplorationResultNarrativeSnapshot | null {
   const trial = presentReportSection(report?.trialSectionJson);
   const encounter = presentReportSection(report?.encounterSectionJson);
 
@@ -112,9 +112,9 @@ function reportExplorationResultNarrative(
 function reportIsExplorationSource(input: {
   report: ReportDetailCore | null;
   reportDomainKey: string | null;
-  trialManifestationNarrative: ExplorationResultNarrativeSnapshotV1 | null;
-  encounterCombatHandoffNarrative: ExplorationResultNarrativeSnapshotV1 | null;
-  explorationResultNarrative: ExplorationResultNarrativeSnapshotV1 | null;
+  trialManifestationNarrative: ExplorationResultNarrativeSnapshot | null;
+  encounterCombatHandoffNarrative: ExplorationResultNarrativeSnapshot | null;
+  explorationResultNarrative: ExplorationResultNarrativeSnapshot | null;
 }): boolean {
   return (
     input.reportDomainKey === 'exploration' ||
@@ -129,9 +129,9 @@ function reportIsExplorationSource(input: {
 function missingExplorationNarrativeFields(input: {
   sourceKind: ReportDetailPreviewExplorationSourceKind | null;
   combatStage: CombatStageViewModel | null;
-  trialManifestationNarrative: ExplorationResultNarrativeSnapshotV1 | null;
-  encounterCombatHandoffNarrative: ExplorationResultNarrativeSnapshotV1 | null;
-  explorationResultNarrative: ExplorationResultNarrativeSnapshotV1 | null;
+  trialManifestationNarrative: ExplorationResultNarrativeSnapshot | null;
+  encounterCombatHandoffNarrative: ExplorationResultNarrativeSnapshot | null;
+  explorationResultNarrative: ExplorationResultNarrativeSnapshot | null;
 }): readonly string[] {
   const missing: string[] = [];
 

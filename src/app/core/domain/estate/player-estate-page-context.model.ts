@@ -1,6 +1,6 @@
 import type { Json } from '../../types/database.types';
 
-export interface PlayerEstatePageContextV3 {
+export interface PlayerEstatePageContext {
   contractVersion: 'player_estate_page_context_v3';
   hero: PlayerEstateHeroRow;
   copyJson: EstateCopyJson;

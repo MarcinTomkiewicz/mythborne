@@ -4,7 +4,7 @@ import { GamePageSummaryRow } from '../../../core/interfaces/game-page-summary-r
 import { GamePageHeader } from '../../../shared/game-page-header/game-page-header';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { ReportDetailSections } from '../../../game/pages/reports/report-detail-sections';
-import { PublicReportDetailV2 } from '../../../core/domain/reports/report-detail.model';
+import { PublicReportDetail } from '../../../core/domain/reports/report-detail.model';
 import { isPublicPvpReportDetail } from '../../../core/utils/pvp-report-domain-context';
 import { PvpPublicReportDomainContent } from '../../components/pvp-public-report-domain-content/pvp-public-report-domain-content';
 import { PublicReportPageState } from './public-report-page.state';
@@ -71,7 +71,7 @@ export class PublicReportPage implements OnInit {
     this.page.markMissingRoutePublicToken();
   }
 
-  isPublicPvpDetail(detail: PublicReportDetailV2 | null): boolean {
+  isPublicPvpDetail(detail: PublicReportDetail | null): boolean {
     return !!detail?.report && isPublicPvpReportDetail(detail);
   }
 }

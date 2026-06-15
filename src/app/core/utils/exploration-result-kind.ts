@@ -1,9 +1,9 @@
 import type {
-  ExplorationResultNarrativeSnapshotV1,
+  ExplorationResultNarrativeSnapshot,
 } from '../domain/exploration/exploration-result-copy.model';
 
 export function isTrialResultKind(
-  result: ExplorationResultNarrativeSnapshotV1,
+  result: ExplorationResultNarrativeSnapshot,
 ): boolean {
   return (
     result.resultKind === 'trial_resolved_success' ||
@@ -12,7 +12,7 @@ export function isTrialResultKind(
 }
 
 export function isEncounterCombatResultKind(
-  result: ExplorationResultNarrativeSnapshotV1,
+  result: ExplorationResultNarrativeSnapshot,
 ): boolean {
   return (
     result.resultKind === 'encounter_combat_success' ||
@@ -21,13 +21,13 @@ export function isEncounterCombatResultKind(
 }
 
 export function canRenderExplorationRewardSupplement(
-  result: ExplorationResultNarrativeSnapshotV1,
+  result: ExplorationResultNarrativeSnapshot,
 ): boolean {
   return isTrialResultKind(result) || isEncounterCombatResultKind(result);
 }
 
 export function canRenderExplorationEffectSupplement(
-  result: ExplorationResultNarrativeSnapshotV1,
+  result: ExplorationResultNarrativeSnapshot,
 ): boolean {
   return isEncounterCombatResultKind(result);
 }

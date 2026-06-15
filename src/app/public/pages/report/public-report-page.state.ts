@@ -1,7 +1,7 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { catchError, forkJoin, map, of } from 'rxjs';
 import { PvpPublicReportCopy } from '../../../core/domain/pvp/pvp-public-report-copy.model';
-import { PublicReportDetailV2 } from '../../../core/domain/reports/report-detail.model';
+import { PublicReportDetail } from '../../../core/domain/reports/report-detail.model';
 import { ReportPageCopy } from '../../../core/domain/reports/report-page-copy.model';
 import { GameCopyService } from '../../../core/services/game-copy/game-copy.service';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
@@ -13,7 +13,7 @@ export class PublicReportPageState {
   private readonly reports = inject(PlayerReports);
   private loadRequestId = 0;
 
-  readonly detail = signal<PublicReportDetailV2 | null>(null);
+  readonly detail = signal<PublicReportDetail | null>(null);
   readonly detailLoadError = signal<unknown | null>(null);
   readonly copy = signal<ReportPageCopy | null>(null);
   readonly pvpPublicReportCopy = signal<PvpPublicReportCopy | null>(null);
@@ -91,7 +91,7 @@ export class PublicReportPageState {
 
 function publicDetailDiagnostic(
   publicToken: string,
-  detail: PublicReportDetailV2 | null,
+  detail: PublicReportDetail | null,
   error: unknown,
 ): string {
   const path = publicReportPathFromToken(publicToken);

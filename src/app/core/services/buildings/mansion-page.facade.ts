@@ -5,7 +5,7 @@ import {
   EstateBuildingRow,
   EstateCopyJson,
   EstateRuntimeState,
-  PlayerEstatePageContextV3,
+  PlayerEstatePageContext,
 } from '../../domain/estate/player-estate-page-context.model';
 import { resolveBuildingImagePath } from '../../domain/building/building-image-paths';
 import { toBuildingDurationLabel } from '../../utils/building-display';
@@ -29,7 +29,7 @@ export class MansionPageFacade {
 
   readonly isLoading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly context = signal<PlayerEstatePageContextV3 | null>(null);
+  readonly context = signal<PlayerEstatePageContext | null>(null);
   readonly startingBuildingId = signal<string | null>(null);
   readonly settlingActiveJobId = this.activeJobState.settlingActiveJobId;
 
@@ -211,7 +211,7 @@ export class MansionPageFacade {
       : copy.sections.buildings;
   }
 
-  private acceptsContext(context: PlayerEstatePageContextV3): boolean {
+  private acceptsContext(context: PlayerEstatePageContext): boolean {
     const activeHero = this.activeHero.state();
     const estate = context.estateRuntimeState;
 
@@ -231,7 +231,7 @@ export class MansionPageFacade {
       );
   }
 
-  private contextKey(context: PlayerEstatePageContextV3 | null): string | null {
+  private contextKey(context: PlayerEstatePageContext | null): string | null {
     const estate = context?.estateRuntimeState;
 
     return context && estate

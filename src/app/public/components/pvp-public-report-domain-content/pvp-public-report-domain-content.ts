@@ -1,12 +1,12 @@
 import { Component, computed, input } from '@angular/core';
 import { PvpPublicReportCopy } from '../../../core/domain/pvp/pvp-public-report-copy.model';
 import type {
-  PvpResultOutcomeBannerV1,
-  PvpResultSummaryV1,
+  PvpResultOutcomeBanner,
+  PvpResultSummary,
 } from '../../../core/domain/pvp/pvp-result-snapshot.model';
 import {
-  PublicReportDetailV2,
-  PublicReportDetailV2Available,
+  PublicReportDetail,
+  PublicReportDetailAvailable,
 } from '../../../core/domain/reports/report-detail.model';
 import { mapPvpAttackCombatStageView } from '../../../core/utils/combat-report-display.mapper';
 import { publicPvpResultSummary } from '../../../core/utils/pvp-result-summary';
@@ -24,13 +24,13 @@ import { CombatStage } from '../../../game/components/combat/combat-stage';
 })
 export class PvpPublicReportDomainContent {
   readonly copy = input<PvpPublicReportCopy | null>(null);
-  readonly detail = input<PublicReportDetailV2 | null>(null);
-  readonly availableDetail = computed((): PublicReportDetailV2Available | null => {
+  readonly detail = input<PublicReportDetail | null>(null);
+  readonly availableDetail = computed((): PublicReportDetailAvailable | null => {
     const detail = this.detail();
 
     return detail?.report ? detail : null;
   });
-  readonly resultSummary = computed((): PvpResultSummaryV1 | null =>
+  readonly resultSummary = computed((): PvpResultSummary | null =>
     publicPvpResultSummary(this.availableDetail()?.domainContextJson.pvpResult),
   );
   readonly missingResultDiagnostic = computed(() =>
@@ -58,7 +58,7 @@ export class PvpPublicReportDomainContent {
     return access && !access.isAvailable ? access.notFoundLabel : null;
   }
 
-  outcomeBannerIconClass(banner: PvpResultOutcomeBannerV1): string {
+  outcomeBannerIconClass(banner: PvpResultOutcomeBanner): string {
     return requiredSemanticIconClass(
       banner.iconKey,
       'domainContextJson.pvpResult.public.neutral.outcomeBanner.iconKey',
