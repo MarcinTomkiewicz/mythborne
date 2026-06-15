@@ -14,11 +14,11 @@
             </div>
 
             <p class="color-text text-md lh-16 m-0">
-              <app-rich-text [fragments]="narrative.narrativeRichText" />
+              <app-rich-text [fragments]="narrative.narrativeRichText" itemPopoverContext="exploration" />
             </p>
           </section>
         } @else if (activeChallenge.trialDefinitionId) {
-          <span hidden data-blocked="activeChallenge.trialManifestationNarrativeJson"></span>
+          <p class="warn-text text-sm m-0">activeChallenge.trialManifestationNarrativeJson</p>
         }
 
         @if (encounterCombatHandoffNarrative(); as narrative) {
@@ -33,11 +33,11 @@
             </div>
 
             <p class="color-text text-md lh-16 m-0">
-              <app-rich-text [fragments]="narrative.narrativeRichText" />
+              <app-rich-text [fragments]="narrative.narrativeRichText" itemPopoverContext="exploration" />
             </p>
           </section>
         } @else if (activeChallenge.encounterDefinitionId) {
-          <span hidden data-blocked="activeChallenge.encounterCombatHandoffNarrativeJson"></span>
+          <p class="warn-text text-sm m-0">activeChallenge.encounterCombatHandoffNarrativeJson</p>
         }
 
         @if (combatSourcePresentation(); as sourcePresentation) {
@@ -53,9 +53,7 @@
             <p-progress-spinner strokeWidth="4" />
           </section>
         } @else if (requiresCombatSourcePresentation() && hasRuntimeCopyError()) {
-          <section class="mg-card p-lg flex-row-center-center w-100 error-text" role="alert">
-            <span class="pi pi-exclamation-triangle" aria-hidden="true"></span>
-          </section>
+          <p class="warn-text text-sm m-0">exploration.runtimeCopy</p>
         } @else if (requiresCombatSourcePresentation() && runtimeCopy(); as runtimeCopy) {
           <section class="mg-card p-lg flex-col gap-sm w-100">
             <h3 class="color-heading text-lg m-0">

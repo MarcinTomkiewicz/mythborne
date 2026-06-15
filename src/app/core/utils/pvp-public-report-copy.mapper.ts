@@ -4,7 +4,7 @@ import {
   PvpPublicReportKind,
   PvpPublicReportLocale,
 } from '../domain/pvp/pvp-public-report-copy.model';
-import { Database } from '../types/database.types';
+import { Json } from '../types/database.types';
 import {
   JsonRecord,
   requireLiteral,
@@ -15,17 +15,13 @@ import {
   requiredText,
   read,
 } from './json-read';
-import { mapPvpPublicAttackReportCopy } from './pvp-public-attack-report-copy.mapper';
 import { mapPvpPublicReportSectionsCopy } from './pvp-public-report-sections-copy.mapper';
 import { mapPvpPublicReportShellCopy } from './pvp-public-report-shell-copy.mapper';
 import { mapPvpPublicSpyReportCopy } from './pvp-public-spy-report-copy.mapper';
 
-type PvpPublicReportCopyRaw =
-  Database['public']['Functions']['get_public_pvp_report_copy']['Returns'];
-
 const PUBLIC_REPORT_LOCALES: readonly PvpPublicReportLocale[] = ['pl', 'en'];
 
-export function mapPvpPublicReportCopy(raw: PvpPublicReportCopyRaw): PvpPublicReportCopy {
+export function mapPvpPublicReportCopy(raw: Json): PvpPublicReportCopy {
   const root = requiredRecord(raw, 'get_public_pvp_report_copy');
   const reportKind = nullableUnion(
     requiredNullableText(read(root, 'reportKind'), 'get_public_pvp_report_copy.reportKind'),
@@ -87,9 +83,7 @@ export function mapPvpPublicReportCopy(raw: PvpPublicReportCopyRaw): PvpPublicRe
         requiredRecord(shellRaw, 'get_public_pvp_report_copy.shell'),
         publicToken,
       ),
-      attackReport: mapPvpPublicAttackReportCopy(
-        requiredRecord(attackReportRaw, 'get_public_pvp_report_copy.attackReport'),
-      ),
+      attackReport: null,
       spyReport: null,
     };
   }

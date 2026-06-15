@@ -6,10 +6,12 @@ import {
 import { Json } from '../types/database.types';
 import {
   JsonRecord,
+  jsonRecord,
   read,
   requiredRecord,
   requiredText,
 } from './json-read';
+import { copyTextOrKey } from './game-copy-key-fallback';
 
 const COPY_CONTRACT_KEY = 'pvp_action_copy';
 const COPY_CONTRACT_VERSION = 'pvp_action_copy_v1';
@@ -27,10 +29,10 @@ export function mapPvpActionCopy(value: Json): PvpActionCopy {
     throw new Error(`pvpActionCopy.contractVersion must be ${COPY_CONTRACT_VERSION}.`);
   }
 
-  const common = requiredRecord(read(root, 'common'), 'pvpActionCopy.common');
-  const activeAction = requiredRecord(read(root, 'activeAction'), 'pvpActionCopy.activeAction');
-  const combatHandoff = requiredRecord(read(root, 'combatHandoff'), 'pvpActionCopy.combatHandoff');
-  const eligibility = requiredRecord(read(root, 'eligibility'), 'pvpActionCopy.eligibility');
+  const common = jsonRecord(read(root, 'common')) ?? {};
+  const activeAction = jsonRecord(read(root, 'activeAction')) ?? {};
+  const combatHandoff = jsonRecord(read(root, 'combatHandoff')) ?? {};
+  const eligibility = jsonRecord(read(root, 'eligibility')) ?? {};
 
   return {
     contractKey,
@@ -41,41 +43,41 @@ export function mapPvpActionCopy(value: Json): PvpActionCopy {
     common: mapCommonCopy(common),
     activeAction: {
       panel: {
-        defaultTitle: requiredPathText(activeAction, 'activeAction', 'panel', 'defaultTitle'),
-        attackTitle: requiredPathText(activeAction, 'activeAction', 'panel', 'attackTitle'),
-        spyTitle: requiredPathText(activeAction, 'activeAction', 'panel', 'spyTitle'),
-        returnTitle: requiredPathText(activeAction, 'activeAction', 'panel', 'returnTitle'),
-        attackAriaLabel: requiredPathText(activeAction, 'activeAction', 'panel', 'attackAriaLabel'),
-        spyAriaLabel: requiredPathText(activeAction, 'activeAction', 'panel', 'spyAriaLabel'),
-        returnAriaLabel: requiredPathText(activeAction, 'activeAction', 'panel', 'returnAriaLabel'),
+        defaultTitle: copyPathText(activeAction, 'activeAction', 'panel', 'defaultTitle'),
+        attackTitle: copyPathText(activeAction, 'activeAction', 'panel', 'attackTitle'),
+        spyTitle: copyPathText(activeAction, 'activeAction', 'panel', 'spyTitle'),
+        returnTitle: copyPathText(activeAction, 'activeAction', 'panel', 'returnTitle'),
+        attackAriaLabel: copyPathText(activeAction, 'activeAction', 'panel', 'attackAriaLabel'),
+        spyAriaLabel: copyPathText(activeAction, 'activeAction', 'panel', 'spyAriaLabel'),
+        returnAriaLabel: copyPathText(activeAction, 'activeAction', 'panel', 'returnAriaLabel'),
       },
       time: {
-        remainingTimeLabel: requiredPathText(activeAction, 'activeAction', 'time', 'remainingTimeLabel'),
-        attackTravelLabel: requiredPathText(activeAction, 'activeAction', 'time', 'attackTravelLabel'),
-        spyTravelLabel: requiredPathText(activeAction, 'activeAction', 'time', 'spyTravelLabel'),
-        returnTravelLabel: requiredPathText(activeAction, 'activeAction', 'time', 'returnTravelLabel'),
-        decisionWindowLabel: requiredPathText(activeAction, 'activeAction', 'time', 'decisionWindowLabel'),
+        remainingTimeLabel: copyPathText(activeAction, 'activeAction', 'time', 'remainingTimeLabel'),
+        attackTravelLabel: copyPathText(activeAction, 'activeAction', 'time', 'attackTravelLabel'),
+        spyTravelLabel: copyPathText(activeAction, 'activeAction', 'time', 'spyTravelLabel'),
+        returnTravelLabel: copyPathText(activeAction, 'activeAction', 'time', 'returnTravelLabel'),
+        decisionWindowLabel: copyPathText(activeAction, 'activeAction', 'time', 'decisionWindowLabel'),
       },
       phaseText: {
-        attackTravel: requiredPathText(activeAction, 'activeAction', 'phaseText', 'attackTravel'),
-        spyTravel: requiredPathText(activeAction, 'activeAction', 'phaseText', 'spyTravel'),
-        attackManualWindow: requiredPathText(activeAction, 'activeAction', 'phaseText', 'attackManualWindow'),
-        attackReturn: requiredPathText(activeAction, 'activeAction', 'phaseText', 'attackReturn'),
-        attackResolved: requiredPathText(activeAction, 'activeAction', 'phaseText', 'attackResolved'),
-        spyResolved: requiredPathText(activeAction, 'activeAction', 'phaseText', 'spyResolved'),
+        attackTravel: copyPathText(activeAction, 'activeAction', 'phaseText', 'attackTravel'),
+        spyTravel: copyPathText(activeAction, 'activeAction', 'phaseText', 'spyTravel'),
+        attackManualWindow: copyPathText(activeAction, 'activeAction', 'phaseText', 'attackManualWindow'),
+        attackReturn: copyPathText(activeAction, 'activeAction', 'phaseText', 'attackReturn'),
+        attackResolved: copyPathText(activeAction, 'activeAction', 'phaseText', 'attackResolved'),
+        spyResolved: copyPathText(activeAction, 'activeAction', 'phaseText', 'spyResolved'),
       },
       loading: {
-        refreshSpyState: requiredPathText(activeAction, 'activeAction', 'loading', 'refreshSpyState'),
-        refreshAttackState: requiredPathText(activeAction, 'activeAction', 'loading', 'refreshAttackState'),
-        refreshDecisionState: requiredPathText(activeAction, 'activeAction', 'loading', 'refreshDecisionState'),
-        refreshReturnState: requiredPathText(activeAction, 'activeAction', 'loading', 'refreshReturnState'),
-        refreshUnknownState: requiredPathText(activeAction, 'activeAction', 'loading', 'refreshUnknownState'),
+        refreshSpyState: copyPathText(activeAction, 'activeAction', 'loading', 'refreshSpyState'),
+        refreshAttackState: copyPathText(activeAction, 'activeAction', 'loading', 'refreshAttackState'),
+        refreshDecisionState: copyPathText(activeAction, 'activeAction', 'loading', 'refreshDecisionState'),
+        refreshReturnState: copyPathText(activeAction, 'activeAction', 'loading', 'refreshReturnState'),
+        refreshUnknownState: copyPathText(activeAction, 'activeAction', 'loading', 'refreshUnknownState'),
       },
       readyStates: {
-        decisionReady: requiredPathText(activeAction, 'activeAction', 'readyStates', 'decisionReady'),
-        targetReached: requiredPathText(activeAction, 'activeAction', 'readyStates', 'targetReached'),
-        heroReturned: requiredPathText(activeAction, 'activeAction', 'readyStates', 'heroReturned'),
-        reportReady: requiredPathText(activeAction, 'activeAction', 'readyStates', 'reportReady'),
+        decisionReady: copyPathText(activeAction, 'activeAction', 'readyStates', 'decisionReady'),
+        targetReached: copyPathText(activeAction, 'activeAction', 'readyStates', 'targetReached'),
+        heroReturned: copyPathText(activeAction, 'activeAction', 'readyStates', 'heroReturned'),
+        reportReady: copyPathText(activeAction, 'activeAction', 'readyStates', 'reportReady'),
       },
     },
     combatHandoff: {
@@ -94,12 +96,12 @@ export function mapPvpActionCopy(value: Json): PvpActionCopy {
           'header',
           'titleCommonKey',
         ),
-        description: requiredPathText(combatHandoff, 'combatHandoff', 'header', 'description'),
+        description: copyPathText(combatHandoff, 'combatHandoff', 'header', 'description'),
       },
       decisionWindow: {
-        eyebrow: requiredPathText(combatHandoff, 'combatHandoff', 'decisionWindow', 'eyebrow'),
-        title: requiredPathText(combatHandoff, 'combatHandoff', 'decisionWindow', 'title'),
-        description: requiredPathText(combatHandoff, 'combatHandoff', 'decisionWindow', 'description'),
+        eyebrow: copyPathText(combatHandoff, 'combatHandoff', 'decisionWindow', 'eyebrow'),
+        title: copyPathText(combatHandoff, 'combatHandoff', 'decisionWindow', 'title'),
+        description: copyPathText(combatHandoff, 'combatHandoff', 'decisionWindow', 'description'),
         decisionWindowLabelCommonKey: requiredCommonKey(
           combatHandoff,
           'common.labels.decisionTime',
@@ -121,7 +123,7 @@ export function mapPvpActionCopy(value: Json): PvpActionCopy {
           'decisionWindow',
           'autoActionCommonKey',
         ),
-        waitingForDecision: requiredPathText(
+        waitingForDecision: copyPathText(
           combatHandoff,
           'combatHandoff',
           'decisionWindow',
@@ -136,76 +138,88 @@ export function mapPvpActionCopy(value: Json): PvpActionCopy {
           'emptyCombatLog',
           'titleCommonKey',
         ),
-        text: requiredPathText(combatHandoff, 'combatHandoff', 'emptyCombatLog', 'text'),
+        text: copyPathText(combatHandoff, 'combatHandoff', 'emptyCombatLog', 'text'),
       },
     },
     eligibility: {
       statusLabels: {
-        available: requiredPathText(eligibility, 'eligibility', 'statusLabels', 'available'),
-        unavailable: requiredPathText(eligibility, 'eligibility', 'statusLabels', 'unavailable'),
-        actionUnavailable: requiredPathText(eligibility, 'eligibility', 'statusLabels', 'actionUnavailable'),
+        available: copyPathText(eligibility, 'eligibility', 'statusLabels', 'available'),
+        unavailable: copyPathText(eligibility, 'eligibility', 'statusLabels', 'unavailable'),
+        actionUnavailable: copyPathText(eligibility, 'eligibility', 'statusLabels', 'actionUnavailable'),
       },
       disabledReasonTooltips: mapDisabledReasonTooltips(
-        requiredRecord(read(eligibility, 'disabledReasonTooltips'), 'pvpActionCopy.eligibility.disabledReasonTooltips'),
+        jsonRecord(read(eligibility, 'disabledReasonTooltips')) ?? {},
       ),
     },
   };
 }
 
 function mapCommonCopy(root: JsonRecord): PvpActionCopy['common'] {
-  const labels = requiredRecord(read(root, 'labels'), 'pvpActionCopy.common.labels');
-  const richText = requiredRecord(read(root, 'richText'), 'pvpActionCopy.common.richText');
-  const gloryLabel = requiredRecord(read(richText, 'gloryLabel'), 'pvpActionCopy.common.richText.gloryLabel');
-  const emptyValues = requiredRecord(read(root, 'emptyValues'), 'pvpActionCopy.common.emptyValues');
-  const actionLabels = requiredRecord(read(root, 'actionLabels'), 'pvpActionCopy.common.actionLabels');
-  const actionTooltips = requiredRecord(read(root, 'actionTooltips'), 'pvpActionCopy.common.actionTooltips');
+  const labels = jsonRecord(read(root, 'labels')) ?? {};
+  const richText = jsonRecord(read(root, 'richText')) ?? {};
+  const gloryLabel = jsonRecord(read(richText, 'gloryLabel')) ?? {};
+  const emptyValues = jsonRecord(read(root, 'emptyValues')) ?? {};
+  const actionLabels = jsonRecord(read(root, 'actionLabels')) ?? {};
+  const actionTooltips = jsonRecord(read(root, 'actionTooltips')) ?? {};
 
   return {
     labels: mapCommonLabels(labels),
     richText: {
       gloryLabel: {
-        text: requiredText(read(gloryLabel, 'text'), 'pvpActionCopy.common.richText.gloryLabel.text'),
-        tone: requiredRichTextTone(
+        text: copyTextOrKey(
+          read(gloryLabel, 'text'),
+          'pvpActionCopy.common.richText.gloryLabel.text',
+        ),
+        tone: richTextToneOrDefault(
           read(gloryLabel, 'tone'),
           'pvpActionCopy.common.richText.gloryLabel.tone',
         ),
       },
     },
     emptyValues: {
-      noData: requiredText(read(emptyValues, 'noData'), 'pvpActionCopy.common.emptyValues.noData'),
-      noTarget: requiredText(read(emptyValues, 'noTarget'), 'pvpActionCopy.common.emptyValues.noTarget'),
-      noGuild: requiredText(read(emptyValues, 'noGuild'), 'pvpActionCopy.common.emptyValues.noGuild'),
-      noAttackProtection: requiredText(
+      noData: copyTextOrKey(read(emptyValues, 'noData'), 'pvpActionCopy.common.emptyValues.noData'),
+      noTarget: copyTextOrKey(read(emptyValues, 'noTarget'), 'pvpActionCopy.common.emptyValues.noTarget'),
+      noGuild: copyTextOrKey(read(emptyValues, 'noGuild'), 'pvpActionCopy.common.emptyValues.noGuild'),
+      noAttackProtection: copyTextOrKey(
         read(emptyValues, 'noAttackProtection'),
         'pvpActionCopy.common.emptyValues.noAttackProtection',
       ),
-      noValue: requiredText(read(emptyValues, 'noValue'), 'pvpActionCopy.common.emptyValues.noValue'),
+      noValue: copyTextOrKey(read(emptyValues, 'noValue'), 'pvpActionCopy.common.emptyValues.noValue'),
     },
     actionLabels: {
-      refresh: requiredText(read(actionLabels, 'refresh'), 'pvpActionCopy.common.actionLabels.refresh'),
-      openReport: requiredText(read(actionLabels, 'openReport'), 'pvpActionCopy.common.actionLabels.openReport'),
-      resolveManual: requiredText(read(actionLabels, 'resolveManual'), 'pvpActionCopy.common.actionLabels.resolveManual'),
-      resolveAuto: requiredText(read(actionLabels, 'resolveAuto'), 'pvpActionCopy.common.actionLabels.resolveAuto'),
-      enterCombat: requiredText(read(actionLabels, 'enterCombat'), 'pvpActionCopy.common.actionLabels.enterCombat'),
-      backToVicinity: requiredText(read(actionLabels, 'backToVicinity'), 'pvpActionCopy.common.actionLabels.backToVicinity'),
-      attack: requiredText(read(actionLabels, 'attack'), 'pvpActionCopy.common.actionLabels.attack'),
-      spy: requiredText(read(actionLabels, 'spy'), 'pvpActionCopy.common.actionLabels.spy'),
-      siege: requiredText(read(actionLabels, 'siege'), 'pvpActionCopy.common.actionLabels.siege'),
+      refresh: copyTextOrKey(read(actionLabels, 'refresh'), 'pvpActionCopy.common.actionLabels.refresh'),
+      openReport: copyTextOrKey(read(actionLabels, 'openReport'), 'pvpActionCopy.common.actionLabels.openReport'),
+      resolveManual: copyTextOrKey(
+        read(actionLabels, 'resolveManual'),
+        'pvpActionCopy.common.actionLabels.resolveManual',
+      ),
+      resolveAuto: copyTextOrKey(read(actionLabels, 'resolveAuto'), 'pvpActionCopy.common.actionLabels.resolveAuto'),
+      enterCombat: copyTextOrKey(read(actionLabels, 'enterCombat'), 'pvpActionCopy.common.actionLabels.enterCombat'),
+      backToVicinity: copyTextOrKey(
+        read(actionLabels, 'backToVicinity'),
+        'pvpActionCopy.common.actionLabels.backToVicinity',
+      ),
+      attack: copyTextOrKey(read(actionLabels, 'attack'), 'pvpActionCopy.common.actionLabels.attack'),
+      spy: copyTextOrKey(read(actionLabels, 'spy'), 'pvpActionCopy.common.actionLabels.spy'),
+      siege: copyTextOrKey(read(actionLabels, 'siege'), 'pvpActionCopy.common.actionLabels.siege'),
     },
     actionTooltips: {
-      attack: requiredText(read(actionTooltips, 'attack'), 'pvpActionCopy.common.actionTooltips.attack'),
-      spy: requiredText(read(actionTooltips, 'spy'), 'pvpActionCopy.common.actionTooltips.spy'),
-      siegeUnavailable: requiredText(
+      attack: copyTextOrKey(read(actionTooltips, 'attack'), 'pvpActionCopy.common.actionTooltips.attack'),
+      spy: copyTextOrKey(read(actionTooltips, 'spy'), 'pvpActionCopy.common.actionTooltips.spy'),
+      siegeUnavailable: copyTextOrKey(
         read(actionTooltips, 'siegeUnavailable'),
         'pvpActionCopy.common.actionTooltips.siegeUnavailable',
       ),
-      resolveManual: requiredText(
+      resolveManual: copyTextOrKey(
         read(actionTooltips, 'resolveManual'),
         'pvpActionCopy.common.actionTooltips.resolveManual',
       ),
-      resolveAuto: requiredText(read(actionTooltips, 'resolveAuto'), 'pvpActionCopy.common.actionTooltips.resolveAuto'),
-      openReport: requiredText(read(actionTooltips, 'openReport'), 'pvpActionCopy.common.actionTooltips.openReport'),
-      refresh: requiredText(read(actionTooltips, 'refresh'), 'pvpActionCopy.common.actionTooltips.refresh'),
+      resolveAuto: copyTextOrKey(
+        read(actionTooltips, 'resolveAuto'),
+        'pvpActionCopy.common.actionTooltips.resolveAuto',
+      ),
+      openReport: copyTextOrKey(read(actionTooltips, 'openReport'), 'pvpActionCopy.common.actionTooltips.openReport'),
+      refresh: copyTextOrKey(read(actionTooltips, 'refresh'), 'pvpActionCopy.common.actionTooltips.refresh'),
     },
   };
 }
@@ -254,28 +268,54 @@ function mapCommonLabels(root: JsonRecord): PvpActionCommonLabelsCopy {
 
 function mapDisabledReasonTooltips(root: JsonRecord): PvpActionDisabledReasonTooltipsCopy {
   return {
-    targetProtected: requiredText(read(root, 'targetProtected'), 'pvpActionCopy.eligibility.disabledReasonTooltips.targetProtected'),
-    attackerBusy: requiredText(read(root, 'attackerBusy'), 'pvpActionCopy.eligibility.disabledReasonTooltips.attackerBusy'),
-    targetLevelTooHigh: requiredText(read(root, 'targetLevelTooHigh'), 'pvpActionCopy.eligibility.disabledReasonTooltips.targetLevelTooHigh'),
-    targetLevelTooLow: requiredText(read(root, 'targetLevelTooLow'), 'pvpActionCopy.eligibility.disabledReasonTooltips.targetLevelTooLow'),
-    sameGuild: requiredText(read(root, 'sameGuild'), 'pvpActionCopy.eligibility.disabledReasonTooltips.sameGuild'),
-    actionUnavailable: requiredText(read(root, 'actionUnavailable'), 'pvpActionCopy.eligibility.disabledReasonTooltips.actionUnavailable'),
-    dailyAttackLimitReached: requiredText(read(root, 'dailyAttackLimitReached'), 'pvpActionCopy.eligibility.disabledReasonTooltips.dailyAttackLimitReached'),
-    cooldownActive: requiredText(read(root, 'cooldownActive'), 'pvpActionCopy.eligibility.disabledReasonTooltips.cooldownActive'),
-    siegeNotAvailable: requiredText(read(root, 'siegeNotAvailable'), 'pvpActionCopy.eligibility.disabledReasonTooltips.siegeNotAvailable'),
+    targetProtected: copyTextOrKey(
+      read(root, 'targetProtected'),
+      'pvpActionCopy.eligibility.disabledReasonTooltips.targetProtected',
+    ),
+    attackerBusy: copyTextOrKey(
+      read(root, 'attackerBusy'),
+      'pvpActionCopy.eligibility.disabledReasonTooltips.attackerBusy',
+    ),
+    targetLevelTooHigh: copyTextOrKey(
+      read(root, 'targetLevelTooHigh'),
+      'pvpActionCopy.eligibility.disabledReasonTooltips.targetLevelTooHigh',
+    ),
+    targetLevelTooLow: copyTextOrKey(
+      read(root, 'targetLevelTooLow'),
+      'pvpActionCopy.eligibility.disabledReasonTooltips.targetLevelTooLow',
+    ),
+    sameGuild: copyTextOrKey(
+      read(root, 'sameGuild'),
+      'pvpActionCopy.eligibility.disabledReasonTooltips.sameGuild',
+    ),
+    actionUnavailable: copyTextOrKey(
+      read(root, 'actionUnavailable'),
+      'pvpActionCopy.eligibility.disabledReasonTooltips.actionUnavailable',
+    ),
+    dailyAttackLimitReached: copyTextOrKey(
+      read(root, 'dailyAttackLimitReached'),
+      'pvpActionCopy.eligibility.disabledReasonTooltips.dailyAttackLimitReached',
+    ),
+    cooldownActive: copyTextOrKey(
+      read(root, 'cooldownActive'),
+      'pvpActionCopy.eligibility.disabledReasonTooltips.cooldownActive',
+    ),
+    siegeNotAvailable: copyTextOrKey(
+      read(root, 'siegeNotAvailable'),
+      'pvpActionCopy.eligibility.disabledReasonTooltips.siegeNotAvailable',
+    ),
   };
 }
 
 function commonLabel(root: JsonRecord, key: keyof PvpActionCommonLabelsCopy): string {
-  return requiredText(read(root, key), `pvpActionCopy.common.labels.${key}`);
+  return copyTextOrKey(read(root, key), `pvpActionCopy.common.labels.${key}`);
 }
 
-function requiredPathText(root: JsonRecord, rootName: string, ...path: string[]): string {
-  const fieldPath = `pvpActionCopy.${path.join('.')}`;
+function copyPathText(root: JsonRecord, rootName: string, ...path: string[]): string {
   const value = path.reduce<Json | undefined>((current, key) =>
-    read(requiredRecord(current, fieldPath), key), root);
+    read(jsonRecord(current), key), root);
 
-  return requiredText(value, `${rootName}.${path.join('.')}`);
+  return copyTextOrKey(value, `pvpActionCopy.${rootName}.${path.join('.')}`);
 }
 
 function requiredCommonKey<Expected extends string>(
@@ -284,7 +324,7 @@ function requiredCommonKey<Expected extends string>(
   rootName: string,
   ...path: string[]
 ): Expected {
-  const value = requiredPathText(root, rootName, ...path);
+  const value = copyPathText(root, rootName, ...path);
 
   if (value !== expected) {
     throw new Error(`pvpActionCopy.${path.join('.')} must be ${expected}.`);
@@ -327,4 +367,13 @@ function requiredRichTextTone(value: Json | undefined, field: string): PvpAction
   }
 
   return tone;
+}
+
+function richTextToneOrDefault(
+  value: Json | undefined,
+  field: string,
+): PvpActionCopy['common']['richText']['gloryLabel']['tone'] {
+  return value === undefined || value === null
+    ? 'heading'
+    : requiredRichTextTone(value, field);
 }

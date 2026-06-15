@@ -2,23 +2,31 @@
   <app-loading-overlay [visible]="pvpAction.isLoading()" label="" />
 
   @if (pvpAction.copy(); as actionCopy) {
-    @if (completion()?.reportId) {
-      <app-combat-report-handoff-card [completion]="completion()" />
-    } @else if (pvpAction.combatSourceRef(); as source) {
-      <section class="mg-card p-lg flex-col gap-sm w-100">
-        <p class="small-caps color-muted text-xs mb-0">{{ actionCopy.common.labels.combat }}</p>
-        <h1 class="color-heading text-xl mb-0">{{ actionCopy.common.labels.heroCombat }}</h1>
-        <p class="color-text text-md lh-16 mb-0">{{ actionCopy.combatHandoff.header.description }}</p>
-      </section>
-
-      <app-minigame-host
-        [minigameKey]="minigameKey"
-        [sourceRef]="source"
-        [contextTitle]="actionCopy.common.labels.heroCombat"
-        [sourcePresentation]="combatSourcePresentation(actionCopy)"
-        [combatDecisionDeadline]="pvpAction.decisionDeadline()"
-        (completed)="acceptCompletion($event)"
+    @if (currentCompletion()?.reportId; as reportId) {
+      <app-report-detail-preview-card
+        [reportId]="reportId"
+        [label]="actionCopy.common.labels.combatReport"
+        [directReportLabel]="actionCopy.common.actionLabels.openReport"
       />
+    } @else if (pvpAction.combatSourceRef(); as source) {
+      @if (pvpAction.combatSourcePresentation(); as presentation) {
+        @if (presentation.header; as header) {
+          <section class="mg-card p-lg flex-col gap-sm w-100">
+            <p class="small-caps color-muted text-xs mb-0">{{ header.eyebrow }}</p>
+            <h1 class="color-heading text-xl mb-0">{{ header.title }}</h1>
+            <p class="color-text text-md lh-16 mb-0">{{ header.text }}</p>
+          </section>
+        }
+
+        <app-minigame-host
+          [minigameKey]="minigameKey"
+          [sourceRef]="source"
+          [contextTitle]="presentation.header?.title ?? actionCopy.common.labels.heroCombat"
+          [sourcePresentation]="presentation"
+          [combatDecisionDeadline]="pvpAction.decisionDeadline()"
+          (completed)="acceptCompletion($event)"
+        />
+      }
     } @else if (!pvpAction.isLoading() && !pvpAction.visibleOffer()) {
       <section class="mg-card p-lg flex-col gap-sm w-100">
         <p class="small-caps color-muted text-xs mb-0">{{ actionCopy.common.labels.combat }}</p>
@@ -30,6 +38,7 @@
       <app-pvp-active-action-panel
         [offer]="offer"
         [copy]="actionCopy"
+        [sourcePresentation]="pvpAction.combatSourcePresentation()"
         [timer]="pvpAction.timer()"
         [factRows]="pvpAction.factRows()"
         [isLoading]="pvpAction.isLoading()"
@@ -41,10 +50,6 @@
     @if (pvpAction.error()) {
       <p class="warn-text mb-0">{{ pvpAction.error() }}</p>
     }
-  } @else if (pvpAction.hasCopyLoadError()) {
-    <section class="mg-card p-lg flex-row-center-center w-100 error-text" role="alert">
-      <span class="pi pi-exclamation-triangle" aria-hidden="true"></span>
-    </section>
   } @else if (pvpAction.error()) {
     <p class="warn-text mb-0">{{ pvpAction.error() }}</p>
   }

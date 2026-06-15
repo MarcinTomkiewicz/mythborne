@@ -41,7 +41,7 @@ export class PvpReportDomainContent {
   readonly isAttackReport = computed(() => isPrivatePvpAttackReportDetail(this.detail()));
   readonly missingResultDiagnostic = computed(() =>
     this.isAttackReport() && !this.detail().domainContextJson.pvpResult
-      ? 'Brak domainContextJson.pvpResult dla dostępnego raportu PvP. Wymagany backfill albo poprawka read modelu.'
+      ? 'domainContextJson.pvpResult.missingBackfillRequired'
       : null,
   );
   readonly spyCopy = computed((): PvpPrivateSpyReportAvailableCopy | null => {

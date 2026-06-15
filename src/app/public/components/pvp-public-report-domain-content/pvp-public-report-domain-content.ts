@@ -31,7 +31,7 @@ export class PvpPublicReportDomainContent {
   readonly missingResultDiagnostic = computed(() =>
     this.availableDetail()?.domainContextJson.pvp?.sourceKind === 'pvp_attack' &&
     !this.availableDetail()?.domainContextJson.pvpResult
-      ? 'Brak domainContextJson.pvpResult dla dostępnego publicznego raportu PvP. Wymagany backfill albo poprawka read modelu.'
+      ? 'domainContextJson.pvpResult.public.missingBackfillRequired'
       : null,
   );
   readonly combatStage = computed(() => {

@@ -53,6 +53,24 @@ export class ReportHandoffActions {
   copyPublicReportLink(): void {
     const link = this.actions().publicReportPath;
 
+    console.info('[PvPReportHandoff]', {
+      sourceComponent: 'ReportHandoffActions',
+      selectedRenderBranch: 'publicCopy.click',
+      activeOfferId: null,
+      pvpActionId: null,
+      pvpAttackResultId: null,
+      combatResultId: null,
+      gameReportId: this.actions().directReportId,
+      reportId: this.actions().directReportId,
+      publicToken: this.actions().publicToken,
+      selectedCta: 'publicCopy',
+      selectedPath: link,
+      directPath: this.actions().directReportLink,
+      publicPath: link,
+      detailReportExists: null,
+      pvpResultExists: null,
+    });
+
     if (!link) {
       this.toast.show(
         'error',

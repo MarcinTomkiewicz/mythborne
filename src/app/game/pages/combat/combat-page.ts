@@ -38,6 +38,21 @@ export class CombatPage {
 
   acceptCompletion(event: MinigameCompletionEvent): void {
     this.completion.set(event);
+    console.info('[PvPReportHandoff]', {
+      sourceComponent: 'CombatPage',
+      selectedRenderBranch: 'completion.accepted',
+      activeOfferId: event.sourceEntityId,
+      pvpActionId: event.sourceEntityId,
+      pvpAttackResultId: event.resultId ?? null,
+      combatResultId: null,
+      gameReportId: event.reportId ?? null,
+      reportId: event.reportId ?? null,
+      publicToken: null,
+      selectedCta: event.reportId ? 'directReport' : null,
+      selectedPath: event.reportId ? `/game/reports/${event.reportId}` : null,
+      detailReportExists: null,
+      pvpResultExists: null,
+    });
     this.pvpAction.refresh();
   }
 
