@@ -37,6 +37,7 @@ export interface CombatResolutionPreviewReadModel {
   sourceEntityType: string;
   sourceEntityId: string;
   participants: CombatLiveParticipantReadModel[];
+  pvpCombatContext: PvpCombatContextPresentation | null;
   updatedAt: string;
   rawJson: Json;
 }

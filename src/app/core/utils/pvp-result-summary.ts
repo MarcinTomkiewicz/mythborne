@@ -6,6 +6,7 @@ import {
 export function pvpResultSummaryForHero(
   pvpResult: PvpResultSnapshotV1 | null | undefined,
   activeHeroId: string | null,
+  allowNeutralFallback = false,
 ): PvpResultSummaryV1 | null {
   if (!pvpResult) {
     return null;
@@ -19,7 +20,9 @@ export function pvpResultSummaryForHero(
     return pvpResult.private.defender;
   }
 
-  return pvpResult.public.neutral;
+  return activeHeroId && allowNeutralFallback
+    ? pvpResult.public.neutral
+    : null;
 }
 
 export function publicPvpResultSummary(

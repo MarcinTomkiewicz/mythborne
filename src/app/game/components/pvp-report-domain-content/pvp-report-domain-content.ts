@@ -1,14 +1,18 @@
 import { Component, computed, input } from '@angular/core';
 import {
-  PvpPrivateAttackReportAvailableCopy,
   PvpPrivateReportCopy,
   PvpPrivateSpyReportAvailableCopy,
 } from '../../../core/domain/pvp/pvp-private-report-copy.model';
 import type {
   PrivateReportDetailPage,
 } from '../../../core/domain/reports/report-detail.model';
-import { ReportSpySection } from '../../../core/domain/reports/report-section.model';
-import { mapPrivatePvpAttackCombatStageView } from '../../../core/utils/combat-report-display.mapper';
+import type { PvpResultSummaryV1 } from '../../../core/domain/pvp/pvp-result-snapshot.model';
+import {
+  ReportSpySection,
+} from '../../../core/domain/reports/report-section.model';
+import { mapPvpAttackCombatStageView } from '../../../core/utils/combat-report-display.mapper';
+import { pvpResultSummaryForHero } from '../../../core/utils/pvp-result-summary';
+import { isPrivatePvpAttackReportDetail } from '../../../core/utils/pvp-report-domain-context';
 import { RichText } from '../../../shared/rich-text/rich-text';
 import { CombatStage } from '../combat/combat-stage';
 
@@ -24,18 +28,26 @@ import { CombatStage } from '../combat/combat-stage';
 })
 export class PvpReportDomainContent {
   readonly detail = input.required<PrivateReportDetailPage>();
-  readonly copy = input.required<PvpPrivateReportCopy>();
+  readonly copy = input<PvpPrivateReportCopy | null>(null);
   readonly activeHeroId = input<string | null>(null);
 
-  readonly attackCopy = computed((): PvpPrivateAttackReportAvailableCopy | null => {
-    const copy = this.copy();
-
-    return copy.reportKind === 'attack' ? copy : null;
-  });
+  readonly resultSummary = computed((): PvpResultSummaryV1 | null =>
+    pvpResultSummaryForHero(
+      this.detail().domainContextJson.pvpResult,
+      this.activeHeroId(),
+      this.detail().access.accessRole !== 'participant',
+    ),
+  );
+  readonly isAttackReport = computed(() => isPrivatePvpAttackReportDetail(this.detail()));
+  readonly missingResultDiagnostic = computed(() =>
+    this.isAttackReport() && !this.detail().domainContextJson.pvpResult
+      ? 'Brak domainContextJson.pvpResult dla dostępnego raportu PvP. Wymagany backfill albo poprawka read modelu.'
+      : null,
+  );
   readonly spyCopy = computed((): PvpPrivateSpyReportAvailableCopy | null => {
     const copy = this.copy();
 
-    return copy.reportKind === 'spy' ? copy : null;
+    return copy?.reportKind === 'spy' ? copy : null;
   });
   readonly spySection = computed((): ReportSpySection | null => {
     const section = this.detail().report.spySectionJson;
@@ -44,22 +56,17 @@ export class PvpReportDomainContent {
   });
   readonly combatStage = computed(() =>
     (() => {
-      const copy = this.attackCopy();
-
-      return copy
-        ? mapPrivatePvpAttackCombatStageView({
+      return this.isAttackReport()
+        ? mapPvpAttackCombatStageView({
           report: this.detail().report,
-          copy,
+          shell: this.detail().reportShellContextJson,
           combatResultId: this.detail().domainContextJson.pvp?.combatResultId,
           activeHeroId: this.activeHeroId(),
+          pvpCombatContext: this.detail().domainContextJson.pvpCombatContext ?? null,
         })
         : null;
     })(),
   );
-
-  trackByKey(index: number, item: { key: string }): string {
-    return `${item.key}:${index}`;
-  }
 
   showSpyResources(section: ReportSpySection): boolean {
     return section.resources.length > 0 || section.revealedSections.resources;

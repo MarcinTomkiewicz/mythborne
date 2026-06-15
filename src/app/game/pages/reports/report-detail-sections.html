@@ -2,13 +2,11 @@
   @if (isPrivateExploration()) {
     <app-exploration-report-domain-content [detail]="detail()" />
   } @else if (privatePvpDetail(); as pvpDetail) {
-    @if (pvpPrivateReportCopy(); as copy) {
-      <app-pvp-report-domain-content
-        [detail]="pvpDetail"
-        [copy]="copy"
-        [activeHeroId]="activeHeroId()"
-      />
-    }
+    <app-pvp-report-domain-content
+      [detail]="pvpDetail"
+      [copy]="pvpPrivateReportCopy()"
+      [activeHeroId]="activeHeroId()"
+    />
   } @else if (combatStage(); as stage) {
     <app-combat-stage [stage]="stage" />
   }

@@ -90,6 +90,7 @@ export function mapCombatSessionStageView(input: {
     previewStatus: state ? null : preview?.previewStatus ?? null,
     liveStatusKey: state?.statusKey ?? null,
     timingManifest: state?.currentTimingManifest ?? null,
+    pvpCombatContext: state?.currentTimingManifest?.pvpCombatContext ?? preview?.pvpCombatContext ?? null,
     loading: {
       previewFailed: input.previewFailed,
       isLoadingPreview: input.isLoadingPreview,

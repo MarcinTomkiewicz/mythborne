@@ -2,7 +2,6 @@ export type PvpPublicReportLocale = 'pl' | 'en';
 export type PvpPublicReportKind = 'attack' | 'spy';
 export type PvpPublicReportKindOrUnavailable = PvpPublicReportKind | null;
 export type PvpPublicViewerRole = 'viewer';
-export type PvpPublicAttackOutcomeKey = 'attacker_victory' | 'defender_victory' | 'draw';
 export type PvpPublicSpyOutcomeKey =
   | 'success_undetected'
   | 'success_detected'
@@ -22,7 +21,7 @@ export interface PvpPublicReportCopy {
   access: PvpPublicReportAccessCopy;
   shell: PvpPublicReportShellCopy | null;
   sections: PvpPublicReportSectionsCopy;
-  attackReport: PvpPublicAttackReportCopy | null;
+  attackReport: null;
   spyReport: PvpPublicSpyReportCopy | null;
 }
 
@@ -35,7 +34,7 @@ export interface PvpPublicAttackReportAvailableCopy extends PvpPublicReportCopy 
   reportKind: 'attack';
   access: PvpPublicReportAvailableAccessCopy;
   shell: PvpPublicReportShellCopy;
-  attackReport: PvpPublicAttackReportCopy;
+  attackReport: null;
   spyReport: null;
 }
 
@@ -116,21 +115,6 @@ export interface PvpPublicReportPrivateOmittedSectionCopy {
 export interface PvpPublicReportNoticeSectionCopy {
   title: string;
   text: string;
-}
-
-export interface PvpPublicAttackReportCopy {
-  reportKind: 'attack';
-  viewerRole: PvpPublicViewerRole;
-  outcomeKey: PvpPublicAttackOutcomeKey;
-  title: string;
-  summary: string;
-  resultTitle: string;
-  resultNarrative: string;
-  experienceLines: [];
-  resourceLine: null;
-  gloryLine: null;
-  privateDetailsOmitted: true;
-  privateDetailsOmittedLabel: string;
 }
 
 export interface PvpPublicSpyReportCopy {

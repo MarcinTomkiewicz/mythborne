@@ -1,49 +1,21 @@
 <div class="flex-col gap-lg w-100 min-w-0">
-  @if (attackCopy(); as copy) {
+  @if (combatStage(); as stage) {
+    <app-combat-stage [stage]="stage" />
+  }
+
+  @if (resultSummary(); as result) {
     <section class="mg-card p-lg flex-col gap-md w-100">
       <div class="flex-col gap-xs">
-        <p class="text-sm font-bold color-accent m-0">{{ copy.sections.result }}</p>
-        <h2 class="color-heading text-xl m-0">{{ copy.attackReport.result.title }}</h2>
-        <p class="color-text text-md lh-16 m-0">{{ copy.attackReport.result.narrativePlainText }}</p>
+        <h2 class="color-heading text-xl m-0">{{ result.title }}</h2>
+        <p class="color-text text-md lh-16 m-0">
+          <app-rich-text [fragments]="result.summaryRichText" />
+        </p>
       </div>
     </section>
-
-    @if (combatStage(); as stage) {
-      <app-combat-stage [stage]="stage" />
-    }
-
-    @if (
-      copy.attackReport.experience.lines.length > 0 ||
-      copy.attackReport.resources.line ||
-      copy.attackReport.glory.lineRichText.length > 0
-    ) {
-      <section class="mg-card p-lg flex-col gap-md w-100">
-        @if (copy.attackReport.experience.lines.length > 0) {
-          <div class="flex-col gap-xs">
-            <h3 class="color-heading text-lg m-0">{{ copy.sections.experience }}</h3>
-            @for (line of copy.attackReport.experience.lines; track trackByKey($index, line)) {
-              <p class="color-text text-md lh-16 m-0">{{ line.text }}</p>
-            }
-          </div>
-        }
-
-        @if (copy.attackReport.resources.line) {
-          <div class="flex-col gap-xs">
-            <h3 class="color-heading text-lg m-0">{{ copy.sections.resources }}</h3>
-            <p class="color-text text-md lh-16 m-0">{{ copy.attackReport.resources.line }}</p>
-          </div>
-        }
-
-        @if (copy.attackReport.glory.lineRichText.length > 0) {
-          <div class="flex-col gap-xs">
-            <h3 class="color-heading text-lg m-0">{{ copy.sections.glory }}</h3>
-            <p class="color-text text-md lh-16 m-0">
-              <app-rich-text [fragments]="copy.attackReport.glory.lineRichText" />
-            </p>
-          </div>
-        }
-      </section>
-    }
+  } @else if (missingResultDiagnostic(); as diagnostic) {
+    <section class="mg-card p-lg flex-col gap-sm w-100" data-blocked="domainContextJson.pvpResult">
+      <p class="warn-text text-sm m-0">{{ diagnostic }}</p>
+    </section>
   }
 
   @if (spyCopy(); as copy) {

@@ -5,6 +5,5 @@ export interface ReportHandoffActionsViewModel {
   directReportUnavailableMessage: string | null;
   publicReportPath: string | null;
   publicReportCopyLabel: string;
-  publicReportCopyDisabled: boolean;
   publicReportUnavailableMessage: string | null;
 }

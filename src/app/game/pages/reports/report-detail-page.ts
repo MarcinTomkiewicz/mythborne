@@ -32,46 +32,14 @@ export class ReportDetailPage implements OnInit {
       return [];
     }
 
-    const isPrivatePvpReport = isPrivatePvpReportDetail(detail);
-
-    if (isPrivatePvpReport) {
-      const pvpCopy = this.page.pvpPrivateReportCopy();
-
-      return pvpCopy
-        ? [
-            {
-              key: 'reportType',
-              label: copy.reportShell.meta.eventTypeLabel,
-              value: pvpCopy.shell.eventTypeLabel,
-            },
-            {
-              key: 'source',
-              label: copy.reportShell.meta.sourceLabel,
-              value: pvpCopy.shell.sourceLabel,
-            },
-            {
-              key: 'createdAt',
-              label: copy.reportShell.meta.reportDateLabel,
-              value: this.page.formatDateTime(detail.report.createdAt),
-            },
-            {
-              key: 'reportsCenter',
-              label: copy.reportsCenter.header.title,
-              value: copy.reportShell.header.backAction,
-              route: '/game/reports',
-            },
-          ]
-        : [];
-    }
-
-    const nonPvpDetail = detail as PrivateReportDetailPage;
-    const sourceValue = nonPvpDetail.report.sourceLabel;
+    const shell = detail.reportShellContextJson;
+    const sourceValue = shell.source.label;
 
     return [
       {
         key: 'reportType',
         label: copy.reportShell.meta.eventTypeLabel,
-        value: nonPvpDetail.report.reportTypeLabel,
+        value: shell.eventType.label,
       },
       ...(sourceValue
         ? [{
@@ -83,7 +51,9 @@ export class ReportDetailPage implements OnInit {
       {
         key: 'createdAt',
         label: copy.reportShell.meta.reportDateLabel,
-        value: this.page.formatDateTime(nonPvpDetail.report.createdAt),
+        value: shell.reportDate.displayValue ?? (
+          shell.reportDate.value ? this.page.formatDateTime(shell.reportDate.value) : ''
+        ),
       },
       {
         key: 'reportsCenter',

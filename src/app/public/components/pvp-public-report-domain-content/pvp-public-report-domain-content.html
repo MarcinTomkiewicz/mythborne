@@ -1,38 +1,36 @@
 <div class="flex-col gap-lg w-100 min-w-0">
-  @if (!copy().access.isAvailable) {
+  @if (!availableDetail() && copy()?.access?.isAvailable === false) {
     <section class="mg-card p-lg flex-col gap-sm w-100">
-      <h1 class="color-heading text-xl m-0">{{ copy().sections.notFound.title }}</h1>
-      <p class="color-text text-md lh-16 m-0">{{ copy().sections.notFound.text }}</p>
+      <h1 class="color-heading text-xl m-0">{{ copy()?.sections?.notFound?.title }}</h1>
+      <p class="color-text text-md lh-16 m-0">{{ copy()?.sections?.notFound?.text }}</p>
       @if (notFoundLabel(); as label) {
         <p class="color-text text-md lh-16 m-0">{{ label }}</p>
       }
     </section>
   } @else {
-    @if (copy().attackReport; as attack) {
+    @if (combatStage(); as stage) {
+      <app-combat-stage [stage]="stage" />
+    }
+
+    @if (resultSummary(); as result) {
       <section class="mg-card p-lg flex-col gap-md w-100">
         <div class="flex-col gap-xs">
-          <p class="text-sm font-bold color-accent m-0">{{ copy().sections.result.label }}</p>
-          <h2 class="color-heading text-xl m-0">{{ attack.resultTitle }}</h2>
-          <p class="color-text text-md lh-16 m-0">{{ attack.resultNarrative }}</p>
+          <h2 class="color-heading text-xl m-0">{{ result.title }}</h2>
+          <p class="color-text text-md lh-16 m-0">
+            <app-rich-text [fragments]="result.summaryRichText" />
+          </p>
         </div>
-        <p class="color-text text-md lh-16 m-0">{{ attack.privateDetailsOmittedLabel }}</p>
       </section>
-
-      <section class="mg-card p-lg flex-col gap-sm w-100">
-        <h3 class="color-heading text-lg m-0">{{ copy().sections.resources.label }}</h3>
-        <p class="color-text text-md lh-16 m-0">{{ copy().sections.resources.privateOmittedLabel }}</p>
-      </section>
-
-      <section class="mg-card p-lg flex-col gap-sm w-100">
-        <h3 class="color-heading text-lg m-0">{{ copy().sections.experience.label }}</h3>
-        <p class="color-text text-md lh-16 m-0">{{ copy().sections.experience.privateOmittedLabel }}</p>
+    } @else if (missingResultDiagnostic(); as diagnostic) {
+      <section class="mg-card p-lg flex-col gap-sm w-100" data-blocked="domainContextJson.pvpResult">
+        <p class="warn-text text-sm m-0">{{ diagnostic }}</p>
       </section>
     }
 
-    @if (copy().spyReport; as spy) {
+    @if (copy()?.spyReport; as spy) {
       <section class="mg-card p-lg flex-col gap-md w-100">
         <div class="flex-col gap-xs">
-          <p class="text-sm font-bold color-accent m-0">{{ copy().sections.spy.label }}</p>
+          <p class="text-sm font-bold color-accent m-0">{{ copy()?.sections?.spy?.label }}</p>
           <h2 class="color-heading text-xl m-0">{{ spy.title }}</h2>
           <p class="color-text text-md lh-16 m-0">{{ spy.summary }}</p>
         </div>
@@ -41,9 +39,9 @@
       </section>
     }
 
-    @if (copy().shell; as shell) {
+    @if (copy()?.shell; as shell) {
       <section class="mg-card p-lg flex-col gap-sm w-100">
-        <h3 class="color-heading text-lg m-0">{{ copy().sections.participants.label }}</h3>
+        <h3 class="color-heading text-lg m-0">{{ copy()?.sections?.participants?.label }}</h3>
         <div class="flex-col gap-xs">
           @for (participant of shell.participants; track participant.displayName + ':' + $index) {
             <div class="flex-row align-center justify-between gap-md">
@@ -57,9 +55,11 @@
       </section>
     }
 
-    <section class="mg-card p-lg flex-col gap-sm w-100">
-      <h3 class="color-heading text-lg m-0">{{ copy().sections.publicNotice.title }}</h3>
-      <p class="color-text text-md lh-16 m-0">{{ copy().sections.publicNotice.text }}</p>
-    </section>
+    @if (copy()?.sections?.publicNotice; as publicNotice) {
+      <section class="mg-card p-lg flex-col gap-sm w-100">
+        <h3 class="color-heading text-lg m-0">{{ publicNotice.title }}</h3>
+        <p class="color-text text-md lh-16 m-0">{{ publicNotice.text }}</p>
+      </section>
+    }
   }
 </div>

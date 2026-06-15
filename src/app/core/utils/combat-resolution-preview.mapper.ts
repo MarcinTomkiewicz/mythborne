@@ -14,7 +14,10 @@ import {
 } from './json-read';
 import { mapParticipantStatRows } from './combat-live-participant.mapper';
 import { trimToNull } from './normalize-text';
-import { mapPvpCombatParticipantEffects } from './pvp-combat-context.mapper';
+import {
+  mapOptionalPvpCombatContextPresentation,
+  mapPvpCombatParticipantEffects,
+} from './pvp-combat-context.mapper';
 
 export function mapCombatResolutionPreview(
   row: GetCombatResolutionPreviewRpcRow,
@@ -31,6 +34,10 @@ export function mapCombatResolutionPreview(
     sourceEntityType: row.source_entity_type,
     sourceEntityId: row.source_entity_id,
     participants,
+    pvpCombatContext: mapOptionalPvpCombatContextPresentation(
+      row.pvp_combat_context,
+      'get_combat_resolution_preview.pvp_combat_context',
+    ),
     updatedAt: row.updated_at,
     rawJson: row as unknown as Json,
   };

@@ -8,7 +8,7 @@ import { GameCopyService } from '../../../core/services/game-copy/game-copy.serv
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
 import { toDateTimeLabel } from '../../../core/utils/date-display';
-import { isPrivatePvpReportDetail } from '../../../core/utils/pvp-report-domain-context';
+import { isPrivatePvpSpyReportDetail } from '../../../core/utils/pvp-report-domain-context';
 import { RequestToken } from '../../../core/utils/request-token';
 
 @Injectable()
@@ -28,16 +28,6 @@ export class ReportDetailPageState {
   readonly hasError = signal(false);
   readonly pendingRequestCount = signal(0);
   readonly isLoading = computed(() => this.pendingRequestCount() > 0);
-  readonly canRenderDetail = computed(() => {
-    const detail = this.detail();
-
-    if (!detail) {
-      return false;
-    }
-
-    return !isPrivatePvpReportDetail(detail) || this.pvpPrivateReportCopy() !== null;
-  });
-
   loadData(reportId: string): void {
     const token = this.beginDetailLoadToken();
 
@@ -140,7 +130,7 @@ export class ReportDetailPageState {
 
           this.detail.set(detail);
 
-          if (isPrivatePvpReportDetail(detail)) {
+          if (isPrivatePvpSpyReportDetail(detail)) {
             this.loadPvpPrivateReportCopy(heroId, serverId, reportId, token);
           }
         },

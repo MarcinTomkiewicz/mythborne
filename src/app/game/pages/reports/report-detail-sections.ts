@@ -57,9 +57,7 @@ export class ReportDetailSections {
         }),
   );
   readonly publicReportPath = computed(() =>
-    publicReportPathFromToken(
-      this.detail().report.publicToken ?? this.context().publicToken,
-    ),
+    publicReportPathFromToken(this.detail().report.publicToken),
   );
 
   copyPublicReportLink(): void {

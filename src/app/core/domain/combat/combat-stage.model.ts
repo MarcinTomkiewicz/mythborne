@@ -9,6 +9,7 @@ import {
   CombatTimingManifestReadModel,
 } from './combat-live.model';
 import { CombatSourcePresentation } from './combat-source-presentation.model';
+import type { PvpCombatContextPresentation } from '../pvp/pvp-combat-context.model';
 
 export interface CombatStageLogViewModel {
   show: boolean;
@@ -38,6 +39,7 @@ export interface CombatLiveCenterPanelInput {
   previewStatus: string | null;
   liveStatusKey: string | null;
   participants: readonly CombatLiveParticipantReadModel[];
+  pvpCombatContext: PvpCombatContextPresentation | null;
   roundLabel: string | null;
   timingManifest: CombatTimingManifestReadModel | null;
   timing: {
