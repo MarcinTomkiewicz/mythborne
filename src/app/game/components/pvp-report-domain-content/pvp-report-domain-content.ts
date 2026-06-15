@@ -6,13 +6,18 @@ import {
 import type {
   PrivateReportDetailPage,
 } from '../../../core/domain/reports/report-detail.model';
-import type { PvpResultSummaryV1 } from '../../../core/domain/pvp/pvp-result-snapshot.model';
+import type {
+  PvpResultOutcomeBannerV1,
+  PvpResultSummaryV1,
+} from '../../../core/domain/pvp/pvp-result-snapshot.model';
 import {
   ReportSpySection,
 } from '../../../core/domain/reports/report-section.model';
 import { mapPvpAttackCombatStageView } from '../../../core/utils/combat-report-display.mapper';
 import { pvpResultSummaryForHero } from '../../../core/utils/pvp-result-summary';
 import { isPrivatePvpAttackReportDetail } from '../../../core/utils/pvp-report-domain-context';
+import { semanticIconClass } from '../../../core/utils/semantic-icon-class';
+import { OutcomeReportLayout } from '../../../shared/outcome-report-layout/outcome-report-layout';
 import { RichText } from '../../../shared/rich-text/rich-text';
 import { CombatStage } from '../combat/combat-stage';
 
@@ -21,6 +26,7 @@ import { CombatStage } from '../combat/combat-stage';
   standalone: true,
   imports: [
     CombatStage,
+    OutcomeReportLayout,
     RichText,
   ],
   templateUrl: './pvp-report-domain-content.html',
@@ -67,7 +73,6 @@ export class PvpReportDomainContent {
         : null;
     })(),
   );
-
   showSpyResources(section: ReportSpySection): boolean {
     return section.resources.length > 0 || section.revealedSections.resources;
   }
@@ -89,5 +94,9 @@ export class PvpReportDomainContent {
       !this.showSpyBuildings(section) &&
       !this.showSpyEquipment(section) &&
       !this.showSpyStats(section);
+  }
+
+  outcomeBannerIconClass(banner: PvpResultOutcomeBannerV1): string {
+    return semanticIconClass(banner.iconKey) ?? '';
   }
 }

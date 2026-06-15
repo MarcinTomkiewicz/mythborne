@@ -1,5 +1,7 @@
 import {
   PvpResultGlorySentenceV1,
+  PvpResultOutcomeBannerTone,
+  PvpResultOutcomeBannerV1,
   PvpResultOutcomeKey,
   PvpResultPerspective,
   PvpResultSnapshotV1,
@@ -83,6 +85,10 @@ function mapPvpResultSummary(record: JsonRecord, field: string): PvpResultSummar
       `${field}.summaryRichText`,
       requireTextOrValueKind,
     ),
+    outcomeBanner: mapOutcomeBanner(
+      requiredRecord(read(record, 'outcomeBanner'), `${field}.outcomeBanner`),
+      `${field}.outcomeBanner`,
+    ),
     includesGlory: requiredBoolean(read(record, 'includesGlory'), `${field}.includesGlory`),
     glorySentence: mapOptionalGlorySentence(read(record, 'glorySentence'), `${field}.glorySentence`),
     technicalContext: mapTechnicalContext(
@@ -90,6 +96,44 @@ function mapPvpResultSummary(record: JsonRecord, field: string): PvpResultSummar
       `${field}.technicalContext`,
     ),
   };
+}
+
+function mapOutcomeBanner(record: JsonRecord, field: string): PvpResultOutcomeBannerV1 {
+  requireLiteral(requiredText(read(record, 'contractKey'), `${field}.contractKey`), 'pvp_result_outcome_banner', `${field}.contractKey`);
+  requireLiteral(requiredText(read(record, 'contractVersion'), `${field}.contractVersion`), 'pvp_result_outcome_banner_v1', `${field}.contractVersion`);
+  requireLiteral(requiredText(read(record, 'sourceOwner'), `${field}.sourceOwner`), 'pvp.result', `${field}.sourceOwner`);
+
+  return {
+    contractKey: 'pvp_result_outcome_banner',
+    contractVersion: 'pvp_result_outcome_banner_v1',
+    sourceOwner: 'pvp.result',
+    perspective: requirePerspective(requiredText(read(record, 'perspective'), `${field}.perspective`), `${field}.perspective`),
+    outcomeKey: requireOutcomeKey(requiredText(read(record, 'outcomeKey'), `${field}.outcomeKey`), `${field}.outcomeKey`),
+    label: requiredNonBlankText(read(record, 'label'), `${field}.label`),
+    statusLabel: requiredString(read(record, 'statusLabel'), `${field}.statusLabel`),
+    title: requiredNonBlankText(read(record, 'title'), `${field}.title`),
+    description: requiredString(read(record, 'description'), `${field}.description`),
+    tone: requireOutcomeBannerTone(requiredText(read(record, 'tone'), `${field}.tone`), `${field}.tone`),
+    iconKey: requiredNonBlankText(read(record, 'iconKey'), `${field}.iconKey`),
+  };
+}
+
+function requiredNonBlankText(value: Json | undefined, field: string): string {
+  const text = requiredText(value, field);
+
+  if (!text.trim()) {
+    throw new Error(`${field} must be a non-empty string.`);
+  }
+
+  return text;
+}
+
+function requiredString(value: Json | undefined, field: string): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  throw new Error(`${field} must be a string.`);
 }
 
 function mapOptionalGlorySentence(
@@ -132,6 +176,22 @@ function requireOutcomeKey(value: string, field: string): PvpResultOutcomeKey {
 
 function requirePerspective(value: string, field: string): PvpResultPerspective {
   if (value === 'attacker' || value === 'defender' || value === 'neutral') {
+    return value;
+  }
+
+  throw new Error(`${field} has unsupported value: ${value}.`);
+}
+
+function requireOutcomeBannerTone(
+  value: string,
+  field: string,
+): PvpResultOutcomeBannerTone {
+  if (
+    value === 'success' ||
+    value === 'danger' ||
+    value === 'warning' ||
+    value === 'neutral'
+  ) {
     return value;
   }
 

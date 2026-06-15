@@ -8,19 +8,19 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import type { PvpPrivateReportCopy } from '../../../core/domain/pvp/pvp-private-report-copy.model';
 import type { PrivateReportDetailPage } from '../../../core/domain/reports/report-detail.model';
-import type {
-  ReportDetailPreviewExplorationSourceKind,
-} from '../../../core/domain/reports/report-detail-preview.model';
 import type { ReportHandoffActionsViewModel } from '../../../core/domain/reports/report-handoff.model';
 import { GameCopyService } from '../../../core/services/game-copy/game-copy.service';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
+import { explorationParentContextReportId } from '../../../core/utils/report-detail-parent-context';
 import { mapReportHandoffActions } from '../../../core/utils/report-handoff-actions.mapper';
 import { mapReportDetailPreviewView } from '../../../core/utils/report-detail-preview.mapper';
 import {
   isPrivatePvpReportDetail,
+  isPrivatePvpSpyReportDetail,
   isPvpReportDomainDetail,
 } from '../../../core/utils/pvp-report-domain-context';
 import { PvpReportDomainContent } from '../pvp-report-domain-content/pvp-report-domain-content';
@@ -32,6 +32,7 @@ import { ReportDetailPreviewDisplay } from './report-detail-preview-display';
   standalone: true,
   imports: [
     PvpReportDomainContent,
+    ProgressSpinnerModule,
     ReportDetailPreviewDisplay,
     ReportHandoffActions,
   ],
@@ -68,7 +69,6 @@ export class ReportDetailPreviewCard {
       ? mapReportDetailPreviewView({
           detail,
           activeHeroId: this.activeHeroId(),
-          showRewardResult: true,
         })
       : null;
   });
@@ -82,6 +82,12 @@ export class ReportDetailPreviewCard {
         })
       : null;
   });
+  readonly fallbackReportActions = computed<ReportHandoffActionsViewModel>(() =>
+    mapReportHandoffActions({
+      reportId: this.reportId(),
+      publicToken: null,
+    }),
+  );
 
   constructor() {
     effect(() => {
@@ -134,6 +140,18 @@ export class ReportDetailPreviewCard {
             return;
           }
 
+          if (isPvpReportDomainDetail(detail)) {
+            this.detail.set(detail);
+            this.hasError.set(false);
+            this.isLoading.set(false);
+
+            if (isPrivatePvpSpyReportDetail(detail)) {
+              this.loadPvpPrivateReportCopy(detail.access.reportId, requestId);
+            }
+
+            return;
+          }
+
           const parentReportId = explorationParentContextReportId(
             detail,
             reportId,
@@ -146,12 +164,6 @@ export class ReportDetailPreviewCard {
 
           this.detail.set(detail);
           this.hasError.set(false);
-
-          if (isPrivatePvpReportDetail(detail)) {
-            this.loadPvpPrivateReportCopy(detail.access.reportId, requestId);
-            return;
-          }
-
           this.isLoading.set(false);
         },
         error: () => {
@@ -196,71 +208,4 @@ export class ReportDetailPreviewCard {
       },
     });
   }
-}
-
-function explorationParentContextReportId(
-  detail: PrivateReportDetailPage,
-  currentReportId: string,
-): string | null {
-  if (!isCombatResultReport(detail)) {
-    return null;
-  }
-
-  const expectedKind = expectedExplorationParentKind(detail);
-
-  if (!expectedKind) {
-    return null;
-  }
-
-  return detail.report.relatedReportsJson.find(
-    (candidate) =>
-      candidate.reportId &&
-      candidate.relationKind === 'parent_context_report' &&
-      isExpectedExplorationParentContextReport(
-        expectedKind,
-        candidate.reportTypeKey,
-        candidate.sourceEntityType,
-      ) &&
-      candidate.reportId !== currentReportId,
-  )?.reportId ?? null;
-}
-
-function isCombatResultReport(detail: PrivateReportDetailPage): boolean {
-  return (
-    detail.report.reportTypeKey === 'combat' &&
-    detail.report.sourceEntityType === 'combat_result'
-  );
-}
-
-function expectedExplorationParentKind(
-  detail: PrivateReportDetailPage,
-): ReportDetailPreviewExplorationSourceKind | null {
-  return (
-    normalizeExplorationParentKind(
-      detail.domainContextJson.exploration?.challengeKind ?? null,
-    ) ??
-    normalizeExplorationParentKind(
-      detail.domainContextJson.combat?.sourceType ?? null,
-    )
-  );
-}
-
-function normalizeExplorationParentKind(
-  value: string | null,
-): ReportDetailPreviewExplorationSourceKind | null {
-  if (value === 'trial' || value === 'encounter') {
-    return value;
-  }
-
-  return null;
-}
-
-function isExpectedExplorationParentContextReport(
-  expectedKind: ReportDetailPreviewExplorationSourceKind,
-  reportTypeKey: string,
-  sourceEntityType: string,
-): boolean {
-  return expectedKind === 'encounter'
-    ? reportTypeKey === 'encounter' && sourceEntityType === 'encounter_result'
-    : reportTypeKey === 'trial' && sourceEntityType === 'trial_result';
 }

@@ -20,6 +20,7 @@ import {
   pendingTimerDisplay,
   pendingTimerHasElapsed,
 } from '../../../core/utils/pending-timer';
+import { pvpActionCopyKeyFallback } from '../../../core/utils/pvp-action-copy-key-fallback';
 import { RequestToken } from '../../../core/utils/request-token';
 import { MinigameSourceRef } from '../../components/minigame-host/minigame-host.model';
 import {
@@ -43,7 +44,7 @@ export class PvpCombatActionState {
   private lastElapsedRefreshMs = 0;
   private activeContextKey: string | null = null;
 
-  readonly copy = signal<PvpActionCopy | null>(null);
+  readonly copy = signal<PvpActionCopy | null>(pvpActionCopyKeyFallback());
   readonly combatCommonCopy = this.combatCopy.combatCommonCopy;
   readonly pvpCombatCopy = this.combatCopy.pvpCombatCopy;
   readonly offer = signal<ActivePvpActionOffer | null>(null);
@@ -238,7 +239,7 @@ export class PvpCombatActionState {
         next: (copy) => {
           this.copy.set(copy);
         },
-        error: () => this.copy.set(null),
+        error: () => this.copy.set(pvpActionCopyKeyFallback()),
       });
   }
 

@@ -1,19 +1,24 @@
 import { Component, computed, input } from '@angular/core';
 import { PvpPublicReportCopy } from '../../../core/domain/pvp/pvp-public-report-copy.model';
-import { PvpResultSummaryV1 } from '../../../core/domain/pvp/pvp-result-snapshot.model';
+import type {
+  PvpResultOutcomeBannerV1,
+  PvpResultSummaryV1,
+} from '../../../core/domain/pvp/pvp-result-snapshot.model';
 import {
   PublicReportDetailV2,
   PublicReportDetailV2Available,
 } from '../../../core/domain/reports/report-detail.model';
 import { mapPvpAttackCombatStageView } from '../../../core/utils/combat-report-display.mapper';
 import { publicPvpResultSummary } from '../../../core/utils/pvp-result-summary';
+import { requiredSemanticIconClass } from '../../../core/utils/semantic-icon-class';
+import { OutcomeReportLayout } from '../../../shared/outcome-report-layout/outcome-report-layout';
 import { RichText } from '../../../shared/rich-text/rich-text';
 import { CombatStage } from '../../../game/components/combat/combat-stage';
 
 @Component({
   selector: 'app-pvp-public-report-domain-content',
   standalone: true,
-  imports: [CombatStage, RichText],
+  imports: [CombatStage, OutcomeReportLayout, RichText],
   templateUrl: './pvp-public-report-domain-content.html',
   host: { class: 'd-block w-100' },
 })
@@ -47,10 +52,16 @@ export class PvpPublicReportDomainContent {
         })
       : null;
   });
-
   notFoundLabel(): string | null {
     const access = this.copy()?.access;
 
     return access && !access.isAvailable ? access.notFoundLabel : null;
+  }
+
+  outcomeBannerIconClass(banner: PvpResultOutcomeBannerV1): string {
+    return requiredSemanticIconClass(
+      banner.iconKey,
+      'domainContextJson.pvpResult.public.neutral.outcomeBanner.iconKey',
+    );
   }
 }

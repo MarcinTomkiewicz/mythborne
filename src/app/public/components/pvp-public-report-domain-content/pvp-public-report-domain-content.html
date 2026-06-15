@@ -8,6 +8,17 @@
       }
     </section>
   } @else {
+    @if (resultSummary()?.outcomeBanner; as banner) {
+      <app-outcome-report-layout
+        [label]="banner.label"
+        [statusLabel]="banner.statusLabel"
+        [title]="banner.title"
+        [description]="banner.description"
+        [iconClass]="outcomeBannerIconClass(banner)"
+        [titleTone]="banner.tone"
+      />
+    }
+
     @if (combatStage(); as stage) {
       <app-combat-stage [stage]="stage" />
     }

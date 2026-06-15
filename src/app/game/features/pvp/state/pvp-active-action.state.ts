@@ -23,17 +23,18 @@ import {
   pendingTimerDisplay,
   pendingTimerHasElapsed,
 } from '../../../../core/utils/pending-timer';
+import { pvpActionCopyKeyFallback } from '../../../../core/utils/pvp-action-copy-key-fallback';
 import { RequestToken } from '../../../../core/utils/request-token';
+import { PvpCombatCopyState } from './pvp-combat-copy.state';
 import { PvpSpyReportState } from './pvp-spy-report.state';
 
 const ELAPSED_REFRESH_INTERVAL_MS = 5000;
-const PVP_ACTION_COPY_CONTRACT_ERROR = 'player.pvp.action copy unavailable';
-
 @Injectable()
 export class PvpActiveActionState {
   private readonly activeHero = inject(ActiveHero);
   private readonly destroyRef = inject(DestroyRef);
   private readonly gameCopy = inject(GameCopyService);
+  private readonly combatCopy = inject(PvpCombatCopyState);
   private readonly playerPvp = inject(PlayerPvp);
   private readonly spyReport = inject(PvpSpyReportState);
   private readonly requests = new RequestToken();
@@ -44,7 +45,9 @@ export class PvpActiveActionState {
   private activeContextKey: string | null = null;
 
   readonly isLoading = signal(false);
-  readonly copy = signal<PvpActionCopy | null>(null);
+  readonly copy = signal<PvpActionCopy | null>(pvpActionCopyKeyFallback());
+  readonly combatCommonCopy = this.combatCopy.combatCommonCopy;
+  readonly pvpCombatCopy = this.combatCopy.pvpCombatCopy;
   readonly error = signal<string | null>(null);
   readonly offer = signal<ActivePvpActionOffer | null>(null);
   readonly visibleOffer = computed(() => {
@@ -80,6 +83,11 @@ export class PvpActiveActionState {
     const copy = this.copy();
 
     return offer && copy ? pvpActiveActionFactRows(offer, copy) : [];
+  });
+  readonly combatSourcePresentation = computed(() => {
+    const copy = this.copy();
+
+    return copy ? this.combatCopy.sourcePresentation(copy) : null;
   });
 
   constructor() {
@@ -219,7 +227,10 @@ export class PvpActiveActionState {
           this.copy.set(copy);
           this.spyReport.setGenericErrorLabel(this.errorLabel());
         },
-        error: () => this.error.set(this.errorLabel() || PVP_ACTION_COPY_CONTRACT_ERROR),
+        error: () => {
+          this.copy.set(pvpActionCopyKeyFallback());
+          this.spyReport.setGenericErrorLabel(this.errorLabel());
+        },
       });
   }
 }

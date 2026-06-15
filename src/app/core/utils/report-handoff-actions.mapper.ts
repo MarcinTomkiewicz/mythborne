@@ -1,25 +1,22 @@
 import { ReportHandoffActionsViewModel } from '../domain/reports/report-handoff.model';
+import { resolvePublicReportPath } from './public-report-path';
 
 export function mapReportHandoffActions(input: {
   reportId: string;
   publicToken?: string | null;
   publicReportPath?: string | null;
 }): ReportHandoffActionsViewModel {
-  const publicReportPath = input.publicReportPath ??
-    (input.publicToken ? `/report/${input.publicToken}` : null);
+  const publicReportPath = resolvePublicReportPath(input);
+  const directReportLink = `/game/reports/${input.reportId}`;
 
   return {
     directReportId: input.reportId,
-    directReportLink: `/game/reports/${input.reportId}`,
-    directReportLabel: 'Otwórz pełny raport',
+    directReportLink,
+    directReportLabel: null,
     directReportUnavailableMessage: null,
+    publicToken: input.publicToken ?? null,
     publicReportPath,
-    publicReportCopyLabel: publicReportPath
-      ? 'Kopiuj link do raportu'
-      : 'Link publiczny niedostępny',
-    publicReportCopyDisabled: publicReportPath === null,
-    publicReportUnavailableMessage: publicReportPath === null
-      ? 'Publiczny link raportu nie jest dostępny w bieżącym odczycie raportu.'
-      : null,
+    publicReportCopyLabel: null,
+    publicReportUnavailableMessage: null,
   };
 }

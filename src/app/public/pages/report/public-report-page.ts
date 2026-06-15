@@ -1,6 +1,5 @@
 import { Component, OnInit, computed, inject } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ButtonModule } from 'primeng/button';
+import { ActivatedRoute } from '@angular/router';
 import { GamePageSummaryRow } from '../../../core/interfaces/game-page-summary-row.interface';
 import { GamePageHeader } from '../../../shared/game-page-header/game-page-header';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
@@ -14,12 +13,10 @@ import { PublicReportPageState } from './public-report-page.state';
   selector: 'app-public-report-page',
   standalone: true,
   imports: [
-    ButtonModule,
     GamePageHeader,
     LoadingOverlay,
     PvpPublicReportDomainContent,
     ReportDetailSections,
-    RouterLink,
   ],
   providers: [PublicReportPageState],
   templateUrl: './public-report-page.html',
@@ -31,47 +28,20 @@ export class PublicReportPage implements OnInit {
 
   readonly headerSummaryRows = computed<readonly GamePageSummaryRow[]>(() => {
     const copy = this.page.copy();
-    const pvpCopy = this.page.pvpPublicReportCopy();
-
-    if (pvpCopy?.access.isAvailable) {
-      return pvpCopy.shell && copy
-        ? [
-            {
-              key: 'reportType',
-              label: copy.reportShell.meta.eventTypeLabel,
-              value: pvpCopy.shell.reportTypeLabel,
-            },
-            {
-              key: 'source',
-              label: copy.reportShell.meta.sourceLabel,
-              value: pvpCopy.shell.sourceLabel,
-            },
-            {
-              key: 'createdAt',
-              label: copy.reportShell.meta.reportDateLabel,
-              value: pvpCopy.shell.createdAt,
-            },
-          ]
-        : [];
-    }
-
     const detail = this.page.detail();
-
-    if (pvpCopy && (!detail?.report || isPublicPvpReportDetail(detail))) {
-      return [];
-    }
 
     if (!copy || !detail?.report) {
       return [];
     }
 
-    const sourceValue = detail.report.sourceLabel;
+    const shell = detail.reportShellContextJson;
+    const sourceValue = shell.source.label;
 
     return [
       {
         key: 'reportType',
         label: copy.reportShell.meta.eventTypeLabel,
-        value: detail.report.reportTypeLabel,
+        value: shell.eventType.label,
       },
       ...(sourceValue
         ? [{
@@ -83,7 +53,9 @@ export class PublicReportPage implements OnInit {
       {
         key: 'createdAt',
         label: copy.reportShell.meta.reportDateLabel,
-        value: this.page.toDateTimeLabel(detail.report.createdAt),
+        value: shell.reportDate.displayValue ?? (
+          shell.reportDate.value ? this.page.toDateTimeLabel(shell.reportDate.value) : ''
+        ),
       },
     ];
   });
@@ -93,7 +65,10 @@ export class PublicReportPage implements OnInit {
 
     if (publicToken) {
       this.page.loadData(publicToken);
+      return;
     }
+
+    this.page.markMissingRoutePublicToken();
   }
 
   isPublicPvpDetail(detail: PublicReportDetailV2 | null): boolean {

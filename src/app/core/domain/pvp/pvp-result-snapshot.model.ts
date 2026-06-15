@@ -2,6 +2,7 @@ import type { RichTextFragment } from '../rich-text/rich-text.model';
 
 export type PvpResultOutcomeKey = 'attacker_victory' | 'defender_victory' | 'draw';
 export type PvpResultPerspective = 'attacker' | 'defender' | 'neutral';
+export type PvpResultOutcomeBannerTone = 'success' | 'danger' | 'warning' | 'neutral';
 
 export interface PvpResultSnapshotV1 {
   contractKey: 'pvp_result_snapshot';
@@ -32,9 +33,24 @@ export interface PvpResultSummaryV1 {
   title: string;
   summaryPlainText: string;
   summaryRichText: RichTextFragment[];
+  outcomeBanner: PvpResultOutcomeBannerV1;
   includesGlory: boolean;
   glorySentence: PvpResultGlorySentenceV1 | null;
   technicalContext: PvpResultTechnicalContextV1;
+}
+
+export interface PvpResultOutcomeBannerV1 {
+  contractKey: 'pvp_result_outcome_banner';
+  contractVersion: 'pvp_result_outcome_banner_v1';
+  sourceOwner: 'pvp.result';
+  perspective: PvpResultPerspective;
+  outcomeKey: PvpResultOutcomeKey;
+  label: string;
+  statusLabel: string;
+  title: string;
+  description: string;
+  tone: PvpResultOutcomeBannerTone;
+  iconKey: string;
 }
 
 export interface PvpResultGlorySentenceV1 {
