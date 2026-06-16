@@ -21,6 +21,13 @@
     <section class="mg-container mg-card flex-col gap-sm p-lg w-100">
       <h1 class="color-heading text-xl m-0">{{ copy.reportShell.public.notFoundTitle }}</h1>
       <p class="color-text text-md lh-16 m-0">{{ copy.reportShell.public.notFoundText }}</p>
+      @if (page.errorMessage(); as errorMessage) {
+        <p class="warn-text text-sm m-0">{{ errorMessage }}</p>
+      }
+    </section>
+  } @else if (page.errorMessage(); as errorMessage) {
+    <section class="mg-container mg-card flex-col gap-sm p-lg w-100">
+      <p class="warn-text text-sm m-0">{{ errorMessage }}</p>
     </section>
   }
 }

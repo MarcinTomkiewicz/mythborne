@@ -175,7 +175,6 @@ function mapPublicAccess(record: JsonRecord, field: string): ReportsCenterPublic
     hasPublicToken: requiredBoolean(read(record, 'hasPublicToken'), `${field}.hasPublicToken`),
     publicToken: requiredNullableText(read(record, 'publicToken'), `${field}.publicToken`),
     publicPath: requiredNullableText(read(record, 'publicPath'), `${field}.publicPath`),
-    privatePath: requiredText(read(record, 'privatePath'), `${field}.privatePath`),
   };
 }
 
@@ -201,7 +200,5 @@ function mapDiagnostics(record: JsonRecord, field: string): ReportsCenterPreview
       read(record, 'usesPrivateDomainRpc'),
       `${field}.usesPrivateDomainRpc`,
     ),
-    legacyTitle: requiredNullableText(read(record, 'legacyTitle'), `${field}.legacyTitle`),
-    legacySummary: requiredNullableText(read(record, 'legacySummary'), `${field}.legacySummary`),
   };
 }

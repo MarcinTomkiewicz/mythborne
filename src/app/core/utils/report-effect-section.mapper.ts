@@ -51,7 +51,11 @@ function mapEffectSection(record: JsonRecord, field: string): ReportEffectSectio
     rewardEffectEntries: requiredArray(
       read(record, 'rewardEffectEntries'),
       `${field}.rewardEffectEntries`,
-    ).map((row, index) => mapRewardEffectEntry(row, `${field}.rewardEffectEntries[${index}]`)),
+    ).map((row, index) => mapRewardEffectEntry(
+      row,
+      `${field}.rewardEffectEntries[${index}]`,
+      index,
+    )),
     narrativeLines: optionalTextArray(read(record, 'narrativeLines'), `${field}.narrativeLines`),
   };
 }
@@ -70,12 +74,17 @@ function mapEffectRow(row: JsonRecord, field: string): ReportEffectRow {
 function mapRewardEffectEntry(
   row: JsonRecord,
   field: string,
+  index: number,
 ): ReportRewardEffectEntryRow {
+  const reason = read(row, 'reason');
+
   return {
     ...mapEffectDisplay(row, field),
     skipped: requiredBoolean(read(row, 'skipped'), `${field}.skipped`),
     applied: requiredBoolean(read(row, 'applied'), `${field}.applied`),
-    reason: requiredNullableText(read(row, 'reason'), `${field}.reason`),
+    reason: reason === undefined
+      ? `report.effectSectionJson.rewardEffectEntries[${index}].reason`
+      : optionalNullableText(reason, `${field}.reason`),
     createdAt: requiredNullableText(read(row, 'createdAt'), `${field}.createdAt`),
   };
 }

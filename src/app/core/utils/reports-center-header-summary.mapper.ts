@@ -21,7 +21,9 @@ export function mapReportsCenterHeaderSummaryRows(
       key: 'latestReport',
       label: copy.latestReportLabel,
       value: summary.latestReport.title ?? copy.latestReportFallback,
-      route: summary.latestReport.privatePath ?? undefined,
+      route: summary.latestReport.reportId
+        ? ['/game/reports', summary.latestReport.reportId]
+        : undefined,
     },
   ];
 }

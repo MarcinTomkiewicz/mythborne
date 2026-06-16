@@ -165,9 +165,19 @@ function mapReports(value: Json | undefined): ReportsCenterListRow[] {
 }
 
 function mapReportRow(row: JsonRecord, field: string): ReportsCenterListRow {
+  const reportId = requiredText(read(row, 'reportId'), `${field}.reportId`);
+  const preview = mapPreview(
+    requiredRecord(read(row, 'preview'), `${field}.preview`),
+    `${field}.preview`,
+  );
+
+  if (preview.reportId !== reportId) {
+    throw new Error(`${field}.preview.reportId must match ${field}.reportId.`);
+  }
+
   return {
     contractVersion: requiredText(read(row, 'contractVersion'), `${field}.contractVersion`),
-    reportId: requiredText(read(row, 'reportId'), `${field}.reportId`),
+    reportId,
     publicToken: requiredNullableText(read(row, 'publicToken'), `${field}.publicToken`),
     reportTypeKey: requiredText(read(row, 'reportTypeKey'), `${field}.reportTypeKey`),
     sourceEntityType: requiredText(read(row, 'sourceEntityType'), `${field}.sourceEntityType`),
@@ -191,10 +201,7 @@ function mapReportRow(row: JsonRecord, field: string): ReportsCenterListRow {
     readAt: requiredNullableText(read(row, 'readAt'), `${field}.readAt`),
     isUnread: requiredBoolean(read(row, 'isUnread'), `${field}.isUnread`),
     marker: mapMarker(requiredRecord(read(row, 'marker'), `${field}.marker`), `${field}.marker`),
-    preview: mapPreview(
-      requiredRecord(read(row, 'preview'), `${field}.preview`),
-      `${field}.preview`,
-    ),
+    preview,
     visibilityPolicy: mapVisibilityPolicy(
       requiredRecord(read(row, 'visibilityPolicy'), `${field}.visibilityPolicy`),
       `${field}.visibilityPolicy`,

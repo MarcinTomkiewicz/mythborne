@@ -26,6 +26,7 @@ export class ReportDetailPageState {
   readonly detail = signal<PrivateReportDetailPage | null>(null);
   readonly pvpPrivateReportCopy = signal<PvpPrivateReportCopy | null>(null);
   readonly hasError = signal(false);
+  readonly errorMessage = signal<string | null>(null);
   readonly pendingRequestCount = signal(0);
   readonly isLoading = computed(() => this.pendingRequestCount() > 0);
   loadData(reportId: string): void {
@@ -35,6 +36,7 @@ export class ReportDetailPageState {
     this.detail.set(null);
     this.pvpPrivateReportCopy.set(null);
     this.hasError.set(false);
+    this.errorMessage.set(null);
 
     this.startRequest(token);
     this.activeHero
@@ -55,12 +57,12 @@ export class ReportDetailPageState {
           this.activeServerId = state.serverId;
           this.loadReportFoundation(state.heroId, state.serverId, reportId, token);
         },
-        error: () => {
+        error: (error: unknown) => {
           if (!this.requestToken.isCurrent(token)) {
             return;
           }
 
-          this.hasError.set(true);
+          this.failCurrentLoad(error);
         },
       });
   }
@@ -97,12 +99,12 @@ export class ReportDetailPageState {
 
           this.copy.set(copy);
         },
-        error: () => {
+        error: (error: unknown) => {
           if (!this.isCurrentRequest(token, heroId, serverId)) {
             return;
           }
 
-          this.hasError.set(true);
+          this.failCurrentLoad(error);
         },
       });
   }
@@ -134,12 +136,12 @@ export class ReportDetailPageState {
             this.loadPvpPrivateReportCopy(heroId, serverId, reportId, token);
           }
         },
-        error: () => {
+        error: (error: unknown) => {
           if (!this.isCurrentRequest(token, heroId, serverId)) {
             return;
           }
 
-          this.hasError.set(true);
+          this.failCurrentLoad(error);
         },
       });
   }
@@ -168,12 +170,12 @@ export class ReportDetailPageState {
 
         this.pvpPrivateReportCopy.set(copy);
       },
-      error: () => {
+      error: (error: unknown) => {
         if (!this.isCurrentRequest(token, heroId, serverId)) {
           return;
         }
 
-        this.hasError.set(true);
+        this.failCurrentLoad(error);
       },
     });
   }
@@ -212,5 +214,10 @@ export class ReportDetailPageState {
     this.pendingRequestCount.set(0);
 
     return token;
+  }
+
+  private failCurrentLoad(error: unknown): void {
+    this.errorMessage.set(error instanceof Error && error.message ? error.message : null);
+    this.hasError.set(true);
   }
 }

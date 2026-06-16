@@ -212,7 +212,7 @@ export interface ReportRewardEntryRow {
 export interface ReportRewardSection {
   hasReward: boolean;
   title: string;
-  summary: string;
+  summary: string | null;
   sourceLabel: string;
   status: string | null;
   sourceKind: string | null;

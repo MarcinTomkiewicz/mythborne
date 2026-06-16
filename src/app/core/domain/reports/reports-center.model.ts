@@ -196,7 +196,6 @@ export interface ReportsCenterPublicAccess {
   hasPublicToken: boolean;
   publicToken: string | null;
   publicPath: string | null;
-  privatePath: string;
 }
 
 export interface ReportsCenterMarker {
@@ -210,8 +209,6 @@ export interface ReportsCenterPreviewDiagnostics {
   previewWarnings: ReportsCenterPreviewWarning[];
   usesFullReportDetail: false;
   usesPrivateDomainRpc: false;
-  legacyTitle: string | null;
-  legacySummary: string | null;
 }
 
 export interface ReportsCenterPreviewWarning {
@@ -234,7 +231,6 @@ export interface ReportsCenterLatestReport {
   title: string | null;
   createdAt: string | null;
   publicToken: string | null;
-  privatePath: string | null;
 }
 
 export interface ReportsCenterNotificationsSummary {

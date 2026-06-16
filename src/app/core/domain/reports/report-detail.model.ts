@@ -122,7 +122,6 @@ export interface ReportShellContext {
   source: ReportShellContextValue;
   eventType: ReportShellContextValue;
   reportDate: ReportShellContextDate;
-  legacyReportSnapshot: ReportShellLegacySnapshot;
   missingShellContextReason: string | null;
 }
 
@@ -134,14 +133,6 @@ export interface ReportShellContextValue {
 export interface ReportShellContextDate {
   value: string | null;
   displayValue: string | null;
-}
-
-export interface ReportShellLegacySnapshot {
-  reportTypeKey: string | null;
-  sourceEntityType: string | null;
-  title: string | null;
-  summary: string | null;
-  hiddenFromShell: true;
 }
 
 export interface ReportAccessPrivate {

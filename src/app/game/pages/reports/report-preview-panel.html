@@ -37,7 +37,7 @@
     <div class="flex-row-end-center flex-wrap gap-sm w-100 min-w-0">
       <p-button
         [label]="copy().openAction"
-        [routerLink]="preview.publicAccess.privatePath"
+        [routerLink]="['/game/reports', preview.reportId]"
       />
 
       @if (preview.publicAccess.hasPublicToken && preview.publicAccess.publicPath) {

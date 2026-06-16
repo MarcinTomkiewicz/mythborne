@@ -12,7 +12,6 @@ import {
   ReportShellContextDate,
   ReportShellContext,
   ReportShellContextValue,
-  ReportShellLegacySnapshot,
   SpyReportDomainContext,
 } from '../domain/reports/report-detail.model';
 import { Json } from '../types/database.types';
@@ -154,10 +153,6 @@ function mapReportShellContext(context: JsonRecord, field: string): ReportShellC
       requiredRecord(read(context, 'reportDate'), `${field}.reportDate`),
       `${field}.reportDate`,
     ),
-    legacyReportSnapshot: mapShellLegacySnapshot(
-      requiredRecord(read(context, 'legacyReportSnapshot'), `${field}.legacyReportSnapshot`),
-      `${field}.legacyReportSnapshot`,
-    ),
     missingShellContextReason: requiredNullableText(
       read(context, 'missingShellContextReason'),
       `${field}.missingShellContextReason`,
@@ -176,22 +171,6 @@ function mapShellContextDate(record: JsonRecord, field: string): ReportShellCont
   return {
     value: requiredNullableText(read(record, 'value'), `${field}.value`),
     displayValue: requiredNullableText(read(record, 'displayValue'), `${field}.displayValue`),
-  };
-}
-
-function mapShellLegacySnapshot(record: JsonRecord, field: string): ReportShellLegacySnapshot {
-  return {
-    reportTypeKey: requiredNullableText(read(record, 'reportTypeKey'), `${field}.reportTypeKey`),
-    sourceEntityType: requiredNullableText(
-      read(record, 'sourceEntityType'),
-      `${field}.sourceEntityType`,
-    ),
-    title: requiredNullableText(read(record, 'title'), `${field}.title`),
-    summary: requiredNullableText(read(record, 'summary'), `${field}.summary`),
-    hiddenFromShell: requireTrue(
-      requiredBoolean(read(record, 'hiddenFromShell'), `${field}.hiddenFromShell`),
-      `${field}.hiddenFromShell`,
-    ),
   };
 }
 

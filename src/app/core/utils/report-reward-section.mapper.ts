@@ -16,10 +16,14 @@ import {
 import { mapNullableEffectDisplay } from './report-effect-section.mapper';
 
 export function mapRewardSection(record: JsonRecord, field: string): ReportRewardSection {
+  const summary = read(record, 'summary');
+
   return {
     hasReward: requiredBoolean(read(record, 'hasReward'), `${field}.hasReward`),
     title: requiredText(read(record, 'title'), `${field}.title`),
-    summary: requiredText(read(record, 'summary'), `${field}.summary`),
+    summary: summary === undefined
+      ? 'report.rewardSectionJson.summary'
+      : requiredNullableText(summary, `${field}.summary`),
     sourceLabel: requiredText(read(record, 'sourceLabel'), `${field}.sourceLabel`),
     status: optionalNullableText(read(record, 'status'), `${field}.status`),
     sourceKind: optionalNullableText(read(record, 'sourceKind'), `${field}.sourceKind`),

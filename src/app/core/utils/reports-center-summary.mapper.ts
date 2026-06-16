@@ -76,7 +76,6 @@ function mapLatestReport(record: JsonRecord, field: string): ReportsCenterLatest
     title: requiredNullableText(read(record, 'title'), `${field}.title`),
     createdAt: requiredNullableText(read(record, 'createdAt'), `${field}.createdAt`),
     publicToken: requiredNullableText(read(record, 'publicToken'), `${field}.publicToken`),
-    privatePath: requiredNullableText(read(record, 'privatePath'), `${field}.privatePath`),
   };
 }
 
