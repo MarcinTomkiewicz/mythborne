@@ -13,7 +13,7 @@ import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/bro
     <section class="mg-card p-lg flex-col gap-sm w-100">
       <p class="small-caps color-muted text-xs m-0">{{ heading() }}</p>
       <div class="flex-row-start-center flex-wrap gap-sm w-100">
-        @if (actions().directReportLink && directReportButtonLabel(); as label) {
+        @if (showDirectReportAction() && actions().directReportLink && directReportButtonLabel(); as label) {
           <p-button
             [label]="label"
             icon="pi pi-file"
@@ -32,11 +32,14 @@ import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/bro
           />
         }
       </div>
-      @if (actions().directReportUnavailableMessage; as message) {
+      @if (showDirectReportAction() && actions().directReportUnavailableMessage; as message) {
         <p class="warn-text text-sm m-0">{{ message }}</p>
       }
-      @if (actions().directReportLink && !directReportButtonLabel()) {
+      @if (showDirectReportAction() && actions().directReportLink && !directReportButtonLabel()) {
         <p class="warn-text text-sm m-0">reportHandoff.actions.directReportLabel.missingCopy</p>
+      }
+      @if (actions().publicReportPath && !publicReportButtonLabel()) {
+        <p class="warn-text text-sm m-0">reportHandoff.actions.publicReportCopyLabel.missingCopy</p>
       }
       @if (actions().publicReportUnavailableMessage; as message) {
         <p class="warn-text text-sm m-0">{{ message }}</p>
@@ -52,6 +55,14 @@ export class ReportHandoffActions {
   readonly directReportLabel = input<string | null>(null);
   readonly publicReportCopyLabel = input<string | null>(null);
   readonly publicReportCopyText = input(true);
+  readonly showDirectReportAction = input(true);
+  readonly publicReportToastTitle = input<string | null>('reportHandoff.toast.title');
+  readonly publicReportCopySuccessMessage = input<string | null>(
+    'reportHandoff.toast.copyPublicReportLinkSuccess',
+  );
+  readonly publicReportCopyFailedMessage = input<string | null>(
+    'reportHandoff.toast.copyPublicReportLinkFailed',
+  );
 
   directReportButtonLabel(): string | null {
     return this.directReportLabel() ?? buttonLabelOrNull(this.actions().directReportLabel);
@@ -67,8 +78,8 @@ export class ReportHandoffActions {
     if (!link) {
       this.toast.show(
         'error',
-        'reportHandoff.toast.title',
-        'reportHandoff.toast.copyPublicReportLinkFailed',
+        this.publicReportToastTitle() ?? 'reportHandoff.toast.title',
+        this.publicReportCopyFailedMessage() ?? 'reportHandoff.toast.copyPublicReportLinkFailed',
       );
       return;
     }
@@ -76,10 +87,10 @@ export class ReportHandoffActions {
     void copyTextToClipboard(absoluteBrowserUrl(link))
       .then((copied) => this.toast.show(
         copied ? 'success' : 'error',
-        'reportHandoff.toast.title',
+        this.publicReportToastTitle() ?? 'reportHandoff.toast.title',
         copied
-          ? 'reportHandoff.toast.copyPublicReportLinkSuccess'
-          : 'reportHandoff.toast.copyPublicReportLinkFailed',
+          ? this.publicReportCopySuccessMessage() ?? 'reportHandoff.toast.copyPublicReportLinkSuccess'
+          : this.publicReportCopyFailedMessage() ?? 'reportHandoff.toast.copyPublicReportLinkFailed',
       ));
   }
 }

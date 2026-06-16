@@ -3,11 +3,8 @@ import { ActivatedRoute } from '@angular/router';
 import { GamePageSummaryRow } from '../../../core/interfaces/game-page-summary-row.interface';
 import { GamePageHeader } from '../../../shared/game-page-header/game-page-header';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
-import { PrivateReportDetailPage } from '../../../core/domain/reports/report-detail.model';
-import { isPrivatePvpReportDetail } from '../../../core/utils/pvp-report-domain-context';
 import { ReportDetailSections } from './report-detail-sections';
 import { ReportDetailPageState } from './report-detail-page.state';
-import { PvpReportDomainContent } from '../../components/pvp-report-domain-content/pvp-report-domain-content';
 
 @Component({
   selector: 'app-report-detail-page',
@@ -15,7 +12,6 @@ import { PvpReportDomainContent } from '../../components/pvp-report-domain-conte
   imports: [
     GamePageHeader,
     LoadingOverlay,
-    PvpReportDomainContent,
     ReportDetailSections,
   ],
   providers: [ReportDetailPageState],
@@ -70,9 +66,5 @@ export class ReportDetailPage implements OnInit {
     if (reportId) {
       this.page.loadData(reportId);
     }
-  }
-
-  isPrivatePvpDetail(detail: PrivateReportDetailPage): boolean {
-    return isPrivatePvpReportDetail(detail);
   }
 }

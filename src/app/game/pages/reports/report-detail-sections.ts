@@ -1,29 +1,29 @@
 import { Component, computed, input } from '@angular/core';
-import { ButtonModule } from 'primeng/button';
 import type {
   PrivateReportDetailPage,
   ReportDetail,
 } from '../../../core/domain/reports/report-detail.model';
 import { PvpPrivateReportCopy } from '../../../core/domain/pvp/pvp-private-report-copy.model';
 import type { ReportShellCopy } from '../../../core/domain/reports/report-page-copy.model';
-import { absoluteBrowserUrl, copyTextToClipboard } from '../../../core/utils/browser-clipboard';
 import { mapNonPvpCanonicalReportCombatStageView } from '../../../core/utils/combat-report-display.mapper';
-import { publicReportPathFromToken } from '../../../core/utils/public-report-path';
 import {
   isPrivatePvpReportDetail,
 } from '../../../core/utils/pvp-report-domain-context';
+import { mapReportDetailPreviewView } from '../../../core/utils/report-detail-preview.mapper';
+import { mapReportHandoffActions } from '../../../core/utils/report-handoff-actions.mapper';
 import { CombatStage } from '../../components/combat/combat-stage';
-import { ExplorationReportDomainContent } from '../../components/exploration-report-domain-content/exploration-report-domain-content';
 import { PvpReportDomainContent } from '../../components/pvp-report-domain-content/pvp-report-domain-content';
+import { ReportHandoffActions } from '../../components/report-handoff-actions/report-handoff-actions';
+import { ReportDetailPreviewDisplay } from '../../components/report-detail-preview-card/report-detail-preview-display';
 
 @Component({
   selector: 'app-report-detail-sections',
   standalone: true,
   imports: [
-    ButtonModule,
     CombatStage,
-    ExplorationReportDomainContent,
     PvpReportDomainContent,
+    ReportHandoffActions,
+    ReportDetailPreviewDisplay,
   ],
   templateUrl: './report-detail-sections.html',
   host: { class: 'd-block w-100 min-w-0' },
@@ -32,9 +32,14 @@ export class ReportDetailSections {
   readonly detail = input.required<ReportDetail>();
   readonly activeHeroId = input<string | null>(null);
   readonly pvpPrivateReportCopy = input<PvpPrivateReportCopy | null>(null);
-  readonly shellCopy = input.required<ReportShellCopy>();
+  readonly shellCopy = input<ReportShellCopy | null>(null);
 
   readonly context = computed(() => this.detail().domainContextJson);
+  readonly privateDetail = computed(() =>
+    this.detail().access.visibility === 'private'
+      ? this.detail() as PrivateReportDetailPage
+      : null,
+  );
   readonly isPrivateExploration = computed(() => {
     const context = this.context();
 
@@ -43,11 +48,21 @@ export class ReportDetailSections {
       !context.frontendUsage.sourceIdsRedacted &&
       context.missingContextReason === null;
   });
-  readonly privatePvpDetail = computed(() =>
-    isPrivatePvpReportDetail(this.detail())
-      ? this.detail() as PrivateReportDetailPage
-      : null,
-  );
+  readonly privatePvpDetail = computed(() => {
+    const detail = this.privateDetail();
+
+    return detail && isPrivatePvpReportDetail(detail) ? detail : null;
+  });
+  readonly privateExplorationPreview = computed(() => {
+    const detail = this.privateDetail();
+
+    return detail && this.isPrivateExploration()
+      ? mapReportDetailPreviewView({
+          detail,
+          activeHeroId: this.activeHeroId(),
+        })
+      : null;
+  });
   readonly combatStage = computed(() =>
     this.isPrivateExploration() || this.privatePvpDetail()
       ? null
@@ -56,17 +71,14 @@ export class ReportDetailSections {
           combatResultId: this.context().combat?.combatResultId ?? null,
         }),
   );
-  readonly publicReportPath = computed(() =>
-    publicReportPathFromToken(this.detail().report.publicToken),
-  );
+  readonly reportActions = computed(() => {
+    const detail = this.privateDetail();
 
-  copyPublicReportLink(): void {
-    const path = this.publicReportPath();
-
-    if (!path) {
-      return;
-    }
-
-    void copyTextToClipboard(absoluteBrowserUrl(path));
-  }
+    return detail
+      ? mapReportHandoffActions({
+          reportId: detail.access.reportId,
+          publicToken: detail.report.publicToken,
+        })
+      : null;
+  });
 }

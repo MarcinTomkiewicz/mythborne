@@ -1,6 +1,10 @@
 <div class="flex-col gap-lg w-100 min-w-0">
-  @if (isPrivateExploration()) {
-    <app-exploration-report-domain-content [detail]="detail()" />
+  @if (privateExplorationPreview(); as preview) {
+    <app-report-detail-preview-display
+      [label]="detail().report.reportTypeLabel"
+      [view]="preview"
+      [showActions]="false"
+    />
   } @else if (privatePvpDetail(); as pvpDetail) {
     <app-pvp-report-domain-content
       [detail]="pvpDetail"
@@ -11,16 +15,16 @@
     <app-combat-stage [stage]="stage" />
   }
 
-  @if (publicReportPath()) {
-    <section class="mg-card p-lg flex-col gap-sm w-100">
-      <p-button
-        type="button"
-        [label]="shellCopy().header.copyLinkAction"
-        icon="pi pi-link"
-        severity="secondary"
-        [text]="true"
-        (onClick)="copyPublicReportLink()"
+  @if (reportActions(); as actions) {
+    @if (actions.publicReportPath) {
+      <app-report-handoff-actions
+        [actions]="actions"
+        heading=""
+        [publicReportCopyLabel]="shellCopy()?.header?.copyLinkAction ?? null"
+        [publicReportToastTitle]="shellCopy()?.header?.copyLinkAction ?? null"
+        [publicReportCopySuccessMessage]="shellCopy()?.feedback?.copyLinkSuccess ?? null"
+        [showDirectReportAction]="false"
       />
-    </section>
+    }
   }
 </div>
