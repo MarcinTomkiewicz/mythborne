@@ -2,6 +2,7 @@ import type { CombatStageViewModel } from '../combat/combat-stage.model';
 import type {
   ExplorationResultNarrativeSnapshot,
 } from '../exploration/exploration-result-copy.model';
+import type { ReportRewardRichTextSnapshot } from './report-section.model';
 import type { ReportHandoffActionsViewModel } from './report-handoff.model';
 
 export type ReportDetailPreviewOutcomeTone = 'success' | 'danger' | 'warning' | 'neutral';
@@ -18,6 +19,9 @@ export interface ReportDetailPreviewView {
   combatStage: CombatStageViewModel | null;
   narrativeLines: readonly string[];
   sections: readonly ReportDetailPreviewSection[];
+  richTextVisibility: 'private' | 'public';
+  publicToken: string | null;
+  rewardRichText: ReportRewardRichTextSnapshot | null;
   actions: ReportHandoffActionsViewModel | null;
 }
 

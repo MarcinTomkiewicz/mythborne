@@ -1,6 +1,7 @@
 import type {
   ExplorationResultNarrativeSnapshot,
 } from '../exploration/exploration-result-copy.model';
+import type { RichTextFragment } from '../rich-text/rich-text.model';
 
 export interface ReportParticipantRow {
   participantRole: string | null;
@@ -210,6 +211,11 @@ export interface ReportRewardEntryRow {
   createdAt: string | null;
 }
 
+export interface ReportRewardRichTextSnapshot {
+  inlineRichText: RichTextFragment[];
+  sentenceRichText: RichTextFragment[];
+}
+
 export interface ReportRewardSection {
   hasReward: boolean;
   title: string;
@@ -221,6 +227,7 @@ export interface ReportRewardSection {
   grantedAt: string | null;
   entryCount: number | null;
   entries: ReportRewardEntryRow[];
+  rewardRichTextJson: ReportRewardRichTextSnapshot | null;
   narrativeLines: string[];
   message: string | null;
 }

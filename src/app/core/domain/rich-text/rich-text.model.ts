@@ -18,12 +18,8 @@ export interface RichTextFragment {
   effectKey?: string;
   effectKind?: string;
   itemId?: string;
+  itemReferenceId?: string;
   itemName?: string;
   itemPublicToken?: string | null;
   metadata?: Record<string, unknown>;
-}
-
-export interface RichTextItemReference {
-  sourceItemId: string | null;
-  itemReferenceId: string;
 }

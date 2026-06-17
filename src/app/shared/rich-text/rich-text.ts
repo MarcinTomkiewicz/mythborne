@@ -1,8 +1,5 @@
 import { Component, input } from '@angular/core';
-import {
-  RichTextFragment,
-  RichTextItemReference,
-} from '../../core/domain/rich-text/rich-text.model';
+import { RichTextFragment } from '../../core/domain/rich-text/rich-text.model';
 import type { ItemPopoverContextKey } from '../../core/domain/item/item-detail-popover.model';
 import { ItemDetailPopover } from '../item-detail-popover/item-detail-popover';
 
@@ -17,10 +14,9 @@ export class RichText {
   readonly visibility = input<'private' | 'public'>('private');
   readonly publicToken = input<string | null>(null);
   readonly itemPopoverContext = input<ItemPopoverContextKey | null>(null);
-  readonly itemReferences = input<readonly RichTextItemReference[]>([]);
 
   fragmentTrackKey(index: number, fragment: RichTextFragment): string {
-    return `${fragment.kind}:${fragment.itemId ?? ''}:${fragment.text}:${index}`;
+    return `${fragment.kind}:${fragment.itemReferenceId ?? fragment.itemId ?? ''}:${fragment.text}:${index}`;
   }
 
   itemText(fragment: RichTextFragment): string {
@@ -28,22 +24,29 @@ export class RichText {
   }
 
   itemReferenceId(fragment: RichTextFragment): string | null {
-    if (fragment.kind !== 'itemRef' || !fragment.itemId?.trim() || this.visibility() !== 'public') {
+    if (fragment.kind !== 'itemRef' || this.visibility() !== 'public') {
       return null;
     }
 
-    return this.itemReferences().find((item) => item.sourceItemId === fragment.itemId)
-      ?.itemReferenceId ?? null;
+    return fragment.itemReferenceId?.trim() || null;
   }
 
   canRenderItemPopover(fragment: RichTextFragment): boolean {
-    if (fragment.kind !== 'itemRef' || !fragment.itemId?.trim()) {
+    if (fragment.kind !== 'itemRef') {
       return false;
     }
 
     return this.visibility() === 'private'
-      ? Boolean(this.itemPopoverContext()?.trim())
+      ? Boolean(fragment.itemId?.trim() && this.itemPopoverContext()?.trim())
       : Boolean(this.publicToken()?.trim() && this.itemReferenceId(fragment));
+  }
+
+  missingItemReferenceDiagnostic(fragment: RichTextFragment): string | null {
+    return this.visibility() === 'public' &&
+      fragment.kind === 'itemRef' &&
+      !fragment.itemReferenceId?.trim()
+      ? 'richText.itemRef.itemReferenceId'
+      : null;
   }
 
   popoverItemId(fragment: RichTextFragment): string | null {

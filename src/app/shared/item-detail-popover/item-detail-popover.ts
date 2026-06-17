@@ -118,7 +118,7 @@ export class ItemDetailPopover {
 
     if (
       this.status() === 'loaded'
-      && this.loadedDetail()?.itemId === itemId
+      && (!itemId || this.loadedDetail()?.itemId === itemId)
       && this.loadedItemKey() === this.currentItemKey()
     ) {
       return;
@@ -135,7 +135,7 @@ export class ItemDetailPopover {
       this.loadedDetail.set(null);
       this.loadedItemKey.set(null);
       this.status.set('error');
-      this.error.set(this.copy()?.access.notFound ?? null);
+      this.error.set(this.copy()?.access.notFound ?? 'itemDetailPopover.access.notFound');
       this.loadingItemKey = null;
       return;
     }
@@ -179,7 +179,7 @@ export class ItemDetailPopover {
           this.loadedDetail.set(null);
           this.loadedItemKey.set(null);
           this.status.set('error');
-          this.error.set(this.copy()?.access.notReadable ?? null);
+          this.error.set(this.copy()?.access.notReadable ?? 'itemDetailPopover.access.notReadable');
           this.loadingItemKey = null;
         },
       });
@@ -198,7 +198,7 @@ export class ItemDetailPopover {
       return null;
     }
 
-    return this.error() ?? this.copy()?.access.notReadable ?? null;
+    return this.error() ?? this.copy()?.access.notReadable ?? 'itemDetailPopover.access.notReadable';
   }
 
   private clearHideTimeout(): void {
@@ -235,7 +235,11 @@ export class ItemDetailPopover {
   private canLoadDetail(): boolean {
     return Boolean(
       this.itemId()?.trim()
-      || (this.publicToken()?.trim() && this.itemReferenceId()?.trim()),
+      || (
+        this.contextKey() === 'public_report' &&
+        this.publicToken()?.trim() &&
+        this.itemReferenceId()?.trim()
+      ),
     );
   }
 }

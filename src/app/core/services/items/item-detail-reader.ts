@@ -28,11 +28,15 @@ export class ItemDetailReader {
     const normalizedPublicToken = trimToNull(publicToken);
     const normalizedItemReferenceId = trimToNull(itemReferenceId);
 
-    if (normalizedPublicToken && normalizedItemReferenceId) {
+    if (
+      normalizedContext === 'public_report' &&
+      normalizedPublicToken &&
+      normalizedItemReferenceId
+    ) {
       const args: ItemPopoverDetailRpcArgs = {
         p_hero_id: null,
         p_item_id: null,
-        p_context: normalizedContext ?? 'public_report',
+        p_context: 'public_report',
         p_public_token: normalizedPublicToken,
         p_item_reference_id: normalizedItemReferenceId,
       };

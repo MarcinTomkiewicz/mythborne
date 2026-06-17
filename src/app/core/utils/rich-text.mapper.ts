@@ -75,6 +75,7 @@ function mapRichTextFragment<TKind extends string>(
     effectKey: optionalNullableText(read(record, 'effectKey'), `${field}.effectKey`) ?? undefined,
     effectKind: optionalNullableText(read(record, 'effectKind'), `${field}.effectKind`) ?? undefined,
     itemId: optionalNullableText(read(record, 'itemId'), `${field}.itemId`) ?? undefined,
+    itemReferenceId: optionalNullableText(read(record, 'itemReferenceId'), `${field}.itemReferenceId`) ?? undefined,
     itemName: optionalNullableText(read(record, 'itemName'), `${field}.itemName`) ?? undefined,
     itemPublicToken: optionalNullableText(read(record, 'itemPublicToken'), `${field}.itemPublicToken`),
     metadata: mapMetadata(read(record, 'metadata'), `${field}.metadata`),

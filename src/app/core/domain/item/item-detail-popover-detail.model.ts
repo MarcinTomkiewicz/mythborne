@@ -10,7 +10,7 @@ export interface ItemDetailPopoverDetailReadModel {
   contractVersion: ItemDetailPopoverDetailContractVersion;
   access: ItemDetailPopoverAccess;
   source: string;
-  itemId: string;
+  itemId: string | null;
   heroId: string | null;
   displayMeta: ItemDetailPopoverDisplayMeta;
   valueDisplay: PlayerItemDisplayCoreValueDisplay | null;
@@ -38,7 +38,7 @@ export interface ItemDetailPopoverAccess {
 }
 
 export interface ItemDetailPopoverDisplayMeta {
-  itemId: string;
+  itemId: string | null;
   itemName: string;
   lifecycleStatusKey: string | null;
   lifecycleStatusLabel: string | null;
@@ -143,7 +143,7 @@ export interface ItemDetailPopoverModifierSourceRow {
 export interface ItemDetailPopoverRequirementRow {
   displaySection: 'requirements';
   displayTone: ItemDetailPopoverDisplayTone;
-  isMet: boolean;
+  isMet: boolean | null;
   displayLabel: string;
   requiredDisplayValue: string | null;
   currentDisplayValue: string | null;

@@ -3,6 +3,7 @@ import type {
   ExplorationResultNarrativeSnapshot,
   ExplorationRichTextFragment,
 } from '../../../core/domain/exploration/exploration-result-copy.model';
+import type { RichTextFragment } from '../../../core/domain/rich-text/rich-text.model';
 import {
   canRenderExplorationEffectSupplement,
   canRenderExplorationRewardSupplement,
@@ -72,11 +73,36 @@ export class ReportDetailPreviewDisplay {
       : null;
   }
 
+  explorationRewardRichText(
+    view: ReportDetailPreviewView,
+    result: ExplorationResultNarrativeSnapshot,
+  ): readonly RichTextFragment[] | readonly ExplorationRichTextFragment[] | null {
+    return view.richTextVisibility === 'public'
+      ? this.snapshotRewardRichText(view)
+      : this.rewardRichText(result);
+  }
+
   effectRichText(
     result: ExplorationResultNarrativeSnapshot,
   ): readonly ExplorationRichTextFragment[] | null {
     return canRenderExplorationEffectSupplement(result) && result.effectRichText?.length
       ? result.effectRichText
       : null;
+  }
+
+  snapshotRewardRichText(
+    view: ReportDetailPreviewView,
+  ): readonly RichTextFragment[] | null {
+    const rewardRichText = view.rewardRichText;
+
+    if (!rewardRichText) {
+      return null;
+    }
+
+    return rewardRichText.sentenceRichText.length
+      ? rewardRichText.sentenceRichText
+      : rewardRichText.inlineRichText.length
+        ? rewardRichText.inlineRichText
+        : null;
   }
 }

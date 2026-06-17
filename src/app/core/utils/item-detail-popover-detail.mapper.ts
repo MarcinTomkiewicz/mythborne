@@ -18,6 +18,7 @@ import {
   optionalText,
   read,
   requiredBoolean,
+  requiredNullableText,
   requiredRecord,
   requiredText,
 } from './json-read';
@@ -36,15 +37,25 @@ export function mapItemDetailPopoverDetail(
     throw new Error(`${fieldPath}.contractVersion must be item_detail_popover_detail_v1.`);
   }
 
-  const access = mapAccess(requiredRecord(read(root, 'access'), `${fieldPath}.access`));
-  const itemDetail = requiredRecord(read(root, 'itemDetail'), `${fieldPath}.itemDetail`);
-  const bonusesJson = optionalRecord(read(itemDetail, 'bonuses_json', 'bonusesJson'));
+  const detail = optionalRecord(read(root, 'detail'));
+  const itemDetailValue = read(root, 'itemDetail') ?? read(detail, 'itemDetail');
+  const itemDetailFieldPath = read(root, 'itemDetail') !== undefined
+    ? `${fieldPath}.itemDetail`
+    : `${fieldPath}.detail.itemDetail`;
+  const access = mapAccess(requiredRecord(
+    read(root, 'access') ?? read(detail, 'access'),
+    `${fieldPath}.access`,
+  ));
+  const itemDetail = requiredRecord(itemDetailValue, itemDetailFieldPath);
+  const bonusesJson = optionalRecord(read(itemDetail, 'bonuses_json', 'bonusesJson'))
+    ?? optionalRecord(read(detail, 'bonuses_json', 'bonusesJson'));
   const displayMetaSource = optionalRecord(read(itemDetail, 'displayMeta'))
+    ?? optionalRecord(read(detail, 'displayMeta'))
     ?? optionalRecord(read(bonusesJson, 'displayMeta'));
   const displayMeta = mapDisplayMeta(
     displayMetaSource,
     itemDetail,
-    `${fieldPath}.itemDetail`,
+    itemDetailFieldPath,
   );
   const valueDisplay = mapValueDisplay(
     read(itemDetail, 'valueDisplay')
@@ -52,10 +63,12 @@ export function mapItemDetailPopoverDetail(
     ?? read(displayMetaSource, 'valueDisplay'),
   );
   const requirements = mapRequirementRows(
-    read(bonusesJson, 'requirementsJson')
-    ?? read(bonusesJson, 'requirements')
-    ?? read(itemDetail, 'requirementsJson')
-    ?? read(itemDetail, 'requirements'),
+    rowsValue(read(bonusesJson, 'requirementsJson'))
+    ?? rowsValue(read(bonusesJson, 'requirements'))
+    ?? rowsValue(read(itemDetail, 'requirementsJson'))
+    ?? rowsValue(read(itemDetail, 'requirements'))
+    ?? rowsValue(read(detail, 'requirementsJson'))
+    ?? rowsValue(read(detail, 'requirements')),
   );
   const requirementStatus = mapRequirementStatus(
     optionalRecord(read(bonusesJson, 'requirementStatus'))
@@ -68,31 +81,49 @@ export function mapItemDetailPopoverDetail(
     contractVersion,
     access,
     source: access.accessKind,
-    itemId: requiredText(read(itemDetail, 'item_id', 'itemId'), `${fieldPath}.itemDetail.item_id`),
+    itemId: requiredNullableText(read(itemDetail, 'item_id', 'itemId') ?? null, `${itemDetailFieldPath}.item_id`),
     heroId: optionalText(read(itemDetail, 'hero_id', 'heroId')),
     displayMeta,
     valueDisplay,
-    itemStats: mapStatRows(read(bonusesJson, 'itemStats')),
-    modifierRows: mapModifierRows(
-      read(bonusesJson, 'displayBonusRows')
-      ?? read(bonusesJson, 'bonusRows')
-      ?? read(bonusesJson, 'bonuses')
-      ?? read(bonusesJson, 'modifierRows'),
+    itemStats: mapStatRows(
+      rowsValue(read(bonusesJson, 'itemStats'))
+      ?? rowsValue(read(itemDetail, 'itemStats')),
     ),
-    bonuses: mapModifierRows(read(bonusesJson, 'bonuses')),
-    bonusRows: mapModifierRows(read(bonusesJson, 'bonusRows')),
-    displayBonusRows: mapModifierRows(read(bonusesJson, 'displayBonusRows')),
+    modifierRows: mapModifierRows(
+      rowsValue(read(bonusesJson, 'displayBonusRows'))
+      ?? rowsValue(read(bonusesJson, 'bonusRows'))
+      ?? rowsValue(read(bonusesJson, 'itemStats'), 'bonusRows')
+      ?? rowsValue(read(bonusesJson, 'bonuses'))
+      ?? rowsValue(read(bonusesJson, 'modifierRows'))
+      ?? rowsValue(read(itemDetail, 'displayBonusRows'))
+      ?? rowsValue(read(itemDetail, 'bonusRows'))
+      ?? rowsValue(read(itemDetail, 'itemStats'), 'bonusRows')
+      ?? rowsValue(read(itemDetail, 'bonuses'))
+      ?? rowsValue(read(itemDetail, 'modifierRows')),
+    ),
+    bonuses: mapModifierRows(rowsValue(read(bonusesJson, 'bonuses')) ?? rowsValue(read(itemDetail, 'bonuses'))),
+    bonusRows: mapModifierRows(
+      rowsValue(read(bonusesJson, 'bonusRows'))
+      ?? rowsValue(read(bonusesJson, 'itemStats'), 'bonusRows')
+      ?? rowsValue(read(itemDetail, 'bonusRows'))
+      ?? rowsValue(read(itemDetail, 'itemStats'), 'bonusRows'),
+    ),
+    displayBonusRows: mapModifierRows(
+      rowsValue(read(bonusesJson, 'displayBonusRows'))
+      ?? rowsValue(read(itemDetail, 'displayBonusRows')),
+    ),
     requirements,
-    requirementsJson: mapRequirementRows(read(itemDetail, 'requirementsJson')),
+    requirementsJson: mapRequirementRows(rowsValue(read(itemDetail, 'requirementsJson'))),
     requirementStatus,
     meetsRequirements: requirementStatus.meetsRequirements,
     requirementCount: requirementStatus.requirementCount,
     unmetCount: requirementStatus.unmetCount,
     failuresJson: jsonValue(
       read(bonusesJson, 'failuresJson')
-      ?? read(itemDetail, 'failuresJson'),
+      ?? read(itemDetail, 'failuresJson')
+      ?? read(detail, 'failuresJson'),
     ),
-    metadata: jsonValue(read(bonusesJson, 'metadata')),
+    metadata: jsonValue(read(bonusesJson, 'metadata') ?? read(itemDetail, 'metadata')),
   };
 }
 
@@ -111,8 +142,10 @@ function mapDisplayMeta(
   itemDetail: JsonRecord,
   fieldPath: string,
 ) {
+  const itemId = requiredNullableText(read(itemDetail, 'item_id', 'itemId') ?? null, `${fieldPath}.item_id`);
+
   return {
-    itemId: requiredText(read(itemDetail, 'item_id', 'itemId'), `${fieldPath}.item_id`),
+    itemId,
     itemName: requiredText(
       read(displayMeta, 'itemName') ?? read(itemDetail, 'item_name', 'itemName'),
       `${fieldPath}.item_name`,
@@ -153,7 +186,7 @@ function mapStatRows(value: Json | undefined): ItemDetailPopoverStatRow[] {
   return mapJsonArray(value, (row) => row).map((row, index) => ({
     displaySection: 'item_stats',
     isPrimaryItemStat: true,
-    label: requiredText(read(row, 'label'), `itemStats[${index}].label`),
+    label: requiredText(read(row, 'label', 'displayLabel'), `itemStats[${index}].label`),
     displayValue: requiredText(read(row, 'displayValue'), `itemStats[${index}].displayValue`),
     displayTone: displayTone(read(row, 'displayTone')),
     statKey: optionalText(read(row, 'statKey')) ?? `stat-${index}`,
@@ -190,6 +223,7 @@ function mapModifierRows(value: Json | undefined): ItemDetailPopoverModifierRow[
     rowKind: optionalText(read(row, 'rowKind')) ?? 'bonus',
     aggregated: optionalBoolean(read(row, 'aggregated')) ?? false,
     label: optionalText(read(row, 'label'))
+      ?? optionalText(read(row, 'displayLabel'))
       ?? requiredText(read(row, 'targetLabel'), `bonusRows[${index}].targetLabel`),
     targetLabel: optionalText(read(row, 'targetLabel')),
     targetKey: optionalText(read(row, 'targetKey')) ?? '',
@@ -211,7 +245,7 @@ function mapRequirementRows(value: Json | undefined): ItemDetailPopoverRequireme
   return mapJsonArray(value, (row) => row).map((row, index) => ({
     displaySection: 'requirements',
     displayTone: displayTone(read(row, 'displayTone')),
-    isMet: requiredBoolean(read(row, 'isMet'), `requirements[${index}].isMet`),
+    isMet: optionalBoolean(read(row, 'isMet')) ?? null,
     displayLabel: optionalText(read(row, 'displayLabel'))
       ?? optionalText(read(row, 'displayText'))
       ?? requiredText(read(row, 'shortDisplayText'), `requirements[${index}].displayLabel`),
@@ -316,6 +350,12 @@ function optionalRecord(value: Json | undefined): JsonRecord | null {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
     ? (value as JsonRecord)
     : null;
+}
+
+function rowsValue(value: Json | undefined, key = 'rows'): Json | undefined {
+  const record = optionalRecord(value);
+
+  return record ? read(record, key) : value;
 }
 
 function displayTone(value: Json | undefined): ItemDetailPopoverDisplayTone {

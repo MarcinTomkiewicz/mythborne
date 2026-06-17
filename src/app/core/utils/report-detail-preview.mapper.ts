@@ -66,6 +66,11 @@ export function mapReportDetailPreviewView(input: {
     combatStage,
     narrativeLines: isExplorationSource ? [] : reportNarrativeLines(report),
     sections: isExplorationSource ? [] : reportPreviewSections(report),
+    richTextVisibility: input.detail.access.visibility,
+    publicToken: input.detail.access.visibility === 'public'
+      ? input.detail.access.publicToken
+      : null,
+    rewardRichText: reportRewardRichText(report),
     actions: input.detail.access.visibility === 'private'
       ? mapReportHandoffActions({
           reportId: input.detail.access.reportId,
@@ -111,6 +116,12 @@ function reportExplorationResultNarrative(
   const encounter = presentReportSection(report?.encounterSectionJson);
 
   return trial?.resultNarrativeJson ?? encounter?.resultNarrativeJson ?? null;
+}
+
+function reportRewardRichText(report: ReportDetailCore | null) {
+  const reward = presentReportSection(report?.rewardSectionJson);
+
+  return reward?.rewardRichTextJson ?? null;
 }
 
 function reportIsExplorationSource(input: {

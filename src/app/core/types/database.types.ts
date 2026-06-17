@@ -15214,6 +15214,18 @@ export type Database = {
         Args: { p_payload: Json; p_public_token?: string; p_report_id?: string }
         Returns: Json
       }
+      attach_report_item_reference_ids_to_reward_entries: {
+        Args: { p_entries: Json; p_report_id: string }
+        Returns: Json
+      }
+      attach_report_item_reference_ids_to_rich_text_array: {
+        Args: { p_fragments: Json; p_report_id: string }
+        Returns: Json
+      }
+      attach_report_reward_item_reference_ids: {
+        Args: { p_report_id: string; p_reward_section_json: Json }
+        Returns: Json
+      }
       attach_reward_drop_item_to_game_report: {
         Args: {
           p_item_id: string
@@ -15758,6 +15770,10 @@ export type Database = {
         }
         Returns: Json
       }
+      build_pvp_combat_completion_handoff_json: {
+        Args: { p_request_id?: string; p_session_id: string }
+        Returns: Json
+      }
       build_pvp_combat_context_from_live_session: {
         Args: { p_session_id: string }
         Returns: Json
@@ -15808,6 +15824,22 @@ export type Database = {
           p_locale?: string
           p_message_kind: string
           p_rank_name?: string
+        }
+        Returns: Json
+      }
+      build_pvp_result_outcome_banner_json: {
+        Args: {
+          p_locale?: string
+          p_perspective?: string
+          p_pvp_attack_result_id: string
+        }
+        Returns: Json
+      }
+      build_pvp_result_snapshot_from_pvp_attack_result: {
+        Args: {
+          p_locale?: string
+          p_pvp_attack_result_id: string
+          p_request_id?: string
         }
         Returns: Json
       }
@@ -17941,6 +17973,35 @@ export type Database = {
           updated_at: string
         }[]
       }
+      ensure_pvp_combat_completion_handoff: {
+        Args: { p_request_id?: string; p_session_id: string }
+        Returns: {
+          completed_at: string | null
+          created_at: string
+          current_action_index: number
+          current_actor_participant_id: string | null
+          current_round_number: number
+          current_timing_manifest_json: Json
+          event_count: number
+          final_combat_result_id: string | null
+          id: string
+          metadata_json: Json
+          round_order_json: Json
+          server_id: string
+          source_entity_id: string
+          source_entity_type: string
+          source_type: Database["public"]["Enums"]["combat_source_type"]
+          status_key: string
+          turn_limit: number
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "combat_live_sessions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       ensure_pvp_combat_session: {
         Args: { p_pvp_action_id: string; p_request_id?: string }
         Returns: {
@@ -18540,14 +18601,16 @@ export type Database = {
       formula_random:
         | { Args: never; Returns: number }
         | { Args: { p_max: number; p_min: number }; Returns: number }
-      formula_round_down: {
-        Args: { p_step?: number; p_value: number }
-        Returns: number
-      }
-      formula_round_up: {
-        Args: { p_step?: number; p_value: number }
-        Returns: number
-      }
+      formula_round_down:
+        | { Args: { p_step: number; p_value: number }; Returns: number }
+        | { Args: { p_step: number; p_value: number }; Returns: number }
+        | { Args: { p_step: number; p_value: number }; Returns: number }
+        | { Args: { p_step?: number; p_value: number }; Returns: number }
+      formula_round_up:
+        | { Args: { p_step: number; p_value: number }; Returns: number }
+        | { Args: { p_step: number; p_value: number }; Returns: number }
+        | { Args: { p_step: number; p_value: number }; Returns: number }
+        | { Args: { p_step?: number; p_value: number }; Returns: number }
       formula_trial_manifestation_model_k: {
         Args: {
           p_cap_percent: number
@@ -22619,6 +22682,10 @@ export type Database = {
         Returns: Json
       }
       normalize_locale_key: { Args: { p_locale_key: string }; Returns: string }
+      normalize_pvp_report_labels_in_detail_payload: {
+        Args: { p_payload: Json }
+        Returns: Json
+      }
       notify_level_up_stat_bonus_granted: {
         Args: {
           p_hero_id: string
@@ -23785,6 +23852,39 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      refresh_pvp_attack_result_complete_report_context: {
+        Args: { p_pvp_attack_result_id: string; p_request_id?: string }
+        Returns: {
+          attacker_estate_id: string | null
+          attacker_hero_id: string
+          attacker_level_snapshot: number
+          combat_outcome: Database["public"]["Enums"]["combat_outcome"]
+          combat_result_id: string
+          created_at: string
+          defender_estate_id: string | null
+          defender_hero_id: string
+          defender_level_snapshot: number
+          id: string
+          level_difference: number
+          loser_hero_id: string | null
+          metadata_json: Json
+          notification_context_json: Json
+          outcome_key: string
+          prestige_context_json: Json
+          pvp_action_id: string
+          report_context_json: Json
+          resource_outcome_json: Json
+          reward_context_json: Json
+          server_id: string
+          winner_hero_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pvp_attack_results"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       refresh_pvp_attack_result_prestige_context: {
         Args: { p_pvp_attack_result_id: string; p_reason?: string }
         Returns: {
@@ -24262,6 +24362,15 @@ export type Database = {
       }
       resolve_pvp_prestige_message_kind: {
         Args: { p_points_delta: number }
+        Returns: string
+      }
+      resolve_report_reward_item_reference_id: {
+        Args: {
+          p_item_display_text: string
+          p_item_ordinal?: number
+          p_report_id: string
+          p_source_item_id_text?: string
+        }
         Returns: string
       }
       resolve_reward_item_luck_context: {

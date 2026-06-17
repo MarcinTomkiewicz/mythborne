@@ -22,7 +22,12 @@
         </div>
 
         <p class="color-text text-md lh-16 m-0">
-          <app-rich-text [fragments]="manifestation.narrativeRichText" itemPopoverContext="exploration" />
+          <app-rich-text
+            [fragments]="manifestation.narrativeRichText"
+            [visibility]="view().richTextVisibility"
+            [publicToken]="view().publicToken"
+            itemPopoverContext="exploration"
+          />
         </p>
       </section>
     }
@@ -39,7 +44,12 @@
         </div>
 
         <p class="color-text text-md lh-16 m-0">
-          <app-rich-text [fragments]="handoff.narrativeRichText" itemPopoverContext="exploration" />
+          <app-rich-text
+            [fragments]="handoff.narrativeRichText"
+            [visibility]="view().richTextVisibility"
+            [publicToken]="view().publicToken"
+            itemPopoverContext="exploration"
+          />
         </p>
       </section>
     }
@@ -62,18 +72,33 @@
         }
 
         <p class="color-text text-md lh-16 m-0">
-          <app-rich-text [fragments]="result.narrativeRichText" itemPopoverContext="exploration" />
+          <app-rich-text
+            [fragments]="result.narrativeRichText"
+            [visibility]="view().richTextVisibility"
+            [publicToken]="view().publicToken"
+            itemPopoverContext="exploration"
+          />
         </p>
 
-        @if (rewardRichText(result); as rewardFragments) {
+        @if (explorationRewardRichText(view(), result); as rewardFragments) {
           <p class="color-text text-md lh-16 m-0">
-            <app-rich-text [fragments]="rewardFragments" itemPopoverContext="exploration" />
+            <app-rich-text
+              [fragments]="rewardFragments"
+              [visibility]="view().richTextVisibility"
+              [publicToken]="view().publicToken"
+              itemPopoverContext="exploration"
+            />
           </p>
         }
 
         @if (effectRichText(result); as effectFragments) {
           <p class="color-text text-md lh-16 m-0">
-            <app-rich-text [fragments]="effectFragments" itemPopoverContext="exploration" />
+            <app-rich-text
+              [fragments]="effectFragments"
+              [visibility]="view().richTextVisibility"
+              [publicToken]="view().publicToken"
+              itemPopoverContext="exploration"
+            />
           </p>
         }
       </section>
@@ -100,6 +125,19 @@
 
     @if (view().combatStage; as stage) {
       <app-combat-stage [stage]="stage" />
+    }
+
+    @if (snapshotRewardRichText(view()); as rewardFragments) {
+      <section class="mg-card p-lg flex-col gap-md w-100">
+        <p class="color-text text-md lh-16 m-0">
+          <app-rich-text
+            [fragments]="rewardFragments"
+            [visibility]="view().richTextVisibility"
+            [publicToken]="view().publicToken"
+            itemPopoverContext="exploration"
+          />
+        </p>
+      </section>
     }
 
     @for (section of view().sections; track section.key) {

@@ -1,7 +1,11 @@
 import {
   ReportRewardEntryRow,
+  ReportRewardRichTextSnapshot,
   ReportRewardSection,
-} from '../domain/reports/report.model';
+} from '../domain/reports/report-section.model';
+import {
+  Json,
+} from '../types/database.types';
 import {
   JsonRecord,
   optionalNullableNumber,
@@ -11,9 +15,11 @@ import {
   requiredArray,
   requiredBoolean,
   requiredNullableText,
+  requiredRecord,
   requiredText,
 } from './json-read';
 import { mapNullableEffectDisplay } from './report-effect-section.mapper';
+import { mapOptionalRichTextFragments } from './rich-text.mapper';
 
 export function mapRewardSection(record: JsonRecord, field: string): ReportRewardSection {
   const summary = read(record, 'summary');
@@ -32,8 +38,36 @@ export function mapRewardSection(record: JsonRecord, field: string): ReportRewar
     entryCount: optionalNullableNumber(read(record, 'entryCount'), `${field}.entryCount`),
     entries: requiredArray(read(record, 'entries'), `${field}.entries`)
       .map((row, index) => mapRewardEntry(row, `${field}.entries[${index}]`)),
+    rewardRichTextJson: mapOptionalRewardRichText(
+      read(record, 'rewardRichTextJson'),
+      `${field}.rewardRichTextJson`,
+    ),
     narrativeLines: optionalTextArray(read(record, 'narrativeLines'), `${field}.narrativeLines`),
     message: optionalNullableText(read(record, 'message'), `${field}.message`),
+  };
+}
+
+function mapOptionalRewardRichText(
+  value: Json | undefined,
+  field: string,
+): ReportRewardRichTextSnapshot | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const record = requiredRecord(value, field);
+
+  return {
+    inlineRichText: mapOptionalRichTextFragments(
+      read(record, 'inlineRichText'),
+      `${field}.inlineRichText`,
+      requireReportRewardRichTextKind,
+    ) ?? [],
+    sentenceRichText: mapOptionalRichTextFragments(
+      read(record, 'sentenceRichText'),
+      `${field}.sentenceRichText`,
+      requireReportRewardRichTextKind,
+    ) ?? [],
   };
 }
 
@@ -55,4 +89,22 @@ function mapRewardEntry(row: JsonRecord, field: string): ReportRewardEntryRow {
     playerSummary: requiredNullableText(read(row, 'playerSummary'), `${field}.playerSummary`),
     createdAt: optionalNullableText(read(row, 'createdAt'), `${field}.createdAt`),
   };
+}
+
+function requireReportRewardRichTextKind(value: string, field: string): string {
+  if (
+    value === 'text' ||
+    value === 'patronRef' ||
+    value === 'trialTitleRef' ||
+    value === 'experience' ||
+    value === 'resource' ||
+    value === 'itemRef' ||
+    value === 'effect' ||
+    value === 'stat' ||
+    value === 'value'
+  ) {
+    return value;
+  }
+
+  throw new Error(`${field} has unsupported value: ${value}.`);
 }

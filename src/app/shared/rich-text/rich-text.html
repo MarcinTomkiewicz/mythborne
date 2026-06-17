@@ -10,6 +10,9 @@
     >
       <span [class]="fragmentToneClass(fragment)">{{ fragment.text }}</span>
     </app-item-detail-popover>
+  } @else if (missingItemReferenceDiagnostic(fragment); as diagnostic) {
+    <span [class]="fragmentToneClass(fragment)">{{ fragment.text }}</span>
+    <span class="warn-text text-xs">{{ diagnostic }}</span>
   } @else {
     <span [class]="fragmentToneClass(fragment)">{{ fragment.text }}</span>
   }
