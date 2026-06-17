@@ -84,8 +84,12 @@ export function mapNonPvpCanonicalReportCombatStageView(
   } = {},
 ): CombatStageViewModel | null {
   const section = presentReportCombatSection(report);
-  const detail = report && section && context.combatResultId
-    ? combatDetailFromCanonicalReport(report, section, context.combatResultId)
+  const detail = report && section
+    ? combatDetailFromCanonicalReport(
+        report,
+        section,
+        context.combatResultId ?? report.publicToken ?? report.createdAt,
+      )
     : null;
 
   if (!detail || !report || !section) {

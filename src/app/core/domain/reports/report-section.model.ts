@@ -171,6 +171,7 @@ export interface ReportCombatAttackRow {
 }
 
 export interface ReportCombatSection {
+  combatResultId: string | null;
   sourceLabel: string;
   title: string;
   summary: string;

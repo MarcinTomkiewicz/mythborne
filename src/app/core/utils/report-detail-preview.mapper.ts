@@ -3,7 +3,7 @@ import type {
   ExplorationResultNarrativeSnapshot,
 } from '../domain/exploration/exploration-result-copy.model';
 import type {
-  PrivateReportDetailPage,
+  ReportDetail,
   ReportDetailCore,
 } from '../domain/reports/report-detail.model';
 import type {
@@ -22,7 +22,7 @@ import { mapReportHandoffActions } from './report-handoff-actions.mapper';
 import { presentReportSection } from './report-section-common.mapper';
 
 export function mapReportDetailPreviewView(input: {
-  detail: PrivateReportDetailPage;
+  detail: ReportDetail;
   activeHeroId: string | null;
 }): ReportDetailPreviewView {
   if (input.detail.domainContextJson.reportDomainKey === 'pvp') {
@@ -60,14 +60,18 @@ export function mapReportDetailPreviewView(input: {
           explorationResultNarrative,
         })
       : [],
-    outcomeBanner: isExplorationSource ? null : reportOutcomeBanner(report, input.activeHeroId),
+    outcomeBanner: isExplorationSource
+      ? null
+      : reportOutcomeBanner(report, input.activeHeroId, input.detail.access.visibility),
     combatStage,
     narrativeLines: isExplorationSource ? [] : reportNarrativeLines(report),
     sections: isExplorationSource ? [] : reportPreviewSections(report),
-    actions: mapReportHandoffActions({
-      reportId: input.detail.access.reportId,
-      publicToken: report.publicToken ?? null,
-    }),
+    actions: input.detail.access.visibility === 'private'
+      ? mapReportHandoffActions({
+          reportId: input.detail.access.reportId,
+          publicToken: report.publicToken ?? null,
+        })
+      : null,
   };
 }
 function reportExplorationSourceKind(
@@ -159,26 +163,32 @@ function missingExplorationNarrativeFields(input: {
 }
 
 function reportCombatStage(input: {
-  detail: PrivateReportDetailPage;
+  detail: ReportDetail;
   activeHeroId: string | null;
 }): CombatStageViewModel | null {
+  const combat = presentReportSection(input.detail.report.combatSectionJson);
+
   return mapNonPvpCanonicalReportCombatStageView(input.detail.report, {
     activeHeroId: input.activeHeroId,
     activeHeroPortraitSrc: null,
-    combatResultId: input.detail.domainContextJson.combat?.combatResultId ?? null,
+    combatResultId: combat?.combatResultId
+      ?? input.detail.domainContextJson.exploration?.combatResultId
+      ?? input.detail.domainContextJson.combat?.combatResultId
+      ?? null,
   });
 }
 
 function reportOutcomeBanner(
   report: ReportDetailCore | null,
   activeHeroId: string | null,
+  visibility: ReportDetail['access']['visibility'],
 ): ReportDetailPreviewOutcomeBanner | null {
   const combat = presentReportSection(report?.combatSectionJson);
 
   return combat
     ? {
         title: combat.outcomeLabel,
-        tone: combatOutcomeTone(combat, activeHeroId),
+        tone: combatOutcomeTone(combat, activeHeroId, visibility),
       }
     : null;
 }
@@ -186,7 +196,12 @@ function reportOutcomeBanner(
 function combatOutcomeTone(
   section: ReportCombatSection,
   activeHeroId: string | null,
+  visibility: ReportDetail['access']['visibility'],
 ): ReportDetailPreviewOutcomeTone {
+  if (visibility === 'public') {
+    return 'neutral';
+  }
+
   if (!activeHeroId) {
     throw new Error(
       'Active hero id is required to resolve get_report_detail.report.combatSectionJson outcome tone.',

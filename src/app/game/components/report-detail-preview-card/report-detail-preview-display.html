@@ -128,9 +128,9 @@
 
   }
 
-  @if (showActions()) {
+  @if (showActions() && view().actions; as actions) {
     <app-report-handoff-actions
-      [actions]="view().actions"
+      [actions]="actions"
       [directReportLabel]="directReportLabel()"
       [publicReportCopyLabel]="publicReportCopyLabel()"
     />

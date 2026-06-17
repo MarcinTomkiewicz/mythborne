@@ -18,7 +18,7 @@ export interface ReportDetailPreviewView {
   combatStage: CombatStageViewModel | null;
   narrativeLines: readonly string[];
   sections: readonly ReportDetailPreviewSection[];
-  actions: ReportHandoffActionsViewModel;
+  actions: ReportHandoffActionsViewModel | null;
 }
 
 export interface ReportDetailPreviewSection {

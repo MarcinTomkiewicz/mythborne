@@ -21,6 +21,10 @@ import {
 
 export function mapCombatSection(record: JsonRecord, field: string): ReportCombatSection {
   return {
+    combatResultId: optionalNullableText(
+      read(record, 'combatResultId', 'combat_result_id'),
+      `${field}.combatResultId`,
+    ),
     sourceLabel: requiredText(read(record, 'sourceLabel'), `${field}.sourceLabel`),
     title: requiredText(read(record, 'title'), `${field}.title`),
     summary: requiredText(read(record, 'summary'), `${field}.summary`),

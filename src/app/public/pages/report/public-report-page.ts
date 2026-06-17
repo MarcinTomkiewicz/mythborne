@@ -3,10 +3,11 @@ import { ActivatedRoute } from '@angular/router';
 import { GamePageSummaryRow } from '../../../core/interfaces/game-page-summary-row.interface';
 import { GamePageHeader } from '../../../shared/game-page-header/game-page-header';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
-import { ReportDetailSections } from '../../../game/pages/reports/report-detail-sections';
 import { PublicReportDetail } from '../../../core/domain/reports/report-detail.model';
 import { isPublicPvpReportDetail } from '../../../core/utils/pvp-report-domain-context';
+import { mapReportDetailPreviewView } from '../../../core/utils/report-detail-preview.mapper';
 import { PvpPublicReportDomainContent } from '../../components/pvp-public-report-domain-content/pvp-public-report-domain-content';
+import { ReportDetailPreviewDisplay } from '../../../game/components/report-detail-preview-card/report-detail-preview-display';
 import { PublicReportPageState } from './public-report-page.state';
 
 @Component({
@@ -16,7 +17,7 @@ import { PublicReportPageState } from './public-report-page.state';
     GamePageHeader,
     LoadingOverlay,
     PvpPublicReportDomainContent,
-    ReportDetailSections,
+    ReportDetailPreviewDisplay,
   ],
   providers: [PublicReportPageState],
   templateUrl: './public-report-page.html',
@@ -58,6 +59,16 @@ export class PublicReportPage implements OnInit {
         ),
       },
     ];
+  });
+  readonly publicSnapshotPreview = computed(() => {
+    const detail = this.page.detail();
+
+    return detail?.report && !isPublicPvpReportDetail(detail)
+      ? mapReportDetailPreviewView({
+          detail,
+          activeHeroId: null,
+        })
+      : null;
   });
 
   ngOnInit(): void {
