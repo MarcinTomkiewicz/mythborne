@@ -86,7 +86,7 @@
           @if (active.isTravelPhase || (active.isBlockingRuntimeActivity && !active.isManualWindow)) {
             <app-pending-timer-oracle
               [timer]="timer()"
-              [isReady]="isTimerReady()"
+              [isReady]="active.actionKind === 'attack' && active.isTravelPhase ? isArrivalReady() : isTimerReady()"
               [isResolving]="false"
               [isUpdating]="isLoading()"
               [timerAriaLabel]="timeLabel(active)"

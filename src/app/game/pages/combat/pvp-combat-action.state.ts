@@ -4,10 +4,10 @@ import { finalize } from 'rxjs';
 import { CombatSurfaceDecisionDeadline } from '../../../core/domain/combat/combat-display.model';
 import { activeHeroContextKey } from '../../../core/domain/hero/active-hero-context';
 import {
+  isPvpAttackArrivalReady,
   pvpActiveActionErrorMessage,
   pvpActiveActionFactRows,
   pvpActiveActionManualDecisionDeadlineAt,
-  pvpActiveActionRefreshAt,
   pvpActiveActionTiming,
   shouldShowActivePvpOffer,
 } from '../../../core/domain/pvp/pvp-active-action-display.mapper';
@@ -29,8 +29,6 @@ import {
 } from '../../features/pvp/utils/pvp-combat-source-ref';
 import { PvpCombatCopyState } from '../../features/pvp/state/pvp-combat-copy.state';
 
-const ACTIVE_OFFER_REFRESH_INTERVAL_MS = 5000;
-
 @Injectable()
 export class PvpCombatActionState {
   private readonly activeHero = inject(ActiveHero);
@@ -40,8 +38,6 @@ export class PvpCombatActionState {
   private readonly playerPvp = inject(PlayerPvp);
   private readonly requests = new RequestToken();
   private readonly nowMs = signal(Date.now());
-  private elapsedRefreshKey: string | null = null;
-  private lastElapsedRefreshMs = 0;
   private activeContextKey: string | null = null;
 
   readonly copy = signal<PvpActionCopy | null>(pvpActionCopyKeyFallback());
@@ -90,6 +86,11 @@ export class PvpCombatActionState {
       nowMs: this.nowMs(),
     });
   });
+  readonly isAttackArrivalReady = computed(() => {
+    const offer = this.visibleOffer();
+
+    return !!offer && isPvpAttackArrivalReady(offer, this.nowMs());
+  });
   readonly factRows = computed(() => {
     const offer = this.visibleOffer();
     const copy = this.copy();
@@ -130,33 +131,6 @@ export class PvpCombatActionState {
     this.destroyRef.onDestroy(() => clearInterval(intervalId));
 
     effect(() => {
-      const offer = this.offer();
-      const nowMs = this.nowMs();
-      const refreshAt = offer ? pvpActiveActionRefreshAt(offer) : null;
-
-      if (
-        !offer ||
-        !refreshAt ||
-        !pendingTimerHasElapsed({ resolvesAt: refreshAt, nowMs }) ||
-        this.isLoading()
-      ) {
-        return;
-      }
-
-      const refreshKey = `${offer.pvpActionId}:${offer.phase}:${refreshAt}`;
-
-      if (
-        this.elapsedRefreshKey === refreshKey &&
-        nowMs - this.lastElapsedRefreshMs < ACTIVE_OFFER_REFRESH_INTERVAL_MS
-      ) {
-        return;
-      }
-
-      this.elapsedRefreshKey = refreshKey;
-      this.lastElapsedRefreshMs = nowMs;
-      queueMicrotask(() => this.load());
-    });
-    effect(() => {
       const contextKey = activeHeroContextKey(this.activeHero.state());
 
       if (contextKey === this.activeContextKey) {
@@ -167,8 +141,6 @@ export class PvpCombatActionState {
       this.requests.next();
       this.offer.set(null);
       this.error.set(null);
-      this.elapsedRefreshKey = null;
-      this.lastElapsedRefreshMs = 0;
 
       if (contextKey) {
         queueMicrotask(() => this.load());

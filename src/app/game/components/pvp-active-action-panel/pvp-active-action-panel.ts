@@ -41,6 +41,7 @@ export class PvpActiveActionPanel {
   readonly factRows = input.required<readonly PvpActiveActionFactRow[]>();
   readonly isLoading = input(false);
   readonly isTimerReady = input(false);
+  readonly isArrivalReady = input(false);
   readonly renderCombatHost = input(false);
   readonly refresh = output<void>();
   readonly combatCompletion = signal<MinigameCompletionEvent | null>(null);

@@ -1,10 +1,10 @@
-import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
+import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
 import {
+  isPvpAttackArrivalReady,
   pvpActiveActionErrorMessage,
   pvpActiveActionFactRows,
-  pvpActiveActionRefreshAt,
   pvpActiveActionTiming,
   shouldShowActivePvpOffer,
 } from '../../../../core/domain/pvp/pvp-active-action-display.mapper';
@@ -28,7 +28,6 @@ import { RequestToken } from '../../../../core/utils/request-token';
 import { PvpCombatCopyState } from './pvp-combat-copy.state';
 import { PvpSpyReportState } from './pvp-spy-report.state';
 
-const ELAPSED_REFRESH_INTERVAL_MS = 5000;
 @Injectable()
 export class PvpActiveActionState {
   private readonly activeHero = inject(ActiveHero);
@@ -40,8 +39,6 @@ export class PvpActiveActionState {
   private readonly requests = new RequestToken();
   private readonly nowMs = signal(Date.now());
   private readonly errorLabel = signal('');
-  private elapsedRefreshKey: string | null = null;
-  private lastElapsedRefreshMs = 0;
   private activeContextKey: string | null = null;
 
   readonly isLoading = signal(false);
@@ -78,6 +75,11 @@ export class PvpActiveActionState {
       nowMs: this.nowMs(),
     });
   });
+  readonly isAttackArrivalReady = computed(() => {
+    const offer = this.visibleOffer();
+
+    return !!offer && isPvpAttackArrivalReady(offer, this.nowMs());
+  });
   readonly factRows = computed(() => {
     const offer = this.visibleOffer();
     const copy = this.copy();
@@ -93,41 +95,6 @@ export class PvpActiveActionState {
   constructor() {
     const intervalId = setInterval(() => this.nowMs.set(Date.now()), 1000);
     this.destroyRef.onDestroy(() => clearInterval(intervalId));
-
-    effect(() => {
-      const offer = this.visibleOffer();
-      const nowMs = this.nowMs();
-      const refreshAt = offer ? pvpActiveActionRefreshAt(offer) : null;
-
-      if (
-        !offer
-        || !refreshAt
-        || !pendingTimerHasElapsed({ resolvesAt: refreshAt, nowMs })
-        || this.isLoading()
-      ) {
-        return;
-      }
-
-      const refreshKey = `${offer.pvpActionId}:${offer.phase}:${refreshAt}`;
-
-      if (
-        this.elapsedRefreshKey === refreshKey &&
-        nowMs - this.lastElapsedRefreshMs < ELAPSED_REFRESH_INTERVAL_MS
-      ) {
-        return;
-      }
-
-      this.elapsedRefreshKey = refreshKey;
-      this.lastElapsedRefreshMs = nowMs;
-      queueMicrotask(() => {
-        if (offer.actionKind === 'spy') {
-          this.spyReport.prepare(offer);
-          return;
-        }
-
-        this.load();
-      });
-    });
 
     this.loadCopy();
   }
