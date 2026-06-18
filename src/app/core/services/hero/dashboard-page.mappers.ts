@@ -1,6 +1,7 @@
 import {
   HeroDashboardDisplayDamageRow,
   HeroDashboardDisplayStatRow,
+  HeroDashboardDisplayValueSegment,
   HeroDashboardStatTone,
   HeroDashboardRuntimeStatsReadModel,
 } from '../../domain/hero/hero-dashboard-runtime-stats.model';
@@ -74,7 +75,8 @@ function orderDerivedStats(
 }
 
 function damageRow(row: HeroDashboardDisplayDamageRow): DashboardDerivedStatRow {
-  const parts = damageParts(row);
+  const segmentParts = displaySegmentParts(row.displaySegments);
+  const parts = segmentParts.length ? segmentParts : damageParts(row);
   const value = parts.map((part) => part.text).join('');
 
   return {
@@ -89,16 +91,33 @@ function damageRow(row: HeroDashboardDisplayDamageRow): DashboardDerivedStatRow 
 }
 
 function derivedStatRow(row: HeroDashboardDisplayStatRow): DashboardDerivedStatRow {
+  const segmentParts = displaySegmentParts(row.displaySegments);
+
   return {
     key: row.statKey,
     label: row.label,
-    value: row.displayValue || null,
-    valueClass: colorableToneTextClass(row.tone, row.colorableFinalValue, 'text-md'),
-    parts: valueParts(
-      row.displayValue,
-      row.colorableFinalValue ? row.tone : 'neutral',
-    ),
+    value: segmentParts.length
+      ? segmentParts.map((part) => part.text).join('')
+      : row.displayValue || null,
+    valueClass: segmentParts.length
+      ? 'text-md'
+      : colorableToneTextClass(row.tone, row.colorableFinalValue, 'text-md'),
+    parts: segmentParts.length
+      ? segmentParts
+      : valueParts(
+        row.displayValue,
+        row.colorableFinalValue ? row.tone : 'neutral',
+      ),
   };
+}
+
+function displaySegmentParts(
+  segments: HeroDashboardDisplayValueSegment[] | undefined,
+): DashboardStatValuePart[] {
+  return segments?.map((segment) => ({
+    text: segment.text,
+    className: toneTextClass(segment.tone, 'text-md'),
+  })) ?? [];
 }
 
 function damageParts(row: HeroDashboardDisplayDamageRow): DashboardStatValuePart[] {

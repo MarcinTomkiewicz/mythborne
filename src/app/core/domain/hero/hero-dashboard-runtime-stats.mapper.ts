@@ -9,10 +9,12 @@ import {
   optionalNumber,
   optionalText,
   read,
+  requiredText,
 } from '../../utils/json-read';
 import {
   HeroDashboardDisplayDamageRow,
   HeroDashboardDisplayDamageValue,
+  HeroDashboardDisplayValueSegment,
   HeroDashboardDisplayStatRow,
   HeroDashboardDisplayStats,
   HeroDashboardRuntimeStatsReadModel,
@@ -72,19 +74,20 @@ function mapDisplayStatRow(row: JsonRecord): HeroDashboardDisplayStatRow {
     'valueLabel',
     'value_label',
   )) ?? displayText(finalValue);
+  const displaySegments = mapDisplayValueSegments(row);
 
   return {
     statKey,
     label: optionalText(read(row, 'label')) ?? statKey,
     displayValue,
-    finalValue,
-    tone: statTone(read(row, 'tone')),
+    tone: statTone(read(row, 'tone', 'displayTone', 'display_tone')),
     colorableFinalValue: optionalBoolean(read(
       row,
       'colorableFinalValue',
       'colorable_final_value',
     )) ?? false,
     sortOrder: optionalNumber(read(row, 'sortOrder', 'sort_order')) ?? 0,
+    ...(displaySegments.length ? { displaySegments } : {}),
   };
 }
 
@@ -99,6 +102,7 @@ function mapDisplayDamageRow(row: JsonRecord): HeroDashboardDisplayDamageRow {
     'attackSourceKey',
     'attack_source_key',
   )) ?? '';
+  const displaySegments = mapDisplayValueSegments(row);
 
   return {
     key,
@@ -110,22 +114,41 @@ function mapDisplayDamageRow(row: JsonRecord): HeroDashboardDisplayDamageRow {
       'name',
       'slotLabel',
       'slot_label',
-    )) ?? 'Damage',
+    )) ?? 'dashboard.displayStats.damageRows.label',
     displayValue: optionalText(read(row, 'displayValue', 'display_value')) ?? '',
-    baseDamage: damageValue(read(row, 'baseDamage', 'base_damage')),
     finalDamage: damageValue(read(row, 'finalDamage', 'final_damage')),
-    minDelta: optionalNumber(read(row, 'minDelta', 'min_delta')),
-    maxDelta: optionalNumber(read(row, 'maxDelta', 'max_delta')),
     minTone: statTone(read(row, 'minTone', 'min_tone')),
     maxTone: statTone(read(row, 'maxTone', 'max_tone')),
-    tone: statTone(read(row, 'tone')),
+    tone: statTone(read(row, 'tone', 'displayTone', 'display_tone')),
     colorableFinalValue: optionalBoolean(read(
       row,
       'colorableFinalValue',
       'colorable_final_value',
     )) ?? false,
     sortOrder: optionalNumber(read(row, 'sortOrder', 'sort_order')) ?? 0,
+    ...(displaySegments.length ? { displaySegments } : {}),
   };
+}
+
+function mapDisplayValueSegments(row: JsonRecord): HeroDashboardDisplayValueSegment[] {
+  return mapJsonArray(
+    read(
+      row,
+      'displaySegments',
+      'display_segments',
+      'displayValueSegments',
+      'display_value_segments',
+      'valueParts',
+      'value_parts',
+    ),
+    (segment) => ({
+      text: requiredText(
+        read(segment, 'text', 'displayValue', 'display_value'),
+        'displaySegments.text',
+      ),
+      tone: statTone(read(segment, 'tone')),
+    }),
+  );
 }
 
 function damageValue(value: Json | undefined): HeroDashboardDisplayDamageValue {

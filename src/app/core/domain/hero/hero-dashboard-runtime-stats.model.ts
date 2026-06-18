@@ -2,14 +2,19 @@ import type { StatTone } from '../../utils/stat-tone-class';
 
 export type HeroDashboardStatTone = StatTone;
 
+export interface HeroDashboardDisplayValueSegment {
+  text: string;
+  tone: HeroDashboardStatTone;
+}
+
 export interface HeroDashboardDisplayStatRow {
   statKey: string;
   label: string;
   displayValue: string;
-  finalValue: string | number | null;
   tone: HeroDashboardStatTone;
   colorableFinalValue: boolean;
   sortOrder: number;
+  displaySegments?: HeroDashboardDisplayValueSegment[];
 }
 
 export interface HeroDashboardDisplayDamageValue {
@@ -21,15 +26,13 @@ export interface HeroDashboardDisplayDamageRow {
   key: string;
   label: string;
   displayValue: string;
-  baseDamage: HeroDashboardDisplayDamageValue;
   finalDamage: HeroDashboardDisplayDamageValue;
-  minDelta: number | null;
-  maxDelta: number | null;
   minTone: HeroDashboardStatTone;
   maxTone: HeroDashboardStatTone;
   tone: HeroDashboardStatTone;
   colorableFinalValue: boolean;
   sortOrder: number;
+  displaySegments?: HeroDashboardDisplayValueSegment[];
 }
 
 export interface HeroDashboardDisplayStats {
