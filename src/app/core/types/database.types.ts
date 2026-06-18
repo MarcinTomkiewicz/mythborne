@@ -14817,6 +14817,18 @@ export type Database = {
         }
         Returns: number
       }
+      apply_item_detail_damage_display_segments: {
+        Args: { p_row: Json }
+        Returns: Json
+      }
+      apply_item_detail_final_stats_display_segments: {
+        Args: { p_final_stats: Json }
+        Returns: Json
+      }
+      apply_item_detail_item_stats_display_segments: {
+        Args: { p_rows: Json }
+        Returns: Json
+      }
       apply_item_detail_popover_item_stats_filter: {
         Args: { p_response: Json }
         Returns: Json
@@ -14883,6 +14895,10 @@ export type Database = {
       }
       apply_player_estate_buildings_resource_cost_status_json: {
         Args: { p_buildings_json: Json; p_hero_id: string }
+        Returns: Json
+      }
+      apply_public_item_popover_canonical_item_stats: {
+        Args: { p_detail: Json }
         Returns: Json
       }
       apply_pvp_attack_result_prestige: {
@@ -15690,6 +15706,17 @@ export type Database = {
           p_server_id: string
           p_suffix_affix_id: string
           p_viewer_hero_id: string
+        }
+        Returns: Json
+      }
+      build_item_detail_popover_component_item_stat_summary: {
+        Args: {
+          p_base_id: string
+          p_item_id?: string
+          p_prefix_affix_id?: string
+          p_quality_key: string
+          p_report_item_reference_id?: string
+          p_suffix_affix_id?: string
         }
         Returns: Json
       }
@@ -22366,6 +22393,14 @@ export type Database = {
       }
       item_detail_popover_current_display_text: {
         Args: { p_value: string }
+        Returns: string
+      }
+      item_detail_popover_jsonb_numeric: {
+        Args: { p_key: string; p_row: Json }
+        Returns: number
+      }
+      item_detail_popover_segment_tone: {
+        Args: { p_base_value: number; p_value: number }
         Returns: string
       }
       item_popover_copy: { Args: never; Returns: Json }

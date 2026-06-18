@@ -1,5 +1,4 @@
 import {
-  ItemDetailPopoverContext,
   ItemDetailPopoverRequirementState,
   ItemDetailPopoverValueRow,
   ItemDetailPopoverViewModel,
@@ -11,15 +10,21 @@ import {
 
 export function itemDetailPopoverViewModel(
   detail: ItemDetailPopoverDetailReadModel,
-  context: ItemDetailPopoverContext = currentContext(),
 ): ItemDetailPopoverViewModel {
   const displayMeta = detail.displayMeta;
+  const itemStats = detail.itemStats.map((row, index) => ({
+    key: `stat-${index}`,
+    label: row.label,
+    displayValue: row.displayValue,
+    valueParts: row.displaySegments.length
+      ? row.displaySegments
+      : valueParts(row.displayValue, row.displayTone),
+    valueTone: row.displaySegments.length ? 'neutral' : row.displayTone,
+  }));
 
   return {
     itemId: detail.itemId,
     name: displayMeta.itemName,
-    description: null,
-    statusLabel: null,
     headerMetaLabels: [
       displayMeta.qualityLabel,
       displayMeta.baseTypeLabel,
@@ -27,28 +32,18 @@ export function itemDetailPopoverViewModel(
     ].filter((label): label is string => Boolean(label)),
     iconClass: `pi pi-${displayMeta.displayIconKey}`,
     valueDisplay: detail.valueDisplay ?? displayMeta.valueDisplay,
-    itemStats: detail.itemStats.map((row, index) => ({
-      key: `stat-${index}`,
-      label: row.label,
-      displayValue: row.displayValue,
-      valueParts: valueParts(row.displayValue, row.displayTone),
-      sourceLabel: null,
-      isBoosted: row.displayTone === 'positive',
-      valueTone: row.displayTone,
-    })),
+    itemStats,
     modifierRows: detail.modifierRows.map((row, index) => ({
       key: `modifier-${index}`,
       label: row.label,
       displayValue: row.displayValue,
       valueParts: valueParts(row.displayValue, row.displayTone),
-      sourceLabel: null,
-      isBoosted: row.displayTone === 'positive',
       valueTone: row.displayTone,
     })),
     requirementRows: detail.requirements.map((row, index) => ({
       key: `requirement-${index}`,
-      label: row.compactDisplay?.label ?? row.displayLabel,
-      requiredValue: row.compactDisplay?.requiredValue ?? row.requiredDisplayValue,
+      label: row.compactDisplay?.label || row.displayLabel,
+      requiredValue: row.compactDisplay?.requiredValue || row.requiredDisplayValue,
       currentValue: row.isMet === false
         ? row.currentDisplayText
           ?? row.currentValueLabel
@@ -56,10 +51,8 @@ export function itemDetailPopoverViewModel(
           ?? row.currentDisplayValue
         : null,
       isMet: row.isMet,
-      failureReason: null,
     })),
     requirementState: requirementState(detail),
-    context,
     isLoading: false,
     error: null,
   };
@@ -81,29 +74,18 @@ function requirementState(
   const meetsRequirements = status.meetsRequirements;
 
   if (count === 0) {
-    return { kind: 'met', label: null, details: null };
+    return { kind: 'met' };
   }
 
   if (meetsRequirements === true) {
-    return { kind: 'met', label: null, details: null };
+    return { kind: 'met' };
   }
 
   if (meetsRequirements === false || (unmetCount ?? 0) > 0) {
-    return { kind: 'not_met', label: null, details: null };
+    return { kind: 'not_met' };
   }
 
   return {
     kind: 'unknown',
-    label: null,
-    details: null,
-  };
-}
-
-function currentContext(): ItemDetailPopoverContext {
-  return {
-    kind: 'current',
-    label: null,
-    capturedAt: null,
-    sourceLabel: null,
   };
 }

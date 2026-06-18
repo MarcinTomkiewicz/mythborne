@@ -35,7 +35,6 @@ export class ItemDetailPopover {
   readonly publicToken = input<string | null>(null);
   readonly itemReferenceId = input<string | null>(null);
   readonly contextSourceLabel = input<string | null>(null);
-  readonly capturedAt = input<string | null>(null);
   readonly triggerLabel = input<string | null>(null);
   readonly triggerIcon = input<string | null>(null);
   readonly triggerSeverity = input<'secondary' | 'info' | 'success' | 'warn' | 'danger'>('secondary');
@@ -55,14 +54,12 @@ export class ItemDetailPopover {
       && (!itemId || detail.itemId === itemId)
       && this.loadedItemKey() === this.currentItemKey()
     ) {
-      return itemDetailPopoverViewModel(detail, this.viewContext());
+      return itemDetailPopoverViewModel(detail);
     }
 
     return {
       itemId,
       name: this.fallbackName() ?? '',
-      description: null,
-      statusLabel: null,
       headerMetaLabels: [],
       iconClass: 'pi pi-box',
       valueDisplay: null,
@@ -70,7 +67,6 @@ export class ItemDetailPopover {
       modifierRows: [],
       requirementRows: [],
       requirementState: null,
-      context: this.viewContext(),
       isLoading: this.status() === 'loading',
       error: this.playerSafeError(),
     };
@@ -212,15 +208,6 @@ export class ItemDetailPopover {
     return target instanceof Element && Boolean(target.closest(
       'button, a, input, select, textarea, p-button, p-checkbox, p-select',
     ));
-  }
-
-  private viewContext() {
-    return {
-      kind: 'current' as const,
-      label: null,
-      capturedAt: this.capturedAt(),
-      sourceLabel: this.contextSourceLabel(),
-    };
   }
 
   private currentItemKey(): string {

@@ -68,10 +68,6 @@
     } @else if (detail.error) {
       <span class="warn-text">{{ detail.error }}</span>
     } @else if (popoverCopy) {
-      @if (detail.description) {
-        <p class="mb-0">{{ detail.description }}</p>
-      }
-
       @if (detail.itemStats.length) {
         <section class="mg-item-popover__section flex-col gap-xs w-100 pb-sm">
           <strong class="mg-item-popover__section-title">{{ popoverCopy.sections.itemStats }}</strong>
@@ -143,9 +139,6 @@
               @if (requirement.currentValue) {
                 <span class="color-muted text-xs font-bold">{{ requirement.currentValue }}</span>
               }
-              @if (requirement.failureReason) {
-                <span class="color-muted text-xs font-bold">{{ requirement.failureReason }}</span>
-              }
             </span>
             @if (requirement.requiredValue) {
               <strong class="mg-item-popover__row-value text-md">
@@ -154,11 +147,7 @@
             }
           </div>
         } @empty {
-          @if (detail.requirementState?.kind === 'met') {
-            <span class="mg-item-popover__empty color-muted text-sm">{{ popoverCopy.empty.requirements }}</span>
-          } @else {
-            <span class="mg-item-popover__empty color-muted text-sm">{{ popoverCopy.empty.requirements }}</span>
-          }
+          <span class="mg-item-popover__empty color-muted text-sm">{{ popoverCopy.empty.requirements }}</span>
         }
       </section>
       }

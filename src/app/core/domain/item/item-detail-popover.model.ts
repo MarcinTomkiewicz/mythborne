@@ -3,7 +3,6 @@ import type { PlayerItemDisplayCoreValueDisplay } from './player-item-display-co
 export type ItemDetailPopoverRequirementKind =
   | 'met'
   | 'not_met'
-  | 'not_applicable'
   | 'unknown';
 
 export interface ItemDetailPopoverValueRow {
@@ -11,8 +10,6 @@ export interface ItemDetailPopoverValueRow {
   label: string;
   displayValue: string;
   valueParts: ItemDetailPopoverValuePart[];
-  sourceLabel: string | null;
-  isBoosted: boolean;
   valueTone: string;
 }
 
@@ -27,20 +24,10 @@ export interface ItemDetailPopoverRequirementRow {
   requiredValue: string | null;
   currentValue: string | null;
   isMet: boolean | null;
-  failureReason: string | null;
 }
 
 export interface ItemDetailPopoverRequirementState {
   kind: ItemDetailPopoverRequirementKind;
-  label: string | null;
-  details: string | null;
-}
-
-export interface ItemDetailPopoverContext {
-  kind: 'current';
-  label: string | null;
-  capturedAt: string | null;
-  sourceLabel: string | null;
 }
 
 export type ItemPopoverContextKey =
@@ -49,8 +36,7 @@ export type ItemPopoverContextKey =
   | 'auction'
   | 'trade'
   | 'exploration'
-  | 'public_report'
-  | string;
+  | 'public_report';
 
 export interface ItemDetailPopoverCopy {
   contractVersion: 'item_detail_popover_copy_v1';
@@ -93,8 +79,6 @@ export interface ItemDetailPopoverCopyAccess {
 export interface ItemDetailPopoverViewModel {
   itemId: string | null;
   name: string;
-  description: string | null;
-  statusLabel: string | null;
   headerMetaLabels: string[];
   iconClass: string;
   valueDisplay: PlayerItemDisplayCoreValueDisplay | null;
@@ -102,7 +86,6 @@ export interface ItemDetailPopoverViewModel {
   modifierRows: ItemDetailPopoverValueRow[];
   requirementRows: ItemDetailPopoverRequirementRow[];
   requirementState: ItemDetailPopoverRequirementState | null;
-  context: ItemDetailPopoverContext;
   isLoading: boolean;
   error: string | null;
 }
