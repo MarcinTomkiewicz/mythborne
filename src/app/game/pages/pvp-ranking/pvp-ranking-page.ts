@@ -7,6 +7,7 @@ import { SelectModule } from 'primeng/select';
 import { GamePageHeader } from '../../../shared/game-page-header/game-page-header';
 import { DataRowList } from '../../components/data-row-list/data-row-list';
 import { PvpActiveActionPanel } from '../../components/pvp-active-action-panel/pvp-active-action-panel';
+import { PvpSandboxTools } from '../../components/pvp-sandbox-tools/pvp-sandbox-tools';
 import { PvpRankingTargetPanel } from '../../components/pvp-ranking/target-panel/pvp-ranking-target-panel';
 import type {
   DataRow,
@@ -15,6 +16,7 @@ import type {
 import { PvpActionRunner } from '../../../core/services/pvp/pvp-action-runner';
 import { PvpActiveActionNavigationState } from '../../features/pvp/state/pvp-active-action-navigation.state';
 import { PvpActiveActionState } from '../../features/pvp/state/pvp-active-action.state';
+import { PvpSandboxToolState } from '../../features/pvp/state/pvp-sandbox-tool.state';
 import { PvpSpyReportState } from '../../features/pvp/state/pvp-spy-report.state';
 import { PvpRankingActionsState } from '../../features/pvp-ranking/state/pvp-ranking-actions.state';
 import { PvpRankingPageState } from '../../features/pvp-ranking/state/pvp-ranking-page.state';
@@ -31,6 +33,7 @@ import { PvpRankingPageState } from '../../features/pvp-ranking/state/pvp-rankin
     InputTextModule,
     PaginatorModule,
     PvpActiveActionPanel,
+    PvpSandboxTools,
     PvpRankingTargetPanel,
     ReactiveFormsModule,
     SelectModule,
@@ -40,6 +43,7 @@ import { PvpRankingPageState } from '../../features/pvp-ranking/state/pvp-rankin
     PvpActionRunner,
     PvpActiveActionState,
     PvpActiveActionNavigationState,
+    PvpSandboxToolState,
     PvpSpyReportState,
     PvpRankingActionsState,
     PvpRankingPageState,

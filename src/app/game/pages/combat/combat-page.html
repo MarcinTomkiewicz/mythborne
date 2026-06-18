@@ -18,6 +18,12 @@
           </section>
         }
 
+        <app-pvp-sandbox-tools
+          [offer]="pvpAction.visibleOffer()"
+          (refreshActiveOffer)="refreshActivePvpOffer()"
+          (refreshAttackCounters)="refreshActivePvpOffer()"
+        />
+
         <app-minigame-host
           [minigameKey]="minigameKey"
           [sourceRef]="source"

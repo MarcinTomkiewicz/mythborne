@@ -4,11 +4,11 @@ import { finalize, Observable } from 'rxjs';
 import { EXPLORATION_RUNTIME_COPY } from '../../../core/constants/exploration-runtime-copy.const';
 import { HeroExplorationChallengeCompletionReadModel } from '../../../core/domain/exploration/exploration-runtime.model';
 import { AddHeroRemainingActionsResult } from '../../../core/domain/exploration/exploration-debug.model';
-import { GameServerKind } from '../../../core/enums/active-server.enum';
 import { HeroExplorationDebug } from '../../../core/services/exploration/hero-exploration-debug';
 import { ActiveServer } from '../../../core/services/server/active-server';
 import { ToastService } from '../../../core/services/ui/toast';
 import { ExplorationSandboxScope } from '../../../core/types/exploration-runtime-context.types';
+import { canShowSandboxTestTools } from '../../../core/utils/sandbox-test-tools-visibility';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ChallengeCompletionSnapshot } from './exploration-challenge.model';
 import { ExplorationChallengeState } from './exploration-challenge.state';
@@ -38,7 +38,7 @@ export class ExplorationSandboxToolState {
     const server = this.activeServer.selectedServer();
     const access = this.activeServer.access();
 
-    return server?.kind === GameServerKind.Sandbox && access.canAccessSandbox;
+    return canShowSandboxTestTools(server, access);
   });
   readonly canShowSandboxTools = this.canShowSelectionDiagnostics;
   readonly canSkipSandboxStepTimer = computed(() =>

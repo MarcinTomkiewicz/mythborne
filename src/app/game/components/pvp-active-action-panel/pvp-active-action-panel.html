@@ -83,18 +83,18 @@
         </div>
 
         <div class="grid-3-1 gap-lg w-100 grid-items-center">
-          @if (active.isTravelPhase || (active.isBlockingRuntimeActivity && !active.isManualWindow)) {
+          @if (shouldShowTimerOracle(active)) {
             <app-pending-timer-oracle
               [timer]="timer()"
-              [isReady]="active.actionKind === 'attack' && active.isTravelPhase ? isArrivalReady() : isTimerReady()"
+              [isReady]="timerOracleReady(active)"
               [isResolving]="false"
               [isUpdating]="isLoading()"
               [timerAriaLabel]="timeLabel(active)"
               [progressAriaLabel]="copy().common.labels.remainingTime"
               [pendingLabel]="timeLabel(active)"
               [readyLabel]="copy().activeAction.readyStates.decisionReady"
-              [readyTitle]="active.isResolved ? copy().activeAction.readyStates.heroReturned : copy().activeAction.readyStates.targetReached"
-              [readyHelperText]="active.isResolved ? copy().activeAction.readyStates.reportReady : copy().activeAction.phaseText.attackManualWindow"
+              [readyTitle]="timerOracleReadyTitle(active)"
+              [readyHelperText]="timerOracleReadyHelperText(active)"
               [primaryActionLabel]="copy().common.actionLabels.refresh"
               [decorativeLabel]="copy().common.labels.action"
               (primaryAction)="refresh.emit()"

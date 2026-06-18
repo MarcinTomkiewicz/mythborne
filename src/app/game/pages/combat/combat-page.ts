@@ -7,7 +7,9 @@ import {
 } from '../../components/minigame-host/minigame-host.model';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { ReportDetailPreviewCard } from '../../components/report-detail-preview-card/report-detail-preview-card';
+import { PvpSandboxTools } from '../../components/pvp-sandbox-tools/pvp-sandbox-tools';
 import { PvpCombatActionState } from './pvp-combat-action.state';
+import { PvpSandboxToolState } from '../../features/pvp/state/pvp-sandbox-tool.state';
 
 @Component({
   selector: 'app-combat-page',
@@ -16,9 +18,10 @@ import { PvpCombatActionState } from './pvp-combat-action.state';
     LoadingOverlay,
     MinigameHost,
     PvpActiveActionPanel,
+    PvpSandboxTools,
     ReportDetailPreviewCard,
   ],
-  providers: [PvpCombatActionState],
+  providers: [PvpCombatActionState, PvpSandboxToolState],
   templateUrl: './combat-page.html',
   host: { class: 'd-contents min-w-0' },
 })
@@ -37,6 +40,10 @@ export class CombatPage {
   });
 
   acceptCompletion(event: MinigameCompletionEvent): void {
+    if (!event.reportId) {
+      return;
+    }
+
     this.completion.set(event);
     this.pvpAction.refresh();
   }

@@ -6,6 +6,7 @@ import {
   pvpActiveActionKindLabel,
   pvpActiveActionPhaseText,
   pvpActiveActionTitle,
+  isPvpReturnRuntimePhase,
   PvpActiveActionFactRow,
 } from '../../../core/domain/pvp/pvp-active-action-display.mapper';
 import { PvpActionCopy } from '../../../core/domain/pvp/pvp-action-copy.model';
@@ -62,6 +63,10 @@ export class PvpActiveActionPanel {
   }
 
   acceptCombatCompletion(event: MinigameCompletionEvent): void {
+    if (!event.reportId) {
+      return;
+    }
+
     this.combatCompletion.set(event);
     this.completedActionId.set(this.offer()?.pvpActionId ?? null);
     this.refresh.emit();
@@ -88,6 +93,38 @@ export class PvpActiveActionPanel {
 
   isManualAttackWindow(active: ActivePvpActionOffer): boolean {
     return isManualPvpCombatOffer(active);
+  }
+
+  isReturnPhase(active: ActivePvpActionOffer): boolean {
+    return isPvpReturnRuntimePhase(active);
+  }
+
+  shouldShowTimerOracle(active: ActivePvpActionOffer): boolean {
+    return active.isTravelPhase ||
+      this.isReturnPhase(active) ||
+      (active.isBlockingRuntimeActivity && !active.isManualWindow);
+  }
+
+  timerOracleReady(active: ActivePvpActionOffer): boolean {
+    return active.actionKind === 'attack' && active.isTravelPhase
+      ? this.isArrivalReady()
+      : this.isTimerReady();
+  }
+
+  timerOracleReadyTitle(active: ActivePvpActionOffer): string {
+    const readyStates = this.copy().activeAction.readyStates;
+
+    return this.isReturnPhase(active) || active.isResolved
+      ? readyStates.heroReturned
+      : readyStates.targetReached;
+  }
+
+  timerOracleReadyHelperText(active: ActivePvpActionOffer): string {
+    const copy = this.copy();
+
+    return this.isReturnPhase(active) || active.isResolved
+      ? copy.activeAction.readyStates.reportReady
+      : copy.activeAction.phaseText.attackManualWindow;
   }
 
   spyRemainingLabel(active: ActivePvpActionOffer): string {

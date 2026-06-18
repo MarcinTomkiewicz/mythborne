@@ -7,6 +7,12 @@
       [summaryRows]="state.headerSummaryRows()"
     />
 
+    <app-pvp-sandbox-tools
+      [offer]="activePvpAction.visibleOffer()"
+      (refreshActiveOffer)="activePvpAction.load()"
+      (refreshAttackCounters)="state.reloadCurrentContext()"
+    />
+
     @if (activePvpAction.copy(); as actionCopy) {
       <app-pvp-active-action-panel
         [offer]="activePvpAction.visibleOffer()"

@@ -29,6 +29,12 @@
         }
       </section>
 
+      <app-pvp-sandbox-tools
+        [offer]="activePvpAction.visibleOffer()"
+        (refreshActiveOffer)="activePvpAction.load()"
+        (refreshAttackCounters)="refreshPvpSandboxCounters()"
+      />
+
       @if (activePvpAction.copy(); as actionCopy) {
         <app-pvp-active-action-panel
           [offer]="activePvpAction.visibleOffer()"

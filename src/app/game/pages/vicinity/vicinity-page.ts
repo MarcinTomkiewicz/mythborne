@@ -8,6 +8,7 @@ import {
 import { PvpActionRunner } from '../../../core/services/pvp/pvp-action-runner';
 import { DataRowList } from '../../components/data-row-list/data-row-list';
 import { PvpActiveActionPanel } from '../../components/pvp-active-action-panel/pvp-active-action-panel';
+import { PvpSandboxTools } from '../../components/pvp-sandbox-tools/pvp-sandbox-tools';
 import { VicinityPagination } from '../../components/vicinity/pagination/vicinity-pagination';
 import { VicinitySelectedTargetPanel } from '../../components/vicinity/selected-target-panel/vicinity-selected-target-panel';
 import { VicinityToolbar } from '../../components/vicinity/toolbar/vicinity-toolbar';
@@ -22,6 +23,7 @@ import { VicinityRelocationState } from '../../features/vicinity/state/vicinity-
 import { VicinityRowsState } from '../../features/vicinity/state/vicinity-rows.state';
 import { VicinitySearchState } from '../../features/vicinity/state/vicinity-search.state';
 import { PvpSpyReportState } from '../../features/pvp/state/pvp-spy-report.state';
+import { PvpSandboxToolState } from '../../features/pvp/state/pvp-sandbox-tool.state';
 import { VicinityTargetSearchState } from '../../features/vicinity/state/vicinity-target-search.state';
 import { VicinityVisibleTargetOverlayState } from '../../features/vicinity/state/vicinity-visible-target-overlay.state';
 import type {
@@ -52,6 +54,7 @@ const VICINITY_RELOCATION_CONFIRMATION_KEY = 'vicinity-relocation';
     GamePageHeader,
     StructuredConfirmDialog,
     PvpActiveActionPanel,
+    PvpSandboxTools,
     DataRowList,
     VicinityPagination,
     VicinitySelectedTargetPanel,
@@ -61,6 +64,7 @@ const VICINITY_RELOCATION_CONFIRMATION_KEY = 'vicinity-relocation';
     VicinityPageState,
     PvpActiveActionState,
     PvpActiveActionNavigationState,
+    PvpSandboxToolState,
     VicinityHeaderSummaryState,
     VicinityRangeState,
     VicinityRelocationState,
@@ -160,6 +164,11 @@ export class VicinityPage implements OnInit {
     }
 
     this.rowsState.startRowAction(row, actionKind);
+  }
+
+  refreshPvpSandboxCounters(): void {
+    this.page.loadDailyAttackState();
+    this.page.loadData();
   }
 
   private confirmClaimEstate(row: AddressDataRow): void {

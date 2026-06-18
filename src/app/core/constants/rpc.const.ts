@@ -128,6 +128,8 @@ export const RPC = {
   get_my_pvp_attack_result: 'get_my_pvp_attack_result',
   start_pvp_action: 'start_pvp_action',
   settle_due_pvp_spy_action: 'settle_due_pvp_spy_action',
+  skip_active_pvp_attack_travel_timer:
+    'skip_active_pvp_attack_travel_timer',
   create_pvp_spy_game_report: 'create_pvp_spy_game_report',
   get_my_staff_notification_unread_count: 'get_my_staff_notification_unread_count',
   get_my_staff_notifications: 'get_my_staff_notifications',

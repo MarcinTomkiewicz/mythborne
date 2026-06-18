@@ -85,6 +85,11 @@ export class CombatHost {
         return;
       }
 
+      if (!completion.reportId) {
+        this.flow.clearCompletion();
+        return;
+      }
+
       this.completed.emit(completion);
       this.flow.clearCompletion();
     });

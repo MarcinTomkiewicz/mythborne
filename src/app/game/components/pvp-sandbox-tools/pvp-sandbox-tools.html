@@ -1,6 +1,6 @@
 @if (sandbox.canShowSandboxTools()) {
   <app-sandbox-test-tools-strip
-    title="Narzędzia testowe eksploracji"
+    title="Narzędzia testowe PvP"
     helperText="Akcje działają przez sandboxowe RPC i są ukryte poza kontekstem testowym."
   >
     <p-button
@@ -9,17 +9,21 @@
       severity="secondary"
       label="Skróć czas"
       [loading]="sandbox.isRunningSandboxTool()"
-      [disabled]="!sandbox.canSkipSandboxStepTimer()"
-      (onClick)="sandbox.skipSandboxStepTimer()"
+      [disabled]="!sandbox.canSkipSandboxAttackTravel(offer())"
+      (onClick)="skipAttackTravel()"
     />
     <p-button
       type="button"
       size="small"
       severity="secondary"
-      label="Dodaj triale"
+      label="Dodaj ataki"
       [loading]="sandbox.isRunningSandboxTool()"
-      [disabled]="!sandbox.canAddSandboxTrials()"
-      (onClick)="sandbox.addSandboxTrials()"
+      [disabled]="!sandbox.canAddSandboxAttacks()"
+      (onClick)="addAttacks()"
     />
   </app-sandbox-test-tools-strip>
+
+  @if (sandbox.feedback(); as feedback) {
+    <p class="warn-text mb-0">{{ feedback }}</p>
+  }
 }
