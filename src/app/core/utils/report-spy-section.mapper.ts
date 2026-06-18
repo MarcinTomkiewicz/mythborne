@@ -8,6 +8,7 @@ import {
 } from '../domain/reports/report.model';
 import {
   JsonRecord,
+  optionalNullableText,
   read,
   requiredArray,
   requiredBoolean,
@@ -130,7 +131,7 @@ function mapSpyEquipment(row: JsonRecord, field: string): ReportSpyEquipmentRow 
     slotLabel: requiredNullableText(read(row, 'slotLabel'), `${field}.slotLabel`),
     equipmentArea: requiredNullableText(read(row, 'equipmentArea'), `${field}.equipmentArea`),
     displayName: requiredText(read(row, 'displayName'), `${field}.displayName`),
-    qualityKey: requiredNullableText(read(row, 'qualityKey'), `${field}.qualityKey`),
+    qualityKey: optionalNullableText(read(row, 'qualityKey'), `${field}.qualityKey`),
   };
 }
 

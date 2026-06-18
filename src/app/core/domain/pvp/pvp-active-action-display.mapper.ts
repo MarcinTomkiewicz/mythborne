@@ -1,4 +1,7 @@
-import { formatTimeOfDayLabel } from '../../utils/pending-timer';
+import {
+  formatTimeOfDayLabel,
+  pendingTimerHasElapsed,
+} from '../../utils/pending-timer';
 import { PvpActionCopy } from './pvp-action-copy.model';
 import { ActivePvpActionOffer } from './pvp.model';
 
@@ -30,7 +33,7 @@ export function pvpActiveActionTiming(offer: ActivePvpActionOffer): PvpActiveAct
   if (offer.isTravelPhase) {
     return {
       startedAt: offer.phaseStartedAt ?? offer.startedAt,
-      resolvesAt: offer.phaseEndsAt ?? offer.arrivesAt,
+      resolvesAt: pvpActiveActionTravelArrivalAt(offer),
     };
   }
 
@@ -67,8 +70,15 @@ export function pvpActiveActionManualDecisionDeadlineAt(
   return offer.phaseEndsAt ?? offer.manualDeadlineAt ?? offer.expiresAt;
 }
 
-export function pvpActiveActionRefreshAt(offer: ActivePvpActionOffer): string | null {
-  return pvpActiveActionTiming(offer).resolvesAt;
+export function isPvpAttackArrivalReady(
+  offer: ActivePvpActionOffer,
+  nowMs: number,
+): boolean {
+  return offer.actionKind === 'attack' &&
+    offer.isTravelPhase &&
+    !offer.isManualWindow &&
+    !offer.isResolved &&
+    pendingTimerHasElapsed({ resolvesAt: offer.arrivesAt, nowMs });
 }
 
 export function pvpActiveActionFactRows(
@@ -93,7 +103,7 @@ export function pvpActiveActionFactRows(
   if (offer.isTravelPhase || isPvpSpyActivePhase(offer)) {
     return presentFactRows([
       ...baseRows,
-      { label: labels.arrivalTime, value: timeDisplay(offer.phaseEndsAt ?? offer.arrivesAt ?? offer.availableAt) },
+      { label: labels.arrivalTime, value: timeDisplay(pvpActiveActionTravelArrivalAt(offer)) },
     ]);
   }
 
@@ -186,6 +196,12 @@ function isPvpSpyActivePhase(offer: ActivePvpActionOffer): boolean {
   return offer.actionKind === 'spy' &&
     !offer.isResolved &&
     Boolean(offer.phaseEndsAt ?? offer.arrivesAt ?? offer.availableAt);
+}
+
+function pvpActiveActionTravelArrivalAt(offer: ActivePvpActionOffer): string | null {
+  return offer.actionKind === 'attack'
+    ? offer.arrivesAt
+    : offer.phaseEndsAt ?? offer.arrivesAt ?? offer.availableAt;
 }
 
 function returnAvailabilityAt(offer: ActivePvpActionOffer): string | null {
