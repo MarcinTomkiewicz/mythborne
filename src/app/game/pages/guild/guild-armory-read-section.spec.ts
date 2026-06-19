@@ -8,7 +8,7 @@ import {
   GuildConfigSummary,
   GuildMemberListItem,
 } from '../../../core/domain/guild/guild.model';
-import { ArmoryItemSummary } from '../../../core/domain/item/item-equipment.model';
+import { PlayerArmoryItemReadModel } from '../../../core/domain/item/player-armory-page-context.model';
 import { GuildArmoryItemActionsState } from './guild-armory-item-actions.state';
 import { GuildArmoryMemberAccessState } from './guild-armory-member-access.state';
 import { GuildArmoryReadSection } from './guild-armory-read-section';
@@ -58,7 +58,15 @@ describe('GuildArmoryReadSection', () => {
     state.config.set(config({ armoryCapacity: 0, armoryCapacityIsUnlimited: true }));
     actions.depositItems.set([
       depositItem(),
-      depositItem({ itemId: 'item-equipped', name: 'Equipped Blade' }),
+      depositItem({
+        itemId: 'item-equipped',
+        itemName: 'Equipped Blade',
+        displayCore: {
+          ...depositItem().displayCore,
+          itemId: 'item-equipped',
+          itemName: 'Equipped Blade',
+        },
+      }),
     ]);
     actions.equippedItemIds.set(new Set(['item-equipped']));
 
@@ -254,7 +262,7 @@ class FakeGuildArmoryReadState {
 }
 
 class FakeGuildArmoryItemActionsState {
-  readonly depositItems = signal<ArmoryItemSummary[]>([]);
+  readonly depositItems = signal<PlayerArmoryItemReadModel[]>([]);
   readonly equippedItemIds = signal<Set<string>>(new Set());
   readonly isLoadingDepositContext = signal(false);
   readonly isMutating = signal(false);
@@ -269,12 +277,12 @@ class FakeGuildArmoryItemActionsState {
   readonly withdraw = jasmine.createSpy('withdraw');
   readonly remove = jasmine.createSpy('remove');
 
-  isEquipped(item: Pick<ArmoryItemSummary, 'itemId'>): boolean {
+  isEquipped(item: Pick<PlayerArmoryItemReadModel, 'itemId'>): boolean {
     return this.equippedItemIds().has(item.itemId);
   }
 
-  canDeposit(item: ArmoryItemSummary): boolean {
-    return item.lifecycleStatus === 'active' && !this.isEquipped(item);
+  canDeposit(item: PlayerArmoryItemReadModel): boolean {
+    return item.lifecycleStatusKey === 'active' && !this.isEquipped(item);
   }
 }
 
@@ -374,23 +382,78 @@ function config(overrides: Partial<GuildConfigSummary> = {}): GuildConfigSummary
   };
 }
 
-function depositItem(overrides: Partial<ArmoryItemSummary> = {}): ArmoryItemSummary {
+function depositItem(
+  overrides: Partial<PlayerArmoryItemReadModel> = {},
+): PlayerArmoryItemReadModel {
   return {
     itemId: 'item-1',
-    ownerHeroId: 'hero-1',
+    heroId: 'hero-1',
     serverId: 'server-1',
-    name: 'Bronze Spear',
-    description: null,
-    lifecycleStatus: 'active',
+    itemName: 'Bronze Spear',
+    lifecycleStatusKey: 'active',
+    lifecycleStatusLabel: 'Active',
     generationBaseId: 'base-1',
     generationQualityKey: 'common',
+    qualityMultiplier: 1,
+    qualityLabel: 'Common',
+    baseKey: 'bronze_spear',
+    baseName: 'Bronze Spear',
+    baseTypeKey: 'spear',
+    baseTypeLabel: 'Spear',
     prefixAffixId: null,
+    prefixKey: null,
+    prefixName: null,
     suffixAffixId: null,
+    suffixKey: null,
+    suffixName: null,
     armoryShelfPosition: 1,
     drachmaValue: 10,
-    shelfPosition: 1,
+    generatedAt: '2026-05-09T10:00:00.000Z',
+    createdAt: '2026-05-09T10:00:00.000Z',
+    storagePosition: 1,
+    storageSlotKey: 'shelf_1',
     shelfName: 'Main shelf',
-    requirementPreview: null,
+    storageSlotName: 'Main shelf',
+    isUnsorted: false,
+    visibilityIndex: 1,
+    visibilityLimit: 10,
+    isVisible: true,
+    itemCategoryKey: 'weapon',
+    equipmentArea: 'weapon',
+    primarySlotKey: 'main_hand',
+    primarySlotLabel: 'Main hand',
+    handUsageKey: 'one_handed',
+    handUsageLabel: 'One handed',
+    allowedSlotKeys: ['main_hand'],
+    allowedSlotLabel: 'Main hand',
+    displayIconKey: 'box',
+    meetsRequirements: true,
+    requirementCount: 0,
+    unmetRequirementCount: 0,
+    requirementStatus: {},
+    displayCore: {
+      itemId: 'item-1',
+      itemName: 'Bronze Spear',
+      lifecycleStatusKey: 'active',
+      lifecycleStatusLabel: 'Active',
+      generationQualityKey: 'common',
+      qualityLabel: 'Common',
+      baseKey: 'bronze_spear',
+      baseName: 'Bronze Spear',
+      baseTypeKey: 'spear',
+      baseTypeLabel: 'Spear',
+      drachmaValue: '10',
+      displayIconKey: 'box',
+      equipmentArea: 'weapon',
+      handUsageKey: 'one_handed',
+      handUsageLabel: 'One handed',
+      primarySlotKey: 'main_hand',
+      primarySlotLabel: 'Main hand',
+      equipmentSlotKey: null,
+      equipmentSlotLabel: null,
+      allowedSlotKeys: ['main_hand'],
+      allowedSlotLabel: 'Main hand',
+    },
     ...overrides,
   };
 }

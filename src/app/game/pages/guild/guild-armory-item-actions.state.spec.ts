@@ -9,9 +9,9 @@ import {
   GuildArmoryLoanOperationResult,
 } from '../../../core/domain/guild/guild-armory.model';
 import {
-  ArmoryItemSummary,
   EquippedItemSummary,
 } from '../../../core/domain/item/item-equipment.model';
+import { PlayerArmoryItemReadModel } from '../../../core/domain/item/player-armory-page-context.model';
 import { ActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
 import { PlayerGuildArmoryActions } from '../../../core/services/guild/player-guild-armory-actions';
 import { ToastService } from '../../../core/services/ui/toast';
@@ -274,7 +274,7 @@ describe('GuildArmoryItemActionsState', () => {
 });
 
 class FakeArmoryShelfState {
-  readonly visibleItems = signal<ArmoryItemSummary[]>([]);
+  readonly visibleItems = signal<PlayerArmoryItemReadModel[]>([]);
   readonly isLoading = signal(false);
   readonly load = jasmine.createSpy('load');
   readonly refresh = jasmine.createSpy('refresh');
@@ -301,23 +301,78 @@ function activeContext(
   };
 }
 
-function depositItem(overrides: Partial<ArmoryItemSummary> = {}): ArmoryItemSummary {
+function depositItem(
+  overrides: Partial<PlayerArmoryItemReadModel> = {},
+): PlayerArmoryItemReadModel {
   return {
     itemId: 'item-1',
-    ownerHeroId: 'hero-1',
+    heroId: 'hero-1',
     serverId: 'server-1',
-    name: 'Bronze Spear',
-    description: null,
-    lifecycleStatus: 'active',
+    itemName: 'Bronze Spear',
+    lifecycleStatusKey: 'active',
+    lifecycleStatusLabel: 'Active',
     generationBaseId: 'base-1',
     generationQualityKey: 'common',
+    qualityMultiplier: 1,
+    qualityLabel: 'Common',
+    baseKey: 'bronze_spear',
+    baseName: 'Bronze Spear',
+    baseTypeKey: 'spear',
+    baseTypeLabel: 'Spear',
     prefixAffixId: null,
+    prefixKey: null,
+    prefixName: null,
     suffixAffixId: null,
+    suffixKey: null,
+    suffixName: null,
     armoryShelfPosition: 1,
     drachmaValue: 10,
-    shelfPosition: 1,
+    generatedAt: '2026-05-09T10:00:00.000Z',
+    createdAt: '2026-05-09T10:00:00.000Z',
+    storagePosition: 1,
+    storageSlotKey: 'shelf_1',
     shelfName: 'Main shelf',
-    requirementPreview: null,
+    storageSlotName: 'Main shelf',
+    isUnsorted: false,
+    visibilityIndex: 1,
+    visibilityLimit: 10,
+    isVisible: true,
+    itemCategoryKey: 'weapon',
+    equipmentArea: 'weapon',
+    primarySlotKey: 'main_hand',
+    primarySlotLabel: 'Main hand',
+    handUsageKey: 'one_handed',
+    handUsageLabel: 'One handed',
+    allowedSlotKeys: ['main_hand'],
+    allowedSlotLabel: 'Main hand',
+    displayIconKey: 'box',
+    meetsRequirements: true,
+    requirementCount: 0,
+    unmetRequirementCount: 0,
+    requirementStatus: {},
+    displayCore: {
+      itemId: 'item-1',
+      itemName: 'Bronze Spear',
+      lifecycleStatusKey: 'active',
+      lifecycleStatusLabel: 'Active',
+      generationQualityKey: 'common',
+      qualityLabel: 'Common',
+      baseKey: 'bronze_spear',
+      baseName: 'Bronze Spear',
+      baseTypeKey: 'spear',
+      baseTypeLabel: 'Spear',
+      drachmaValue: '10',
+      displayIconKey: 'box',
+      equipmentArea: 'weapon',
+      handUsageKey: 'one_handed',
+      handUsageLabel: 'One handed',
+      primarySlotKey: 'main_hand',
+      primarySlotLabel: 'Main hand',
+      equipmentSlotKey: null,
+      equipmentSlotLabel: null,
+      allowedSlotKeys: ['main_hand'],
+      allowedSlotLabel: 'Main hand',
+    },
     ...overrides,
   };
 }

@@ -1,5 +1,4 @@
 import {
-  armoryItemIconClass,
   classifyItemDisplay,
   mapEquipmentPreviewRows,
 } from './equipment-preview.mapper';
@@ -134,33 +133,6 @@ describe('equipment preview mapper', () => {
     ]);
   });
 
-  it('maps armory inventory card icons from structural DB classification fields', () => {
-    expect(armoryItemIconClass(armoryItem({ baseTypeKey: 'one_handed_weapon' })))
-      .toBe('pi pi-one-handed');
-    expect(armoryItemIconClass(armoryItem({ baseTypeKey: 'two_handed_weapon' })))
-      .toBe('pi pi-two-handed');
-    expect(armoryItemIconClass(armoryItem({ baseTypeKey: 'ranged_weapon' })))
-      .toBe('pi pi-bow-weapon');
-    expect(armoryItemIconClass(armoryItem({
-      baseTypeKey: 'helmet',
-      itemCategoryKey: 'armor',
-      equipmentArea: 'armor',
-      handUsageKey: '',
-      primarySlotKey: 'helmet',
-      allowedSlotKeys: ['helmet'],
-    })))
-      .toBe('pi pi-armory-helmet');
-    expect(armoryItemIconClass(armoryItem({
-      baseTypeKey: 'ring',
-      itemCategoryKey: 'jewelry',
-      equipmentArea: 'jewelry',
-      handUsageKey: '',
-      primarySlotKey: 'ring_1',
-      allowedSlotKeys: ['ring_1', 'ring_2'],
-    })))
-      .toBe('pi pi-ring');
-  });
-
   it('classifies one-handed items from base type and hand usage variants', () => {
     expect(classifyItemDisplay({ baseTypeKey: 'one_handed_weapon' }).iconClass)
       .toBe('pi pi-one-handed');
@@ -232,37 +204,6 @@ function equippedItem(
     suffixKey: null,
     suffixName: null,
     isRuntimeUsable: true,
-    ...overrides,
-  };
-}
-
-function armoryItem(
-  overrides: Partial<Parameters<typeof armoryItemIconClass>[0]>,
-): Parameters<typeof armoryItemIconClass>[0] {
-  return {
-    itemId: 'item-1',
-    ownerHeroId: 'hero-1',
-    serverId: 'server-1',
-    name: 'Named item',
-    description: null,
-    lifecycleStatus: 'active',
-    generationBaseId: 'base-1',
-    generationQualityKey: 'normal',
-    prefixAffixId: null,
-    suffixAffixId: null,
-    armoryShelfPosition: 1,
-    drachmaValue: 20,
-    shelfPosition: 1,
-    shelfName: 'Shelf 1',
-    baseKey: 'base-key',
-    baseName: 'Base name',
-    baseTypeKey: 'one_handed_weapon',
-    itemCategoryKey: 'weapon',
-    equipmentArea: 'weapon',
-    handUsageKey: 'one_handed',
-    primarySlotKey: 'main_hand',
-    allowedSlotKeys: ['main_hand'],
-    requirementPreview: null,
     ...overrides,
   };
 }

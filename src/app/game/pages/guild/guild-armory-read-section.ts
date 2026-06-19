@@ -5,7 +5,7 @@ import {
   GuildArmoryCurrentItemStatusKey,
   GuildArmoryItem,
 } from '../../../core/domain/guild/guild-armory.model';
-import { ArmoryItemSummary } from '../../../core/domain/item/item-equipment.model';
+import { PlayerArmoryItemReadModel } from '../../../core/domain/item/player-armory-page-context.model';
 import { ArmoryShelfState } from '../../../core/services/items/armory-shelf.state';
 import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
 import { GuildArmoryItemActionsState } from './guild-armory-item-actions.state';
@@ -52,9 +52,13 @@ export class GuildArmoryReadSection implements OnInit {
     return `${quality} - ${baseType}`;
   }
 
-  depositItemSubtitle(item: ArmoryItemSummary): string {
-    const quality = item.generationQualityKey || 'Unknown quality';
-    const shelf = item.shelfName || `Shelf ${item.shelfPosition}`;
+  depositItemSubtitle(item: PlayerArmoryItemReadModel): string {
+    const quality = item.displayCore.qualityLabel
+      || item.displayCore.generationQualityKey
+      || 'Unknown quality';
+    const shelf = item.storageSlotName
+      || item.shelfName
+      || `Shelf ${item.storagePosition}`;
 
     return `${quality} - ${shelf}`;
   }

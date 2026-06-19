@@ -14639,6 +14639,10 @@ export type Database = {
         Args: { p_bonuses_json: Json }
         Returns: Json
       }
+      aggregate_item_detail_modifier_rows_source_projection: {
+        Args: { p_bonuses_json: Json }
+        Returns: Json
+      }
       apply_auction_pagination_display: {
         Args: { p_payload: Json; p_template: string }
         Returns: Json
@@ -14732,6 +14736,10 @@ export type Database = {
       }
       apply_dashboard_damage_row_display_contract: {
         Args: { p_hero_id: string; p_row: Json }
+        Returns: Json
+      }
+      apply_game_copy_text_rows_to_payload: {
+        Args: { p_game_copy_kind: string; p_locale: string; p_payload: Json }
         Returns: Json
       }
       apply_global_config_value_change_entry: {
@@ -15772,6 +15780,10 @@ export type Database = {
             Returns: Json
           }
       build_player_armory_item_requirement_status_json: {
+        Args: { p_hero_id: string; p_item_id: string }
+        Returns: Json
+      }
+      build_player_armory_item_row_json: {
         Args: { p_hero_id: string; p_item_id: string }
         Returns: Json
       }
@@ -20949,6 +20961,14 @@ export type Database = {
         }[]
       }
       get_item_base_type_key: { Args: { p_item_id: string }; Returns: string }
+      get_item_bonus_display_sort_order: {
+        Args: {
+          p_scope_key?: string
+          p_target_key: string
+          p_type_key?: string
+        }
+        Returns: number
+      }
       get_item_detail_popover_raw_v1: {
         Args: {
           p_context?: string
@@ -21536,10 +21556,14 @@ export type Database = {
         Returns: Json
       }
       get_player_exploration_difficulty_copy: {
-        Args: { p_locale?: string }
+        Args: { p_locale: string }
         Returns: Json
       }
       get_player_exploration_difficulty_copy_base: {
+        Args: { p_locale?: string }
+        Returns: Json
+      }
+      get_player_exploration_difficulty_copy_source: {
         Args: { p_locale?: string }
         Returns: Json
       }
@@ -22425,6 +22449,10 @@ export type Database = {
         Args: { p_building_id: string; p_district_code: string }
         Returns: boolean
       }
+      is_game_copy_text_row_editable: {
+        Args: { p_metadata_json: Json }
+        Returns: boolean
+      }
       is_item_generation_affix_allowed_for_base_type: {
         Args: { p_affix_id: string; p_base_type_key: string }
         Returns: boolean
@@ -22744,6 +22772,10 @@ export type Database = {
       }
       normalize_hero_attack_plan_dashboard_source_rows: {
         Args: { p_payload: Json }
+        Returns: Json
+      }
+      normalize_item_detail_display_meta_quality_label_json: {
+        Args: { p_bonuses_json: Json }
         Returns: Json
       }
       normalize_item_detail_popover_item_detail_current_text: {
@@ -24180,6 +24212,10 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      reorder_item_detail_display_bonus_rows_json: {
+        Args: { p_rows_json: Json }
+        Returns: Json
+      }
       reset_hero_exploration: {
         Args: {
           p_difficulty_key?: string
@@ -24663,10 +24699,6 @@ export type Database = {
       }
       sanitize_player_armory_item_detail_bonuses_json: {
         Args: { p_bonuses_json: Json; p_drachma_value?: number }
-        Returns: Json
-      }
-      sanitize_player_armory_item_row_json: {
-        Args: { p_item_json: Json }
         Returns: Json
       }
       sanitize_player_armory_jsonb_labels: {
@@ -26519,6 +26551,10 @@ export type Database = {
           travel_time_seconds: number
         }[]
       }
+      strip_legacy_item_detail_bonuses_keys_json: {
+        Args: { p_bonuses_json: Json }
+        Returns: Json
+      }
       submit_combat_player_action: {
         Args: {
           p_request_id?: string
@@ -26743,6 +26779,28 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      update_game_copy_text: {
+        Args: {
+          p_copy_path: string
+          p_game_copy_kind: string
+          p_locale: string
+          p_reason?: string
+          p_value: string
+        }
+        Returns: {
+          audit_log_id: string
+          copy_path: string
+          game_copy_kind: string
+          locale: string
+          metadata_json: Json
+          previous_value: string
+          reason: string
+          text_row_id: string
+          updated_at: string
+          updated_by: string
+          value: string
+        }[]
       }
       update_item_requirement_aggregation_settings: {
         Args: {

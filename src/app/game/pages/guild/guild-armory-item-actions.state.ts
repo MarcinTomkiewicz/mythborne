@@ -7,7 +7,7 @@ import {
   GuildArmoryLoan,
   GuildArmoryLoanOperationResult,
 } from '../../../core/domain/guild/guild-armory.model';
-import { ArmoryItemSummary } from '../../../core/domain/item/item-equipment.model';
+import { PlayerArmoryItemReadModel } from '../../../core/domain/item/player-armory-page-context.model';
 import { ActiveHeroState } from '../../../core/interfaces/hero/active-hero.interface';
 import { PlayerGuildArmoryActions } from '../../../core/services/guild/player-guild-armory-actions';
 import { ToastService } from '../../../core/services/ui/toast';
@@ -55,15 +55,15 @@ export class GuildArmoryItemActionsState {
     this.equipment.load();
   }
 
-  isEquipped(item: Pick<ArmoryItemSummary, 'itemId'>): boolean {
+  isEquipped(item: Pick<PlayerArmoryItemReadModel, 'itemId'>): boolean {
     return this.equippedItemIds().has(item.itemId);
   }
 
-  canDeposit(item: ArmoryItemSummary): boolean {
-    return item.lifecycleStatus === 'active' && !this.isEquipped(item);
+  canDeposit(item: PlayerArmoryItemReadModel): boolean {
+    return item.lifecycleStatusKey === 'active' && !this.isEquipped(item);
   }
 
-  deposit(item: ArmoryItemSummary): void {
+  deposit(item: PlayerArmoryItemReadModel): void {
     if (this.isEquipped(item)) {
       this.showActionError(
         'Equipped items must be unequipped before guild armory deposit.',

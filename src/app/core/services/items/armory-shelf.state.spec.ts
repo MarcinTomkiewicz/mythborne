@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Observable, of, Subject, throwError } from 'rxjs';
-import { HeroArmoryReadModel } from '../../domain/item/item-equipment.model';
+import { PlayerArmoryReadModel } from '../../domain/item/player-armory-page-context.model';
 import { ActiveHeroState } from '../../interfaces/hero/active-hero.interface';
 import { ActiveHero } from '../hero/active-hero';
 import { ArmoryShelfState } from './armory-shelf.state';
@@ -17,7 +17,7 @@ describe('ArmoryShelfState', () => {
   beforeEach(() => {
     activeHero = new FakeActiveHero();
     armory = jasmine.createSpyObj<PlayerArmory>('PlayerArmory', [
-      'getArmory',
+      'getArmoryReadModel',
       'renameShelf',
       'moveItemToShelf',
     ]);
@@ -38,7 +38,7 @@ describe('ArmoryShelfState', () => {
   });
 
   it('loads armory shelves and visible items', () => {
-    armory.getArmory.and.returnValue(readModelSubject(2));
+    armory.getArmoryReadModel.and.returnValue(readModelSubject(2));
 
     state.load();
 
@@ -50,7 +50,7 @@ describe('ArmoryShelfState', () => {
   });
 
   it('surfaces empty armory without dropping shelf structure', () => {
-    armory.getArmory.and.returnValue(readModelSubject(0));
+    armory.getArmoryReadModel.and.returnValue(readModelSubject(0));
 
     state.load();
 
@@ -67,12 +67,12 @@ describe('ArmoryShelfState', () => {
 
     expect(state.status()).toBe('error');
     expect(state.error()).toBe('No active hero for armory shelves.');
-    expect(armory.getArmory).not.toHaveBeenCalled();
+    expect(armory.getArmoryReadModel).not.toHaveBeenCalled();
   });
 
   it('ignores stale success after active hero context changes', () => {
-    const request = new Subject<HeroArmoryReadModel>();
-    armory.getArmory.and.returnValue(request.asObservable());
+    const request = new Subject<PlayerArmoryReadModel>();
+    armory.getArmoryReadModel.and.returnValue(request.asObservable());
 
     state.load();
     activeHero.state.set(activeHeroState({
@@ -87,23 +87,23 @@ describe('ArmoryShelfState', () => {
   });
 
   it('ignores older load responses after a newer refresh', () => {
-    const first = new Subject<HeroArmoryReadModel>();
-    const second = new Subject<HeroArmoryReadModel>();
-    armory.getArmory.and.returnValues(first.asObservable(), second.asObservable());
+    const first = new Subject<PlayerArmoryReadModel>();
+    const second = new Subject<PlayerArmoryReadModel>();
+    armory.getArmoryReadModel.and.returnValues(first.asObservable(), second.asObservable());
 
     state.load();
     state.refresh();
     second.next(readModel(2));
     first.next(readModel(1));
 
-    expect(armory.getArmory).toHaveBeenCalledTimes(2);
+    expect(armory.getArmoryReadModel).toHaveBeenCalledTimes(2);
     expect(state.status()).toBe('loaded');
     expect(state.visibleItems().length).toBe(2);
   });
 
   it('maps service errors to read error state', () => {
-    const request = new Subject<HeroArmoryReadModel>();
-    armory.getArmory.and.returnValue(request.asObservable());
+    const request = new Subject<PlayerArmoryReadModel>();
+    armory.getArmoryReadModel.and.returnValue(request.asObservable());
 
     state.load();
     request.error(new Error('armory read denied'));
@@ -114,8 +114,8 @@ describe('ArmoryShelfState', () => {
   });
 
   it('clears state and invalidates pending loads', () => {
-    const request = new Subject<HeroArmoryReadModel>();
-    armory.getArmory.and.returnValue(request.asObservable());
+    const request = new Subject<PlayerArmoryReadModel>();
+    armory.getArmoryReadModel.and.returnValue(request.asObservable());
 
     state.load();
     state.clear();
@@ -173,7 +173,7 @@ describe('ArmoryShelfState', () => {
       itemAuditLogId: 'audit-item-1',
       vendorAuditLogId: 'audit-vendor-1',
     }));
-    armory.getArmory.and.returnValue(readModelSubject(0));
+    armory.getArmoryReadModel.and.returnValue(readModelSubject(0));
 
     state.vendorScrapItem('item-1');
 
@@ -199,7 +199,7 @@ describe('ArmoryShelfState', () => {
       totalDrachmaAmount: 40,
       balanceAfter: 140,
     }));
-    armory.getArmory.and.returnValue(readModelSubject(0));
+    armory.getArmoryReadModel.and.returnValue(readModelSubject(0));
     const afterResponse = jasmine.createSpy('afterResponse');
 
     state.bulkVendorScrapItems(['item-1', 'item-2', 'item-1'], afterResponse);
@@ -230,7 +230,7 @@ describe('ArmoryShelfState', () => {
       itemAuditLogId: 'audit-item-1',
       vendorAuditLogId: 'audit-vendor-1',
     }));
-    armory.getArmory.and.returnValue(
+    armory.getArmoryReadModel.and.returnValue(
       throwError(() => new Error('armory refresh denied')),
     );
     const afterResponse = jasmine.createSpy('afterResponse');
@@ -261,7 +261,7 @@ describe('ArmoryShelfState', () => {
       vendorAuditLogId: string;
     }>();
     lifecycle.vendorScrapHeroItem.and.returnValue(request.asObservable());
-    armory.getArmory.and.returnValue(readModelSubject(0));
+    armory.getArmoryReadModel.and.returnValue(readModelSubject(0));
     const afterResponse = jasmine.createSpy('afterResponse');
 
     state.vendorScrapItem('item-1', afterResponse);
@@ -282,14 +282,14 @@ describe('ArmoryShelfState', () => {
     });
 
     expect(afterResponse).not.toHaveBeenCalled();
-    expect(armory.getArmory).not.toHaveBeenCalled();
+    expect(armory.getArmoryReadModel).not.toHaveBeenCalled();
     expect(state.actionError()).toBe('Armory shelf context changed.');
     expect(state.status()).toBe('error');
   });
 
   it('surfaces mutation errors without optimistic state changes', () => {
     const initial = readModel(1);
-    const request = new Subject<HeroArmoryReadModel>();
+    const request = new Subject<PlayerArmoryReadModel>();
     armory.renameShelf.and.returnValue(request.asObservable());
     state.readModel.set(initial);
     state.status.set('loaded');
@@ -308,7 +308,7 @@ describe('ArmoryShelfState', () => {
 
   it('clears previous armory when mutation success arrives after context changes', () => {
     const initial = readModel(1);
-    const request = new Subject<HeroArmoryReadModel>();
+    const request = new Subject<PlayerArmoryReadModel>();
     armory.moveItemToShelf.and.returnValue(request.asObservable());
     state.readModel.set(initial);
     state.status.set('loaded');
@@ -366,37 +366,96 @@ function activeHeroState(
 
 function readModelSubject(
   visibleItemCount: number,
-): Observable<HeroArmoryReadModel> {
+): Observable<PlayerArmoryReadModel> {
   return of(readModel(visibleItemCount));
 }
 
-function readModel(visibleItemCount: number): HeroArmoryReadModel {
+function readModel(visibleItemCount: number): PlayerArmoryReadModel {
   const visibleItems = Array.from({ length: visibleItemCount }, (_, index) => ({
     itemId: `item-${index + 1}`,
-    ownerHeroId: 'hero-1',
+    heroId: 'hero-1',
     serverId: 'server-1',
-    name: `Item ${index + 1}`,
-    description: null,
-    lifecycleStatus: 'active' as const,
-    generationBaseId: null,
+    itemName: `Item ${index + 1}`,
+    lifecycleStatusKey: 'active',
+    lifecycleStatusLabel: 'Active',
     generationQualityKey: null,
+    qualityMultiplier: null,
+    qualityLabel: null,
+    generationBaseId: null,
+    baseKey: null,
+    baseName: null,
+    baseTypeKey: null,
+    baseTypeLabel: null,
     prefixAffixId: null,
+    prefixKey: null,
+    prefixName: null,
     suffixAffixId: null,
+    suffixKey: null,
+    suffixName: null,
     armoryShelfPosition: 1,
     drachmaValue: null,
-    shelfPosition: 1,
+    generatedAt: null,
+    createdAt: null,
+    storagePosition: 1,
+    storageSlotKey: 'shelf_1',
     shelfName: 'Shelf 1',
-    requirementPreview: null,
+    storageSlotName: 'Shelf 1',
+    isUnsorted: false,
+    visibilityIndex: index + 1,
+    visibilityLimit: visibleItemCount,
+    isVisible: true,
+    itemCategoryKey: null,
+    equipmentArea: null,
+    primarySlotKey: 'main_hand',
+    primarySlotLabel: 'Main hand',
+    handUsageKey: null,
+    handUsageLabel: null,
+    allowedSlotKeys: ['main_hand'],
+    allowedSlotLabel: 'Main hand',
+    displayIconKey: 'box',
+    meetsRequirements: true,
+    requirementCount: 0,
+    unmetRequirementCount: 0,
+    requirementStatus: {},
+    displayCore: {
+      itemId: `item-${index + 1}`,
+      itemName: `Item ${index + 1}`,
+      lifecycleStatusKey: 'active',
+      lifecycleStatusLabel: 'Active',
+      generationQualityKey: null,
+      qualityLabel: null,
+      baseKey: null,
+      baseName: null,
+      baseTypeKey: null,
+      baseTypeLabel: null,
+      drachmaValue: null,
+      displayIconKey: 'box',
+      equipmentArea: null,
+      handUsageKey: null,
+      handUsageLabel: null,
+      primarySlotKey: 'main_hand',
+      primarySlotLabel: 'Main hand',
+      equipmentSlotKey: null,
+      equipmentSlotLabel: null,
+      allowedSlotKeys: ['main_hand'],
+      allowedSlotLabel: 'Main hand',
+    },
   }));
 
   return {
     heroId: 'hero-1',
     shelves: Array.from({ length: 11 }, (_, index) => ({
-      shelfId: index === 0 ? null : `shelf-${index}`,
+      storageSlotId: index === 0 ? null : `shelf-${index}`,
+      storageSlotKey: index === 0 ? null : `shelf_${index}`,
       heroId: 'hero-1',
       position: index,
       name: index === 0 ? 'Unsorted' : `Shelf ${index}`,
-      updatedAt: index === 0 ? null : '2026-05-07T10:00:00Z',
+      displayName: index === 0 ? 'Unsorted' : `Shelf ${index}`,
+      displayLabel: 'Shelf',
+      displayValue: String(index),
+      visibleItemCount: index === 0 ? visibleItemCount : 0,
+      itemCount: index === 0 ? visibleItemCount : 0,
+      sortOrder: index,
       isPersisted: index !== 0,
       isUnsortedDropArea: index === 0,
       visibleItems: index === 0 ? visibleItems : [],
@@ -407,15 +466,6 @@ function readModel(visibleItemCount: number): HeroArmoryReadModel {
       totalOwnedItemCount: visibleItemCount,
       hiddenItemCount: 0,
       visibilityLimit: visibleItemCount,
-      visibilityLimitSource: 'visible_item_capacity',
-      sourceConfigJson: { target: 'visible_item_capacity' },
-      visibleStatuses: ['active', 'locked_trade', 'locked_auction'],
-      unsortedJson: {
-        id: null,
-        position: 0,
-        name: 'Unsorted',
-      },
-      shelvesJson: [],
     },
   };
 }
