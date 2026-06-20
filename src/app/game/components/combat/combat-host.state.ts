@@ -15,10 +15,8 @@ import { RequestToken } from '../../../core/utils/request-token';
 import { sameSourceRef } from '../../../core/utils/source-ref';
 import { MinigameCompletionEvent, MinigameSourceRef } from '../minigame-host/minigame-host.model';
 import { CombatHostPreviewLoader } from './combat-host-preview-loader';
-import {
-  CombatHostSessionRunner,
-  CombatHostSessionRunnerContext,
-} from './combat-host-session-runner';
+import { CombatHostSessionRunner } from './combat-host-session-runner';
+import { CombatHostSessionRunnerContext } from './combat-host-session-runner-context.model';
 import { CombatHostTimingState } from './combat-host-timing.state';
 
 @Injectable()
@@ -34,6 +32,7 @@ export class CombatHostState {
   private readonly autoResolveToken = new RequestToken();
   private readonly submitActionToken = new RequestToken();
   private readonly finalizeResultToken = new RequestToken();
+  private readonly recoverStateToken = new RequestToken();
   private readonly sourceRef = signal<MinigameSourceRef | null>(null);
   private readonly contextTitle = signal('');
   private readonly sourcePresentation = signal<CombatSourcePresentation | null>(null);
@@ -44,6 +43,7 @@ export class CombatHostState {
   private readonly isPreparingSession = signal(false);
   private readonly isAutoResolving = signal(false);
   private readonly isSubmittingAction = signal(false);
+  private readonly isRecoveringState = signal(false);
 
   readonly isFinalizingResult = signal(false);
   readonly previewErrorMessage = signal<string | null>(null);
@@ -81,6 +81,7 @@ export class CombatHostState {
           isPreparingSession: this.isPreparingSession(),
           isAutoResolving: this.isAutoResolving(),
           isSubmittingAction: this.isSubmittingAction(),
+          isRecoveringState: this.isRecoveringState(),
           walkingPosition: this.timingState.frame().positionPercent,
           canSubmitStrike: this.canSubmitStrike(),
           decisionDeadline: this.visibleDecisionDeadline(),
@@ -130,7 +131,13 @@ export class CombatHostState {
         currentSourceRef: () => this.sourceRef(),
         unavailableText: () => this.sourcePresentation()?.unavailablePreview.text ?? null,
         resetForPreviewLoad: () => this.resetForPreviewLoad(),
-        setPreview: (preview) => this.preview.set(preview),
+        setPreview: (preview) => {
+          this.preview.set(preview);
+          this.sessionRunner.recoverCombatLiveState(
+            this.sessionContext(),
+            preview?.combatSessionId ?? null,
+          );
+        },
         setPreviewError: (message) => this.previewErrorMessage.set(message),
         setIsLoadingPreview: (value) => this.isLoadingPreview.set(value),
       });
@@ -162,6 +169,7 @@ export class CombatHostState {
     this.autoResolveToken.next();
     this.submitActionToken.next();
     this.finalizeResultToken.next();
+    this.recoverStateToken.next();
     this.preview.set(null);
     this.liveState.set(null);
     this.previewErrorMessage.set(null);
@@ -172,6 +180,7 @@ export class CombatHostState {
     this.isAutoResolving.set(false);
     this.isSubmittingAction.set(false);
     this.isFinalizingResult.set(false);
+    this.isRecoveringState.set(false);
     this.timingState.resetFrame();
     this.timingState.stop();
   }
@@ -207,6 +216,7 @@ export class CombatHostState {
       isAutoResolving: () => this.isAutoResolving(),
       isSubmittingAction: () => this.isSubmittingAction(),
       isFinalizingResult: () => this.isFinalizingResult(),
+      isRecoveringState: () => this.isRecoveringState(),
       actionUnavailableText: () => this.actionUnavailableText(),
       finalizeUnavailableText: () => this.finalizeUnavailableText(),
       tokens: {
@@ -214,6 +224,7 @@ export class CombatHostState {
         autoResolve: this.autoResolveToken,
         submitAction: this.submitActionToken,
         finalizeResult: this.finalizeResultToken,
+        recoverState: this.recoverStateToken,
       },
       setLiveState: (state: CombatLiveStateReadModel) => this.liveState.set(state),
       setCompletion: (completion: MinigameCompletionEvent) => this.completion.set(completion),
@@ -223,6 +234,7 @@ export class CombatHostState {
       setIsAutoResolving: (value: boolean) => this.isAutoResolving.set(value),
       setIsSubmittingAction: (value: boolean) => this.isSubmittingAction.set(value),
       setIsFinalizingResult: (value: boolean) => this.isFinalizingResult.set(value),
+      setIsRecoveringState: (value: boolean) => this.isRecoveringState.set(value),
     };
   }
 }

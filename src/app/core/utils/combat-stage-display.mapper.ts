@@ -66,6 +66,7 @@ export function mapCombatSessionStageView(input: {
   isPreparingSession: boolean;
   isAutoResolving: boolean;
   isSubmittingAction: boolean;
+  isRecoveringState: boolean;
   walkingPosition: number;
   canSubmitStrike: boolean;
   decisionDeadline?: CombatSurfaceDecisionDeadline | null;
@@ -96,7 +97,7 @@ export function mapCombatSessionStageView(input: {
       isLoadingPreview: input.isLoadingPreview,
       isSubmittingAction: input.isSubmittingAction,
       isPreparingSession: input.isPreparingSession,
-      isRecoveringState: false,
+      isRecoveringState: input.isRecoveringState,
     },
     timing: {
       isCombatRunning: Boolean(
@@ -114,11 +115,13 @@ export function mapCombatSessionStageView(input: {
       canShowStartAction: !state && preview?.canStartManual === true,
       canStartAction: !state &&
         preview?.canStartManual === true &&
+        !input.isRecoveringState &&
         !input.isPreparingSession &&
         !input.isAutoResolving,
       canShowAutoResolveAction: !state && preview?.canAutoResolve === true,
       canAutoResolveAction: !state &&
         preview?.canAutoResolve === true &&
+        !input.isRecoveringState &&
         !input.isPreparingSession &&
         !input.isAutoResolving,
       isAutoResolving: input.isAutoResolving,

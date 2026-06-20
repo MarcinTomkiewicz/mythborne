@@ -10,6 +10,7 @@ import {
   AutoResolveCombatSessionRpcRow,
   FinalizeCombatSourceResultRpcRow,
   GetCombatResolutionPreviewRpcRow,
+  GetCombatLiveStateRpcRow,
   StartManualCombatSessionRpcRow,
   SubmitCombatPlayerActionRpcRow,
 } from '../../types/combat-live-rpc.types';
@@ -23,6 +24,7 @@ import {
   mapCombatResolutionPreview,
   toAutoResolveCombatSessionRpcArgs,
   toFinalizeCombatSourceResultRpcArgs,
+  toGetCombatLiveStateRpcArgs,
   toGetCombatResolutionPreviewRpcArgs,
   toStartManualCombatSessionRpcArgs,
   toSubmitCombatPlayerActionRpcArgs,
@@ -49,6 +51,19 @@ export class CombatSessions {
       .rpc<StartManualCombatSessionRpcRow[]>(
         RPC.start_manual_combat_session,
         toStartManualCombatSessionRpcArgs(input),
+      )
+      .pipe(map(firstCombatLiveStateRow), map(mapCombatLiveState));
+  }
+
+  getCombatLiveState(input: { combatSessionId: string; sinceEventIndex?: number | null }):
+    Observable<CombatLiveStateReadModel> {
+    return this.backend
+      .rpc<GetCombatLiveStateRpcRow[]>(
+        RPC.get_combat_live_state,
+        toGetCombatLiveStateRpcArgs({
+          sessionId: input.combatSessionId,
+          sinceEventIndex: input.sinceEventIndex ?? null,
+        }),
       )
       .pipe(map(firstCombatLiveStateRow), map(mapCombatLiveState));
   }

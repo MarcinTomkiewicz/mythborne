@@ -1,47 +1,13 @@
 import { Injectable, inject } from '@angular/core';
 import { CombatTimingStrikeSnapshot } from '../../../core/domain/combat/combat-display.model';
-import {
-  CombatLiveStateReadModel,
-  CombatResolutionPreviewReadModel,
-} from '../../../core/domain/combat/combat-live.model';
+import { CombatLiveStateReadModel } from '../../../core/domain/combat/combat-live.model';
 import { CombatSessions } from '../../../core/services/combat/combat-sessions';
 import { mergeCombatLiveEvents } from '../../../core/utils/combat-live-mappers';
 import { createRequestId } from '../../../core/utils/request-id';
-import { RequestToken } from '../../../core/utils/request-token';
 import { sameSourceRef } from '../../../core/utils/source-ref';
-import {
-  MINIGAME_KEY,
-  MinigameCompletionEvent,
-  MinigameSourceRef,
-} from '../minigame-host/minigame-host.model';
+import { MINIGAME_KEY } from '../minigame-host/minigame-host.model';
 import { CombatHostRequestRunner } from './combat-host-request-runner';
-
-export interface CombatHostSessionRunnerContext {
-  sourceRef: () => MinigameSourceRef | null;
-  preview: () => CombatResolutionPreviewReadModel | null;
-  liveState: () => CombatLiveStateReadModel | null;
-  completion: () => MinigameCompletionEvent | null;
-  isPreparingSession: () => boolean;
-  isAutoResolving: () => boolean;
-  isSubmittingAction: () => boolean;
-  isFinalizingResult: () => boolean;
-  actionUnavailableText: () => string | null;
-  finalizeUnavailableText: () => string | null;
-  tokens: {
-    manualStart: RequestToken;
-    autoResolve: RequestToken;
-    submitAction: RequestToken;
-    finalizeResult: RequestToken;
-  };
-  setLiveState: (state: CombatLiveStateReadModel) => void;
-  setCompletion: (completion: MinigameCompletionEvent) => void;
-  setActionError: (message: string | null) => void;
-  setFinalizeError: (message: string | null) => void;
-  setIsPreparingSession: (value: boolean) => void;
-  setIsAutoResolving: (value: boolean) => void;
-  setIsSubmittingAction: (value: boolean) => void;
-  setIsFinalizingResult: (value: boolean) => void;
-}
+import { CombatHostSessionRunnerContext } from './combat-host-session-runner-context.model';
 
 @Injectable()
 export class CombatHostSessionRunner {
@@ -56,6 +22,7 @@ export class CombatHostSessionRunner {
       !sourceRef ||
       !preview?.canStartManual ||
       context.liveState() ||
+      context.isRecoveringState() ||
       context.isPreparingSession() ||
       context.isAutoResolving()
     ) {
@@ -92,6 +59,7 @@ export class CombatHostSessionRunner {
       !sourceRef ||
       !preview?.canAutoResolve ||
       context.liveState() ||
+      context.isRecoveringState() ||
       context.isPreparingSession() ||
       context.isAutoResolving()
     ) {
@@ -121,6 +89,40 @@ export class CombatHostSessionRunner {
       }),
       onError: () => context.setActionError(context.actionUnavailableText()),
       onFinalize: () => context.setIsAutoResolving(false),
+    });
+  }
+
+  recoverCombatLiveState(
+    context: CombatHostSessionRunnerContext,
+    combatSessionId: string | null,
+  ): void {
+    const sourceRef = context.sourceRef();
+
+    if (
+      !sourceRef ||
+      !combatSessionId ||
+      context.liveState() ||
+      context.isRecoveringState()
+    ) {
+      return;
+    }
+
+    context.setActionError(null);
+    context.setIsRecoveringState(true);
+    this.requestRunner.run({
+      requestToken: context.tokens.recoverState,
+      currentSourceRef: context.sourceRef,
+      sourceRef,
+      request: this.combatSessions.getCombatLiveState({
+        combatSessionId,
+      }),
+      isCurrent: () => !context.liveState(),
+      onSuccess: (state) => {
+        context.setLiveState(state);
+        this.completeManualCombatIfNeeded(context, state);
+      },
+      onError: () => context.setActionError(context.actionUnavailableText()),
+      onFinalize: () => context.setIsRecoveringState(false),
     });
   }
 
