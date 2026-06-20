@@ -1,12 +1,6 @@
-import { ItemLifecycleStatus } from '../domain/item/item-equipment.model';
-
-export type ArmoryInventoryAvailabilityFilterValue =
-  | 'all'
-  | Extract<ItemLifecycleStatus, 'active' | 'locked_trade' | 'locked_auction'>;
-
-export interface ArmoryInventoryFilters {
+export interface PlayerArmoryInventoryFilters {
   searchTerm: string;
   slotKey: string;
-  standKey: string;
-  availability: ArmoryInventoryAvailabilityFilterValue;
+  availabilityKey: string;
+  storageSlotPosition: string;
 }

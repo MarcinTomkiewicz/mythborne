@@ -7,7 +7,6 @@ import type {
 } from '@angular/cdk/drag-drop';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormRecord, ReactiveFormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
 import {
   PlayerArmoryPageCopyFilters,
   PlayerArmoryPageCopyInventory,
@@ -20,7 +19,6 @@ import {
   canVendorScrapInventoryItem,
   sumVendorScrapDrachmaValue,
 } from '../../../core/domain/item/player-armory-page-helpers';
-import { ArmoryBulkActionsToolbarState } from '../../../core/interfaces/item/armory-bulk-actions-toolbar-state.interface';
 import {
   ArmoryInventoryDragData,
   ArmoryInventoryShelfRow,
@@ -30,7 +28,6 @@ import {
   ArmoryRenameInventoryShelfInput,
 } from '../../../core/interfaces/item/armory-page-actions.interface';
 import {
-  ARMORY_INVENTORY_ALL_FILTER_VALUE,
   armoryAvailabilityFilterOptions,
   armorySlotFilterOptions,
   armoryStorageSlotFilterOptions,
@@ -38,14 +35,31 @@ import {
   armoryStorageSlotLabel,
   filterArmoryShelves,
 } from '../../../core/utils/armory-inventory-filter';
+import {
+  canReceiveArmoryShelfDrop,
+  movedArmoryItemsForDraggedItem,
+} from '../../../core/utils/armory/armory-inventory-drag-drop';
+import {
+  armoryInventoryShelfRows,
+  armoryShelfControlName,
+} from '../../../core/utils/armory/armory-inventory-shelf-rows';
+import {
+  armoryBulkToolbarState,
+  armoryMoveDestinationOptions,
+  selectedArmoryInventoryItems,
+} from '../../../core/utils/armory/armory-inventory-selection-view';
+import {
+  syncArmoryShelfNameForms,
+} from '../../../core/utils/armory/armory-shelf-form-controls';
+import { ARMORY_INVENTORY_ALL_FILTER_VALUE } from '../../../core/constants/armory-inventory-filter.const';
 import { normalizeSearchText } from '../../../core/utils/normalize-text';
-import { polishCountTemplateLabel } from '../../../core/utils/number';
 import { InlineTextEdit } from '../../../shared/inline-text-edit/inline-text-edit';
-import { SelectOption } from '../../../core/types/select-option.types';
 import { ArmoryInventoryFilterBar } from '../armory-inventory-filter-bar/armory-inventory-filter-bar';
 import { ArmoryBulkActionsToolbar } from '../armory-bulk-actions-toolbar/armory-bulk-actions-toolbar';
-import { ItemDetailPopover } from '../../../shared/item-detail-popover/item-detail-popover';
 import { ArmoryItemDragPreview } from '../armory-item-drag-preview/armory-item-drag-preview';
+import {
+  ArmoryInventoryItemCard,
+} from '../armory-inventory-item-card/armory-inventory-item-card';
 
 @Component({
   selector: 'app-armory-inventory-section',
@@ -55,10 +69,9 @@ import { ArmoryItemDragPreview } from '../armory-item-drag-preview/armory-item-d
     DragDropModule,
     ArmoryBulkActionsToolbar,
     ArmoryInventoryFilterBar,
-    ButtonModule,
     InlineTextEdit,
-    ItemDetailPopover,
     ArmoryItemDragPreview,
+    ArmoryInventoryItemCard,
   ],
   templateUrl: './armory-inventory-section.html',
 })
@@ -139,31 +152,19 @@ export class ArmoryInventorySection {
       : this.shelves(),
   );
   readonly shelfRows = computed<ArmoryInventoryShelfRow[]>(() =>
-    this.visibleShelves().map((shelf) => {
-      const visibleItemCount = shelf.visibleItems.length;
-
-      return {
-        ...shelf,
-        controlName: shelfControlName(shelf.position),
-        canRename: shelf.isPersisted && !shelf.isUnsortedDropArea,
-        shelfCountLabel: polishCountTemplateLabel(
-          visibleItemCount,
-          this.inventoryCopy().shelfCount,
-        ),
-      };
-    }),
+    armoryInventoryShelfRows(
+      this.visibleShelves(),
+      this.inventoryCopy().shelfCount,
+    ),
   );
   readonly visibleItems = computed(() =>
     this.visibleShelves().flatMap((shelf) => shelf.visibleItems),
   );
   readonly selectedVisibleItems = computed(() => {
-    const visibleItemsById = new Map(
-      this.visibleItems().map((item) => [item.itemId, item]),
+    return selectedArmoryInventoryItems(
+      this.visibleItems(),
+      this.selectedItemIds(),
     );
-
-    return this.selectedItemIds()
-      .map((itemId) => visibleItemsById.get(itemId) ?? null)
-      .filter((item): item is PlayerArmoryItemReadModel => item !== null);
   });
   readonly selectedVisibleItemIds = computed(() =>
     this.selectedVisibleItems().map((item) => item.itemId),
@@ -181,27 +182,9 @@ export class ArmoryInventorySection {
   readonly selectedVisibleDrachmaValue = computed(() =>
     sumVendorScrapDrachmaValue(this.selectedVisibleItems()),
   );
-  readonly moveDestinationOptions = computed<Array<SelectOption<number>>>(() => {
-    const selectedItems = this.selectedVisibleItems();
-    const selectedPositions = new Set(
-      selectedItems.map((item) => item.shelfPosition),
-    );
-
-    return this.shelves()
-      .filter((shelf) =>
-        shelf.isPersisted
-        && !shelf.isUnsortedDropArea
-        && (
-          selectedItems.length === 0
-          || selectedPositions.size !== 1
-          || !selectedPositions.has(shelf.position)
-        ),
-      )
-      .map((shelf) => ({
-        label: armoryStorageSlotLabel(shelf),
-        value: shelf.position,
-      }));
-  });
+  readonly moveDestinationOptions = computed(() =>
+    armoryMoveDestinationOptions(this.shelves(), this.selectedVisibleItems()),
+  );
   readonly canBulkEquipSelected = computed(() =>
     this.selectedVisibleEquippableItemIds().length > 0,
   );
@@ -212,49 +195,35 @@ export class ArmoryInventorySection {
     this.selectedVisibleItemIds().length > 0
     && this.moveDestinationOptions().length > 0,
   );
-  readonly bulkToolbarState = computed<ArmoryBulkActionsToolbarState>(() => {
-    const inventoryCopy = this.inventoryCopy();
-
-    return {
+  readonly bulkToolbarState = computed(() =>
+    armoryBulkToolbarState({
+      inventoryCopy: this.inventoryCopy(),
       selectedCount: this.selectedVisibleItems().length,
       drachmaValue: this.selectedVisibleDrachmaValue(),
-      selectedCountLabel: inventoryCopy.selectedCountLabel,
-      selectedValueLabel: inventoryCopy.selectedValueLabel,
-      actionBusyLabel: inventoryCopy.actionBusyLabel,
       equipLabel: this.bulkEquipItemLabel(),
       sellLabel: this.bulkSellItemLabel(),
-      moveTargetPlaceholder: inventoryCopy.moveTargetPlaceholder,
-      moveSelectedLabel: inventoryCopy.moveSelectedLabel,
       canEquip: this.canBulkEquipSelected(),
       canSell: this.canBulkSellSelected(),
       canMove: this.canBulkMoveSelected(),
       moveDestinationOptions: this.moveDestinationOptions(),
       isActionBusy: this.actionDisabled(),
-    };
-  });
+    }),
+  );
   private readonly searchTerm = computed(() =>
     normalizeSearchText(this.searchValue()),
   );
+  readonly shelfTitle = armoryStorageSlotLabel;
   readonly itemMetadata = armoryItemMetadata;
+  readonly canEquipItem = canEquipInventoryItem;
+  readonly canSellItem = canVendorScrapInventoryItem;
   readonly canEnterShelfDropList = (
     _drag: CdkDrag<ArmoryInventoryDragData>,
     drop: CdkDropList<ArmoryInventoryShelfRow>,
   ): boolean => !this.actionDisabled() && this.canReceiveDroppedItem(drop.data);
+  readonly canReceiveDroppedItem = canReceiveArmoryShelfDrop;
   private readonly syncShelfForms = effect(() =>
-    this.syncShelfNameForms(this.shelves()),
+    syncArmoryShelfNameForms(this.shelfNameForm, this.shelves()),
   );
-
-  shelfTitle(shelf: PlayerArmoryStorageSlotReadModel): string {
-    return armoryStorageSlotLabel(shelf);
-  }
-
-  canEquipItem(item: PlayerArmoryItemReadModel): boolean {
-    return canEquipInventoryItem(item);
-  }
-
-  canSellItem(item: PlayerArmoryItemReadModel): boolean {
-    return canVendorScrapInventoryItem(item);
-  }
 
   isItemSelected(item: PlayerArmoryItemReadModel): boolean {
     return this.selectedItemIds().includes(item.itemId);
@@ -305,10 +274,6 @@ export class ArmoryInventorySection {
     return this.movedItemsForDraggedItem(item);
   }
 
-  canReceiveDroppedItem(shelf: PlayerArmoryStorageSlotReadModel): boolean {
-    return shelf.isPersisted && !shelf.isUnsortedDropArea;
-  }
-
   dropInventoryItem(
     event: CdkDragDrop<
       ArmoryInventoryShelfRow,
@@ -323,7 +288,7 @@ export class ArmoryInventorySection {
     if (
       this.actionDisabled()
       || !this.canReceiveDroppedItem(targetShelf)
-      || movedItems.every((movedItem) => movedItem.shelfPosition === targetShelf.position)
+      || movedItems.every((movedItem) => movedItem.storagePosition === targetShelf.position)
     ) {
       return;
     }
@@ -351,58 +316,10 @@ export class ArmoryInventorySection {
     this.storageSlotFilterControl.setValue(ARMORY_INVENTORY_ALL_FILTER_VALUE);
   }
 
-  private syncShelfNameForms(
-    shelves: readonly PlayerArmoryStorageSlotReadModel[],
-  ): void {
-    const editableShelves = shelves.filter((shelf) =>
-      shelf.isPersisted && !shelf.isUnsortedDropArea,
-    );
-    const controlNames = new Set(
-      editableShelves.map((shelf) => shelfControlName(shelf.position)),
-    );
-
-    for (const shelf of editableShelves) {
-      this.ensureShelfNameControl(shelf);
-    }
-
-    for (const controlName of Object.keys(this.shelfNameForm.controls)) {
-      if (!controlNames.has(controlName)) {
-        this.shelfNameForm.removeControl(controlName, { emitEvent: false });
-      }
-    }
-  }
-
-  private ensureShelfNameControl(shelf: PlayerArmoryStorageSlotReadModel): void {
-    const controlName = shelfControlName(shelf.position);
-    const currentControl = this.shelfNameForm.controls[controlName];
-
-    if (currentControl) {
-      if (!currentControl.dirty && currentControl.value !== shelf.displayName) {
-        currentControl.setValue(shelf.displayName, { emitEvent: false });
-      }
-      return;
-    }
-
-    this.shelfNameForm.addControl(
-      controlName,
-      new FormControl<string>(shelf.displayName, { nonNullable: true }),
-      { emitEvent: false },
-    );
-  }
-
   private movedItemsForDraggedItem(
     item: PlayerArmoryItemReadModel,
   ): PlayerArmoryItemReadModel[] {
-    const selectedItems = this.selectedVisibleItems();
-
-    return selectedItems.length > 1
-      && selectedItems.some((selectedItem) => selectedItem.itemId === item.itemId)
-        ? selectedItems
-        : [item];
+    return movedArmoryItemsForDraggedItem(item, this.selectedVisibleItems());
   }
 
-}
-
-function shelfControlName(position: number): string {
-  return `shelf_${position}`;
 }

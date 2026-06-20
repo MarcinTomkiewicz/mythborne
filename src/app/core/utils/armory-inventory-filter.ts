@@ -3,17 +3,10 @@ import {
   PlayerArmoryItemReadModel,
   PlayerArmoryStorageSlotReadModel,
 } from '../domain/item/player-armory-page-context.model';
+import { ARMORY_INVENTORY_ALL_FILTER_VALUE } from '../constants/armory-inventory-filter.const';
+import { PlayerArmoryInventoryFilters } from '../types/armory-inventory-filter.types';
 import { SelectOption } from '../types/select-option.types';
 import { normalizeSearchText } from './normalize-text';
-
-export const ARMORY_INVENTORY_ALL_FILTER_VALUE = 'all';
-
-export interface PlayerArmoryInventoryFilters {
-  searchTerm: string;
-  slotKey: string;
-  availabilityKey: string;
-  storageSlotPosition: string;
-}
 
 export function armorySlotFilterOptions(
   shelves: readonly PlayerArmoryStorageSlotReadModel[],
@@ -153,7 +146,7 @@ function itemSearchTokens(item: PlayerArmoryItemReadModel): string[] {
     item.displayCore.qualityLabel,
     item.displayCore.baseTypeLabel,
     item.displayCore.allowedSlotLabel,
-    item.displayCore.valueDisplay?.displayValue ?? null,
+    item.displayCore.valueDisplay.displayValue,
   ]);
 }
 

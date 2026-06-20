@@ -1,5 +1,6 @@
 import type {
   PlayerArmoryEquipmentSlotReadModel,
+  PlayerArmoryItemReadModel,
   PlayerArmoryLoadoutPresetReadModel,
   PlayerArmoryStorageSlotReadModel,
 } from '../domain/item/player-armory-page-context.model';
@@ -39,21 +40,19 @@ export function mapArmoryUnsortedStorageSlot(
 
 export function mapArmoryEquipmentSlot(
   row: JsonRecord,
+  itemsById: ReadonlyMap<string, PlayerArmoryItemReadModel>,
 ): PlayerArmoryEquipmentSlotReadModel {
   const hasItem = requiredBoolean(
     read(row, 'hasItem'),
     'equipmentSlots.hasItem',
   );
-
-  return {
+  const base = {
     slotKey: requiredText(read(row, 'slotKey'), 'equipmentSlots.slotKey'),
     slotLabel: requiredText(read(row, 'slotLabel'), 'equipmentSlots.slotLabel'),
     slotSortOrder: requiredNonNegativeInteger(
       read(row, 'slotSortOrder'),
       'equipmentSlots.slotSortOrder',
     ),
-    hasItem,
-    isEmpty: requiredBoolean(read(row, 'isEmpty'), 'equipmentSlots.isEmpty'),
     itemDisplayName: requiredText(
       read(row, 'itemDisplayName'),
       'equipmentSlots.itemDisplayName',
@@ -61,14 +60,31 @@ export function mapArmoryEquipmentSlot(
     itemDisplayStateLabel: optionalText(read(row, 'itemDisplayStateLabel')),
     itemStatusKey: optionalText(read(row, 'itemStatusKey')),
     equipmentArea: optionalText(read(row, 'equipmentArea')),
-    itemId: hasItem
-      ? requiredText(read(row, 'itemId'), 'equipmentSlots.itemId')
-      : null,
-    itemName: hasItem
-      ? requiredText(read(row, 'itemName'), 'equipmentSlots.itemName')
-      : null,
     qualityLabel: optionalText(read(row, 'qualityLabel')),
     baseName: optionalText(read(row, 'baseName')),
+  };
+
+  if (!hasItem) {
+    return {
+      ...base,
+      hasItem: false,
+      isEmpty: true,
+      itemId: null,
+      itemName: null,
+      item: null,
+    };
+  }
+
+  const itemId = requiredText(read(row, 'itemId'), 'equipmentSlots.itemId');
+  const item = itemsById.get(itemId) ?? null;
+
+  return {
+    ...base,
+    hasItem: true,
+    isEmpty: false,
+    itemId,
+    itemName: requiredText(read(row, 'itemName'), 'equipmentSlots.itemName'),
+    item,
   };
 }
 

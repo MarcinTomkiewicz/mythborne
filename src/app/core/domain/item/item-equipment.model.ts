@@ -1,11 +1,9 @@
 import { Json } from '../../types/database.types';
 import { Row } from '../../types/supabase.types';
-import type { PlayerItemDisplayCore } from './player-item-display-core.model';
+import type { PlayerArmoryReadModel } from './player-armory-page-context.model';
 
 export type ItemLifecycleStatus = Row<'items'>['status'];
-export type ItemRequirementValueType = Row<'requirement_definitions'>['value_type'];
 export type EquipmentSlotKey = string;
-export type ArmoryShelfPosition = number;
 export type LoadoutPresetNumber = number;
 
 export const RUNTIME_USABLE_EQUIPPED_ITEM_STATUSES: readonly ItemLifecycleStatus[] = [
@@ -13,29 +11,6 @@ export const RUNTIME_USABLE_EQUIPPED_ITEM_STATUSES: readonly ItemLifecycleStatus
   'locked_trade',
   'locked_auction',
 ];
-
-export interface ItemSummary {
-  itemId: string;
-  ownerHeroId: string;
-  serverId: string;
-  name: string;
-  description: string | null;
-  lifecycleStatus: ItemLifecycleStatus;
-  generationBaseId: string | null;
-  generationQualityKey: string | null;
-  prefixAffixId: string | null;
-  suffixAffixId: string | null;
-  armoryShelfPosition: ArmoryShelfPosition;
-  drachmaValue: number | null;
-}
-
-export interface ItemLifecycleState {
-  itemId: string;
-  status: ItemLifecycleStatus;
-  isRuntimeUsableWhenEquipped: boolean;
-  scrappedAt: string | null;
-  recoverableUntil: string | null;
-}
 
 export interface EquipmentSlot {
   slotKey: EquipmentSlotKey;
@@ -86,6 +61,14 @@ export type EquipmentOperationAction =
   | 'failed'
   | 'skipped';
 
+export const EQUIPMENT_OPERATION_ACTIONS: readonly EquipmentOperationAction[] = [
+  'equipped',
+  'shifted',
+  'unequipped',
+  'failed',
+  'skipped',
+];
+
 export interface EquipmentOperationJournalEntry {
   action: EquipmentOperationAction;
   itemId: string | null;
@@ -106,114 +89,11 @@ export interface EquipmentOperationJournal {
   skipped: EquipmentOperationJournalEntry[];
   finalEquipment: CurrentEquipmentLoadout | null;
   diagnostics: Json | null;
+  visibleArmoryItemsJson: Json | null;
+  armoryStateJson: Json | null;
 }
 
-export interface ItemRequirementComponent {
-  requirementId: string;
-  requirementDefinitionKey: string;
-  valueType: ItemRequirementValueType | null;
-  displayLabel: string;
-  displayValue: string;
-  requiredKey: string | null;
-  requiredValue: number | string | boolean | null;
-  requiredStatKey: string | null;
-  rawRequiredValue: number | null;
-  appliesFromLevel: number;
-  sourceEntityType: string;
-  sourceEntityId: string;
-  sourceLayer: string;
-  sourceLayerLabel: string;
-  sourceKey: string;
-  sourceLabel: string;
-  sourceSortOrder: number;
-  requirementSortOrder: number;
-}
-
-export interface ItemEffectiveRequirement {
-  requirementDefinitionKey: string;
-  valueType: ItemRequirementValueType | null;
-  displayLabel: string;
-  displayValue: string;
-  requiredKey: string | null;
-  requiredStatKey: string | null;
-  requiredValue: number;
-  currentValueLabel?: string | null;
-  isMet?: boolean | null;
-  missingValue?: number | null;
-  failureReasonKey?: string | null;
-  failureReasonLabel?: string | null;
-  finalDecimalValue: number;
-  highestComponentValue: number;
-  additionalComponentValue: number;
-  additionalRequirementFraction: number;
-  preQualityValue: number;
-  qualityRequirementMultiplier: number;
-  roundingMode: string;
-  componentCount: number;
-}
-
-export interface ItemRequirementPreview {
-  itemId: string;
-  heroId: string | null;
-  meetsRequirements: boolean | null;
-  requirementCount: number | null;
-  unmetCount: number | null;
-  failedRequirementKeys: string[];
-  components: ItemRequirementComponent[];
-  effectiveRequirements: ItemEffectiveRequirement[];
-}
-
-export interface ArmoryShelf {
-  shelfId: string;
-  heroId: string;
-  position: ArmoryShelfPosition;
-  name: string;
-  updatedAt: string;
-}
-
-export interface ArmoryShelfReadModel {
-  shelfId: string | null;
-  heroId: string;
-  position: ArmoryShelfPosition;
-  name: string;
-  updatedAt: string | null;
-  isPersisted: boolean;
-  isUnsortedDropArea: boolean;
-  visibleItems: ArmoryItemSummary[];
-}
-
-export interface ArmoryVisibilitySummary {
-  visibleItemCount: number;
-  totalOwnedItemCount: number;
-  hiddenItemCount: number;
-  visibilityLimit: number;
-  visibilityLimitSource: string;
-  sourceConfigJson: Json;
-  visibleStatuses: string[];
-  unsortedJson: Json;
-  shelvesJson: Json;
-}
-
-export interface HeroArmoryReadModel {
-  heroId: string;
-  shelves: ArmoryShelfReadModel[];
-  visibleItems: ArmoryItemSummary[];
-  visibility: ArmoryVisibilitySummary;
-}
-
-export interface ArmoryItemSummary extends ItemSummary {
-  shelfPosition: ArmoryShelfPosition;
-  shelfName: string | null;
-  baseKey?: string | null;
-  baseName?: string | null;
-  baseTypeKey?: string | null;
-  itemCategoryKey?: string | null;
-  equipmentArea?: string | null;
-  handUsageKey?: string | null;
-  primarySlotKey?: string | null;
-  allowedSlotKeys?: string[];
-  requirementPreview: ItemRequirementPreview | null;
-}
+export type HeroArmoryReadModel = PlayerArmoryReadModel;
 
 export interface LoadoutPreset {
   presetId: string;
@@ -274,46 +154,4 @@ export interface LoadoutPresetSlotItem {
 export interface LoadoutPresetPreview {
   preset: LoadoutPreset;
   slotItems: LoadoutPresetSlotItem[];
-}
-
-export type ArmoryItemDetailRowKind = 'native_stat' | 'modifier_bonus';
-export type ArmoryItemDetailDisplaySection = 'item_stats' | 'bonuses';
-
-export interface ArmoryItemDetailStat {
-  statKey: string | null;
-  label: string;
-  displayValue: string;
-  numericValue?: number | null;
-}
-
-export interface ArmoryItemDetailBonus {
-  label: string;
-  targetKey: string | null;
-  displayValue: string;
-  numericValue: number | null;
-  rowKind: ArmoryItemDetailRowKind;
-  displaySection: ArmoryItemDetailDisplaySection;
-  sourceKey: string | null;
-  sourceLabel: string | null;
-  sortOrder: number;
-}
-
-export interface ArmoryItemDetailReadModel {
-  itemId: string;
-  heroId: string;
-  serverId: string;
-  displayCore: PlayerItemDisplayCore;
-  name: string;
-  lifecycleStatus: ItemLifecycleStatus | null;
-  qualityLabel: string | null;
-  baseLabel: string | null;
-  baseTypeKey: string | null;
-  prefixLabel: string | null;
-  suffixLabel: string | null;
-  shelfName: string | null;
-  shelfPosition: ArmoryShelfPosition;
-  drachmaValue: number | null;
-  itemStats: ArmoryItemDetailStat[];
-  bonuses: ArmoryItemDetailBonus[];
-  requirementPreview: ItemRequirementPreview | null;
 }

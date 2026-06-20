@@ -1,4 +1,3 @@
-import { Json } from '../../types/database.types';
 import { JsonRecord } from '../../utils/json-read';
 import type { EquipmentPreviewCopy } from '../equipment/equipment-preview.model';
 import type { PlayerItemDisplayCore } from './player-item-display-core.model';
@@ -11,7 +10,6 @@ export interface PlayerArmoryPageContextReadModel {
   readModel: PlayerArmoryReadModel;
   equipmentSlots: PlayerArmoryEquipmentSlotReadModel[];
   loadoutPresets: PlayerArmoryLoadoutPresetReadModel[];
-  runtimeDerivedStats: Json | null;
 }
 
 export interface PlayerArmoryPageCopyReadModel {
@@ -82,9 +80,6 @@ export interface PlayerArmorySellSelectedMessageParts {
   intro: string;
   itemsIntro: string;
   itemLineParts: PlayerArmorySellSelectedItemLineParts;
-  totalPrefix: string;
-  totalValueToken: string;
-  totalSuffix: string;
 }
 
 export interface PlayerArmorySellSelectedItemLineParts {
@@ -169,40 +164,104 @@ export interface PlayerArmoryStorageSlotReadModel {
   visibleItems: PlayerArmoryItemReadModel[];
 }
 
+export type PlayerArmoryItemDisplayCore = Omit<PlayerItemDisplayCore, 'drachmaValue'> & {
+  valueDisplay: NonNullable<PlayerItemDisplayCore['valueDisplay']>;
+};
+
 export interface PlayerArmoryItemReadModel {
   itemId: string;
-  ownerHeroId: string;
+  heroId: string;
   serverId: string;
-  name: string;
+  itemName: string;
   lifecycleStatusKey: string;
+  lifecycleStatusLabel: string | null;
+  generationQualityKey: string | null;
+  qualityMultiplier: number | null;
+  qualityLabel: string | null;
+  generationBaseId: string | null;
+  baseKey: string | null;
+  baseName: string | null;
+  baseTypeKey: string | null;
+  baseTypeLabel: string | null;
+  prefixAffixId: string | null;
+  prefixKey: string | null;
+  prefixName: string | null;
+  suffixAffixId: string | null;
+  suffixKey: string | null;
+  suffixName: string | null;
   armoryShelfPosition: number;
   drachmaValue: number | null;
-  shelfPosition: number;
+  generatedAt: string | null;
+  createdAt: string | null;
+  storagePosition: number;
+  storageSlotKey: string | null;
   shelfName: string | null;
+  storageSlotName: string | null;
+  isUnsorted: boolean;
+  visibilityIndex: number;
+  visibilityLimit: number;
+  isVisible: boolean;
+  itemCategoryKey: string | null;
+  equipmentArea: string | null;
+  primarySlotKey: string | null;
+  primarySlotLabel: string | null;
+  handUsageKey: string | null;
+  handUsageLabel: string | null;
   allowedSlotKeys: string[];
+  allowedSlotLabel: string | null;
+  displayIconKey: string;
   meetsRequirements: boolean;
-  requirementStatusKey: string;
-  requirementStatusAvailable: boolean;
   requirementCount: number;
   unmetRequirementCount: number;
   requirementStatus: JsonRecord;
-  displayCore: PlayerItemDisplayCore;
+  displayCore: PlayerArmoryItemDisplayCore;
 }
 
-export interface PlayerArmoryEquipmentSlotReadModel {
+interface PlayerArmoryEquipmentSlotBaseReadModel {
   slotKey: string;
   slotLabel: string;
   slotSortOrder: number;
-  hasItem: boolean;
-  isEmpty: boolean;
   itemDisplayName: string;
   itemDisplayStateLabel: string | null;
   itemStatusKey: string | null;
   equipmentArea: string | null;
-  itemId: string | null;
-  itemName: string | null;
   qualityLabel: string | null;
   baseName: string | null;
+}
+
+export type PlayerArmoryEquipmentSlotReadModel =
+  | PlayerArmoryEmptyEquipmentSlotReadModel
+  | PlayerArmoryEquippedEquipmentSlotReadModel;
+
+export type PlayerArmoryEquippedEquipmentSlotReadModel =
+  | PlayerArmoryFullEquipmentSlotReadModel
+  | PlayerArmoryDegradedEquipmentSlotReadModel;
+
+export interface PlayerArmoryEmptyEquipmentSlotReadModel
+  extends PlayerArmoryEquipmentSlotBaseReadModel {
+  hasItem: false;
+  isEmpty: true;
+  itemId: null;
+  itemName: null;
+  item: null;
+}
+
+export interface PlayerArmoryFullEquipmentSlotReadModel
+  extends PlayerArmoryEquipmentSlotBaseReadModel {
+  hasItem: true;
+  isEmpty: false;
+  itemId: string;
+  itemName: string;
+  item: PlayerArmoryItemReadModel;
+}
+
+export interface PlayerArmoryDegradedEquipmentSlotReadModel
+  extends PlayerArmoryEquipmentSlotBaseReadModel {
+  hasItem: true;
+  isEmpty: false;
+  itemId: string;
+  itemName: string;
+  item: null;
 }
 
 export interface PlayerArmoryLoadoutPresetReadModel {

@@ -1,4 +1,5 @@
 import { ItemStatus } from './item.model';
+import { Json } from '../../types/database.types';
 
 export interface VendorScrapHeroItemInput {
   actorHeroId: string;
@@ -59,6 +60,8 @@ export interface BulkVendorScrapHeroItemsResult {
   failedCount: number;
   totalDrachmaAmount: number;
   balanceAfter: number;
+  visibleArmoryItemsJson: Json;
+  armoryStateJson: Json;
 }
 
 export interface RecoverableScrappedItem {

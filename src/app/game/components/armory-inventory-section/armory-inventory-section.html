@@ -82,88 +82,19 @@
                 [cdkDragData]="dragData(item)"
                 [cdkDragDisabled]="actionDisabled()"
               >
-                <app-item-detail-popover
-                  [itemId]="item.itemId"
-                  [fallbackName]="item.displayCore.itemName"
-                  context="armory"
-                  [buttonTrigger]="false"
-                  [triggerFullWidth]="true"
-                  [triggerTabIndex]="null"
-                >
-                  <article
-                    class="mg-card p-sm flex-col gap-xs h-100 w-100 min-w-0 cursor-pointer"
-                    [class.mg-card--selected]="isItemSelected(item)"
-                    role="button"
-                    tabindex="0"
-                    [attr.aria-pressed]="isItemSelected(item)"
-                    (click)="toggleItemSelection(item)"
-                    (keydown.enter)="toggleItemSelection(item)"
-                    (keydown.space)="toggleItemSelection(item); $event.preventDefault()"
-                  >
-                    <div class="flex-col gap-xs min-w-0">
-                      <div class="flex-row-start-center gap-sm min-w-0">
-                        <span class="mg-card p-sm flex-row-center-center flex-none">
-                          <i
-                            class="pi pi-{{ item.displayCore.displayIconKey || 'box' }} color-text text-xl"
-                            aria-hidden="true"
-                          ></i>
-                        </span>
-                        <div class="flex-col-center-start min-h-lines-2 min-w-0">
-                          <strong class="color-text text-sm truncate-1">{{ item.displayCore.itemName }}</strong>
-                        </div>
-                      </div>
-
-                      @if (itemMetadata(item.displayCore); as metadata) {
-                        <span class="color-muted text-xs truncate-1 w-100">{{ metadata }}</span>
-                      }
-                    </div>
-
-                    @if (item.lifecycleStatusKey !== 'active' && item.displayCore.lifecycleStatusLabel) {
-                      <span class="tag-badge tag-badge--muted">{{ item.displayCore.lifecycleStatusLabel }}</span>
-                    }
-
-                    <div class="flex-1"></div>
-
-                    @if (item.displayCore.valueDisplay; as valueDisplay) {
-                      <div class="border-top pt-xs w-100">
-                        <span class="color-muted text-xs">
-                          {{ valueDisplay.displayLabel }}:
-                        </span>
-                        <strong class="color-heading text-xs">{{ valueDisplay.displayValue }}</strong>
-                      </div>
-                    }
-
-                    @if (item.lifecycleStatusKey === 'active') {
-                      <div
-                        class="flex-row-start-center flex-wrap gap-xs border-top pt-xs"
-                        (click)="$event.stopPropagation()"
-                        (mousedown)="$event.stopPropagation()"
-                        (touchstart)="$event.stopPropagation()"
-                        (keydown.enter)="$event.stopPropagation()"
-                        (keydown.space)="$event.stopPropagation()"
-                      >
-                        <p-button
-                          type="button"
-                          severity="secondary"
-                          size="small"
-                          [label]="equipItemLabel()"
-                          [disabled]="actionDisabled() || !canEquipItem(item)"
-                          (onClick)="equipItem.emit(item)"
-                        />
-                        @if (canSellItem(item)) {
-                          <p-button
-                            type="button"
-                            severity="secondary"
-                            size="small"
-                            [label]="sellItemLabel()"
-                            [disabled]="actionDisabled()"
-                            (onClick)="sellItem.emit(item)"
-                          />
-                        }
-                      </div>
-                    }
-                  </article>
-                </app-item-detail-popover>
+                <app-armory-inventory-item-card
+                  [item]="item"
+                  [metadata]="itemMetadata(item.displayCore)"
+                  [selected]="isItemSelected(item)"
+                  [actionDisabled]="actionDisabled()"
+                  [canEquip]="canEquipItem(item)"
+                  [canSell]="canSellItem(item)"
+                  [equipItemLabel]="equipItemLabel()"
+                  [sellItemLabel]="sellItemLabel()"
+                  (toggleItem)="toggleItemSelection($event)"
+                  (equipItem)="equipItem.emit($event)"
+                  (sellItem)="sellItem.emit($event)"
+                />
 
                 <ng-template cdkDragPreview>
                   <app-armory-item-drag-preview

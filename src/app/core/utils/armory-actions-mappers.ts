@@ -39,9 +39,9 @@ function mapBulkMoveArmoryJournalEntry(
   record: JsonRecord,
 ): BulkMoveArmoryItemsToShelfJournalEntry {
   return {
-    itemId: optionalText(read(record, 'itemId', 'item_id')),
-    actionKey: optionalText(read(record, 'actionKey', 'action_key')),
+    itemId: optionalText(read(record, 'itemId')),
+    actionKey: optionalText(read(record, 'actionKey')),
     status: optionalText(read(record, 'status')),
-    message: optionalText(read(record, 'message', 'reason')),
+    message: optionalText(read(record, 'message')),
   };
 }

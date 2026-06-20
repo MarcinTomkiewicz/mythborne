@@ -34,17 +34,6 @@ export function buildSellSelectedConfirmationSegments(
   highlightFields: readonly string[],
   items: readonly PlayerArmoryItemReadModel[],
 ): StructuredConfirmDialogSegment[] {
-  const itemValues = items.map((item) => item.drachmaValue);
-
-  if (!itemValues.every(isFiniteNumber)) {
-    return [];
-  }
-
-  const totalDrachmaValue = itemValues.reduce(
-    (total, value) => total + value,
-    0,
-  );
-
   return [
     { text: parts.intro, highlighted: false, lineBreakAfter: true },
     { text: parts.itemsIntro, highlighted: false, lineBreakAfter: true },
@@ -53,27 +42,7 @@ export function buildSellSelectedConfirmationSegments(
       highlightFields,
       item,
     )),
-    { text: parts.totalPrefix, highlighted: false },
-    {
-      text: String(totalDrachmaValue),
-      highlighted: highlightFields.includes(parts.totalValueToken),
-    },
-    { text: parts.totalSuffix, highlighted: false },
   ];
-}
-
-export function plainStructuredConfirmMessage(
-  segments: readonly StructuredConfirmDialogSegment[],
-): string {
-  return segments
-    .map((segment) => `${segment.text}${segment.lineBreakAfter ? '\n' : ''}`)
-    .join('');
-}
-
-export function playerArmoryContextKey(
-  context: Pick<PlayerArmoryPageContextReadModel, 'heroId' | 'serverId'> | null,
-): string | null {
-  return context ? `${context.serverId}:${context.heroId}` : null;
 }
 
 export function visibleArmoryItemsById(
@@ -91,7 +60,6 @@ export function visibleArmoryItemsById(
 
 export function canEquipInventoryItem(item: PlayerArmoryItemReadModel): boolean {
   return item.lifecycleStatusKey === 'active'
-    && item.requirementStatusKey !== 'unavailable'
     && item.meetsRequirements === true;
 }
 
@@ -99,8 +67,7 @@ export function canVendorScrapInventoryItem(
   item: PlayerArmoryItemReadModel,
 ): boolean {
   return item.lifecycleStatusKey === 'active'
-    && isFiniteNumber(item.drachmaValue)
-    && Boolean(item.displayCore.valueDisplay);
+    && isFiniteNumber(item.drachmaValue);
 }
 
 export function sumVendorScrapDrachmaValue(
@@ -127,17 +94,7 @@ export function mapArmoryPageEquipmentPreviewRows(
     iconClass: equipmentPreviewIconClassForSlot(slot.slotKey),
     emptyDisplayName: slot.hasItem ? null : slot.itemDisplayName,
     emptyDisplayDetail: slot.hasItem ? null : slot.itemDisplayStateLabel,
-    item: slot.hasItem
-      ? {
-          itemId: slot.itemId!,
-          name: slot.itemDisplayName,
-          metadata: slot.itemDisplayStateLabel,
-          statusLabel: slot.itemDisplayStateLabel,
-          qualityLabel: slot.qualityLabel,
-          kindLabel: slot.baseName,
-          slotLabel: slot.slotLabel,
-        }
-      : null,
+    item: equipmentPreviewItem(slot),
   }));
 }
 
@@ -151,11 +108,7 @@ function buildSellSelectedItemLineSegments(
   item: PlayerArmoryItemReadModel,
 ): StructuredConfirmDialogSegment[] {
   const itemLineParts = parts.itemLineParts;
-  const valueDisplay = item.displayCore.valueDisplay?.displayValue;
-
-  if (!valueDisplay) {
-    return [];
-  }
+  const valueDisplay = item.displayCore.valueDisplay.displayValue;
 
   return [
     {
@@ -169,4 +122,22 @@ function buildSellSelectedItemLineSegments(
     },
     { text: itemLineParts.suffix, highlighted: false, lineBreakAfter: true },
   ];
+}
+
+function equipmentPreviewItem(
+  slot: PlayerArmoryEquipmentSlotReadModel,
+): EquipmentPreviewSlotRow['item'] {
+  if (!slot.hasItem) {
+    return null;
+  }
+
+  return {
+    itemId: slot.itemId,
+    name: slot.itemDisplayName,
+    metadata: slot.itemDisplayStateLabel,
+    statusLabel: slot.itemDisplayStateLabel,
+    qualityLabel: slot.qualityLabel,
+    kindLabel: slot.baseName,
+    slotLabel: slot.slotLabel,
+  };
 }

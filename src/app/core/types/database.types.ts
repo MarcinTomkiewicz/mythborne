@@ -15608,6 +15608,14 @@ export type Database = {
         Args: { p_public_safe?: boolean; p_report_id: string }
         Returns: Json
       }
+      build_game_report_item_reference_json: {
+        Args: { p_item_reference_id: string; p_public_safe?: boolean }
+        Returns: Json
+      }
+      build_game_report_item_references_json: {
+        Args: { p_public_safe?: boolean; p_report_id: string }
+        Returns: Json
+      }
       build_game_report_related_reports_json: {
         Args: { p_public_safe?: boolean; p_report_id: string }
         Returns: Json
@@ -15759,6 +15767,19 @@ export type Database = {
         Args: { p_item_id: string; p_viewer_hero_id: string }
         Returns: Json
       }
+      build_item_display_core_from_generation_components: {
+        Args: {
+          p_base_id?: string
+          p_display_name_fallback?: string
+          p_item_id?: string
+          p_item_status?: string
+          p_locale_key?: string
+          p_prefix_affix_id?: string
+          p_quality_key?: string
+          p_suffix_affix_id?: string
+        }
+        Returns: Json
+      }
       build_opponent_combatant_snapshot_for_resolver:
         | {
             Args: {
@@ -15787,6 +15808,10 @@ export type Database = {
         Args: { p_hero_id: string; p_item_id: string }
         Returns: Json
       }
+      build_player_armory_items_json: {
+        Args: { p_hero_id: string }
+        Returns: Json
+      }
       build_player_estate_building_groups_json: {
         Args: { p_buildings_json: Json; p_default_district_code: string }
         Returns: Json
@@ -15798,6 +15823,10 @@ export type Database = {
       build_player_facing_reward_entries_summary: {
         Args: { p_entries_json: Json }
         Returns: string
+      }
+      build_player_item_display_core_from_item_id: {
+        Args: { p_item_id: string; p_locale_key?: string }
+        Returns: Json
       }
       build_player_item_display_core_json: {
         Args: { p_item_json: Json }
@@ -19872,37 +19901,6 @@ export type Database = {
           suffix_affix_id: string
           suffix_key: string
           suffix_name: string
-          visibility_index: number
-          visibility_limit: number
-        }[]
-      }
-      get_hero_armory_items: {
-        Args: { p_hero_id: string }
-        Returns: {
-          allowed_slot_keys: string[]
-          armory_shelf_position: number
-          base_key: string
-          base_name: string
-          base_type_key: string
-          created_at: string
-          drachma_value: number
-          equipment_area: string
-          generated_at: string
-          generation_base_id: string
-          generation_quality_key: string
-          hand_usage_key: string
-          hero_id: string
-          is_unsorted: boolean
-          is_visible: boolean
-          item_category_key: string
-          item_id: string
-          item_name: string
-          item_status: Database["public"]["Enums"]["item_status"]
-          prefix_affix_id: string
-          primary_slot_key: string
-          server_id: string
-          shelf_name: string
-          suffix_affix_id: string
           visibility_index: number
           visibility_limit: number
         }[]

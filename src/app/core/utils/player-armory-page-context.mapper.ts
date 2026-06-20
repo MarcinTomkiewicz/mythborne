@@ -2,6 +2,7 @@ import {
   PlayerArmoryItemReadModel,
   PlayerArmoryPageContextReadModel,
   PlayerArmoryReadModel,
+  PlayerArmoryVisibilityReadModel,
   PlayerArmoryStorageSlotReadModel,
 } from '../domain/item/player-armory-page-context.model';
 import { Json } from '../types/database.types';
@@ -46,10 +47,11 @@ export function mapPlayerArmoryPageContext(
     requiredArray(read(root, 'items'), 'items'),
     shelves,
   );
+  const itemsById = new Map(items.map((item) => [item.itemId, item]));
   const equipmentSlots = requiredArray(
     read(root, 'equipmentSlots'),
     'equipmentSlots',
-  ).map(mapArmoryEquipmentSlot);
+  ).map((row) => mapArmoryEquipmentSlot(row, itemsById));
   const equippedItemIds = new Set(
     equipmentSlots.flatMap((slot) => slot.itemId ? [slot.itemId] : []),
   );
@@ -62,7 +64,10 @@ export function mapPlayerArmoryPageContext(
     copyJson,
     readModel: mapReadModel(
       heroId,
-      requiredRecord(read(root, 'visibilityState'), 'visibilityState'),
+      mapArmoryVisibilityState(
+        requiredRecord(read(root, 'visibilityState'), 'visibilityState'),
+        'visibilityState',
+      ),
       shelves,
       inventoryItems,
     ),
@@ -71,47 +76,90 @@ export function mapPlayerArmoryPageContext(
       read(root, 'loadoutPresets'),
       'loadoutPresets',
     ).map(mapArmoryLoadoutPreset),
-    runtimeDerivedStats: read(root, 'runtimeDerivedStats') ?? null,
   };
+}
+
+export function mapArmoryMutationReadModel(
+  currentReadModel: PlayerArmoryReadModel,
+  visibleItemsJson: Json,
+  armoryStateJson: Json,
+): PlayerArmoryReadModel {
+  return mapReadModel(
+    currentReadModel.heroId,
+    mapArmoryVisibilityState(
+      requiredRecord(armoryStateJson, 'armory_state_json'),
+      'armory_state_json',
+    ),
+    currentReadModel.shelves,
+    mapArmoryPageItemRows(
+      requiredArray(visibleItemsJson, 'visible_items_json'),
+      currentReadModel.shelves,
+    ),
+  );
 }
 
 function mapReadModel(
   heroId: string,
-  visibilityState: JsonRecord,
+  visibility: PlayerArmoryVisibilityReadModel,
   shelves: readonly PlayerArmoryStorageSlotReadModel[],
   items: readonly PlayerArmoryItemReadModel[],
 ): PlayerArmoryReadModel {
-  const itemsByShelf = new Map<number, PlayerArmoryItemReadModel[]>();
+  const itemsByShelf = new Map<string, PlayerArmoryItemReadModel[]>();
 
   for (const item of items) {
-    const shelfItems = itemsByShelf.get(item.shelfPosition) ?? [];
-    itemsByShelf.set(item.shelfPosition, [...shelfItems, item]);
+    const shelfKey = itemStorageSlotKey(item);
+    const shelfItems = itemsByShelf.get(shelfKey);
+
+    if (shelfItems) {
+      shelfItems.push(item);
+    } else {
+      itemsByShelf.set(shelfKey, [item]);
+    }
   }
 
   return {
     heroId,
     shelves: shelves.map((shelf) => ({
       ...shelf,
-      visibleItems: itemsByShelf.get(shelf.position) ?? [],
+      visibleItems: itemsByShelf.get(storageSlotKey(shelf)) ?? [],
     })),
     visibleItems: [...items],
-    visibility: {
-      visibleItemCount: requiredNonNegativeInteger(
-        read(visibilityState, 'visible_item_count'),
-        'visibilityState.visible_item_count',
-      ),
-      totalOwnedItemCount: requiredNonNegativeInteger(
-        read(visibilityState, 'total_owned_item_count'),
-        'visibilityState.total_owned_item_count',
-      ),
-      hiddenItemCount: requiredNonNegativeInteger(
-        read(visibilityState, 'hidden_item_count'),
-        'visibilityState.hidden_item_count',
-      ),
-      visibilityLimit: requiredNonNegativeInteger(
-        read(visibilityState, 'visibility_limit'),
-        'visibilityState.visibility_limit',
-      ),
-    },
+    visibility,
+  };
+}
+
+function itemStorageSlotKey(item: PlayerArmoryItemReadModel): string {
+  return item.storageSlotKey
+    ? `slot:${item.storageSlotKey}:${item.storagePosition}`
+    : `unsorted:${item.storagePosition}`;
+}
+
+function storageSlotKey(shelf: PlayerArmoryStorageSlotReadModel): string {
+  return shelf.storageSlotKey
+    ? `slot:${shelf.storageSlotKey}:${shelf.position}`
+    : `unsorted:${shelf.position}`;
+}
+
+function mapArmoryVisibilityState(
+  value: JsonRecord,
+  fieldPath: 'visibilityState' | 'armory_state_json',
+): PlayerArmoryVisibilityReadModel {
+  return {
+    visibleItemCount: requiredNonNegativeInteger(
+      read(value, 'visible_item_count'),
+      `${fieldPath}.visible_item_count`,
+    ),
+    totalOwnedItemCount: requiredNonNegativeInteger(
+      read(value, 'total_owned_item_count'),
+      `${fieldPath}.total_owned_item_count`,
+    ),
+    hiddenItemCount: requiredNonNegativeInteger(
+      read(value, 'hidden_item_count'),
+      `${fieldPath}.hidden_item_count`,
+    ),
+    visibilityLimit: requiredNonNegativeInteger(
+      read(value, 'visibility_limit'),
+      `${fieldPath}.visibility_limit`,
+    ),
   };
 }

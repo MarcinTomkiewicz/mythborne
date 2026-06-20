@@ -1,9 +1,9 @@
 <app-loading-overlay [visible]="isScreenLoading()" />
 
 <app-structured-confirm-dialog
-  key="armory-sell-item"
+  [key]="sellConfirmation.key"
   styleClass="mg-dialog mg-dialog--danger"
-  [messageSegments]="sellItemConfirmationSegments()"
+  [messageSegments]="sellConfirmation.segments()"
   (hidden)="clearSellItemConfirmationMessage()"
 />
 
@@ -35,9 +35,9 @@
           [showActions]="true"
           [compact]="true"
           [showSlotLabels]="false"
-          [selectedItemIds]="selectedEquippedItemIds()"
-          [selectionActionDisabled]="equipment.isMutating()"
-          (equippedItemToggle)="toggleEquippedItemSelection($event)"
+          [selectedItemIds]="selection.selectedEquippedItemIds()"
+          [selectionActionDisabled]="page.isEquipmentMutating()"
+          (equippedItemToggle)="selection.toggleEquippedItemSelection($event)"
           (unequipSelected)="unequipSelectedItems()"
           (unequipAll)="unequipAllItems()"
         />
@@ -64,8 +64,8 @@
         [renameStorageSlotLabel]="copy.actions.renameStorageSlot"
         [cancelLabel]="copy.confirmations.cancelLabel"
         [actionDisabled]="inventoryActionDisabled()"
-        [selectedItemIds]="selectedInventoryItemIds()"
-        (selectedItemIdsChange)="selectedInventoryItemIds.set($event)"
+        [selectedItemIds]="selection.selectedInventoryItemIds()"
+        (selectedItemIdsChange)="selection.selectedInventoryItemIds.set($event)"
         (equipItem)="equipInventoryItem($event)"
         (bulkEquipItems)="bulkEquipInventoryItems($event)"
         (bulkSellItems)="bulkSellInventoryItems($event)"

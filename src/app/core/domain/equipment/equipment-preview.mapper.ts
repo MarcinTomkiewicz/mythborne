@@ -5,7 +5,6 @@ import {
 } from '../../types/equipment-classification.types';
 import { normalizeKeyText } from '../../utils/normalize-text';
 import {
-  ArmoryItemSummary,
   EquipmentSlot,
   EquippedItemSummary,
 } from '../item/item-equipment.model';
@@ -81,17 +80,6 @@ export function equippedItemIconClass(
   item: EquippedItemSummary,
 ): EquipmentPreviewIconClass {
   return equipmentPreviewIconClass(item.slotKey, item);
-}
-
-export function armoryItemIconClass(
-  item: ArmoryItemSummary,
-): EquipmentPreviewIconClass {
-  return classifyItemDisplay({
-    baseTypeKey: item.baseTypeKey,
-    handUsageKey: item.handUsageKey,
-    primarySlotKey: item.primarySlotKey,
-    allowedSlotKeys: item.allowedSlotKeys,
-  }).iconClass;
 }
 
 export function classifyItemDisplay(

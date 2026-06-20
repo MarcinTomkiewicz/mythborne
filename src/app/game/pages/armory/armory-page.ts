@@ -1,40 +1,34 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ConfirmationService } from 'primeng/api';
+import { Component, OnInit, computed, inject } from '@angular/core';
 import {
   ArmorySummaryRowKey,
   ARMORY_SUMMARY_ROW_CONFIG,
 } from '../../../core/configs/armory-summary-rows.config';
-import { EquipmentPreviewSlotRow } from '../../../core/domain/equipment/equipment-preview.model';
 import {
   PlayerArmoryItemReadModel,
 } from '../../../core/domain/item/player-armory-page-context.model';
 import {
-  buildSellItemConfirmationSegments,
-  buildSellSelectedConfirmationSegments,
-  canEquipInventoryItem,
-  canVendorScrapInventoryItem,
   mapArmoryPageEquipmentPreviewRows,
-  plainStructuredConfirmMessage,
-  visibleArmoryItemsById,
 } from '../../../core/domain/item/player-armory-page-helpers';
-import type {
-  StructuredConfirmDialogSegment,
-} from '../../../core/interfaces/structured-confirm-dialog-segment.interface';
 import { GamePageSummaryRow } from '../../../core/interfaces/game-page-summary-row.interface';
 import {
   ArmoryBulkMoveInventoryItemsInput,
   ArmoryRenameInventoryShelfInput,
 } from '../../../core/interfaces/item/armory-page-actions.interface';
 import { ArmoryPageFacade } from '../../../core/services/items/armory-page.facade';
-import { CurrentEquipmentState } from '../../../core/services/items/current-equipment.state';
+import {
+  ArmoryPageEquipmentMutationState,
+} from '../../../core/services/items/armory-page-equipment-mutation.state';
+import {
+  ArmoryPageInventoryMutationState,
+} from '../../../core/services/items/armory-page-inventory-mutation.state';
 import { ArmoryInventorySection } from '../../components/armory-inventory-section/armory-inventory-section';
 import { LoadoutPresetManagement } from '../../components/loadout-preset-management/loadout-preset-management';
 import { EquipmentPreview } from '../../../shared/equipment-preview/equipment-preview';
 import { GamePageHeader } from '../../../shared/game-page-header/game-page-header';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { StructuredConfirmDialog } from '../../../shared/structured-confirm-dialog/structured-confirm-dialog';
-
-const ARMORY_SELL_ITEM_CONFIRMATION_KEY = 'armory-sell-item';
+import { ArmoryPageSellConfirmationState } from './armory-page-sell-confirmation.state';
+import { ArmoryPageSelectionState } from './armory-page-selection.state';
 
 @Component({
   selector: 'app-armory-page',
@@ -47,28 +41,30 @@ const ARMORY_SELL_ITEM_CONFIRMATION_KEY = 'armory-sell-item';
     LoadoutPresetManagement,
     ArmoryInventorySection,
   ],
-  providers: [ArmoryPageFacade, CurrentEquipmentState],
+  providers: [
+    ArmoryPageFacade,
+    ArmoryPageEquipmentMutationState,
+    ArmoryPageInventoryMutationState,
+    ArmoryPageSellConfirmationState,
+    ArmoryPageSelectionState,
+  ],
   templateUrl: './armory-page.html',
   host: { class: 'd-block w-100' },
 })
 export class ArmoryPage implements OnInit {
-  private readonly confirmationService = inject(ConfirmationService);
   readonly page = inject(ArmoryPageFacade);
-  readonly equipment = inject(CurrentEquipmentState);
-  readonly selectedEquippedItemIds = signal<readonly string[]>([]);
-  readonly selectedInventoryItemIds = signal<readonly string[]>([]);
-  readonly sellItemConfirmationSegments =
-    signal<readonly StructuredConfirmDialogSegment[]>([]);
+  readonly sellConfirmation = inject(ArmoryPageSellConfirmationState);
+  readonly selection = inject(ArmoryPageSelectionState);
   readonly isScreenLoading = computed(() =>
     this.page.status() !== 'error'
     && (
       this.page.status() !== 'loaded'
-      || this.equipment.isMutating()
+      || this.page.isEquipmentMutating()
       || this.page.isInventoryMutating()
     ),
   );
   readonly inventoryActionDisabled = computed(() =>
-    this.equipment.isMutating() || this.page.isInventoryMutating(),
+    this.page.isEquipmentMutating() || this.page.isInventoryMutating(),
   );
   readonly equippedItemCount = computed(() =>
     this.page.equipmentSlots().filter((slot) => slot.hasItem).length,
@@ -106,30 +102,17 @@ export class ArmoryPage implements OnInit {
     this.page.loadData();
   }
 
-  toggleEquippedItemSelection(row: EquipmentPreviewSlotRow): void {
-    const itemId = row.item?.itemId;
-
-    if (!itemId) {
-      return;
-    }
-
-    this.selectedEquippedItemIds.update((selectedIds) =>
-      selectedIds.includes(itemId)
-        ? selectedIds.filter((selectedId) => selectedId !== itemId)
-        : [...selectedIds, itemId],
-    );
-  }
-
   unequipSelectedItems(): void {
-    const selectedIds = this.selectedEquippedItemIds();
+    const selectedIds = this.selection.selectedEquippedItemIds();
 
     if (!selectedIds.length) {
       return;
     }
 
-    this.equipment.bulkUnequipItems({
-      items: selectedIds.map((itemId) => ({ itemId })),
-    }, () => this.refreshAfterEquipmentMutation());
+    this.page.bulkUnequipEquipmentItems(
+      selectedIds,
+      () => this.selection.clearEquipmentSelectionAfterMutation(),
+    );
   }
 
   unequipAllItems(): void {
@@ -140,41 +123,32 @@ export class ArmoryPage implements OnInit {
       return;
     }
 
-    this.equipment.bulkUnequipItems({
-      items: equippedItemIds.map((itemId) => ({ itemId })),
-    }, () => this.refreshAfterEquipmentMutation());
+    this.page.bulkUnequipEquipmentItems(
+      equippedItemIds,
+      () => this.selection.clearEquipmentSelectionAfterMutation(),
+    );
   }
 
   equipInventoryItem(item: PlayerArmoryItemReadModel): void {
-    if (this.inventoryActionDisabled() || !canEquipInventoryItem(item)) {
+    if (this.inventoryActionDisabled()) {
       return;
     }
 
-    this.equipment.equipItem(
-      { itemId: item.itemId },
-      () => this.refreshAfterInventoryMutation(),
+    this.page.equipInventoryItem(
+      item.itemId,
+      () => this.selection.clearAllSelectionAfterInventoryMutation(),
     );
   }
 
   bulkEquipInventoryItems(itemIds: readonly string[]): void {
-    const context = this.page.context();
-
-    if (this.inventoryActionDisabled() || !context || !itemIds.length) {
+    if (this.inventoryActionDisabled() || !itemIds.length) {
       return;
     }
 
-    const selectedItems = visibleArmoryItemsById(context, itemIds);
-
-    if (
-      selectedItems.length !== itemIds.length
-      || selectedItems.some((item) => !canEquipInventoryItem(item))
-    ) {
-      return;
-    }
-
-    this.equipment.bulkEquipItems({
-      items: selectedItems.map((item) => ({ itemId: item.itemId })),
-    }, () => this.refreshAfterInventoryMutation());
+    this.page.bulkEquipInventoryItems(
+      itemIds,
+      () => this.selection.clearAllSelectionAfterInventoryMutation(),
+    );
   }
 
   bulkSellInventoryItems(itemIds: readonly string[]): void {
@@ -185,129 +159,67 @@ export class ArmoryPage implements OnInit {
       return;
     }
 
-    const selectedItems = visibleArmoryItemsById(context, itemIds);
+    const selectedItems = this.page.vendorScrapSelection(itemIds);
 
-    if (
-      selectedItems.length !== itemIds.length
-      || selectedItems.some((item) => !canVendorScrapInventoryItem(item))
-    ) {
+    if (!selectedItems) {
       return;
     }
 
-    const messageSegments = buildSellSelectedConfirmationSegments(
-      copy.confirmations.sellSelectedMessageParts,
-      copy.confirmations.sellSelectedHighlightFields,
+    this.sellConfirmation.confirmSelectedItems(
+      copy,
       selectedItems,
+      () => this.sellInventoryItems(selectedItems),
     );
-
-    if (!messageSegments.length) {
-      return;
-    }
-
-    this.sellItemConfirmationSegments.set(messageSegments);
-    this.confirmationService.confirm({
-      key: ARMORY_SELL_ITEM_CONFIRMATION_KEY,
-      header: copy.confirmations.sellItemTitle,
-      message: plainStructuredConfirmMessage(messageSegments),
-      acceptLabel: copy.confirmations.confirmLabel,
-      rejectLabel: copy.confirmations.cancelLabel,
-      acceptIcon: 'pi pi-check',
-      rejectIcon: 'pi pi-times',
-      acceptButtonStyleClass: 'p-button-danger',
-      rejectButtonStyleClass: 'p-button-secondary',
-      accept: () => this.sellInventoryItems(selectedItems),
-      reject: () => this.clearSellItemConfirmationMessage(),
-    });
   }
 
   private sellInventoryItems(
     items: readonly PlayerArmoryItemReadModel[],
   ): void {
-    const context = this.page.context();
-
-    if (this.inventoryActionDisabled() || !context || !items.length) {
+    if (this.inventoryActionDisabled() || !items.length) {
       return;
     }
 
-    const selectedItems = visibleArmoryItemsById(
-      context,
-      items.map((item) => item.itemId),
-    );
+    const selectedItems = this.page.vendorScrapSelection(items.map((item) => item.itemId));
 
-    if (
-      selectedItems.length !== items.length
-      || selectedItems.some((item) => !canVendorScrapInventoryItem(item))
-    ) {
+    if (!selectedItems || selectedItems.length !== items.length) {
       return;
     }
 
     this.page.bulkVendorScrapInventoryItems(
       selectedItems.map((item) => item.itemId),
-      () => this.clearInventorySelectionAfterMutation(),
+      () => this.selection.clearAllSelectionAfterInventoryMutation(),
     );
   }
 
   bulkMoveInventoryItems(input: ArmoryBulkMoveInventoryItemsInput): void {
-    const context = this.page.context();
-
-    if (this.inventoryActionDisabled() || !context || !input.itemIds.length) {
-      return;
-    }
-
-    const selectedItems = visibleArmoryItemsById(context, input.itemIds);
-    const targetShelf = context.readModel.shelves.find((shelf) =>
-      shelf.position === input.targetShelfPosition
-      && shelf.isPersisted
-      && !shelf.isUnsortedDropArea,
-    );
-
-    if (selectedItems.length !== input.itemIds.length || !targetShelf) {
+    if (this.inventoryActionDisabled() || !input.itemIds.length) {
       return;
     }
 
     this.page.bulkMoveInventoryItems(input, () =>
-      this.clearInventorySelectionAfterMutation(),
+      this.selection.clearAllSelectionAfterInventoryMutation(),
     );
   }
 
   confirmSellInventoryItem(item: PlayerArmoryItemReadModel): void {
     const copy = this.page.context()?.copyJson;
-    const valueDisplay = item.displayCore.valueDisplay?.displayValue;
 
-    if (
-      this.inventoryActionDisabled()
-      || !canVendorScrapInventoryItem(item)
-      || !copy
-      || !valueDisplay
-    ) {
+    if (this.inventoryActionDisabled() || !copy) {
+      return;
+    }
+    const selectedItems = this.page.vendorScrapSelection([item.itemId]);
+
+    if (!selectedItems || selectedItems.length !== 1) {
       return;
     }
 
-    const messageSegments = buildSellItemConfirmationSegments(
-      copy.confirmations.sellItemMessageParts,
-      copy.confirmations.sellItemHighlightFields,
-      item.displayCore.itemName,
-      valueDisplay,
+    this.sellConfirmation.confirmItem(copy, selectedItems[0], () =>
+      this.sellInventoryItem(selectedItems[0]),
     );
-
-    this.sellItemConfirmationSegments.set(messageSegments);
-    this.confirmationService.confirm({
-      key: ARMORY_SELL_ITEM_CONFIRMATION_KEY,
-      header: copy.confirmations.sellItemTitle,
-      message: plainStructuredConfirmMessage(messageSegments),
-      acceptLabel: copy.confirmations.confirmLabel,
-      rejectLabel: copy.confirmations.cancelLabel,
-      acceptIcon: 'pi pi-check',
-      rejectIcon: 'pi pi-times',
-      acceptButtonStyleClass: 'p-button-danger',
-      rejectButtonStyleClass: 'p-button-secondary',
-      accept: () => this.sellInventoryItem(item),
-      reject: () => this.clearSellItemConfirmationMessage(),
-    });
   }
 
   clearSellItemConfirmationMessage(): void {
-    this.sellItemConfirmationSegments.set([]);
+    this.sellConfirmation.clear();
   }
 
   renameInventoryShelf(input: ArmoryRenameInventoryShelfInput): void {
@@ -318,39 +230,18 @@ export class ArmoryPage implements OnInit {
     }
 
     this.page.renameInventoryShelf(input, () =>
-      this.clearInventorySelectionAfterMutation(),
+      this.selection.clearAllSelectionAfterInventoryMutation(),
     );
   }
 
-  private refreshAfterEquipmentMutation(): void {
-    this.selectedEquippedItemIds.set([]);
-    this.page.loadData();
-  }
-
-  private refreshAfterInventoryMutation(): void {
-    this.clearInventorySelectionAfterMutation();
-    this.page.loadData();
-  }
-
-  private clearInventorySelectionAfterMutation(): void {
-    this.selectedEquippedItemIds.set([]);
-    this.selectedInventoryItemIds.set([]);
-  }
-
   private sellInventoryItem(item: PlayerArmoryItemReadModel): void {
-    const context = this.page.context();
-
-    if (
-      this.inventoryActionDisabled()
-      || !canVendorScrapInventoryItem(item)
-      || !context
-    ) {
+    if (this.inventoryActionDisabled()) {
       return;
     }
 
     this.page.vendorScrapInventoryItem(
       item.itemId,
-      () => this.clearInventorySelectionAfterMutation(),
+      () => this.selection.clearAllSelectionAfterInventoryMutation(),
     );
   }
 }

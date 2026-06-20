@@ -19,26 +19,6 @@ export type GetHeroEquipmentRuntimeBonusTotalsRpcArgs =
 export type GetHeroEquipmentRuntimeBonusTotalsRpcRow =
   Database['public']['Functions']['get_hero_equipment_runtime_bonus_totals']['Returns'][number];
 
-export type GetHeroArmoryVisibilityStateRpcArgs =
-  Database['public']['Functions']['get_hero_armory_visibility_state']['Args'];
-export type GetHeroArmoryVisibilityStateRpcRow =
-  Database['public']['Functions']['get_hero_armory_visibility_state']['Returns'][number];
-
-export type GetHeroArmoryItemsRpcArgs =
-  Database['public']['Functions']['get_hero_armory_items']['Args'];
-export type GetHeroArmoryItemsRpcRow =
-  Database['public']['Functions']['get_hero_armory_items']['Returns'][number];
-
-export type GetHeroArmoryItemDetailRpcArgs =
-  Database['public']['Functions']['get_hero_armory_item_detail']['Args'];
-export type GetHeroArmoryItemDetailRpcRow =
-  Database['public']['Functions']['get_hero_armory_item_detail']['Returns'][number];
-
-export type GetHeroItemRequirementStatusRpcArgs =
-  Database['public']['Functions']['get_hero_item_requirement_status']['Args'];
-export type GetHeroItemRequirementStatusRpcRow =
-  Database['public']['Functions']['get_hero_item_requirement_status']['Returns'][number];
-
 export type RenameHeroArmoryShelfRpcArgs =
   Database['public']['Functions']['rename_hero_armory_shelf']['Args'];
 export type RenameHeroArmoryShelfRpcRow =

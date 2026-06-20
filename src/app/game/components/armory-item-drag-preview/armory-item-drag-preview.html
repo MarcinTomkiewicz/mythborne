@@ -7,7 +7,7 @@
       <div class="flex-row-start-center gap-sm min-w-0">
         <span class="mg-card p-sm flex-row-center-center flex-none">
           <i
-            class="pi pi-{{ item().displayCore.displayIconKey || 'box' }} color-heading text-xl"
+            class="pi pi-{{ item().displayCore.displayIconKey }} color-heading text-xl"
             aria-hidden="true"
           ></i>
         </span>
@@ -18,9 +18,9 @@
       @if (itemMetadata(item().displayCore); as metadata) {
         <span class="color-muted text-xs">{{ metadata }}</span>
       }
-      @if (item().displayCore.valueDisplay; as valueDisplay) {
-        <strong class="color-heading text-xs">{{ valueDisplay.displayValue }}</strong>
-      }
+      <strong class="color-heading text-xs">
+        {{ item().displayCore.valueDisplay.displayValue }}
+      </strong>
     </div>
   </article>
 } @else if (!isSummary()) {
@@ -40,7 +40,7 @@
           <div class="flex-row-start-center gap-sm min-w-0">
             <span class="mg-card p-sm flex-row-center-center flex-none">
               <i
-                class="pi pi-{{ stackItem.displayCore.displayIconKey || 'box' }} color-heading text-lg"
+                class="pi pi-{{ stackItem.displayCore.displayIconKey }} color-heading text-lg"
                 aria-hidden="true"
               ></i>
             </span>
@@ -48,9 +48,9 @@
               <strong class="color-text text-sm text-truncate">{{ stackItem.displayCore.itemName }}</strong>
             </div>
           </div>
-          @if (stackItem.displayCore.valueDisplay; as valueDisplay) {
-            <strong class="color-heading text-xs">{{ valueDisplay.displayValue }}</strong>
-          }
+          <strong class="color-heading text-xs">
+            {{ stackItem.displayCore.valueDisplay.displayValue }}
+          </strong>
         </div>
       }
     </div>
@@ -72,7 +72,7 @@
         @for (stackItem of visibleStackItems(); track stackItem.itemId) {
           <div class="mg-drag-stack-preview__item mg-card p-xs flex-row-start-center gap-xs min-w-0">
             <i
-              class="pi pi-{{ stackItem.displayCore.displayIconKey || 'box' }} color-muted text-sm"
+              class="pi pi-{{ stackItem.displayCore.displayIconKey }} color-muted text-sm"
               aria-hidden="true"
             ></i>
             <span class="color-muted text-xs text-truncate">{{ stackItem.displayCore.itemName }}</span>

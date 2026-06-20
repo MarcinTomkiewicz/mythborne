@@ -134,6 +134,8 @@ export function mapBulkVendorScrapHeroItemsResult(
     failedCount: row.failed_count,
     totalDrachmaAmount: row.total_drachma_amount,
     balanceAfter: row.balance_after,
+    visibleArmoryItemsJson: row.visible_items_json,
+    armoryStateJson: row.armory_state_json,
   };
 }
 
