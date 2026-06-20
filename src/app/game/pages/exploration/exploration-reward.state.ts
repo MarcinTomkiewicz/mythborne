@@ -1,7 +1,6 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable, finalize } from 'rxjs';
-import { ENCOUNTER_KIND } from '../../../core/constants/encounter-runtime-keys.const';
 import { EXPLORATION_RUNTIME_COPY } from '../../../core/constants/exploration-runtime-copy.const';
 import {
   ExplorationChallengeRewardReadModel,
@@ -137,19 +136,7 @@ export class ExplorationRewardState {
         return null;
       }
 
-      const encounterKind = stepResult.selectedDefinition?.encounterKind ?? null;
-
-      if (!encounterKind) {
-        this.feedback.setError(
-          null,
-          EXPLORATION_RUNTIME_COPY.rewardEncounterKindMissing,
-        );
-        return null;
-      }
-
-      return encounterKind === ENCOUNTER_KIND.resource
-        ? { kind: 'step', explorationId, stepId: stepResult.stepId }
-        : null;
+      return { kind: 'step', explorationId, stepId: stepResult.stepId };
     }
 
     return preferred?.explorationId === explorationId

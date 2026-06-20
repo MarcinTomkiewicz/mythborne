@@ -34,13 +34,12 @@ export class ExplorationSandboxToolState {
   readonly isRunningSandboxTool = signal(false);
   readonly isUpdatingActiveStepTimer = signal(false);
 
-  readonly canShowSelectionDiagnostics = computed(() => {
+  readonly canShowSandboxTools = computed(() => {
     const server = this.activeServer.selectedServer();
     const access = this.activeServer.access();
 
     return canShowSandboxTestTools(server, access);
   });
-  readonly canShowSandboxTools = this.canShowSelectionDiagnostics;
   readonly canSkipSandboxStepTimer = computed(() =>
     this.canShowSandboxTools()
     && Boolean(this.step.activeStep())

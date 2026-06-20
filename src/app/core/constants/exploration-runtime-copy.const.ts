@@ -1,8 +1,6 @@
 export const EXPLORATION_RUNTIME_COPY = {
   rewardUnavailable: 'Szczegóły nagrody nie są teraz dostępne.',
   rewardLoadFailed: 'Nie udało się odczytać nagrody eksploracji.',
-  rewardEncounterKindMissing:
-    'Read model nagrody eksploracji nie zawiera typu encounter.',
   activeHeroLoadFailed: 'Nie udało się odczytać aktywnego bohatera.',
   explorationStatusLoadFailed: 'Nie udało się odczytać statusu eksploracji.',
   movementUnavailableStatus: 'Niedostępna',
@@ -38,31 +36,9 @@ export const EXPLORATION_RUNTIME_COPY = {
   sandboxTrialsFailed: 'Nie udało się dodać prób Trial.',
   sandboxChallengeCompleted: 'Próba została domknięta.',
   sandboxChallengeFailed: 'Nie udało się domknąć próby w sandboxie.',
-  sandboxOverrideDiagnostic: 'Sandbox wymusił ten wynik.',
-  readinessFilteringDiagnostic:
-    'DB odfiltrowała niedostępne opcje przed wyborem wyniku.',
-  runtimeSelectionDiagnostic: 'Wynik wybrany przez DB runtime eksploracji.',
-  noDefinitionSelected: 'Nie wybrano próby ani spotkania.',
   remainingTrialsOne: 'próba',
   remainingTrialsMany: 'prób',
   remainingTrialsSuffix: 'dostępnych dzisiaj',
-  encounterDefinitionSuffix: 'spotkanie',
-  skippedDefinitionInfix: 'pominięto:',
-  blockingDiagnosticLabel: 'blokujące',
-  diagnosticReasonSeparator: ' - ',
-  stepDiagnosticRpcLabel: 'RPC',
-  stepDiagnosticArgsLabel: 'Argumenty',
-  stepDiagnosticMappedResultLabel: 'Zmapowany wynik',
-  stepResolutionRpcName: 'resolve_hero_exploration_step',
-  unknownLabel: 'Nieznane',
-  unknownDefinition: 'nieznana definicja',
-  unspecifiedReason: 'brak powodu',
-  selectionDiagnosticsTitle: 'Diagnostyka wyboru sandbox',
-  selectedDefinitionLabel: 'Wybrano',
-  selectedAtLabel: 'Czas',
-  finalOutcomeLabel: 'Wynik',
-  missingValueLabel: 'N/D',
-  rawSelectionDebugPayloadLabel: 'Surowy payload diagnostyki wyboru',
 } as const;
 
 export function explorationRemainingTrialsLabel(remaining: number): string {

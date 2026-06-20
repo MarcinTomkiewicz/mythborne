@@ -1,11 +1,10 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationFeedbackState } from './exploration-feedback.state';
-import { ExplorationDiagnosticsState } from './exploration-diagnostics.state';
 import { ExplorationDifficultyPreviewSection } from './exploration-difficulty-preview-section';
-import { ExplorationRuntimeDiagnosticsSection } from './exploration-runtime-diagnostics-section';
 import { ExplorationRuntimeDirectionSection } from './exploration-runtime-direction-section';
 import { ExplorationRuntimePrimarySurface } from './exploration-runtime-primary-surface';
+import { ExplorationRuntimeSandboxSection } from './exploration-runtime-sandbox-section';
 import { ExplorationMovementState } from './exploration-movement.state';
 import { ExplorationMinigameHandoffState } from './exploration-minigame-handoff.state';
 import { ExplorationOverviewState } from './exploration-overview.state';
@@ -22,14 +21,13 @@ import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay'
   standalone: true,
   imports: [
     ExplorationDifficultyPreviewSection,
-    ExplorationRuntimeDiagnosticsSection,
     ExplorationRuntimeDirectionSection,
     ExplorationRuntimePrimarySurface,
+    ExplorationRuntimeSandboxSection,
     LoadingOverlay,
   ],
   providers: [
     ExplorationFeedbackState,
-    ExplorationDiagnosticsState,
     ExplorationPreviewState,
     ExplorationOverviewState,
     ExplorationMovementState,

@@ -431,8 +431,6 @@ function stepResolution(): HeroExplorationStepResolutionReadModel {
     challengeAttemptId: null,
     remainingTrials: 0,
     trialDryStepCount: 1,
-    selectedDefinition: null,
-    selectionDiagnostic: null,
     metadataJson: {},
   };
 }

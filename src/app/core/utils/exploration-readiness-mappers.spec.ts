@@ -1,13 +1,11 @@
 import { Row } from '../types/supabase.types';
 import {
   GetEncounterDefinitionReadinessRpcRow,
-  GetExplorationStepSelectionDiagnosticRpcRow,
   GetTrialDefinitionReadinessRpcRow,
 } from '../types/exploration-runtime-rpc.types';
 import {
   mapEncounterReadiness,
   mapExplorationReadinessReasonMetadata,
-  mapExplorationStepSelectionDiagnostic,
   mapTrialReadiness,
 } from './exploration-readiness-mappers';
 
@@ -78,76 +76,6 @@ describe('exploration readiness mappers', () => {
     }));
   });
 
-  it('maps selection diagnostics for selected and skipped definitions', () => {
-    const diagnostic = mapExplorationStepSelectionDiagnostic(selectionRow({
-      outcome_kind: 'encounter',
-      encounter_definition_id: 'encounter-1',
-      encounter_definition_key: 'light_combat',
-      encounter_definition_ready: true,
-      encounter_kind: 'combat',
-      encounter_selection_skipped_reason: 'incomplete_selected_definition',
-      encounter_readiness_reasons_json: [
-        {
-          key: 'missing_reward_assignment',
-          label: 'Missing reward assignment',
-          is_blocking: true,
-        },
-      ],
-      metadata_json: { selected_at: '2026-05-01T12:00:00.000Z' },
-    }));
-
-    expect(diagnostic.outcomeKind).toBe('encounter');
-    expect(diagnostic.selectedDefinition).toEqual(jasmine.objectContaining({
-      definitionKind: 'encounter',
-      definitionId: 'encounter-1',
-      definitionKey: 'light_combat',
-      isReady: true,
-      encounterKind: 'combat',
-    }));
-    expect(diagnostic.skippedDefinition).toEqual(jasmine.objectContaining({
-      definitionKind: 'encounter',
-      reasonKey: 'incomplete_selected_definition',
-    }));
-    expect(diagnostic.selectedAt).toBe('2026-05-01T12:00:00.000Z');
-  });
-
-  it('handles Nothing and missing optional debug payload safely', () => {
-    const diagnostic = mapExplorationStepSelectionDiagnostic(selectionRow({
-      outcome_kind: 'nothing',
-      trial_definition_id: '',
-      trial_definition_key: '',
-      encounter_definition_id: '',
-      encounter_definition_key: '',
-      encounter_selection_skipped_reason: '',
-      metadata_json: null,
-    }));
-
-    expect(diagnostic.outcomeKind).toBe('nothing');
-    expect(diagnostic.finalOutcomeKind).toBe('nothing');
-    expect(diagnostic.selectedDefinition).toBeNull();
-    expect(diagnostic.skippedDefinition).toBeNull();
-    expect(diagnostic.metadataJson).toBeNull();
-  });
-
-  it('does not emit selected definitions with partial identity', () => {
-    const missingKey = mapExplorationStepSelectionDiagnostic(selectionRow({
-      outcome_kind: 'trial',
-      trial_definition_id: 'trial-1',
-      trial_definition_key: '',
-      trial_definition_ready: true,
-    }));
-    const missingId = mapExplorationStepSelectionDiagnostic(selectionRow({
-      outcome_kind: 'encounter',
-      encounter_definition_id: '',
-      encounter_definition_key: 'light_combat',
-      encounter_definition_ready: true,
-    }));
-
-    expect(missingKey.selectedDefinition).toBeNull();
-    expect(missingKey.finalOutcomeKind).toBe('trial');
-    expect(missingId.selectedDefinition).toBeNull();
-    expect(missingId.finalOutcomeKind).toBe('encounter');
-  });
 });
 
 function readinessRow(
@@ -168,41 +96,6 @@ function readinessRow(
     minigame_key: '',
     reasons_json: [],
     reward_assignment_count: 0,
-    ...overrides,
-  };
-}
-
-function selectionRow(
-  overrides: Partial<GetExplorationStepSelectionDiagnosticRpcRow>,
-): GetExplorationStepSelectionDiagnosticRpcRow {
-  return {
-    challenge_attempt_id: '',
-    challenge_status: '',
-    encounter_chance: 0,
-    encounter_definition_id: '',
-    encounter_definition_key: '',
-    encounter_definition_ready: false,
-    encounter_kind: '',
-    encounter_readiness_reasons_json: [],
-    encounter_roll: 0,
-    encounter_selection_skipped_reason: '',
-    exploration_id: 'exploration-1',
-    forced_override_id: '',
-    hero_id: 'hero-1',
-    metadata_json: {},
-    outcome_kind: 'nothing',
-    readiness_guarded: true,
-    reward_grant_id: '',
-    server_id: 'server-1',
-    step_id: 'step-1',
-    step_kind: 'move',
-    step_status: 'resolved',
-    trial_definition_id: '',
-    trial_definition_key: '',
-    trial_definition_ready: false,
-    trial_opportunity_chance: 0,
-    trial_opportunity_roll: 0,
-    trial_readiness_reasons_json: [],
     ...overrides,
   };
 }

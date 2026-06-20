@@ -1,0 +1,35 @@
+@if (canShowSandboxTools()) {
+  <div class="flex-col gap-sm w-100">
+    <app-exploration-sandbox-tools />
+
+    @if (canShowSandboxChallengeTools()) {
+      <article class="mg-card p-md flex-row-between-center flex-col-sm gap-md">
+        <div class="flex-col gap-xs min-w-0">
+          <p class="small-caps color-muted text-xs m-0">Sandbox</p>
+          <strong class="color-heading">Domknij próbę testowo</strong>
+          <span class="color-muted text-sm">
+            Widoczne tylko w sandboxie; używa narzędzia testowego do domknięcia próby.
+          </span>
+        </div>
+        <div class="flex-row-start-center flex-wrap gap-xs">
+          <p-button
+            type="button"
+            severity="success"
+            label="Sandbox: sukces"
+            [loading]="sandbox.isRunningSandboxTool()"
+            [disabled]="sandbox.isRunningSandboxTool() || !canShowSandboxChallengeTools()"
+            (onClick)="sandbox.forceCompleteSandboxChallenge(true)"
+          />
+          <p-button
+            type="button"
+            severity="danger"
+            label="Sandbox: porażka"
+            [loading]="sandbox.isRunningSandboxTool()"
+            [disabled]="sandbox.isRunningSandboxTool() || !canShowSandboxChallengeTools()"
+            (onClick)="sandbox.forceCompleteSandboxChallenge(false)"
+          />
+        </div>
+      </article>
+    }
+  </div>
+}

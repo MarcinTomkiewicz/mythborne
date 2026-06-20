@@ -306,33 +306,20 @@ describe('HeroExplorations', () => {
     });
   });
 
-  it('maps step resolution to canonical outcomes and preserves selection diagnostics', () => {
+  it('maps step resolution to canonical outcomes without selection diagnostics', () => {
     const result = mapResolveHeroExplorationStepResult({
       ...resolveStepRow(),
       outcome_kind: 'encounter',
       encounter_definition_id: 'encounter-1',
       metadata_json: {
-        selection_diagnostic: {
-          outcome_kind: 'encounter',
-          encounter_definition_id: 'encounter-1',
-          encounter_definition_key: 'minor_resource_find',
-          encounter_definition_ready: true,
-          encounter_kind: 'resource',
-          encounter_readiness_reasons_json: [],
-          selected_at: '2026-05-01T10:10:00.000Z',
-        },
+        resultNarrativeJson: null,
       },
     });
 
     expect(result.outcomeKind).toBe('encounter');
     expect(result.rawOutcomeKind).toBe('encounter');
-    expect(result.selectedDefinition).toEqual(jasmine.objectContaining({
-      definitionKind: 'encounter',
-      definitionId: 'encounter-1',
-      definitionKey: 'minor_resource_find',
-      encounterKind: 'resource',
-    }));
-    expect(result.selectionDiagnostic?.selectedAt).toBe('2026-05-01T10:10:00.000Z');
+    expect(result.encounterDefinitionId).toBe('encounter-1');
+    expect(result.metadataJson).toEqual({ resultNarrativeJson: null });
   });
 
   it('normalizes legacy non-Trial/Encounter step outcomes to Nothing fallback', () => {
