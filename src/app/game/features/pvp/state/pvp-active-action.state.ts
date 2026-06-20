@@ -1,4 +1,4 @@
-import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { computed, DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
 import {
@@ -95,6 +95,27 @@ export class PvpActiveActionState {
   constructor() {
     const intervalId = setInterval(() => this.nowMs.set(Date.now()), 1000);
     this.destroyRef.onDestroy(() => clearInterval(intervalId));
+    this.activeContextKey = activeHeroContextKey(this.activeHero.state());
+
+    effect(() => {
+      const contextKey = activeHeroContextKey(this.activeHero.state());
+
+      if (contextKey === this.activeContextKey) {
+        return;
+      }
+
+      this.activeContextKey = contextKey;
+      this.requests.next();
+      this.spyReport.clear();
+      this.setOffer(null);
+      this.error.set(null);
+
+      if (contextKey) {
+        queueMicrotask(() => this.loadActiveOffer());
+      } else {
+        this.isLoading.set(false);
+      }
+    });
 
     this.loadCopy();
   }
