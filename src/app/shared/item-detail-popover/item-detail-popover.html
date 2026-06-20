@@ -62,9 +62,14 @@
     </header>
 
     @if (detail.isLoading) {
-      @if (popoverCopy) {
-        <span class="mg-item-popover__empty color-muted text-sm">{{ popoverCopy.sections.overview }}</span>
-      }
+      <section
+        class="mg-item-popover__section mg-card flex-col-center-center gap-sm w-100 p-md"
+        aria-busy="true"
+      >
+        <p-progress-spinner ariaLabel="" strokeWidth="4" />
+        <span class="mg-card d-block w-100 p-xs opacity-35" aria-hidden="true"></span>
+        <span class="mg-card d-block w-100 p-xs opacity-35" aria-hidden="true"></span>
+      </section>
     } @else if (detail.error) {
       <span class="warn-text">{{ detail.error }}</span>
     } @else if (popoverCopy) {

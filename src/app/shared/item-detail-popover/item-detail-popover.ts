@@ -3,6 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { Popover } from 'primeng/popover';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import {
   ItemDetailPopoverCopy,
   ItemPopoverContextKey,
@@ -16,7 +17,7 @@ import { itemDetailPopoverViewModel } from '../../core/utils/item-detail-popover
 @Component({
   selector: 'app-item-detail-popover',
   standalone: true,
-  imports: [ButtonModule, Popover],
+  imports: [ButtonModule, Popover, ProgressSpinnerModule],
   templateUrl: './item-detail-popover.html',
 })
 export class ItemDetailPopover {
