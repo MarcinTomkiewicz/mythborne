@@ -40,6 +40,7 @@ export class PvpActiveActionState {
   private readonly nowMs = signal(Date.now());
   private readonly errorLabel = signal('');
   private activeContextKey: string | null = null;
+  private lastArrivalReloadKey: string | null = null;
 
   readonly isLoading = signal(false);
   readonly copy = signal<PvpActionCopy | null>(pvpActionCopyKeyFallback());
@@ -105,6 +106,7 @@ export class PvpActiveActionState {
       }
 
       this.activeContextKey = contextKey;
+      this.lastArrivalReloadKey = null;
       this.requests.next();
       this.spyReport.clear();
       this.setOffer(null);
@@ -115,6 +117,32 @@ export class PvpActiveActionState {
       } else {
         this.isLoading.set(false);
       }
+    });
+
+    effect(() => {
+      const offer = this.visibleOffer();
+
+      if (!offer) {
+        this.lastArrivalReloadKey = null;
+        return;
+      }
+
+      const reloadKey = this.arrivalReloadKeyFor(offer);
+
+      if (this.lastArrivalReloadKey && this.lastArrivalReloadKey !== reloadKey) {
+        this.lastArrivalReloadKey = null;
+      }
+
+      if (
+        !this.isAttackArrivalReady()
+        || this.lastArrivalReloadKey === reloadKey
+        || this.isLoading()
+      ) {
+        return;
+      }
+
+      this.lastArrivalReloadKey = reloadKey;
+      queueMicrotask(() => this.loadActiveOffer());
     });
 
     this.loadCopy();
@@ -203,8 +231,22 @@ export class PvpActiveActionState {
   }
 
   private setOffer(offer: ActivePvpActionOffer | null): void {
+    if (!offer) {
+      this.lastArrivalReloadKey = null;
+    } else {
+      const nextReloadKey = this.arrivalReloadKeyFor(offer);
+
+      if (this.lastArrivalReloadKey && this.lastArrivalReloadKey !== nextReloadKey) {
+        this.lastArrivalReloadKey = null;
+      }
+    }
+
     this.spyReport.clearIfActionChanged(offer?.pvpActionId ?? null);
     this.offer.set(offer);
+  }
+
+  private arrivalReloadKeyFor(offer: ActivePvpActionOffer): string {
+    return `${offer.pvpActionId}:${offer.runtimeActivityId ?? ''}`;
   }
 
   private loadCopy(): void {
