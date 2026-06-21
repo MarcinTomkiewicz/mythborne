@@ -30,6 +30,7 @@
           [contextTitle]="presentation.header?.title ?? actionCopy.common.labels.heroCombat"
           [sourcePresentation]="presentation"
           [combatDecisionDeadline]="pvpAction.decisionDeadline()"
+          [combatLiveSessionId]="pvpAction.combatLiveSessionId()"
           (completed)="acceptCompletion($event)"
         />
       }

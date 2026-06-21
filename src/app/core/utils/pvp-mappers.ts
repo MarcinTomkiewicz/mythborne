@@ -1,6 +1,7 @@
 import {
   ActivePvpActionOffer,
   HeroPvpDailyAttackState,
+  PvpAddressLabelInput,
   PvpActionKindEntry,
   PvpActionStartResult,
   PvpActionStatusEntry,
@@ -182,7 +183,6 @@ export function mapActivePvpActionOffer(
     runtimeActivityId: trimToNull(row.runtime_activity_id),
     serverId: requiredTrimmedText(row.server_id, 'serverId', 'PvP read model'),
     actionKind: requiredTrimmedText(row.action_kind, 'actionKind', 'PvP read model') as PvpActionKindKey,
-    actionKindLabel: pvpActionKindDisplayLabel(row.action_kind),
     phase: requiredTrimmedText(row.phase, 'phase', 'PvP read model'),
     phaseLabel: requiredTrimmedText(row.phase_label, 'phaseLabel', 'PvP read model'),
     statusLabel: requiredTrimmedText(row.status_label, 'statusLabel', 'PvP read model'),
@@ -222,6 +222,7 @@ export function mapActivePvpActionOffer(
     isBlockingRuntimeActivity: row.is_blocking_runtime_activity,
     isTravelPhase: row.is_travel_phase,
     isManualWindow: row.is_manual_window,
+    canEnterManualResolution: row.can_enter_manual_resolution,
     isResolved: row.is_resolved,
     viewerRole: trimToNull(row.viewer_role),
     viewerIsAttacker: row.viewer_role === 'attacker',
@@ -229,15 +230,13 @@ export function mapActivePvpActionOffer(
     pvpSpyResultId: optionalRowText(row, 'pvp_spy_result_id'),
     pvpAttackResultId: trimToNull(row.pvp_attack_result_id),
     combatLiveSessionId: trimToNull(row.combat_live_session_id),
+    combatLiveStatusKey: trimToNull(row.combat_live_status_key),
+    awaitingPlayerAction: row.awaiting_player_action,
     combatResultId: trimToNull(row.combat_result_id),
   };
 }
 
-function pvpAddressLabel(input: {
-  districtCode: string | null;
-  address: string | null;
-  addressNumber: number | null;
-}): string | null {
+function pvpAddressLabel(input: PvpAddressLabelInput): string | null {
   if (input.address) {
     return input.address;
   }
@@ -259,16 +258,4 @@ function optionalRowInteger(row: object, key: string): number | null {
   return key in row
     ? optionalInteger((row as Record<string, unknown>)[key])
     : null;
-}
-
-function pvpActionKindDisplayLabel(actionKind: string): string {
-  if (actionKind === 'attack') {
-    return 'Atak';
-  }
-
-  if (actionKind === 'spy') {
-    return 'Szpiegowanie';
-  }
-
-  return requiredTrimmedText(actionKind, 'actionKind', 'PvP read model');
 }

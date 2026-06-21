@@ -2,24 +2,41 @@ import {
   formatTimeOfDayLabel,
   pendingTimerHasElapsed,
 } from '../../utils/pending-timer';
+import {
+  PvpActiveActionFactCandidate,
+  PvpActiveActionFactRow,
+  PvpActiveActionTiming,
+} from './pvp-active-action-display.model';
 import { PvpActionCopy } from './pvp-action-copy.model';
 import { ActivePvpActionOffer } from './pvp.model';
 
-export interface PvpActiveActionFactRow {
-  label: string;
-  value: string;
-}
-
-export interface PvpActiveActionTiming {
-  startedAt: string | null;
-  resolvesAt: string | null;
-}
-
 export function shouldShowActivePvpOffer(offer: ActivePvpActionOffer): boolean {
   return isPvpSpyActivePhase(offer) ||
+    isPvpActiveCombatOffer(offer) ||
     offer.isTravelPhase ||
     offer.isManualWindow ||
     offer.isBlockingRuntimeActivity;
+}
+
+export function isPvpManualCombatDecisionOffer(
+  offer: ActivePvpActionOffer,
+): boolean {
+  return offer.actionKind === 'attack' &&
+    offer.phase === 'manual_window' &&
+    offer.isManualWindow &&
+    offer.canEnterManualResolution &&
+    !offer.isResolved;
+}
+
+export function isPvpActiveCombatOffer(
+  offer: ActivePvpActionOffer,
+): boolean {
+  return offer.actionKind === 'attack' &&
+    offer.phase === 'live_combat' &&
+    !!offer.combatLiveSessionId &&
+    offer.combatLiveStatusKey === 'awaiting_player_action' &&
+    offer.awaitingPlayerAction &&
+    !offer.isResolved;
 }
 
 export function pvpActiveActionTiming(offer: ActivePvpActionOffer): PvpActiveActionTiming {
@@ -70,6 +87,12 @@ export function pvpActiveActionManualDecisionDeadlineAt(
   return offer.phaseEndsAt ?? offer.manualDeadlineAt ?? offer.expiresAt;
 }
 
+export function pvpReturnRefreshKey(offer: ActivePvpActionOffer): string {
+  const returnResolvesAt = returnAvailabilityAt(offer) ?? '';
+
+  return `${offer.pvpActionId}:${offer.runtimeActivityId ?? ''}:${returnResolvesAt}`;
+}
+
 export function isPvpAttackArrivalReady(
   offer: ActivePvpActionOffer,
   nowMs: number,
@@ -77,6 +100,10 @@ export function isPvpAttackArrivalReady(
   return offer.actionKind === 'attack' &&
     offer.isTravelPhase &&
     !offer.isManualWindow &&
+    !offer.canEnterManualResolution &&
+    offer.phase !== 'manual_window' &&
+    offer.phase !== 'live_combat' &&
+    !offer.combatLiveSessionId &&
     !offer.isResolved &&
     pendingTimerHasElapsed({ resolvesAt: offer.arrivesAt, nowMs });
 }
@@ -86,7 +113,7 @@ export function pvpActiveActionFactRows(
   copy: PvpActionCopy,
 ): PvpActiveActionFactRow[] {
   const labels = copy.common.labels;
-  const baseRows: Array<{ label: string; value: string | null }> = [
+  const baseRows: PvpActiveActionFactCandidate[] = [
     { label: labels.action, value: pvpActiveActionKindLabel(offer, copy) },
     { label: labels.target, value: offer.targetHeroDisplayName },
     { label: labels.targetAddress, value: offer.targetAddressLabel },
@@ -141,10 +168,6 @@ export function pvpActiveActionPhaseText(
   return offer.isResolved
     ? copy.activeAction.phaseText.spyResolved
     : copy.activeAction.phaseText.spyTravel;
-}
-
-export function pvpActiveActionErrorMessage(_error: unknown, fallback: string): string {
-  return fallback;
 }
 
 export function pvpActiveActionTitle(
@@ -213,7 +236,7 @@ function timeDisplay(value: string | null): string | null {
 }
 
 function presentFactRows(
-  rows: Array<{ label: string; value: string | null }>,
+  rows: PvpActiveActionFactCandidate[],
 ): PvpActiveActionFactRow[] {
   return rows.filter(
     (row): row is PvpActiveActionFactRow => row.value !== null,

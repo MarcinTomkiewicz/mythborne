@@ -67,6 +67,14 @@ export class PvpRankingPage implements OnInit {
         : null);
     });
 
+    effect(() => {
+      if (this.activePvpAction.returnClearedRevision() === 0) {
+        return;
+      }
+
+      this.state.reloadCurrentContext();
+    });
+
     void this.pvpActiveActionNavigation;
   }
 

@@ -7,8 +7,9 @@ import {
   pvpActiveActionPhaseText,
   pvpActiveActionTitle,
   isPvpReturnRuntimePhase,
-  PvpActiveActionFactRow,
+  isPvpManualCombatDecisionOffer,
 } from '../../../core/domain/pvp/pvp-active-action-display.mapper';
+import { PvpActiveActionFactRow } from '../../../core/domain/pvp/pvp-active-action-display.model';
 import { PvpActionCopy } from '../../../core/domain/pvp/pvp-action-copy.model';
 import { ActivePvpActionOffer } from '../../../core/domain/pvp/pvp.model';
 import type { PendingTimerDisplay } from '../../../core/types/pending-timer.types';
@@ -16,7 +17,7 @@ import { formatPendingDurationLabel } from '../../../core/utils/pending-timer';
 import { GameBar } from '../../../shared/game-bar/game-bar';
 import { PendingTimerOracle } from '../../../shared/pending-timer-oracle/pending-timer-oracle';
 import {
-  isManualPvpCombatOffer,
+  isPvpCombatHostOffer,
   pvpCombatSourceRef,
 } from '../../features/pvp/utils/pvp-combat-source-ref';
 import { MinigameHost } from '../minigame-host/minigame-host';
@@ -76,6 +77,10 @@ export class PvpActiveActionPanel {
     return pvpCombatSourceRef(active);
   }
 
+  combatLiveSessionId(active: ActivePvpActionOffer): string | null {
+    return this.isCombatHostOffer(active) ? active.combatLiveSessionId : null;
+  }
+
   combatDecisionDeadline(active: ActivePvpActionOffer): CombatSurfaceDecisionDeadline | null {
     if (!this.isManualAttackWindow(active)) {
       return null;
@@ -91,8 +96,12 @@ export class PvpActiveActionPanel {
     };
   }
 
+  isCombatHostOffer(active: ActivePvpActionOffer): boolean {
+    return isPvpCombatHostOffer(active);
+  }
+
   isManualAttackWindow(active: ActivePvpActionOffer): boolean {
-    return isManualPvpCombatOffer(active);
+    return isPvpManualCombatDecisionOffer(active);
   }
 
   isReturnPhase(active: ActivePvpActionOffer): boolean {
@@ -100,9 +109,12 @@ export class PvpActiveActionPanel {
   }
 
   shouldShowTimerOracle(active: ActivePvpActionOffer): boolean {
-    return active.isTravelPhase ||
-      this.isReturnPhase(active) ||
-      (active.isBlockingRuntimeActivity && !active.isManualWindow);
+    return !this.isManualAttackWindow(active) &&
+      (
+        active.isTravelPhase ||
+        this.isReturnPhase(active) ||
+        active.isBlockingRuntimeActivity
+      );
   }
 
   timerOracleReady(active: ActivePvpActionOffer): boolean {
@@ -158,7 +170,7 @@ export class PvpActiveActionPanel {
   timeLabel(active: ActivePvpActionOffer): string {
     const copy = this.copy().activeAction.time;
 
-    if (active.isManualWindow) {
+    if (this.isManualAttackWindow(active)) {
       return copy.decisionWindowLabel;
     }
 

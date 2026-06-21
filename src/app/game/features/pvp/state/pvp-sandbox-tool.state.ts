@@ -1,6 +1,16 @@
 import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, Observable } from 'rxjs';
+import {
+  PVP_SANDBOX_ADD_ATTACKS_ERROR,
+  PVP_SANDBOX_ADD_ATTACKS_REASON,
+  PVP_SANDBOX_ADD_ATTACKS_SUCCESS_PREFIX,
+  PVP_SANDBOX_ATTACK_AMOUNT,
+  PVP_SANDBOX_SKIP_ERROR,
+  PVP_SANDBOX_SKIP_SUCCESS,
+  PVP_SANDBOX_TITLE,
+  PVP_SANDBOX_UNAVAILABLE,
+} from '../../../../core/configs/pvp-active-action-ui.config';
 import { ActivePvpActionOffer } from '../../../../core/domain/pvp/pvp.model';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvpDebug } from '../../../../core/services/pvp/player-pvp-debug';
@@ -10,13 +20,6 @@ import { getErrorMessage } from '../../../../core/utils/error-message';
 import { createRequestId } from '../../../../core/utils/request-id';
 import { RequestToken } from '../../../../core/utils/request-token';
 import { canShowSandboxTestTools } from '../../../../core/utils/sandbox-test-tools-visibility';
-
-const SANDBOX_ATTACK_AMOUNT = 3;
-const SANDBOX_TITLE = 'Sandbox PvP';
-const SANDBOX_UNAVAILABLE = 'Narzędzia testowe PvP są dostępne tylko na serwerze sandbox.';
-const SKIP_SUCCESS = 'Czas podróży aktywnego ataku został skrócony.';
-const ADD_ATTACKS_SUCCESS_PREFIX = 'Dodano ataki. Dostępne ataki:';
-const ADD_ATTACKS_REASON = 'Sandbox PvP: dodanie prób ataku.';
 
 @Injectable()
 export class PvpSandboxToolState {
@@ -52,7 +55,7 @@ export class PvpSandboxToolState {
     onSuccess: () => void,
   ): void {
     if (!this.canSkipSandboxAttackTravel(offer)) {
-      this.feedback.set(SANDBOX_UNAVAILABLE);
+      this.feedback.set(PVP_SANDBOX_UNAVAILABLE);
       return;
     }
 
@@ -62,9 +65,9 @@ export class PvpSandboxToolState {
       }),
       () => {
         onSuccess();
-        this.toast.show('success', SANDBOX_TITLE, SKIP_SUCCESS);
+        this.toast.show('success', PVP_SANDBOX_TITLE, PVP_SANDBOX_SKIP_SUCCESS);
       },
-      'Nie udało się skrócić czasu aktywnego ataku PvP.',
+      PVP_SANDBOX_SKIP_ERROR,
     );
   }
 
@@ -73,7 +76,7 @@ export class PvpSandboxToolState {
     const heroId = this.currentHeroId();
 
     if (!serverId || !heroId || !this.canShowSandboxTools()) {
-      this.feedback.set(SANDBOX_UNAVAILABLE);
+      this.feedback.set(PVP_SANDBOX_UNAVAILABLE);
       return;
     }
 
@@ -81,18 +84,18 @@ export class PvpSandboxToolState {
       this.debug.addRemainingAttacks({
         serverId,
         heroId,
-        amount: SANDBOX_ATTACK_AMOUNT,
-        reason: ADD_ATTACKS_REASON,
+        amount: PVP_SANDBOX_ATTACK_AMOUNT,
+        reason: PVP_SANDBOX_ADD_ATTACKS_REASON,
       }),
       (result) => {
         onSuccess();
         this.toast.show(
           'success',
-          SANDBOX_TITLE,
-          `${ADD_ATTACKS_SUCCESS_PREFIX} ${result.remainingCount}.`,
+          PVP_SANDBOX_TITLE,
+          `${PVP_SANDBOX_ADD_ATTACKS_SUCCESS_PREFIX} ${result.remainingCount}.`,
         );
       },
-      'Nie udało się dodać ataków PvP.',
+      PVP_SANDBOX_ADD_ATTACKS_ERROR,
     );
   }
 
@@ -140,6 +143,10 @@ export class PvpSandboxToolState {
     return offer?.actionKind === 'attack' &&
       offer.isTravelPhase &&
       !offer.isManualWindow &&
+      !offer.canEnterManualResolution &&
+      offer.phase !== 'manual_window' &&
+      offer.phase !== 'live_combat' &&
+      !offer.combatLiveSessionId &&
       !offer.isResolved;
   }
 

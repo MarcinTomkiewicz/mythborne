@@ -63,6 +63,7 @@ export class CombatHost {
   readonly contextTitle = input.required<string>();
   readonly sourcePresentation = input.required<CombatSourcePresentation>();
   readonly decisionDeadline = input<CombatSurfaceDecisionDeadline | null>(null);
+  readonly combatLiveSessionId = input<string | null>(null);
   readonly completed = output<MinigameCompletionEvent>();
 
   constructor() {
@@ -71,6 +72,7 @@ export class CombatHost {
         sourceRef: this.sourceRef(),
         contextTitle: this.contextTitle(),
         sourcePresentation: this.sourcePresentation(),
+        combatLiveSessionId: this.combatLiveSessionId(),
       });
     });
 

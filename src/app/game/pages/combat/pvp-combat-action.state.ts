@@ -5,10 +5,12 @@ import { CombatSurfaceDecisionDeadline } from '../../../core/domain/combat/comba
 import { activeHeroContextKey } from '../../../core/domain/hero/active-hero-context';
 import {
   isPvpAttackArrivalReady,
-  pvpActiveActionErrorMessage,
+  isPvpManualCombatDecisionOffer,
+  isPvpReturnRuntimePhase,
   pvpActiveActionFactRows,
   pvpActiveActionManualDecisionDeadlineAt,
   pvpActiveActionTiming,
+  pvpReturnRefreshKey,
   shouldShowActivePvpOffer,
 } from '../../../core/domain/pvp/pvp-active-action-display.mapper';
 import { PvpActionCopy } from '../../../core/domain/pvp/pvp-action-copy.model';
@@ -20,11 +22,12 @@ import {
   pendingTimerDisplay,
   pendingTimerHasElapsed,
 } from '../../../core/utils/pending-timer';
+import { getErrorMessage } from '../../../core/utils/error-message';
 import { pvpActionCopyKeyFallback } from '../../../core/utils/pvp-action-copy-key-fallback';
 import { RequestToken } from '../../../core/utils/request-token';
 import { MinigameSourceRef } from '../../components/minigame-host/minigame-host.model';
 import {
-  isManualPvpCombatOffer,
+  isPvpCombatHostOffer,
   pvpCombatSourceRef,
 } from '../../features/pvp/utils/pvp-combat-source-ref';
 import { PvpCombatCopyState } from '../../features/pvp/state/pvp-combat-copy.state';
@@ -39,6 +42,7 @@ export class PvpCombatActionState {
   private readonly requests = new RequestToken();
   private readonly nowMs = signal(Date.now());
   private activeContextKey: string | null = null;
+  private lastReturnRefreshKey: string | null = null;
 
   readonly copy = signal<PvpActionCopy | null>(pvpActionCopyKeyFallback());
   readonly combatCommonCopy = this.combatCopy.combatCommonCopy;
@@ -56,11 +60,14 @@ export class PvpCombatActionState {
   readonly combatOffer = computed(() => {
     const offer = this.offer();
 
-    return isManualPvpCombatOffer(offer) ? offer : null;
+    return isPvpCombatHostOffer(offer) ? offer : null;
   });
   readonly combatSourceRef = computed<MinigameSourceRef | null>(() => {
     return pvpCombatSourceRef(this.combatOffer());
   });
+  readonly combatLiveSessionId = computed(() =>
+    this.combatOffer()?.combatLiveSessionId ?? null,
+  );
   readonly combatSourcePresentation = computed(() => {
     const copy = this.copy();
 
@@ -104,6 +111,10 @@ export class PvpCombatActionState {
       return null;
     }
 
+    if (!isPvpManualCombatDecisionOffer(offer)) {
+      return null;
+    }
+
     const resolvesAt = pvpActiveActionManualDecisionDeadlineAt(offer);
 
     if (!resolvesAt) {
@@ -139,7 +150,7 @@ export class PvpCombatActionState {
 
       this.activeContextKey = contextKey;
       this.requests.next();
-      this.offer.set(null);
+      this.setOffer(null);
       this.error.set(null);
 
       if (contextKey) {
@@ -147,6 +158,32 @@ export class PvpCombatActionState {
       } else {
         this.isOfferLoading.set(false);
       }
+    });
+
+    effect(() => {
+      const offer = this.visibleOffer();
+
+      if (!offer || !isPvpReturnRuntimePhase(offer)) {
+        this.lastReturnRefreshKey = null;
+        return;
+      }
+
+      const refreshKey = pvpReturnRefreshKey(offer);
+
+      if (this.lastReturnRefreshKey && this.lastReturnRefreshKey !== refreshKey) {
+        this.lastReturnRefreshKey = null;
+      }
+
+      if (
+        !this.isTimerReady()
+        || this.isLoading()
+        || this.lastReturnRefreshKey === refreshKey
+      ) {
+        return;
+      }
+
+      this.lastReturnRefreshKey = refreshKey;
+      queueMicrotask(() => this.load());
     });
     this.loadCopy();
   }
@@ -158,12 +195,15 @@ export class PvpCombatActionState {
   private load(): void {
     const requestId = this.requests.next();
     const requestContextKey = activeHeroContextKey(this.activeHero.state());
+    const previousOffer = this.visibleOffer();
+    const resolvingAttackArrival = !!previousOffer &&
+      isPvpAttackArrivalReady(previousOffer, this.nowMs());
 
     this.isOfferLoading.set(true);
     this.error.set(null);
 
     if (!requestContextKey) {
-      this.offer.set(null);
+      this.setOffer(null);
       this.error.set(this.copy()?.common.emptyValues.noData ?? null);
       this.isOfferLoading.set(false);
       return;
@@ -184,20 +224,40 @@ export class PvpCombatActionState {
             return;
           }
 
-          this.offer.set(offer ?? null);
+          if (!offer && resolvingAttackArrival) {
+            this.setOffer(null);
+            this.error.set(this.copy()?.common.emptyValues.noData ?? null);
+            return;
+          }
+
+          this.setOffer(offer ?? null);
         },
         error: (error: unknown) => {
           if (!this.isCurrentRequest(requestId, requestContextKey)) {
             return;
           }
 
-          this.offer.set(null);
-          this.error.set(pvpActiveActionErrorMessage(
-            error,
-            this.copy()?.common.emptyValues.noData ?? '',
-          ));
+          this.setOffer(null);
+          this.error.set(getErrorMessage(error, this.copy()?.common.emptyValues.noData ?? ''));
         },
       });
+  }
+
+  private setOffer(offer: ActivePvpActionOffer | null): void {
+    if (!offer) {
+      this.lastReturnRefreshKey = null;
+    } else {
+      const nextReturnRefreshKey = pvpReturnRefreshKey(offer);
+
+      if (
+        this.lastReturnRefreshKey &&
+        this.lastReturnRefreshKey !== nextReturnRefreshKey
+      ) {
+        this.lastReturnRefreshKey = null;
+      }
+    }
+
+    this.offer.set(offer);
   }
 
   private loadCopy(): void {

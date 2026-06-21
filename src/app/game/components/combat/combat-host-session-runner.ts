@@ -7,7 +7,10 @@ import { createRequestId } from '../../../core/utils/request-id';
 import { sameSourceRef } from '../../../core/utils/source-ref';
 import { MINIGAME_KEY } from '../minigame-host/minigame-host.model';
 import { CombatHostRequestRunner } from './combat-host-request-runner';
-import { CombatHostSessionRunnerContext } from './combat-host-session-runner-context.model';
+import {
+  CombatHostLiveStateRecoveryInput,
+  CombatHostSessionRunnerContext,
+} from './combat-host-session-runner-context.model';
 
 @Injectable()
 export class CombatHostSessionRunner {
@@ -45,6 +48,7 @@ export class CombatHostSessionRunner {
       onSuccess: (state) => {
         context.setLiveState(state);
         this.completeManualCombatIfNeeded(context, state);
+        this.recoverManualStartStateIfNeeded(context, state);
       },
       onError: () => context.setActionError(context.actionUnavailableText()),
       onFinalize: () => context.setIsPreparingSession(false),
@@ -107,6 +111,42 @@ export class CombatHostSessionRunner {
       return;
     }
 
+    this.recoverCombatLiveStateForSession({
+      context,
+      sourceRef,
+      combatSessionId,
+      isCurrent: () => !context.liveState(),
+    });
+  }
+
+  private recoverManualStartStateIfNeeded(
+    context: CombatHostSessionRunnerContext,
+    state: CombatLiveStateReadModel,
+  ): void {
+    const sourceRef = context.sourceRef();
+
+    if (
+      state.statusKey === 'completed' ||
+      !sourceRef ||
+      context.isRecoveringState() ||
+      state.awaitingPlayerAction && state.currentTimingManifest
+    ) {
+      return;
+    }
+
+    this.recoverCombatLiveStateForSession({
+      context,
+      sourceRef,
+      combatSessionId: state.sessionId,
+      isCurrent: () => context.liveState()?.sessionId === state.sessionId,
+    });
+  }
+
+  private recoverCombatLiveStateForSession(
+    input: CombatHostLiveStateRecoveryInput,
+  ): void {
+    const { context, sourceRef, combatSessionId, isCurrent } = input;
+
     context.setActionError(null);
     context.setIsRecoveringState(true);
     this.requestRunner.run({
@@ -116,10 +156,10 @@ export class CombatHostSessionRunner {
       request: this.combatSessions.getCombatLiveState({
         combatSessionId,
       }),
-      isCurrent: () => !context.liveState(),
-      onSuccess: (state) => {
-        context.setLiveState(state);
-        this.completeManualCombatIfNeeded(context, state);
+      isCurrent,
+      onSuccess: (nextState) => {
+        context.setLiveState(nextState);
+        this.completeManualCombatIfNeeded(context, nextState);
       },
       onError: () => context.setActionError(context.actionUnavailableText()),
       onFinalize: () => context.setIsRecoveringState(false),

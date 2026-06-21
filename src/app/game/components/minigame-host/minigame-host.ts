@@ -17,6 +17,7 @@ export class MinigameHost {
   readonly contextTitle = input.required<string>();
   readonly sourcePresentation = input.required<CombatSourcePresentation>();
   readonly combatDecisionDeadline = input<CombatSurfaceDecisionDeadline | null>(null);
+  readonly combatLiveSessionId = input<string | null>(null);
   readonly completed = output<MinigameCompletionEvent>();
   readonly isCombatMinigame = computed(() => this.minigameKey() === MINIGAME_KEY.combat);
 }

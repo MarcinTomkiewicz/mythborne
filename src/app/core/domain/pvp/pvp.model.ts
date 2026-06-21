@@ -114,12 +114,17 @@ export interface PvpSpyGameReportResult {
   accessRowsTouched: number;
 }
 
+export interface PvpAddressLabelInput {
+  districtCode: string | null;
+  address: string | null;
+  addressNumber: number | null;
+}
+
 export interface ActivePvpActionOffer {
   pvpActionId: string;
   runtimeActivityId: string | null;
   serverId: string;
   actionKind: PvpActionKindKey;
-  actionKindLabel: string;
   phase: string;
   phaseLabel: string;
   statusLabel: string;
@@ -151,6 +156,7 @@ export interface ActivePvpActionOffer {
   isBlockingRuntimeActivity: boolean;
   isTravelPhase: boolean;
   isManualWindow: boolean;
+  canEnterManualResolution: boolean;
   isResolved: boolean;
   viewerRole: string | null;
   viewerIsAttacker: boolean;
@@ -158,5 +164,7 @@ export interface ActivePvpActionOffer {
   pvpSpyResultId: string | null;
   pvpAttackResultId: string | null;
   combatLiveSessionId: string | null;
+  combatLiveStatusKey: string | null;
+  awaitingPlayerAction: boolean;
   combatResultId: string | null;
 }

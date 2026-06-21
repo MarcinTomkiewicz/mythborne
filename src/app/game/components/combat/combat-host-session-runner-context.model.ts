@@ -1,6 +1,21 @@
 import type { CombatLiveStateReadModel, CombatResolutionPreviewReadModel } from '../../../core/domain/combat/combat-live.model';
+import type { CombatSourcePresentation } from '../../../core/domain/combat/combat-source-presentation.model';
 import type { RequestToken } from '../../../core/utils/request-token';
 import type { MinigameCompletionEvent, MinigameSourceRef } from '../minigame-host/minigame-host.model';
+
+export interface CombatHostContextInput {
+  sourceRef: MinigameSourceRef;
+  contextTitle: string;
+  sourcePresentation: CombatSourcePresentation;
+  combatLiveSessionId: string | null;
+}
+
+export interface CombatHostLiveStateRecoveryInput {
+  context: CombatHostSessionRunnerContext;
+  sourceRef: MinigameSourceRef;
+  combatSessionId: string;
+  isCurrent: () => boolean;
+}
 
 export interface CombatHostSessionRunnerContext {
   sourceRef: () => MinigameSourceRef | null;

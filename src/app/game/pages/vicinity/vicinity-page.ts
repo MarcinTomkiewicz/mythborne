@@ -116,6 +116,14 @@ export class VicinityPage implements OnInit {
     });
 
     effect(() => {
+      if (this.activePvpAction.returnClearedRevision() === 0) {
+        return;
+      }
+
+      this.refreshPvpSandboxCounters();
+    });
+
+    effect(() => {
       const offer = this.activePvpAction.visibleOffer();
 
       if (offer?.actionKind === 'spy' || this.spyReport.isPreparingReport()) {

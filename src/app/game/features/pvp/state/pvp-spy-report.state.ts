@@ -2,13 +2,13 @@ import { DestroyRef, inject, Injectable, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize, Observable, switchMap } from 'rxjs';
 import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
-import { pvpActiveActionErrorMessage } from '../../../../core/domain/pvp/pvp-active-action-display.mapper';
 import {
   ActivePvpActionOffer,
   PvpSpyGameReportResult,
 } from '../../../../core/domain/pvp/pvp.model';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
+import { getErrorMessage } from '../../../../core/utils/error-message';
 import { createRequestId } from '../../../../core/utils/request-id';
 import { RequestToken } from '../../../../core/utils/request-token';
 
@@ -95,10 +95,7 @@ export class PvpSpyReportState {
         this.error.set(
           error instanceof Error && error.message === 'missing_pvp_spy_result_id'
             ? this.genericErrorLabel()
-            : pvpActiveActionErrorMessage(
-                error,
-                this.genericErrorLabel(),
-              ),
+            : getErrorMessage(error, this.genericErrorLabel()),
         );
       },
     });

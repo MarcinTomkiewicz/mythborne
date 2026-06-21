@@ -3,9 +3,10 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { activeHeroContextKey } from '../../../../core/domain/hero/active-hero-context';
 import {
   isPvpAttackArrivalReady,
-  pvpActiveActionErrorMessage,
+  isPvpReturnRuntimePhase,
   pvpActiveActionFactRows,
   pvpActiveActionTiming,
+  pvpReturnRefreshKey,
   shouldShowActivePvpOffer,
 } from '../../../../core/domain/pvp/pvp-active-action-display.mapper';
 import {
@@ -23,6 +24,7 @@ import {
   pendingTimerDisplay,
   pendingTimerHasElapsed,
 } from '../../../../core/utils/pending-timer';
+import { getErrorMessage } from '../../../../core/utils/error-message';
 import { pvpActionCopyKeyFallback } from '../../../../core/utils/pvp-action-copy-key-fallback';
 import { RequestToken } from '../../../../core/utils/request-token';
 import { PvpCombatCopyState } from './pvp-combat-copy.state';
@@ -39,8 +41,9 @@ export class PvpActiveActionState {
   private readonly requests = new RequestToken();
   private readonly nowMs = signal(Date.now());
   private readonly errorLabel = signal('');
+  private readonly returnClearedRevisionSignal = signal(0);
   private activeContextKey: string | null = null;
-  private lastArrivalReloadKey: string | null = null;
+  private lastReturnRefreshKey: string | null = null;
 
   readonly isLoading = signal(false);
   readonly copy = signal<PvpActionCopy | null>(pvpActionCopyKeyFallback());
@@ -48,6 +51,7 @@ export class PvpActiveActionState {
   readonly pvpCombatCopy = this.combatCopy.pvpCombatCopy;
   readonly error = signal<string | null>(null);
   readonly offer = signal<ActivePvpActionOffer | null>(null);
+  readonly returnClearedRevision = computed(() => this.returnClearedRevisionSignal());
   readonly visibleOffer = computed(() => {
     const offer = this.offer();
 
@@ -106,7 +110,7 @@ export class PvpActiveActionState {
       }
 
       this.activeContextKey = contextKey;
-      this.lastArrivalReloadKey = null;
+      this.lastReturnRefreshKey = null;
       this.requests.next();
       this.spyReport.clear();
       this.setOffer(null);
@@ -122,26 +126,26 @@ export class PvpActiveActionState {
     effect(() => {
       const offer = this.visibleOffer();
 
-      if (!offer) {
-        this.lastArrivalReloadKey = null;
+      if (!offer || !isPvpReturnRuntimePhase(offer)) {
+        this.lastReturnRefreshKey = null;
         return;
       }
 
-      const reloadKey = this.arrivalReloadKeyFor(offer);
+      const refreshKey = pvpReturnRefreshKey(offer);
 
-      if (this.lastArrivalReloadKey && this.lastArrivalReloadKey !== reloadKey) {
-        this.lastArrivalReloadKey = null;
+      if (this.lastReturnRefreshKey && this.lastReturnRefreshKey !== refreshKey) {
+        this.lastReturnRefreshKey = null;
       }
 
       if (
-        !this.isAttackArrivalReady()
-        || this.lastArrivalReloadKey === reloadKey
+        !this.isTimerReady()
         || this.isLoading()
+        || this.lastReturnRefreshKey === refreshKey
       ) {
         return;
       }
 
-      this.lastArrivalReloadKey = reloadKey;
+      this.lastReturnRefreshKey = refreshKey;
       queueMicrotask(() => this.loadActiveOffer());
     });
 
@@ -166,6 +170,17 @@ export class PvpActiveActionState {
   private loadActiveOffer(expected?: ExpectedPvpActiveActionOffer): void {
     const requestId = this.requests.next();
     const requestContextKey = activeHeroContextKey(this.activeHero.state());
+    const previousOffer = this.visibleOffer();
+    const resolvingAttackArrival = !expected &&
+      !!previousOffer &&
+      isPvpAttackArrivalReady(previousOffer, this.nowMs());
+    const resolvingReturn = !expected &&
+      !!previousOffer &&
+      isPvpReturnRuntimePhase(previousOffer) &&
+      pendingTimerHasElapsed({
+        resolvesAt: pvpActiveActionTiming(previousOffer).resolvesAt,
+        nowMs: this.nowMs(),
+      });
 
     this.isLoading.set(true);
     this.error.set(null);
@@ -205,6 +220,21 @@ export class PvpActiveActionState {
             return;
           }
 
+          if (!offer && resolvingAttackArrival) {
+            this.setOffer(null);
+            this.error.set(this.errorLabel());
+            this.isLoading.set(false);
+            return;
+          }
+
+          if (!offer && resolvingReturn) {
+            this.setOffer(null);
+            this.returnClearedRevisionSignal.update((revision) => revision + 1);
+            this.error.set(null);
+            this.isLoading.set(false);
+            return;
+          }
+
           if (offer?.actionKind === 'spy' && offer.phase === 'returning') {
             this.setOffer(null);
             this.error.set(this.errorLabel());
@@ -224,7 +254,7 @@ export class PvpActiveActionState {
           }
 
           this.setOffer(null);
-          this.error.set(pvpActiveActionErrorMessage(error, this.errorLabel()));
+          this.error.set(getErrorMessage(error, this.errorLabel()));
           this.isLoading.set(false);
         },
       });
@@ -232,21 +262,20 @@ export class PvpActiveActionState {
 
   private setOffer(offer: ActivePvpActionOffer | null): void {
     if (!offer) {
-      this.lastArrivalReloadKey = null;
+      this.lastReturnRefreshKey = null;
     } else {
-      const nextReloadKey = this.arrivalReloadKeyFor(offer);
+      const nextReturnRefreshKey = pvpReturnRefreshKey(offer);
 
-      if (this.lastArrivalReloadKey && this.lastArrivalReloadKey !== nextReloadKey) {
-        this.lastArrivalReloadKey = null;
+      if (
+        this.lastReturnRefreshKey &&
+        this.lastReturnRefreshKey !== nextReturnRefreshKey
+      ) {
+        this.lastReturnRefreshKey = null;
       }
     }
 
     this.spyReport.clearIfActionChanged(offer?.pvpActionId ?? null);
     this.offer.set(offer);
-  }
-
-  private arrivalReloadKeyFor(offer: ActivePvpActionOffer): string {
-    return `${offer.pvpActionId}:${offer.runtimeActivityId ?? ''}`;
   }
 
   private loadCopy(): void {

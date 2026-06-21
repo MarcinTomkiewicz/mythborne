@@ -16,7 +16,10 @@ import { sameSourceRef } from '../../../core/utils/source-ref';
 import { MinigameCompletionEvent, MinigameSourceRef } from '../minigame-host/minigame-host.model';
 import { CombatHostPreviewLoader } from './combat-host-preview-loader';
 import { CombatHostSessionRunner } from './combat-host-session-runner';
-import { CombatHostSessionRunnerContext } from './combat-host-session-runner-context.model';
+import {
+  CombatHostContextInput,
+  CombatHostSessionRunnerContext,
+} from './combat-host-session-runner-context.model';
 import { CombatHostTimingState } from './combat-host-timing.state';
 
 @Injectable()
@@ -34,6 +37,7 @@ export class CombatHostState {
   private readonly finalizeResultToken = new RequestToken();
   private readonly recoverStateToken = new RequestToken();
   private readonly sourceRef = signal<MinigameSourceRef | null>(null);
+  private readonly combatLiveSessionId = signal<string | null>(null);
   private readonly contextTitle = signal('');
   private readonly sourcePresentation = signal<CombatSourcePresentation | null>(null);
   private readonly externalDecisionDeadline = signal<CombatSurfaceDecisionDeadline | null>(null);
@@ -116,16 +120,20 @@ export class CombatHostState {
     });
   }
 
-  setContext(input: {
-    sourceRef: MinigameSourceRef;
-    contextTitle: string;
-    sourcePresentation: CombatSourcePresentation;
-  }): void {
+  setContext(input: CombatHostContextInput): void {
     this.contextTitle.set(input.contextTitle);
     this.sourcePresentation.set(input.sourcePresentation);
+    const previousCombatLiveSessionId = this.combatLiveSessionId();
+    this.combatLiveSessionId.set(input.combatLiveSessionId);
 
     if (!sameSourceRef(this.sourceRef(), input.sourceRef)) {
       this.sourceRef.set(input.sourceRef);
+      if (input.combatLiveSessionId) {
+        this.resetForPreviewLoad();
+        this.recoverKnownCombatLiveState(input.combatLiveSessionId);
+        return;
+      }
+
       this.previewLoader.load({
         sourceRef: input.sourceRef,
         currentSourceRef: () => this.sourceRef(),
@@ -141,6 +149,18 @@ export class CombatHostState {
         setPreviewError: (message) => this.previewErrorMessage.set(message),
         setIsLoadingPreview: (value) => this.isLoadingPreview.set(value),
       });
+      this.recoverKnownCombatLiveState(input.combatLiveSessionId);
+      return;
+    }
+
+    if (input.combatLiveSessionId !== previousCombatLiveSessionId) {
+      if (input.combatLiveSessionId) {
+        this.resetForPreviewLoad();
+        this.recoverKnownCombatLiveState(input.combatLiveSessionId);
+        return;
+      }
+
+      this.recoverKnownCombatLiveState(input.combatLiveSessionId);
     }
   }
 
@@ -183,6 +203,13 @@ export class CombatHostState {
     this.isRecoveringState.set(false);
     this.timingState.resetFrame();
     this.timingState.stop();
+  }
+
+  private recoverKnownCombatLiveState(combatSessionId: string | null): void {
+    this.sessionRunner.recoverCombatLiveState(
+      this.sessionContext(),
+      combatSessionId,
+    );
   }
 
   private canSubmitStrike(): boolean {
