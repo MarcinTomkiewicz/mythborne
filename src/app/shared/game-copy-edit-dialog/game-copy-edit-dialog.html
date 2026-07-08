@@ -1,103 +1,155 @@
+@let editor = state();
+
 <p-dialog
-  [header]="state().target()?.copyPath ?? ''"
-  [visible]="state().visible()"
+  [header]="editor.dialogTitle()"
+  [visible]="editor.visible()"
   [modal]="true"
-  [closable]="!state().saving()"
-  [closeOnEscape]="!state().saving()"
+  [closable]="!editor.saving()"
+  [closeOnEscape]="!editor.saving()"
   [draggable]="false"
   [resizable]="false"
-  [style]="{ width: '48rem', maxWidth: '92vw' }"
-  (onHide)="state().close()"
+  styleClass="mg-dialog mg-dialog--lg"
+  [closeAriaLabel]="editor.closeAriaLabel()"
+  (onHide)="editor.close()"
 >
-  @if (state().target(); as target) {
-    <div class="flex-col gap-md w-100">
-      <section class="mg-card p-md flex-col gap-xs">
-        <code>{{ target.gameCopyKind }}</code>
-        <code>{{ target.copyPath }}</code>
-      </section>
+  @if (editor.target(); as target) {
+    @if (editor.copy(); as copy) {
+      @let selectedLocale = editor.selectedLocale();
+      @let error = editor.error();
+      @let errorKind = editor.errorKind();
+      @let savedResult = editor.savedResult();
+      @let loading = editor.loading();
+      @let saving = editor.saving();
+      @let activeEntry = editor.activeEntry();
 
-      @if (state().error(); as error) {
-        <p-message severity="error">{{ error }}</p-message>
-      }
+      <div class="flex-col gap-md w-100">
+        <section class="mg-card p-md grid-3 gap-sm w-100">
+          <div class="flex-col gap-xxs min-w-0 w-100">
+            <span class="small-caps color-muted text-xs">{{ copy.metadata.gameCopyKindLabel }}</span>
+            <code>{{ target.gameCopyKind }}</code>
+          </div>
+          <div class="flex-col gap-xxs min-w-0">
+            <span class="small-caps color-muted text-xs">{{ copy.metadata.copyPathLabel }}</span>
+            <code>{{ target.copyPath }}</code>
+          </div>
+          <div class="flex-col gap-xxs min-w-0">
+            <span class="small-caps color-muted text-xs">{{ copy.metadata.localeLabel }}</span>
+            <code>{{ selectedLocale ?? target.locale }}</code>
+          </div>
+        </section>
 
-      @if (state().savedResult(); as result) {
-        <p-message severity="success">
-          <code>{{ result.locale }}</code>
-          <code>{{ result.updatedAt }}</code>
-        </p-message>
-      }
+        @if (error) {
+          <p-message severity="error">
+            @if (errorKind === 'dirty') {
+              <span>{{ copy.messages.dirtyGuard }}</span>
+            } @else if (errorKind === 'save') {
+              <span>{{ copy.messages.saveError }}</span>
+              <code>{{ error }}</code>
+            } @else {
+              <span>{{ copy.messages.loadError }}</span>
+              <code>{{ error }}</code>
+            }
+          </p-message>
+        }
 
-      <div class="flex-row-start-center flex-wrap gap-sm">
-        @for (locale of state().locales(); track locale.locale) {
-          <p-button
-            [label]="locale.nativeLabel || locale.label"
-            size="small"
-            [outlined]="state().selectedLocale() !== locale.locale"
-            [disabled]="state().loading() || state().saving()"
-            (onClick)="state().switchLocale(locale.locale)"
-          />
+        @if (savedResult; as result) {
+          <p-message severity="success">
+            <span>{{ copy.messages.saved }}</span>
+            <code>{{ result.locale }}</code>
+            <code>{{ result.updatedAt }}</code>
+          </p-message>
+        }
+
+        <div class="flex-row-start-center flex-wrap gap-sm">
+          @for (locale of editor.locales(); track locale.locale) {
+            <p-button
+              [label]="locale.nativeLabel || locale.label"
+              size="small"
+              [outlined]="selectedLocale !== locale.locale"
+              [disabled]="loading || saving"
+              (onClick)="editor.switchLocale(locale.locale)"
+            />
+          }
+        </div>
+
+        @if (loading) {
+          <section class="flex-col-center-center gap-sm p-lg w-100" aria-busy="true">
+            <p-progress-spinner strokeWidth="4" />
+            <span>{{ copy.messages.loading }}</span>
+          </section>
+        } @else if (activeEntry; as entry) {
+          @if (!entry.exists) {
+            <p-message severity="warn">
+              <span>{{ copy.messages.missingEntry }}</span>
+              <code>{{ entry.locale }}</code>
+              <code>{{ target.copyPath }}</code>
+            </p-message>
+          } @else if (!entry.isEditable) {
+            <p-message severity="warn">
+              <span>{{ copy.messages.notEditable }}</span>
+              <code>{{ entry.locale }}</code>
+              <code>{{ target.copyPath }}</code>
+            </p-message>
+          }
+
+          <form [formGroup]="editor.form" class="flex-col gap-md w-100">
+            <label class="flex-col gap-sm w-100">
+              <span class="small-caps color-muted text-xs">{{ copy.fields.value.label }}</span>
+              <textarea
+                pTextarea
+                rows="8"
+                class="w-100"
+                formControlName="value"
+                [readOnly]="!entry.exists || !entry.isEditable"
+                [attr.aria-label]="copy.fields.value.ariaLabel"
+              ></textarea>
+            </label>
+
+            <label class="flex-col gap-sm w-100">
+              <span class="small-caps color-muted text-xs">{{ copy.fields.reason.label }}</span>
+              <input
+                pInputText
+                class="w-100"
+                formControlName="reason"
+                [placeholder]="copy.fields.reason.placeholder"
+                [attr.aria-label]="copy.fields.reason.ariaLabel"
+              />
+            </label>
+          </form>
         }
       </div>
-
-      @if (state().loading()) {
-        <section class="flex-col-center-center p-lg w-100" aria-busy="true">
-          <p-progress-spinner strokeWidth="4" />
-        </section>
-      } @else if (state().activeEntry(); as entry) {
-        @if (!entry.exists) {
-          <p-message severity="warn">
-            <code>{{ entry.locale }}</code>
-            <code>{{ target.copyPath }}</code>
-            <code>exists=false</code>
-          </p-message>
-        } @else if (!entry.isEditable) {
-          <p-message severity="warn">
-            <code>{{ entry.locale }}</code>
-            <code>{{ target.copyPath }}</code>
-            <code>isEditable=false</code>
-          </p-message>
-        }
-
-        <form [formGroup]="state().form" class="flex-col gap-md w-100">
-          <label class="flex-col gap-sm">
-            <code>{{ entry.locale }}</code>
-          </label>
-
-          <label class="flex-col gap-sm">
-            <code>p_value</code>
-            <textarea
-              pTextarea
-              rows="8"
-              class="w-100"
-              formControlName="value"
-              [readOnly]="!entry.exists || !entry.isEditable"
-              [attr.aria-label]="target.copyPath"
-            ></textarea>
-          </label>
-
-          <label class="flex-col gap-sm">
-            <code>p_reason</code>
-            <input
-              pInputText
-              class="w-100"
-              formControlName="reason"
-              aria-label="p_reason"
-            />
-          </label>
-        </form>
-      }
-    </div>
+    } @else if (editor.copyError(); as copyError) {
+      <p-message severity="error">
+        <code>{{ copyError }}</code>
+      </p-message>
+    } @else {
+      <section class="flex-col-center-center p-lg w-100" aria-busy="true">
+        <p-progress-spinner strokeWidth="4" />
+      </section>
+    }
   }
 
   <ng-template pTemplate="footer">
     <div class="flex-row-end-center gap-sm">
-      <p-button
-        icon="pi pi-save"
-        ariaLabel="update_game_copy_text_entry"
-        [disabled]="!state().canSave()"
-        [loading]="state().saving()"
-        (onClick)="state().saveCurrentLocale()"
-      />
+      @if (editor.copy(); as copy) {
+        <p-button
+          severity="secondary"
+          [label]="copy.actions.cancel.label"
+          [ariaLabel]="copy.actions.cancel.ariaLabel"
+          [disabled]="editor.saving()"
+          (onClick)="editor.close()"
+        />
+        <p-button
+          icon="pi pi-save"
+          [label]="copy.actions.save.label"
+          [ariaLabel]="copy.actions.save.ariaLabel"
+          [pTooltip]="copy.actions.save.tooltip"
+          tooltipPosition="top"
+          [disabled]="!editor.canSave()"
+          [loading]="editor.saving()"
+          (onClick)="editor.saveCurrentLocale()"
+        />
+      }
     </div>
   </ng-template>
 </p-dialog>

@@ -14,7 +14,7 @@ import { ExplorationRewardState } from './exploration-reward.state';
 import { ExplorationSandboxToolState } from './exploration-sandbox-tool.state';
 import { ExplorationStepState } from './exploration-step.state';
 import { ExplorationStartState } from './exploration-start.state';
-import { GameCopyEditState } from '../../../core/services/game-copy/game-copy-edit.state';
+import { GameCopyEditState } from '../../../shared/game-copy-edit/game-copy-edit.state';
 import { GameCopyEditDialog } from '../../../shared/game-copy-edit-dialog/game-copy-edit-dialog';
 import { GameCopyEditableText } from '../../../shared/game-copy-editable-text/game-copy-editable-text';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';

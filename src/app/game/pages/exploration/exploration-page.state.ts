@@ -1,6 +1,7 @@
 import {
   DestroyRef,
   Injectable,
+  WritableSignal,
   computed,
   effect,
   inject,
@@ -14,9 +15,12 @@ import {
   explorationDifficultyCardCopy,
 } from '../../../core/domain/game-copy/exploration-difficulty-copy.model';
 import { ExplorationRuntimeCopy } from '../../../core/domain/exploration/exploration-runtime-copy.model';
-import { GameCopyEditState } from '../../../core/services/game-copy/game-copy-edit.state';
 import { GameCopy } from '../../../core/services/game-copy/game-copy';
+import {
+  GameCopyRegistry,
+} from '../../../core/types/game-copy-registry.types';
 import { RequestToken } from '../../../core/utils/request-token';
+import { GameCopyEditState } from '../../../shared/game-copy-edit/game-copy-edit.state';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationMinigameHandoffState } from './exploration-minigame-handoff.state';
 import { ExplorationMovementState } from './exploration-movement.state';
@@ -155,83 +159,70 @@ export class ExplorationPageState {
   }
 
   private loadDifficultyCopy(): void {
-    const token = this.copyToken.next();
-
-    this.isDifficultyCopyLoading.set(true);
-    this.difficultyCopyError.set(false);
-    this.difficultyCopy.set(null);
-
-    this.gameCopy
-      .getCopy('player.exploration.difficulty', { locale: 'pl' })
-      .pipe(
-        finalize(() => {
-          if (this.copyToken.isCurrent(token)) {
-            this.isDifficultyCopyLoading.set(false);
-          }
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: (copy) => {
-          if (!this.copyToken.isCurrent(token)) {
-            return;
-          }
-
-          this.difficultyCopyError.set(false);
-          this.difficultyCopy.set(copy);
-        },
-        error: (error: unknown) => {
-          if (!this.copyToken.isCurrent(token)) {
-            return;
-          }
-
-          if (isDevMode()) {
-            console.error('player.exploration.difficulty', error);
-          }
-
-          this.difficultyCopyError.set(true);
-          this.difficultyCopy.set(null);
-        },
-      });
+    this.loadPageCopy(
+      'player.exploration.difficulty',
+      this.copyToken,
+      this.isDifficultyCopyLoading,
+      this.difficultyCopyError,
+      this.difficultyCopy,
+    );
   }
 
   private loadRuntimeCopy(): void {
-    const token = this.runtimeCopyToken.next();
+    this.loadPageCopy(
+      'player.exploration.runtime',
+      this.runtimeCopyToken,
+      this.isRuntimeCopyLoading,
+      this.runtimeCopyError,
+      this.runtimeCopy,
+    );
+  }
 
-    this.isRuntimeCopyLoading.set(true);
-    this.runtimeCopyError.set(false);
-    this.runtimeCopy.set(null);
+  private loadPageCopy<
+    K extends 'player.exploration.difficulty' | 'player.exploration.runtime',
+  >(
+    kind: K,
+    requestToken: RequestToken,
+    loading: WritableSignal<boolean>,
+    errorState: WritableSignal<boolean>,
+    target: WritableSignal<GameCopyRegistry[K] | null>,
+  ): void {
+    const token = requestToken.next();
+
+    loading.set(true);
+    errorState.set(false);
+    target.set(null);
 
     this.gameCopy
-      .getCopy('player.exploration.runtime', { locale: 'pl' })
+      .getCopy(kind, { locale: 'pl' })
       .pipe(
         finalize(() => {
-          if (this.runtimeCopyToken.isCurrent(token)) {
-            this.isRuntimeCopyLoading.set(false);
+          if (requestToken.isCurrent(token)) {
+            loading.set(false);
           }
         }),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
         next: (copy) => {
-          if (!this.runtimeCopyToken.isCurrent(token)) {
+          if (!requestToken.isCurrent(token)) {
             return;
           }
 
-          this.runtimeCopyError.set(false);
-          this.runtimeCopy.set(copy);
+          errorState.set(false);
+          target.set(copy);
         },
         error: (error: unknown) => {
-          if (!this.runtimeCopyToken.isCurrent(token)) {
+          if (!requestToken.isCurrent(token)) {
             return;
           }
 
           if (isDevMode()) {
-            console.error('player.exploration.runtime', error);
+            console.error(kind, error);
           }
 
-          this.runtimeCopyError.set(true);
-          this.runtimeCopy.set(null);
+          errorState.set(true);
+          target.set(null);
         },
       });
   }

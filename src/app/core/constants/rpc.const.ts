@@ -54,6 +54,7 @@ export const RPC = {
   get_player_exploration_difficulty_copy: 'get_player_exploration_difficulty_copy',
   get_player_exploration_runtime_copy: 'get_player_exploration_runtime_copy',
   can_manage_game_copy: 'can_manage_game_copy',
+  get_game_copy_source_payload: 'get_game_copy_source_payload',
   get_game_copy_text_entry_locales: 'get_game_copy_text_entry_locales',
   update_game_copy_text_entry: 'update_game_copy_text_entry',
   get_player_estate_page_context: 'get_player_estate_page_context',

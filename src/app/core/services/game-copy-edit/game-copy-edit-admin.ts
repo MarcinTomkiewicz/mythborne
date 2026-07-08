@@ -14,7 +14,7 @@ import {
 import {
   mapGameCopyTextEntryLocales,
   mapGameCopyTextUpdateResult,
-} from '../../utils/game-copy-edit.mapper';
+} from '../../domain/game-copy/game-copy-edit.mapper';
 import { Backend } from '../backend/backend';
 
 @Injectable({ providedIn: 'root' })

@@ -1,5 +1,5 @@
 import { Component, inject, input } from '@angular/core';
-import { GameCopyEditAdmin } from '../../core/services/game-copy/game-copy-edit-admin';
+import { GameCopyEditAdmin } from '../../core/services/game-copy-edit/game-copy-edit-admin';
 import { GameCopyRegistryKind } from '../../core/types/game-copy-registry.types';
 import { GameCopyEditTrigger } from '../game-copy-edit-trigger/game-copy-edit-trigger';
 

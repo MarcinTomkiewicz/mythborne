@@ -1,9 +1,9 @@
 import { Component, inject, input } from '@angular/core';
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
-import { GameCopyEditState } from '../../core/services/game-copy/game-copy-edit.state';
-import { GameCopyEditAdmin } from '../../core/services/game-copy/game-copy-edit-admin';
+import { GameCopyEditAdmin } from '../../core/services/game-copy-edit/game-copy-edit-admin';
 import { GameCopyRegistryKind } from '../../core/types/game-copy-registry.types';
+import { GameCopyEditState } from '../game-copy-edit/game-copy-edit.state';
 
 @Component({
   selector: 'app-game-copy-edit-trigger',

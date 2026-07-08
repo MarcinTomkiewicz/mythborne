@@ -30,3 +30,48 @@ export interface GameCopyEditTarget {
   copyPath: string;
   locale: string;
 }
+
+export interface GameCopyEditUi {
+  dialog: {
+    title: string;
+  };
+  metadata: {
+    gameCopyKindLabel: string;
+    copyPathLabel: string;
+    localeLabel: string;
+  };
+  fields: {
+    value: {
+      label: string;
+      ariaLabel: string;
+    };
+    reason: {
+      label: string;
+      placeholder: string;
+      ariaLabel: string;
+    };
+  };
+  actions: {
+    save: {
+      label: string;
+      ariaLabel: string;
+      tooltip: string;
+    };
+    cancel: {
+      label: string;
+      ariaLabel: string;
+    };
+    close: {
+      ariaLabel: string;
+    };
+  };
+  messages: {
+    loading: string;
+    missingEntry: string;
+    notEditable: string;
+    saved: string;
+    loadError: string;
+    saveError: string;
+    dirtyGuard: string;
+  };
+}

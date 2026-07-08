@@ -20,6 +20,8 @@ export type GetPlayerExplorationRuntimeCopyRpcResult =
   Database['public']['Functions']['get_player_exploration_runtime_copy']['Returns'];
 export type GetGameCopyTextEntryLocalesRpcResult =
   Database['public']['Functions']['get_game_copy_text_entry_locales']['Returns'];
+export type GetGameCopySourcePayloadRpcResult =
+  Database['public']['Functions']['get_game_copy_source_payload']['Returns'];
 export type UpdateGameCopyTextEntryRpcResult =
   Database['public']['Functions']['update_game_copy_text_entry']['Returns'];
 export type GetReportPageCopyRpcResult =

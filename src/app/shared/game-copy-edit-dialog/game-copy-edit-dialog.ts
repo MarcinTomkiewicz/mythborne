@@ -6,7 +6,8 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TextareaModule } from 'primeng/textarea';
-import { GameCopyEditState } from '../../core/services/game-copy/game-copy-edit.state';
+import { TooltipModule } from 'primeng/tooltip';
+import { GameCopyEditState } from '../game-copy-edit/game-copy-edit.state';
 
 @Component({
   selector: 'app-game-copy-edit-dialog',
@@ -19,6 +20,7 @@ import { GameCopyEditState } from '../../core/services/game-copy/game-copy-edit.
     MessageModule,
     ProgressSpinnerModule,
     TextareaModule,
+    TooltipModule,
   ],
   templateUrl: './game-copy-edit-dialog.html',
 })

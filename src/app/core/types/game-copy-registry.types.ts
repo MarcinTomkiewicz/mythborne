@@ -1,4 +1,5 @@
 import { ExplorationDifficultyCopy } from '../domain/game-copy/exploration-difficulty-copy.model';
+import { GameCopyEditUi } from '../domain/game-copy/game-copy-edit.model';
 import { ExplorationRuntimeCopy } from '../domain/exploration/exploration-runtime-copy.model';
 import { CombatCommonCopy } from '../domain/combat/combat-common-copy.model';
 import { PvpActionCopy } from '../domain/pvp/pvp-action-copy.model';
@@ -10,6 +11,7 @@ import { PvpRankingCopy } from '../domain/pvp/pvp-ranking.model';
 import { ReportPageCopy } from '../domain/reports/report-page-copy.model';
 
 export type GameCopyRegistry = {
+  'admin.gameCopy.edit': GameCopyEditUi;
   'player.combat.common': CombatCommonCopy;
   'player.exploration.difficulty': ExplorationDifficultyCopy;
   'player.exploration.runtime': ExplorationRuntimeCopy;
@@ -25,6 +27,9 @@ export type GameCopyRegistry = {
 export type GameCopyRegistryKind = keyof GameCopyRegistry;
 
 export type GameCopyRegistryArgs = {
+  'admin.gameCopy.edit': {
+    locale: string;
+  };
   'player.combat.common': {
     locale: string;
   };
