@@ -1,0 +1,103 @@
+<p-dialog
+  [header]="state().target()?.copyPath ?? ''"
+  [visible]="state().visible()"
+  [modal]="true"
+  [closable]="!state().saving()"
+  [closeOnEscape]="!state().saving()"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '48rem', maxWidth: '92vw' }"
+  (onHide)="state().close()"
+>
+  @if (state().target(); as target) {
+    <div class="flex-col gap-md w-100">
+      <section class="mg-card p-md flex-col gap-xs">
+        <code>{{ target.gameCopyKind }}</code>
+        <code>{{ target.copyPath }}</code>
+      </section>
+
+      @if (state().error(); as error) {
+        <p-message severity="error">{{ error }}</p-message>
+      }
+
+      @if (state().savedResult(); as result) {
+        <p-message severity="success">
+          <code>{{ result.locale }}</code>
+          <code>{{ result.updatedAt }}</code>
+        </p-message>
+      }
+
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        @for (locale of state().locales(); track locale.locale) {
+          <p-button
+            [label]="locale.nativeLabel || locale.label"
+            size="small"
+            [outlined]="state().selectedLocale() !== locale.locale"
+            [disabled]="state().loading() || state().saving()"
+            (onClick)="state().switchLocale(locale.locale)"
+          />
+        }
+      </div>
+
+      @if (state().loading()) {
+        <section class="flex-col-center-center p-lg w-100" aria-busy="true">
+          <p-progress-spinner strokeWidth="4" />
+        </section>
+      } @else if (state().activeEntry(); as entry) {
+        @if (!entry.exists) {
+          <p-message severity="warn">
+            <code>{{ entry.locale }}</code>
+            <code>{{ target.copyPath }}</code>
+            <code>exists=false</code>
+          </p-message>
+        } @else if (!entry.isEditable) {
+          <p-message severity="warn">
+            <code>{{ entry.locale }}</code>
+            <code>{{ target.copyPath }}</code>
+            <code>isEditable=false</code>
+          </p-message>
+        }
+
+        <form [formGroup]="state().form" class="flex-col gap-md w-100">
+          <label class="flex-col gap-sm">
+            <code>{{ entry.locale }}</code>
+          </label>
+
+          <label class="flex-col gap-sm">
+            <code>p_value</code>
+            <textarea
+              pTextarea
+              rows="8"
+              class="w-100"
+              formControlName="value"
+              [readOnly]="!entry.exists || !entry.isEditable"
+              [attr.aria-label]="target.copyPath"
+            ></textarea>
+          </label>
+
+          <label class="flex-col gap-sm">
+            <code>p_reason</code>
+            <input
+              pInputText
+              class="w-100"
+              formControlName="reason"
+              aria-label="p_reason"
+            />
+          </label>
+        </form>
+      }
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <div class="flex-row-end-center gap-sm">
+      <p-button
+        icon="pi pi-save"
+        ariaLabel="update_game_copy_text_entry"
+        [disabled]="!state().canSave()"
+        [loading]="state().saving()"
+        (onClick)="state().saveCurrentLocale()"
+      />
+    </div>
+  </ng-template>
+</p-dialog>

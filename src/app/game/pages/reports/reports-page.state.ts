@@ -15,10 +15,16 @@ import {
   ReportsCenterEventTypeCopy,
 } from '../../../core/domain/reports/reports-center-copy.model';
 import {
+  REPORTS_CENTER_DEFAULT_READ_MODE_KEY,
+  REPORTS_CENTER_DEFAULT_REPORT_AREA_KEY,
+  REPORTS_CENTER_DEFAULT_TIME_RANGE_KEY,
+  REPORTS_CENTER_PAGE_LIMIT,
+  REPORTS_CENTER_PAGE_OFFSET,
   ReportsCenterAppliedFilters,
+  ReportsCenterPageChangeEvent,
   ReportsCenterPageContext,
 } from '../../../core/domain/reports/reports-center.model';
-import { GameCopyService } from '../../../core/services/game-copy/game-copy.service';
+import { GameCopy } from '../../../core/services/game-copy/game-copy';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
 import {
@@ -28,16 +34,10 @@ import {
 import { mapReportsCenterHeaderSummaryRows } from '../../../core/utils/reports-center-header-summary.mapper';
 import { RequestToken } from '../../../core/utils/request-token';
 
-const REPORTS_CENTER_PAGE_LIMIT = 12;
-const REPORTS_CENTER_PAGE_OFFSET = 0;
-const DEFAULT_REPORT_AREA_KEY = 'all';
-const DEFAULT_READ_MODE_KEY = 'all';
-const DEFAULT_TIME_RANGE_KEY = 'last_7_days';
-
 @Injectable()
 export class ReportsPageState {
   private readonly activeHero = inject(ActiveHero);
-  private readonly gameCopy = inject(GameCopyService);
+  private readonly gameCopy = inject(GameCopy);
   private readonly reports = inject(PlayerReports);
   private readonly destroyRef = inject(DestroyRef);
   private readonly requestToken = new RequestToken();
@@ -50,11 +50,11 @@ export class ReportsPageState {
 
   readonly filtersForm = new FormGroup({
     query: new FormControl('', { nonNullable: true }),
-    reportAreaKey: new FormControl(DEFAULT_REPORT_AREA_KEY, {
+    reportAreaKey: new FormControl(REPORTS_CENTER_DEFAULT_REPORT_AREA_KEY, {
       nonNullable: true,
     }),
-    readModeKey: new FormControl(DEFAULT_READ_MODE_KEY, { nonNullable: true }),
-    timeRangeKey: new FormControl(DEFAULT_TIME_RANGE_KEY, {
+    readModeKey: new FormControl(REPORTS_CENTER_DEFAULT_READ_MODE_KEY, { nonNullable: true }),
+    timeRangeKey: new FormControl(REPORTS_CENTER_DEFAULT_TIME_RANGE_KEY, {
       nonNullable: true,
     }),
   });
@@ -128,9 +128,9 @@ export class ReportsPageState {
     this.filtersForm.setValue(
       {
         query: '',
-        reportAreaKey: DEFAULT_REPORT_AREA_KEY,
-        readModeKey: DEFAULT_READ_MODE_KEY,
-        timeRangeKey: DEFAULT_TIME_RANGE_KEY,
+        reportAreaKey: REPORTS_CENTER_DEFAULT_REPORT_AREA_KEY,
+        readModeKey: REPORTS_CENTER_DEFAULT_READ_MODE_KEY,
+        timeRangeKey: REPORTS_CENTER_DEFAULT_TIME_RANGE_KEY,
       },
       { emitEvent: false },
     );
@@ -174,10 +174,7 @@ export class ReportsPageState {
     this.loadCurrentPage();
   }
 
-  changeReportsPage(input: {
-    first?: number | null;
-    rows?: number | null;
-  }): void {
+  changeReportsPage(input: ReportsCenterPageChangeEvent): void {
     if (!this.activeHeroId || !this.activeServerId) {
       return;
     }

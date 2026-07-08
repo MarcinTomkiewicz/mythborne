@@ -14,7 +14,11 @@ import { ExplorationRewardState } from './exploration-reward.state';
 import { ExplorationSandboxToolState } from './exploration-sandbox-tool.state';
 import { ExplorationStepState } from './exploration-step.state';
 import { ExplorationStartState } from './exploration-start.state';
+import { GameCopyEditState } from '../../../core/services/game-copy/game-copy-edit.state';
+import { GameCopyEditDialog } from '../../../shared/game-copy-edit-dialog/game-copy-edit-dialog';
+import { GameCopyEditableText } from '../../../shared/game-copy-editable-text/game-copy-editable-text';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
+import { MessageModule } from 'primeng/message';
 
 @Component({
   selector: 'app-exploration-page',
@@ -24,7 +28,10 @@ import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay'
     ExplorationRuntimeDirectionSection,
     ExplorationRuntimePrimarySurface,
     ExplorationRuntimeSandboxSection,
+    GameCopyEditableText,
+    GameCopyEditDialog,
     LoadingOverlay,
+    MessageModule,
   ],
   providers: [
     ExplorationFeedbackState,
@@ -37,6 +44,7 @@ import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay'
     ExplorationRewardState,
     ExplorationSandboxToolState,
     ExplorationStartState,
+    GameCopyEditState,
     ExplorationPageState,
   ],
   templateUrl: './exploration-page.html',

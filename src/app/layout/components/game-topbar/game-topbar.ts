@@ -18,7 +18,7 @@ import { AuthState } from '../../../core/services/auth/auth-state';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerDashboardShellState } from '../../../core/services/hero/player-dashboard-shell-state';
 import { Platform } from '../../../core/services/platform/platform';
-import { GameCopyService } from '../../../core/services/game-copy/game-copy.service';
+import { GameCopy } from '../../../core/services/game-copy/game-copy';
 import { semanticIconClass } from '../../../core/utils/semantic-icon-class';
 import { GameBar } from '../../../shared/game-bar/game-bar';
 import { NotificationBell } from '../notification-bell/notification-bell';
@@ -35,7 +35,7 @@ export class GameTopbar implements OnInit {
   private readonly authState = inject(AuthState);
   private readonly activeHero = inject(ActiveHero);
   private readonly dashboardShellState = inject(PlayerDashboardShellState);
-  private readonly gameCopy = inject(GameCopyService);
+  private readonly gameCopy = inject(GameCopy);
   private readonly platform = inject(Platform);
   private readonly destroyRef = inject(DestroyRef);
 

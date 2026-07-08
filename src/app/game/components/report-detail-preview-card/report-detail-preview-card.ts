@@ -12,7 +12,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import type { PvpPrivateReportCopy } from '../../../core/domain/pvp/pvp-private-report-copy.model';
 import type { PrivateReportDetailPage } from '../../../core/domain/reports/report-detail.model';
 import type { ReportHandoffActionsViewModel } from '../../../core/domain/reports/report-handoff.model';
-import { GameCopyService } from '../../../core/services/game-copy/game-copy.service';
+import { GameCopy } from '../../../core/services/game-copy/game-copy';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
 import { explorationParentContextReportId } from '../../../core/utils/report-detail-parent-context';
@@ -42,7 +42,7 @@ import { ReportDetailPreviewDisplay } from './report-detail-preview-display';
 export class ReportDetailPreviewCard {
   private readonly activeHero = inject(ActiveHero);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly gameCopy = inject(GameCopyService);
+  private readonly gameCopy = inject(GameCopy);
   private readonly reports = inject(PlayerReports);
   private loadRequestId = 0;
 

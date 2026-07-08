@@ -2,6 +2,7 @@ import {
   DestroyRef,
   Injectable,
   computed,
+  effect,
   inject,
   isDevMode,
   signal,
@@ -13,7 +14,8 @@ import {
   explorationDifficultyCardCopy,
 } from '../../../core/domain/game-copy/exploration-difficulty-copy.model';
 import { ExplorationRuntimeCopy } from '../../../core/domain/exploration/exploration-runtime-copy.model';
-import { GameCopyService } from '../../../core/services/game-copy/game-copy.service';
+import { GameCopyEditState } from '../../../core/services/game-copy/game-copy-edit.state';
+import { GameCopy } from '../../../core/services/game-copy/game-copy';
 import { RequestToken } from '../../../core/utils/request-token';
 import { ExplorationChallengeState } from './exploration-challenge.state';
 import { ExplorationMinigameHandoffState } from './exploration-minigame-handoff.state';
@@ -30,7 +32,11 @@ export class ExplorationPageState {
   private readonly copyToken = new RequestToken();
   private readonly runtimeCopyToken = new RequestToken();
   private readonly destroyRef = inject(DestroyRef);
-  private readonly gameCopy = inject(GameCopyService);
+  private readonly gameCopy = inject(GameCopy);
+  private readonly difficultyCopyRevision = this.gameCopy.refreshRevision(
+    'player.exploration.difficulty',
+    'pl',
+  );
 
   readonly minigameHandoff = inject(ExplorationMinigameHandoffState);
   readonly overview = inject(ExplorationOverviewState);
@@ -41,6 +47,7 @@ export class ExplorationPageState {
   readonly rewardState = inject(ExplorationRewardState);
   readonly sandbox = inject(ExplorationSandboxToolState);
   readonly start = inject(ExplorationStartState);
+  readonly gameCopyEdit = inject(GameCopyEditState);
 
   readonly selectedDifficultyCardPreview = computed(() =>
     this.preview.difficultyCardPreview(this.overview.selectedDifficultyKey()),
@@ -49,7 +56,9 @@ export class ExplorationPageState {
   readonly runtimeCopy = signal<ExplorationRuntimeCopy | null>(null);
   readonly isDifficultyCopyLoading = signal(false);
   readonly isRuntimeCopyLoading = signal(false);
+  readonly difficultyCopyError = signal(false);
   readonly runtimeCopyError = signal(false);
+  readonly hasDifficultyCopyError = computed(() => this.difficultyCopyError());
   readonly hasRuntimeCopyError = computed(() => this.runtimeCopyError());
   readonly selectedDifficultyCopy = computed(() => {
     const copy = this.difficultyCopy();
@@ -109,6 +118,14 @@ export class ExplorationPageState {
     );
   });
 
+  constructor() {
+    effect(() => {
+      if (this.difficultyCopyRevision() > 0) {
+        this.loadDifficultyCopy();
+      }
+    });
+  }
+
   loadData(): void {
     this.loadDifficultyCopy();
     this.loadRuntimeCopy();
@@ -141,6 +158,7 @@ export class ExplorationPageState {
     const token = this.copyToken.next();
 
     this.isDifficultyCopyLoading.set(true);
+    this.difficultyCopyError.set(false);
     this.difficultyCopy.set(null);
 
     this.gameCopy
@@ -159,6 +177,7 @@ export class ExplorationPageState {
             return;
           }
 
+          this.difficultyCopyError.set(false);
           this.difficultyCopy.set(copy);
         },
         error: (error: unknown) => {
@@ -167,9 +186,10 @@ export class ExplorationPageState {
           }
 
           if (isDevMode()) {
-            console.error('Exploration difficulty copy load failed.', error);
+            console.error('player.exploration.difficulty', error);
           }
 
+          this.difficultyCopyError.set(true);
           this.difficultyCopy.set(null);
         },
       });
@@ -207,7 +227,7 @@ export class ExplorationPageState {
           }
 
           if (isDevMode()) {
-            console.error('Exploration runtime copy load failed.', error);
+            console.error('player.exploration.runtime', error);
           }
 
           this.runtimeCopyError.set(true);

@@ -4954,6 +4954,36 @@ export type Database = {
         }
         Relationships: []
       }
+      game_copy_sources: {
+        Row: {
+          created_at: string
+          game_copy_kind: string
+          id: string
+          is_active: boolean
+          metadata_json: Json
+          source_function_name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          game_copy_kind: string
+          id?: string
+          is_active?: boolean
+          metadata_json?: Json
+          source_function_name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          game_copy_kind?: string
+          id?: string
+          is_active?: boolean
+          metadata_json?: Json
+          source_function_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       game_report_hero_access: {
         Row: {
           access_role: Database["public"]["Enums"]["game_report_access_role"]
@@ -15105,6 +15135,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      assert_can_manage_game_copy: {
+        Args: { p_operation?: string }
+        Returns: undefined
+      }
       assert_can_manage_reward_config: {
         Args: { p_operation?: string; p_reason: string }
         Returns: undefined
@@ -15125,6 +15159,7 @@ export type Database = {
         Args: { p_hero_id: string; p_operation?: string }
         Returns: undefined
       }
+      assert_game_copy_editor_access: { Args: never; Returns: string }
       assert_hero_belongs_to_server: {
         Args: { p_hero_id: string; p_server_id: string }
         Returns: undefined
@@ -15836,6 +15871,10 @@ export type Database = {
         Args: { p_hero_id: string; p_item_id: string }
         Returns: Json
       }
+      build_player_item_slot_policy_json: {
+        Args: { p_base_type_key: string }
+        Returns: Json
+      }
       build_polish_prefix_display_forms: {
         Args: { p_prefix_name: string }
         Returns: Json
@@ -16226,6 +16265,7 @@ export type Database = {
         Args: { p_server_id?: string }
         Returns: boolean
       }
+      can_manage_game_copy: { Args: never; Returns: boolean }
       can_manage_hero: { Args: { target_hero_id: string }; Returns: boolean }
       can_manage_server_staff: {
         Args: { p_server_id: string }
@@ -16244,6 +16284,10 @@ export type Database = {
         Returns: boolean
       }
       can_read_hero: { Args: { target_hero_id: string }; Returns: boolean }
+      can_read_hero_via_pvp_action_stats_context: {
+        Args: { target_hero_id: string }
+        Returns: boolean
+      }
       can_read_moderation_action: {
         Args: {
           p_action: Database["public"]["Tables"]["moderation_actions"]["Row"]
@@ -18129,6 +18173,29 @@ export type Database = {
           updated_at: string
         }[]
       }
+      ensure_pvp_combat_session_base: {
+        Args: { p_pvp_action_id: string; p_request_id?: string }
+        Returns: {
+          awaiting_player_action: boolean
+          combat_session_id: string
+          current_action_index: number
+          current_actor_participant_id: string
+          current_round_number: number
+          current_timing_manifest_json: Json
+          event_count: number
+          events_json: Json
+          final_combat_result_id: string
+          participants_json: Json
+          round_order_json: Json
+          server_id: string
+          source_entity_id: string
+          source_entity_type: string
+          source_type: Database["public"]["Enums"]["combat_source_type"]
+          status_key: string
+          status_label: string
+          updated_at: string
+        }[]
+      }
       ensure_server_membership_for_user: {
         Args: { p_reason?: string; p_server_id: string; p_user_id: string }
         Returns: string
@@ -18725,6 +18792,15 @@ export type Database = {
         }
         Returns: number
       }
+      game_copy_jsonb_path_exists: {
+        Args: { p_path: string[]; p_payload: Json }
+        Returns: boolean
+      }
+      game_copy_path_array: { Args: { p_copy_path: string }; Returns: string[] }
+      game_copy_path_to_jsonb_path: {
+        Args: { p_copy_path: string }
+        Returns: string[]
+      }
       game_copy_titleize_key: { Args: { p_key: string }; Returns: string }
       generate_game_report_public_token: { Args: never; Returns: string }
       generate_identity_observation_anti_abuse_signals: {
@@ -18802,6 +18878,58 @@ export type Database = {
         }[]
       }
       get_active_pvp_action_offer: {
+        Args: { p_hero_id: string }
+        Returns: {
+          action_kind: string
+          arrives_at: string
+          attacker_hero_id: string
+          attacker_name: string
+          available_at: string
+          awaiting_player_action: boolean
+          can_auto_settle: boolean
+          can_enter_manual_resolution: boolean
+          combat_live_session_id: string
+          combat_live_status_key: string
+          combat_result_id: string
+          defender_hero_id: string
+          defender_name: string
+          expires_at: string
+          is_blocking_runtime_activity: boolean
+          is_manual_window: boolean
+          is_resolved: boolean
+          is_travel_phase: boolean
+          manual_deadline_at: string
+          metadata_json: Json
+          outcome_key: string
+          phase: string
+          phase_ends_at: string
+          phase_label: string
+          phase_started_at: string
+          pvp_action_id: string
+          pvp_attack_result_id: string
+          raw_status: string
+          remaining_seconds: number
+          resolved_at: string
+          return_available_at: string
+          return_started_at: string
+          runtime_activity_id: string
+          runtime_activity_is_blocking: boolean
+          runtime_activity_status: string
+          seconds_until_arrival: number
+          seconds_until_expiry: number
+          seconds_until_manual_deadline: number
+          server_id: string
+          started_at: string
+          status_label: string
+          target_address: string
+          target_address_number: number
+          target_district_code: string
+          target_name: string
+          viewer_hero_id: string
+          viewer_role: string
+        }[]
+      }
+      get_active_pvp_action_offer_base: {
         Args: { p_hero_id: string }
         Returns: {
           action_kind: string
@@ -19219,30 +19347,30 @@ export type Database = {
           updated_at: string
         }[]
       }
-      get_combat_live_state_legacy_v1: {
-        Args: { p_session_id: string; p_since_event_index?: number }
+      get_combat_resolution_preview: {
+        Args: {
+          p_locale_key?: string
+          p_source_entity_id: string
+          p_source_entity_type: string
+        }
         Returns: {
-          awaiting_player_action: boolean
+          auto_entrypoint: string
+          can_auto_resolve: boolean
+          can_start_manual: boolean
           combat_session_id: string
-          current_action_index: number
-          current_actor_participant_id: string
-          current_round_number: number
-          current_timing_manifest_json: Json
-          event_count: number
-          events_json: Json
-          final_combat_result_id: string
+          decision_required: boolean
+          manual_entrypoint: string
+          metadata_json: Json
           participants_json: Json
-          round_order_json: Json
-          server_id: string
+          preview_status: string
+          pvp_combat_context: Json
           source_entity_id: string
           source_entity_type: string
           source_type: Database["public"]["Enums"]["combat_source_type"]
-          status_key: string
-          status_label: string
           updated_at: string
         }[]
       }
-      get_combat_resolution_preview: {
+      get_combat_resolution_preview_base: {
         Args: {
           p_locale_key?: string
           p_source_entity_id: string
@@ -19793,6 +19921,60 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_game_copy_available_locales: {
+        Args: never
+        Returns: {
+          is_default: boolean
+          label: string
+          locale: string
+          metadata_json: Json
+          native_label: string
+          sort_order: number
+        }[]
+      }
+      get_game_copy_locales: {
+        Args: never
+        Returns: {
+          isActive: boolean
+          label: string
+          locale: string
+          metadataJson: Json
+          nativeLabel: string
+          sortOrder: number
+        }[]
+      }
+      get_game_copy_source_payload: {
+        Args: { p_game_copy_kind: string; p_locale?: string }
+        Returns: Json
+      }
+      get_game_copy_text_entry: {
+        Args: {
+          p_copy_path: string
+          p_game_copy_kind: string
+          p_locale: string
+        }
+        Returns: {
+          copyPath: string
+          exists: boolean
+          gameCopyKind: string
+          isEditable: boolean
+          locale: string
+          metadataJson: Json
+          updatedAt: string
+          updatedByUserId: string
+          value: string
+          valueType: string
+        }[]
+      }
+      get_game_copy_text_entry_locales: {
+        Args: { p_copy_path: string; p_game_copy_kind: string }
+        Returns: {
+          availableLocalesJson: Json
+          copyPath: string
+          entriesJson: Json
+          gameCopyKind: string
+        }[]
+      }
       get_global_config_integer: {
         Args: { p_config_key: string; p_fallback: number }
         Returns: number
@@ -19964,6 +20146,10 @@ export type Database = {
       get_hero_attribute_derived_preview_manifest: {
         Args: { p_hero_id: string }
         Returns: Json
+      }
+      get_hero_authoritative_pending_combat_effect_id: {
+        Args: { p_hero_id: string }
+        Returns: string
       }
       get_hero_available_character_points: {
         Args: { p_hero_id: string }
@@ -22768,6 +22954,14 @@ export type Database = {
         Args: { p_max_key?: string; p_min_key?: string; p_pair: Json }
         Returns: Json
       }
+      normalize_game_copy_kind: {
+        Args: { p_game_copy_kind: string }
+        Returns: string
+      }
+      normalize_game_copy_path: {
+        Args: { p_copy_path: string }
+        Returns: string
+      }
       normalize_hero_attack_plan_dashboard_source_rows: {
         Args: { p_payload: Json }
         Returns: Json
@@ -24504,6 +24698,14 @@ export type Database = {
           luck_influence: number
           luck_value: number
         }[]
+      }
+      resolve_runtime_bonus_output_type_key: {
+        Args: {
+          p_bonus_target_key: string
+          p_bonus_template_key: string
+          p_bonus_type_key: string
+        }
+        Returns: string
       }
       resolve_trial_offer_inactivity_timeout: {
         Args: { p_attempt_id: string; p_request_id?: string }
@@ -26797,6 +26999,25 @@ export type Database = {
           text_row_id: string
           updated_at: string
           updated_by: string
+          value: string
+        }[]
+      }
+      update_game_copy_text_entry: {
+        Args: {
+          p_copy_path: string
+          p_game_copy_kind: string
+          p_locale: string
+          p_reason?: string
+          p_value: string
+        }
+        Returns: {
+          auditId: string
+          copyPath: string
+          gameCopyKind: string
+          locale: string
+          metadataJson: Json
+          updatedAt: string
+          updatedByUserId: string
           value: string
         }[]
       }

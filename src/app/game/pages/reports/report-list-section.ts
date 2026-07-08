@@ -9,6 +9,7 @@ import {
   ReportsCenterListCopy,
 } from '../../../core/domain/reports/reports-center-copy.model';
 import {
+  ReportsCenterPageChangeEvent,
   ReportsCenterListRow,
   ReportsCenterPagination,
 } from '../../../core/domain/reports/reports-center.model';
@@ -37,7 +38,7 @@ export class ReportListSection {
   readonly markAllReadEnabled = input(false);
   readonly isLoading = input(false);
   readonly isActionLoading = input(false);
-  readonly pageChange = output<{ first?: number | null; rows?: number | null }>();
+  readonly pageChange = output<ReportsCenterPageChangeEvent>();
   readonly selectReport = output<string>();
   readonly toggleReportSelection = output<string>();
   readonly toggleVisibleReportSelection = output<void>();

@@ -97,7 +97,7 @@ New-Item -ItemType Directory -Path $OutputDir | Out-Null
 
 Ensure-GitignoreEntry "$outputPrefix"
 
-$statusOutput = git status --porcelain=v1 -z
+$statusOutput = git status --porcelain=v1 -z -uall
 $entries = $statusOutput -split "`0" | Where-Object { $_ -ne "" }
 
 $changedFiles = New-Object System.Collections.Generic.List[string]

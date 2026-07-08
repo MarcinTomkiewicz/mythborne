@@ -5,6 +5,17 @@ import {
   ReportDomainKey as CanonicalReportDomainKey,
 } from './report-detail.model';
 
+export const REPORTS_CENTER_PAGE_LIMIT = 12;
+export const REPORTS_CENTER_PAGE_OFFSET = 0;
+export const REPORTS_CENTER_DEFAULT_REPORT_AREA_KEY = 'all';
+export const REPORTS_CENTER_DEFAULT_READ_MODE_KEY = 'all';
+export const REPORTS_CENTER_DEFAULT_TIME_RANGE_KEY = 'last_7_days';
+
+export interface ReportsCenterPageChangeEvent {
+  first?: number | null;
+  rows?: number | null;
+}
+
 export interface ReportsCenterPageContext {
   contractVersion: 'reports_center_page_context_v4';
   eventTypeContract: ReportsCenterEventTypeContract;

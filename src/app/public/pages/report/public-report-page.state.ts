@@ -3,13 +3,13 @@ import { catchError, forkJoin, map, of } from 'rxjs';
 import { PvpPublicReportCopy } from '../../../core/domain/pvp/pvp-public-report-copy.model';
 import { PublicReportDetail } from '../../../core/domain/reports/report-detail.model';
 import { ReportPageCopy } from '../../../core/domain/reports/report-page-copy.model';
-import { GameCopyService } from '../../../core/services/game-copy/game-copy.service';
+import { GameCopy } from '../../../core/services/game-copy/game-copy';
 import { PlayerReports } from '../../../core/services/reports/player-reports';
 import { publicReportPathFromToken } from '../../../core/utils/public-report-path';
 
 @Injectable()
 export class PublicReportPageState {
-  private readonly gameCopy = inject(GameCopyService);
+  private readonly gameCopy = inject(GameCopy);
   private readonly reports = inject(PlayerReports);
   private loadRequestId = 0;
 

@@ -1,20 +1,52 @@
 <div class="flex-col gap-xl min-w-0">
+  @if (page.hasDifficultyCopyError()) {
+    <p-message severity="error">
+      <code>player.exploration.difficulty</code>
+    </p-message>
+  }
+
   @if (page.difficultyCopy(); as copy) {
     <section class="mg-card p-md w-100">
       <div class="grid-2-1 gap-lg grid-items-center">
         <div class="flex-col gap-xs">
-          <p class="small-caps color-muted text-xs mb-0">{{ copy.header.eyebrow }}</p>
-          <h2 class="mg-section__title mg-section__title--sm mb-0">
-            {{ copy.header.title }}
-          </h2>
-          <p class="mg-section__subtitle mg-section__subtitle--no-margin mg-section__subtitle--full">
-            {{ copy.header.intro }}
-          </p>
+          <app-game-copy-editable-text
+            gameCopyKind="player.exploration.difficulty"
+            copyPath="header.eyebrow"
+            [locale]="copy.locale"
+          >
+            <p class="small-caps color-muted text-xs mb-0">{{ copy.header.eyebrow }}</p>
+          </app-game-copy-editable-text>
+          <app-game-copy-editable-text
+            gameCopyKind="player.exploration.difficulty"
+            copyPath="header.title"
+            [locale]="copy.locale"
+          >
+            <h2 class="mg-section__title mg-section__title--sm mb-0">
+              {{ copy.header.title }}
+            </h2>
+          </app-game-copy-editable-text>
+          <app-game-copy-editable-text
+            gameCopyKind="player.exploration.difficulty"
+            copyPath="header.intro"
+            [locale]="copy.locale"
+          >
+            <p class="mg-section__subtitle mg-section__subtitle--no-margin mg-section__subtitle--full">
+              {{ copy.header.intro }}
+            </p>
+          </app-game-copy-editable-text>
         </div>
 
         <aside class="mg-card p-lg flex-col gap-sm w-100 shadow-premium">
           <div class="flex-row-between-end gap-md w-100 border-bottom pb-xs">
-            <span class="color-muted small-caps uppercase text-xs">{{ copy.statusPanel.labels.difficulty }}</span>
+            <app-game-copy-editable-text
+              gameCopyKind="player.exploration.difficulty"
+              copyPath="statusPanel.labels.difficulty"
+              [locale]="copy.locale"
+            >
+              <span class="color-muted small-caps uppercase text-xs">
+                {{ copy.statusPanel.labels.difficulty }}
+              </span>
+            </app-game-copy-editable-text>
             <strong class="color-heading text-md">
               @if (page.selectedDifficultyCopy(); as difficultyCopy) {
                 {{ difficultyCopy.title }}
@@ -58,6 +90,11 @@
 
   @if (page.shouldShowRuntimeScreen()) {
     <section class="flex-col gap-sm w-100">
+      @if (page.hasRuntimeCopyError()) {
+        <p-message severity="error">
+          <code>player.exploration.runtime</code>
+        </p-message>
+      }
       <app-exploration-runtime-sandbox-section />
       <app-exploration-runtime-primary-surface />
       <app-exploration-runtime-direction-section />
@@ -81,3 +118,5 @@
   [visible]="page.isLoading()"
   label=""
 />
+
+<app-game-copy-edit-dialog [state]="page.gameCopyEdit" />

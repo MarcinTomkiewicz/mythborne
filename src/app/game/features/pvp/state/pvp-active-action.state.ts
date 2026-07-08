@@ -14,7 +14,7 @@ import {
   PvpActionStartResult,
 } from '../../../../core/domain/pvp/pvp.model';
 import { PvpActionCopy } from '../../../../core/domain/pvp/pvp-action-copy.model';
-import { GameCopyService } from '../../../../core/services/game-copy/game-copy.service';
+import { GameCopy } from '../../../../core/services/game-copy/game-copy';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../../core/services/pvp/player-pvp';
 import type {
@@ -34,7 +34,7 @@ import { PvpSpyReportState } from './pvp-spy-report.state';
 export class PvpActiveActionState {
   private readonly activeHero = inject(ActiveHero);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly gameCopy = inject(GameCopyService);
+  private readonly gameCopy = inject(GameCopy);
   private readonly combatCopy = inject(PvpCombatCopyState);
   private readonly playerPvp = inject(PlayerPvp);
   private readonly spyReport = inject(PvpSpyReportState);

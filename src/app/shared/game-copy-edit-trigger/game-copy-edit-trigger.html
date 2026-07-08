@@ -1,0 +1,13 @@
+@if (canManage()) {
+  <p-button
+    icon="pi pi-pencil"
+    severity="secondary"
+    size="small"
+    [text]="true"
+    [rounded]="true"
+    [ariaLabel]="copyPath()"
+    [pTooltip]="copyPath()"
+    tooltipPosition="top"
+    (onClick)="open()"
+  />
+}

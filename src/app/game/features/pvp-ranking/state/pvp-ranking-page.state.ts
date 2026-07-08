@@ -13,7 +13,7 @@ import {
 } from '../../../../core/domain/pvp/pvp-ranking.model';
 import type { GamePageSummaryRow } from '../../../../core/interfaces/game-page-summary-row.interface';
 import type { DataRow } from '../../../../core/types/data-row.types';
-import { GameCopyService } from '../../../../core/services/game-copy/game-copy.service';
+import { GameCopy } from '../../../../core/services/game-copy/game-copy';
 import { ActiveHero } from '../../../../core/services/hero/active-hero';
 import type { RequiredActiveHeroState } from '../../../../core/interfaces/hero/active-hero.interface';
 import { PlayerPvpRanking } from '../../../../core/services/pvp/player-pvp-ranking';
@@ -29,7 +29,7 @@ export class PvpRankingPageState {
   private readonly destroyRef = inject(DestroyRef);
   private readonly activeHero = inject(ActiveHero);
   private readonly actions = inject(PvpRankingActionsState);
-  private readonly gameCopy = inject(GameCopyService);
+  private readonly gameCopy = inject(GameCopy);
   private readonly ranking = inject(PlayerPvpRanking);
   private readonly contextRequests = new RequestToken();
 

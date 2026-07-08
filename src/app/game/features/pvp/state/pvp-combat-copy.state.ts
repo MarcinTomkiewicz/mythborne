@@ -7,12 +7,12 @@ import { PvpCombatCopy } from '../../../../core/domain/pvp/pvp-combat-copy.model
 import {
   pvpCombatSourcePresentationWithKeyFallbacks,
 } from '../../../../core/domain/pvp/pvp-combat-source-presentation.mapper';
-import { GameCopyService } from '../../../../core/services/game-copy/game-copy.service';
+import { GameCopy } from '../../../../core/services/game-copy/game-copy';
 
 @Injectable({ providedIn: 'root' })
 export class PvpCombatCopyState {
   private readonly destroyRef = inject(DestroyRef);
-  private readonly gameCopy = inject(GameCopyService);
+  private readonly gameCopy = inject(GameCopy);
 
   readonly combatCommonCopy = signal<CombatCommonCopy | null>(null);
   readonly pvpCombatCopy = signal<PvpCombatCopy | null>(null);
