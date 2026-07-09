@@ -21776,6 +21776,10 @@ export type Database = {
         Args: { p_locale?: string }
         Returns: Json
       }
+      get_player_manual_trial_copy: {
+        Args: { p_locale?: string }
+        Returns: Json
+      }
       get_player_page_hero_guard: {
         Args: { p_hero_id: string; p_operation?: string }
         Returns: {

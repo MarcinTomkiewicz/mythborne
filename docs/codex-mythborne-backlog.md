@@ -12522,51 +12522,69 @@ Codex must not create local Angular copy, domain copy inside runtime/read models
 
 Manual Trial Core must not introduce player-facing copy through Angular constants, local fallback strings, Manual Runtime Manifest, Trial Offer runtime payload, Backend Verdict runtime payload, or any other non-copy read model.
 
-All player-facing Manual Trial copy must be consumed through `GameCopyService` from a dedicated copy RPC/GameCopy kind.
+All player-facing Manual Trial shell/workflow copy must be consumed through the existing GameCopy read path from the stable GameCopy kind:
+
+`player.manualTrial.copy`
+
+The current frontend service class for GameCopy consumption is GameCopy. If project naming changes again, use the current existing GameCopy reader/service path, not a local Angular copy substitute.
 
 Runtime/read-model RPCs may expose only keys, ids, state, policies, timers, values, allowed actions, report references and reward references. They must not be treated as UI copy authority.
 
 Frontend must not consume these runtime/read-model fields as player-facing copy even if they currently exist in generated DB contracts:
 
-* `trial_label`;
-* `trial_description`;
-* `trial_helper_text`;
-* `difficulty_label`;
-* `difficulty_description`;
-* `difficulty_helper_text`;
-* `tested_stat_label`;
-* `tested_stat_description`;
-* `tested_stat_helper_text`;
-* `minigame_label`;
-* `minigame_description`;
-* `minigame_helper_text`;
-* `failure_reason_label`;
-* `failure_reason_helper_text`;
-* outcome/resolution/status labels or helper texts.
+trial_label;
+trial_description;
+trial_helper_text;
+difficulty_label;
+difficulty_description;
+difficulty_helper_text;
+tested_stat_label;
+tested_stat_description;
+tested_stat_helper_text;
+minigame_label;
+minigame_description;
+minigame_helper_text;
+failure_reason_label;
+failure_reason_helper_text;
+outcome/resolution/status labels or helper texts.
 
 Required copy source:
 
-* add/consume a stable Manual Trial GameCopy kind, for example `player.manualTrial.copy`;
-* expose it through the existing `GameCopyService`;
-* load it before rendering Manual Trial player-facing shell/workflow states.
+consume the stable Manual Trial GameCopy kind player.manualTrial.copy;
+expose it through the existing frontend GameCopy registry/reader before AB3+ UI renders Manual Trial copy;
+load it before rendering Manual Trial player-facing shell/workflow states;
+use inline GameCopyEdit* pencil triggers only for admin inline editing of displayed GameCopy-backed text, not as the primary copy consumption mechanism.
 
-The Manual Trial copy package must cover at least:
+The Manual Trial copy package currently covers:
 
-* no-active-Trial state;
-* Trial Offer shell labels;
-* Manual Resolve / Auto Resolve action labels;
-* unsupported renderer state;
-* loading/submitting/resolving states;
-* manifest unavailable/error states;
-* exit warning title/body/actions;
-* outcome, resolution mode and failure reason labels keyed by backend keys;
-* report handoff action labels.
+no-active-Trial state;
+Trial Offer shell copy;
+Manual Resolve / Auto Resolve action labels;
+manual loading/submitting/resolving states;
+manifest loading/unavailable/error states;
+unsupported renderer state;
+exit warning title/body/actions;
+result shell title;
+outcome labels keyed by backend outcome_key;
+failure reason labels/helper text keyed by backend failure_reason_key;
+report handoff action labels.
 
-If Manual Trial copy RPC/GameCopy kind or required copy keys are missing, AB3+ is blocked. Codex must report a DB/GameCopy contract blocker instead of adding local copy or consuming runtime/read-model text fields.
+Resolution mode copy is not seeded yet because no current player-visible shell use was confirmed. If a later UI slice displays resolution_mode_key, Codex must stop and report a missing GameCopy path unless the relevant resolutionModes.<key>.label path has been added.
+
+Validation reason copy is not seeded yet because no current player-visible shell use was confirmed. If a later UI slice displays validation_reason_key, Codex must stop and report a missing GameCopy path unless the relevant validationReasons.<key>.label/helper paths have been added.
+
+If Manual Trial copy kind, frontend GameCopy reader, or required copy keys are missing, AB3+ is blocked. Codex must report a DB/GameCopy or frontend GameCopy-reader blocker instead of adding local copy or consuming runtime/read-model text fields.
 
 Manual Runtime Manifest may contain runtime state/config keys, thresholds, timers, policies and player-safe values. It must not be used as a generic transport for display copy.
 
-Future common copy may be reused by the Manual Trial copy package, but Epic AB must not depend on local Angular common-copy substitutes.
+Renderer/minigame-specific copy is outside player.manualTrial.copy.
+
+If minigame_key = combat, the renderer path uses existing combat/minigame copy through the existing combat flow. If a future renderer such as Hera maze or Zeus pillars is added, that renderer must have its own renderer-specific copy contract. player.manualTrial.copy remains the shell/workflow copy around the renderer.
+
+
+Dla AB1 wystarczy dopisać w promptcie jedno krótkie zdanie:
+
+Manual Trial copy DB contract is now available: `player.manualTrial.copy` exists for `pl` and `en`, editable leaves are seeded with `[PH]`, outcomes/failureReasons are seeded from current DB keys, resolutionModes/validationReasons are intentionally not seeded until player-visible use is confirmed. AB1 must preserve runtime keys for copy lookup but must not implement UI copy consumption.
 
 ---
 
