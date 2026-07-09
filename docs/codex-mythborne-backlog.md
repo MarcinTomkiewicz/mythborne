@@ -12398,7 +12398,7 @@ Perform final frontend integration pass for Council voting.
 
 # Epic AB — Manual Trial Minigame Shell/Core
 
-**Status:** Runtime DB/RPC/generated-type readiness confirmed by AB0; AB3+ remains blocked until Manual Trial Copy RPC/GameCopy contract exists and generated Supabase types expose it.
+**Status:** Runtime DB/RPC/generated-type readiness confirmed by AB0; AB1 domain models/mapper envelopes accepted; AB3+ remains blocked until Manual Trial Copy RPC/GameCopy contract exists and generated Supabase types expose it.
 
 **Execution note:** AB0 confirmed the required Manual Trial runtime DB/RPC/generated-type contracts for AB1+. AB0-COPY and/or Migrator copy work still must confirm the required Manual Trial Copy RPC/GameCopy contract before AB3+ starts.
 
@@ -12768,6 +12768,8 @@ Confirm which Manual Trial Core DB/RPC/generated-type contracts are available an
 ---
 
 ## Task AB1 — Manual Trial Core domain models and mapper envelopes
+
+**Status note 2026-07-09:** Accepted. AB1 added Manual Trial domain/read models and mapper envelopes under `src/app/core/domain/manual-trial`, plus generated RPC/table alias types in `src/app/core/types/manual-trial-rpc.types.ts`. The domain mapper is owned by the Manual Trial domain, not `core/utils`; `challenge_status` is exposed as `attemptStatusKey`; direct table-row session consumption was not prepared; the default Backend Verdict mapper returns only player-safe verdict data, with replay/debug fields kept behind a separate debug mapper. No UI, services, DB/RPC changes, generated-type edits, local Manual Trial copy, status-doc-driven runtime behavior or specs were added. Verification passed with `npx tsc --noEmit`, `npm run build` with existing warnings, `git diff --check` and static greps.
 
 **Goal:**
 Add typed frontend domain models and mapper envelopes for Manual Trial Core once DB/RPC contracts exist.

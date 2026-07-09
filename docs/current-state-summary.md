@@ -1,6 +1,6 @@
 # Monster Hunt - Current State Summary
 
-Updated: 2026-06-18
+Updated: 2026-07-09
 
 This file summarizes the current implementation state against:
 - `docs/project-context.md`
@@ -904,6 +904,7 @@ Still pending at the gameplay level even if partially supported in schema:
 - UI-TRADE-1 is accepted/completed in direction as of 2026-06-05 as the Auction House read-only shell/listing browser. The accepted slice keeps `app-game-page-header` with DB-owned Auction copy, the four-row DB-owned summary, Auction/Direct Trade nav without tag badges, and one-item listing rows using only `AuctionListingRow` display fields for item display name/core metadata, DB-owned status/mode labels, Character Point prices, seller and ending fields.
 - UI-TRADE-2 is accepted/completed as of 2026-06-06 as the Auction browse/filter foundation. `/game/auction` consumes the split Auction browse contract for search, auction mode, base type and sort filters, server-backed listing queries, DB-owned pagination display labels, formatted `endsInSeconds`/`endsAt`, shared `app-item-detail-popover` rows with `context="auction"`, and Auction access gating that keeps listings unloaded when `canUseAuction=false`. The route is split into a thin aggregate `AuctionPage` plus local presentation components for listings, listing rows, browse filters and rules; listing rows use the global `mg-data-row mg-data-row--listing` pattern and no local Auction SCSS or `styleUrl` remains. Watch, My Auctions/My Bids, Create, action workflows and Direct Trade remain separate future tasks.
 - Epic AB0 is accepted/completed as of 2026-06-18 as the Manual Trial Core DB/types preflight. Generated types expose the Manual Trial runtime tables/dictionaries and RPCs needed for AB1 domain models/mappers: active Trial Offer, start Manual Runtime Session, Manual Runtime Manifest, Action Log submit, Backend Verdict, direct/offer/manual-inactivity/exit auto-resolve and report handoff. No runtime DB/RPC/generated contract blocker was found for AB1. AB3+ remains blocked because no dedicated Manual Trial Copy RPC/GameCopy kind is registered in `GameCopyService`; Manual Trial runtime/read-model label/description/helper fields must not be consumed as UI copy.
+- Epic AB1 is accepted/completed as of 2026-07-09 as the Manual Trial Core domain model and mapper envelope slice. `src/app/core/domain/manual-trial` now owns the Manual Trial models and domain mapper; `src/app/core/types/manual-trial-rpc.types.ts` exposes generated RPC aliases. AB1 preserves runtime keys for future copy lookup, maps `challenge_status` to `attemptStatusKey`, keeps player-safe Backend Verdict mapping separate from replay/debug data, and avoids direct table-row session consumption. No UI, services, local copy, generated-type edits, DB/RPC changes or specs were added.
 - Status/verdict/sanction/CP penalty action sections now repeat the same audited action shell. Before adding another similar status-action section, check whether a shared wrapper/state/helper is warranted for error/success/loading, submit layout and stale-guard behavior.
 - `core` should continue to hold non-component logic:
   - domain models
