@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/mythsworn-guard.mjs\"",
+            "commandWindows": "powershell -NoProfile -Command \"$root = git rev-parse --show-toplevel; node (Join-Path $root '.codex/hooks/mythsworn-guard.mjs')\"",
+            "timeout": 60,
+            "statusMessage": "Checking Mythsworn architecture rules"
+          }
+        ]
+      }
+    ]
+  }
+}
