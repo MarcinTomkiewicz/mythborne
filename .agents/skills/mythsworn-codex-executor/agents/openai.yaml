@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mythsworn Codex Executor"
+  short_description: "Wykonuje małe taski Mythsworn bez obejść"
+  default_prompt: "Użyj $mythsworn-codex-executor, aby wykonać bieżący task Mythsworn zgodnie z AGENTS.md."
