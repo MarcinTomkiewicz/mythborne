@@ -25,8 +25,8 @@ Do not treat passing specs as proof that the application works.
 When sources conflict, use this order:
 
 1. explicit user instruction for the current task;
-2. current live DB / migrations / latest dump / user-provided generated types;
-3. `docs/database-current.md`;
+2. user-provided generated types and explicit DB/RPC contract or Migrator handoff;
+3. `docs/database-current.md` only as project documentation, never as proof of live DB state;
 4. `docs/current-decisions.md`;
 5. `docs/project-context.md`;
 6. current backlog/task file;
@@ -34,7 +34,9 @@ When sources conflict, use this order:
 8. this file;
 9. legacy concept files only as history/flavor.
 
-For UI tasks, also read the canonical UI/UX backlog and task-specific UI guidance.
+Codex has no direct access to the live DB or the dump stored in ChatGPT project sources. If a required DB/RPC/generated contract was not explicitly provided in the repository or current task, stop and report a blocker instead of guessing.
+
+For work under `src/app`, also apply `src/app/AGENTS.md`, the canonical UI/UX backlog and task-specific UI guidance.
 
 Use **Mythsworn** in new implementation, UI-facing copy and reports unless the user explicitly asks about legacy material.
 
@@ -187,8 +189,10 @@ Touched-file audit:
 
 Rules:
 
-* Local `interface` or `type` in a component is allowed only when strictly private, view-only, used in one file and not a domain/read-model/DTO/RPC/report/equipment/combat/exploration/PvP shape.
-* Non-exported local type is still a violation if it models reusable/domain/read-model data.
+* Do not keep local `interface` declarations in touched production `.ts` files.
+* Do not keep local object-shape `type` declarations in touched production `.ts` files.
+* A trivial implementation-only literal union may stay local only when it does not describe DB/RPC/read-model/domain/report/service/state/render data.
+* A type is not allowed to stay merely because it is private, non-exported, used once, view-only, small or transient.
 * Domain/read-model/report/PvP/combat/exploration/equipment/item/estate/guild shapes belong in `core/domain`, `core/types`, `core/interfaces` or a matching domain model file.
 * A helper is not file-private if it encodes domain semantics, classifies source/result kinds, maps report/reward/effect/combat/trial state, parses DB/RPC payloads or duplicates logic in the current package.
 * Pure generic helper goes to generic util.
@@ -242,7 +246,7 @@ Placement:
 * public/shared interfaces: `core/interfaces/...`;
 * form types: `core/types/forms/...`;
 * report/domain read models: matching domain/report model file;
-* feature-private one-use view-only micro-shapes: local only if strictly private.
+* feature-private object shapes: matching `core/types`, `core/interfaces`, `core/domain` or domain model file; do not keep them local in production `.ts` files.
 
 Do not create compatibility aliases when moving types. Move the type and update imports. Delete obsolete types.
 
@@ -292,94 +296,6 @@ File size:
 * 250–300 lines in touched production TS/HTML: warning, cleanup attention required;
 * 400+ lines: cleanup/splitting decision required in report;
 * 600+ lines: reduce, split by responsibility, or report blocker/cleanup candidate with exact reason.
-
----
-
-## Angular / PrimeNG / UI hard rules
-
-Use modern Angular, signals-first patterns, Reactive Forms and PrimeNG patterns already used by the project.
-
-Blocked unless current task explicitly allows:
-
-* `ngModel` / `FormsModule`;
-* deprecated PrimeNG APIs;
-* native form controls where PrimeNG/project wrappers are expected;
-* `p-select` nested inside native `<label>`;
-* copied prototype CSS;
-* prototype `mb-*` classes;
-* raw gradients/palette values copied from prototypes;
-* local SCSS duplicating global utilities/shared patterns;
-* local `.p-*` PrimeNG skins;
-* `::ng-deep` without explicit blocker;
-* raw DB keys/UUIDs as primary UI labels;
-* `muted-text` / `color-muted` on important values, decisions, warnings, reasons, outcomes, hero names, item names, ranks or selected states;
-* fake UI data/counters/labels/eligibility/timers/actions.
-
-For UI tasks:
-
-* read task-relevant UI/UX guidance first;
-* use existing utilities/wrappers/shared components before local SCSS/components;
-* preserve accepted prototype visual anchors when prototype-backed;
-* report missing production patterns instead of flattening into generic cards;
-* manual/route smoke must explain domain meaning, not only click paths.
-
-If production pattern/data needed for UI is missing, report the missing pattern or DB/RPC/read-model gap. Do not invent frontend fallback.
-
----
-
-## UI utilities and SCSS
-
-Do not use SCSS to recreate layout utilities.
-
-Before adding local SCSS for display, flex, grid, gap, margin, padding, width, height, alignment, position, overflow, z-index, border, radius or background, check existing utilities/global patterns.
-
-If a utility exists, use it.
-
-Feature-local SCSS is allowed only for narrow component geometry or state styling that has no existing utility/pattern and is not reusable.
-
-Every local SCSS addition must have a reason.
-
-Local SCSS duplicating global utilities is required fix, not follow-up.
-
----
-
-## Stale guards
-
-Every async UI workflow depending on selected server, active hero, route id, selected entity, target item/hero, current case/sanction/penalty, access context or route context must guard success and error paths.
-
-Required behavior:
-
-* stale success must not overwrite current state;
-* stale error must not show after context changes;
-* loading ends only for active request/context;
-* changing context clears stale form state and feedback;
-* responses for no-longer-selected entities are ignored.
-
-Missing stale guard in touched async code must be fixed in the same task or reported as blocker if it needs broader contract work.
-
----
-
-## Specs policy
-
-A passing spec is not proof that the application works.
-
-Specs are not acceptance evidence for player-facing UI, DB/RPC workflows, runtime behavior, reports, rewards, combat, PvP, trade, armory, estate, exploration or other domain flows.
-
-Do not add new `.spec.ts` files unless the user explicitly asks for test work.
-
-Do not expand specs unless the current task explicitly asks for test work.
-
-If an existing spec fails in the current accepted application state, delete it.
-
-If an existing spec fails because the task intentionally removed obsolete behavior, delete it.
-
-If an existing spec fails because production code is broken by the current task, fix production code, not the spec.
-
-If a spec still protects real current behavior and only needs import/name cleanup after a type/helper move, update only that import/name cleanup.
-
-Do not write self-fulfilling specs that assert mocks, constants or implementation details created in the same task.
-
-Do not treat `focused specs: pass` as proof that UI or game flow works.
 
 ---
 
