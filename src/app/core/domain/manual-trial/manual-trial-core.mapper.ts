@@ -1,25 +1,26 @@
 import {
   ManualRuntimeManifest,
-  ManualTrialActionLogEnvelope,
+  ManualTrialActionLogSubmitEnvelope,
   ManualTrialBackendVerdict,
-  ManualTrialBackendVerdictDebug,
   ManualTrialFailureReason,
+  ManualTrialReportHandoff,
   ManualTrialOutcome,
   ManualTrialResolutionMode,
   TrialOffer,
 } from './manual-trial-core.model';
 import {
-  GetActiveTrialOfferRpcRow,
-  GetManualTrialRuntimeManifestRpcRow,
-  ManualTrialBackendVerdictRpcRow,
-  ManualTrialFailureReasonRow,
-  ManualTrialOutcomeKindRow,
-  ManualTrialResolutionModeRow,
-  StartManualTrialRuntimeSessionRpcRow,
-  SubmitManualTrialActionLogRpcArgs,
+  ActiveOfferRpcRow,
+  CreateReportHandoffRpcRow,
+  FailureReasonRow,
+  OutcomeKindRow,
+  ResolutionModeRow,
+  RuntimeManifestRpcRow,
+  StartSessionRpcRow,
+  SubmitActionLogRpcArgs,
+  VerdictRpcRow,
 } from '../../types/manual-trial-rpc.types';
 
-export function mapTrialOffer(row: GetActiveTrialOfferRpcRow): TrialOffer {
+export function mapTrialOffer(row: ActiveOfferRpcRow): TrialOffer {
   return {
     attemptId: row.attempt_id,
     serverId: row.server_id,
@@ -47,7 +48,7 @@ export function mapTrialOffer(row: GetActiveTrialOfferRpcRow): TrialOffer {
 }
 
 export function mapManualRuntimeManifest(
-  row: GetManualTrialRuntimeManifestRpcRow | StartManualTrialRuntimeSessionRpcRow,
+  row: RuntimeManifestRpcRow | StartSessionRpcRow,
 ): ManualRuntimeManifest {
   return {
     manifestId: row.manifest_id,
@@ -73,9 +74,9 @@ export function mapManualRuntimeManifest(
   };
 }
 
-export function toSubmitManualTrialActionLogRpcArgs(
-  envelope: ManualTrialActionLogEnvelope,
-): SubmitManualTrialActionLogRpcArgs {
+export function toSubmitActionLogRpcArgs(
+  envelope: ManualTrialActionLogSubmitEnvelope,
+): SubmitActionLogRpcArgs {
   return {
     p_request_id: envelope.requestId,
     p_attempt_id: envelope.attemptId,
@@ -91,7 +92,7 @@ export function toSubmitManualTrialActionLogRpcArgs(
 }
 
 export function mapManualTrialBackendVerdict(
-  row: ManualTrialBackendVerdictRpcRow,
+  row: VerdictRpcRow,
 ): ManualTrialBackendVerdict {
   return {
     verdictId: row.verdict_id,
@@ -121,17 +122,23 @@ export function mapManualTrialBackendVerdict(
   };
 }
 
-export function mapManualTrialBackendVerdictDebug(
-  row: ManualTrialBackendVerdictRpcRow,
-): ManualTrialBackendVerdictDebug {
+export function mapManualTrialReportHandoff(
+  row: CreateReportHandoffRpcRow,
+): ManualTrialReportHandoff {
   return {
+    reportId: row.report_id,
+    publicToken: row.public_token,
+    reportTypeKey: row.report_type_key,
     verdictId: row.verdict_id,
-    backendReplaySummaryJson: row.backend_replay_summary_json,
-    validationWarningsJson: row.validation_warnings_json,
+    attemptId: row.attempt_id,
+    manualSessionId: row.manual_session_id,
+    rewardGrantId: row.reward_grant_id,
+    serverId: row.server_id,
+    heroId: row.hero_id,
   };
 }
 
-export function mapManualTrialOutcome(row: ManualTrialOutcomeKindRow): ManualTrialOutcome {
+export function mapManualTrialOutcome(row: OutcomeKindRow): ManualTrialOutcome {
   return {
     key: row.key,
     isSuccess: row.is_success,
@@ -143,7 +150,7 @@ export function mapManualTrialOutcome(row: ManualTrialOutcomeKindRow): ManualTri
 }
 
 export function mapManualTrialResolutionMode(
-  row: ManualTrialResolutionModeRow,
+  row: ResolutionModeRow,
 ): ManualTrialResolutionMode {
   return {
     key: row.key,
@@ -157,7 +164,7 @@ export function mapManualTrialResolutionMode(
 }
 
 export function mapManualTrialFailureReason(
-  row: ManualTrialFailureReasonRow,
+  row: FailureReasonRow,
 ): ManualTrialFailureReason {
   return {
     key: row.key,

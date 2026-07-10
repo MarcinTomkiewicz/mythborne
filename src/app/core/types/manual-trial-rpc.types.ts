@@ -5,69 +5,49 @@ type Rpc<T extends keyof Database['public']['Functions']> =
 type Table<T extends keyof Database['public']['Tables']> =
   Database['public']['Tables'][T];
 
-export type GetActiveTrialOfferRpcArgs =
-  Rpc<'get_active_trial_offer'>['Args'];
-export type GetActiveTrialOfferRpcRow =
-  Rpc<'get_active_trial_offer'>['Returns'][number];
+export type ActiveOfferRpcArgs = Rpc<'get_active_trial_offer'>['Args'];
+export type ActiveOfferRpcRow = Rpc<'get_active_trial_offer'>['Returns'][number];
 
-export type StartManualTrialRuntimeSessionRpcArgs =
+export type StartSessionRpcArgs =
   Rpc<'start_manual_trial_runtime_session'>['Args'];
-export type StartManualTrialRuntimeSessionRpcRow =
+export type StartSessionRpcRow =
   Rpc<'start_manual_trial_runtime_session'>['Returns'][number];
 
-export type GetManualTrialRuntimeManifestRpcArgs =
+export type RuntimeManifestRpcArgs =
   Rpc<'get_manual_trial_runtime_manifest'>['Args'];
-export type GetManualTrialRuntimeManifestRpcRow =
+export type RuntimeManifestRpcRow =
   Rpc<'get_manual_trial_runtime_manifest'>['Returns'][number];
 
-export type SubmitManualTrialActionLogRpcArgs =
+export type SubmitActionLogRpcArgs =
   Rpc<'submit_manual_trial_action_log'>['Args'];
-export type SubmitManualTrialActionLogRpcRow =
+export type SubmitActionLogRpcRow =
   Rpc<'submit_manual_trial_action_log'>['Returns'][number];
 
-export type GetManualTrialBackendVerdictRpcArgs =
+export type SessionVerdictRpcArgs =
   Rpc<'get_manual_trial_backend_verdict'>['Args'];
-export type GetManualTrialBackendVerdictRpcRow =
+export type SessionVerdictRpcRow =
   Rpc<'get_manual_trial_backend_verdict'>['Returns'][number];
-export type GetManualTrialBackendVerdictForAttemptRpcArgs =
+export type AttemptVerdictRpcArgs =
   Rpc<'get_manual_trial_backend_verdict_for_attempt'>['Args'];
-export type GetManualTrialBackendVerdictForAttemptRpcRow =
+export type AttemptVerdictRpcRow =
   Rpc<'get_manual_trial_backend_verdict_for_attempt'>['Returns'][number];
 
-export type AutoResolveManualTrialRpcArgs =
+export type AutoResolveAttemptRpcArgs =
   Rpc<'auto_resolve_manual_trial'>['Args'];
-export type AutoResolveManualTrialRpcRow =
+export type AutoResolveAttemptRpcRow =
   Rpc<'auto_resolve_manual_trial'>['Returns'][number];
-export type ExitManualTrialToAutoResolveRpcArgs =
-  Rpc<'exit_manual_trial_to_auto_resolve'>['Args'];
-export type ExitManualTrialToAutoResolveRpcRow =
-  Rpc<'exit_manual_trial_to_auto_resolve'>['Returns'][number];
-export type ResolveTrialOfferInactivityTimeoutRpcArgs =
-  Rpc<'resolve_trial_offer_inactivity_timeout'>['Args'];
-export type ResolveTrialOfferInactivityTimeoutRpcRow =
-  Rpc<'resolve_trial_offer_inactivity_timeout'>['Returns'][number];
-export type ResolveManualTrialInactivityTimeoutRpcArgs =
-  Rpc<'resolve_manual_trial_inactivity_timeout'>['Args'];
-export type ResolveManualTrialInactivityTimeoutRpcRow =
-  Rpc<'resolve_manual_trial_inactivity_timeout'>['Returns'][number];
 
-export type CreateManualTrialGameReportRpcArgs =
+export type CreateReportHandoffRpcArgs =
   Rpc<'create_manual_trial_game_report'>['Args'];
-export type CreateManualTrialGameReportRpcRow =
+export type CreateReportHandoffRpcRow =
   Rpc<'create_manual_trial_game_report'>['Returns'][number];
 
-export type ManualTrialBackendVerdictRpcRow =
-  | GetManualTrialBackendVerdictRpcRow
-  | GetManualTrialBackendVerdictForAttemptRpcRow
-  | SubmitManualTrialActionLogRpcRow
-  | AutoResolveManualTrialRpcRow
-  | ExitManualTrialToAutoResolveRpcRow
-  | ResolveTrialOfferInactivityTimeoutRpcRow
-  | ResolveManualTrialInactivityTimeoutRpcRow;
+export type VerdictRpcRow =
+  | SessionVerdictRpcRow
+  | AttemptVerdictRpcRow
+  | SubmitActionLogRpcRow
+  | AutoResolveAttemptRpcRow;
 
-export type ManualTrialOutcomeKindRow =
-  Table<'manual_trial_outcome_kinds'>['Row'];
-export type ManualTrialResolutionModeRow =
-  Table<'manual_trial_resolution_modes'>['Row'];
-export type ManualTrialFailureReasonRow =
-  Table<'manual_trial_failure_reasons'>['Row'];
+export type OutcomeKindRow = Table<'manual_trial_outcome_kinds'>['Row'];
+export type ResolutionModeRow = Table<'manual_trial_resolution_modes'>['Row'];
+export type FailureReasonRow = Table<'manual_trial_failure_reasons'>['Row'];

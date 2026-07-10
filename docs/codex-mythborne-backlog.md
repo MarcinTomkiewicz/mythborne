@@ -12853,6 +12853,8 @@ Do not start AB1 unless AB0 verdict is ready and names exact generated RPC/table
 
 ## Task AB2 — Manual Trial Core read/action services
 
+**Status note 2026-07-10:** Accepted. AB2 added the Manual Trial read/action service layer with one public `ManualTrialFlow` service over canonical RPCs, AB1 domain models/mappers and generated RPC alias types. The service loads active offers, starts runtime sessions, loads manifests, submits normalized Action Logs, reads session/attempt verdicts, triggers direct attempt auto-resolve and creates report handoff records without direct Manual Trial table reads/writes. Shared helpers now own request-id normalization/creation, strict required/optional RPC row mapping and active hero/server scoped stale guards. Legacy `firstRpcRow(...)` / `assertSuccessfulRpcRow(...)` behavior was preserved for non-AB2 callers. No UI, renderer, local Manual Trial copy, DB/RPC changes, generated-type edits or specs were added; timeout/exit workflows remain deferred to later AB slices.
+
 **Goal:**
 Add core services for loading Trial Offer, starting manual sessions, submitting Action Logs, triggering auto-resolve and receiving Backend Verdicts.
 

@@ -49,7 +49,7 @@ export interface ManualRuntimeManifest {
 }
 
 export interface ManualTrialActionLogEnvelope {
-  requestId: string;
+  requestId?: string | null;
   attemptId: string;
   manualSessionId: string;
   manifestId: string;
@@ -59,6 +59,11 @@ export interface ManualTrialActionLogEnvelope {
   clientTimingSummaryJson?: Json;
   clientObservedSummaryJson?: Json;
   clientEnvironmentSummaryJson?: Json;
+}
+
+export interface ManualTrialActionLogSubmitEnvelope
+  extends ManualTrialActionLogEnvelope {
+  requestId: string;
 }
 
 export interface ManualTrialReportSummary {
@@ -92,10 +97,16 @@ export interface ManualTrialBackendVerdict {
   reward: ManualTrialRewardSummary;
 }
 
-export interface ManualTrialBackendVerdictDebug {
+export interface ManualTrialReportHandoff {
+  reportId: string;
+  publicToken: string;
+  reportTypeKey: string;
   verdictId: string;
-  backendReplaySummaryJson: Json;
-  validationWarningsJson: Json;
+  attemptId: string;
+  manualSessionId: string | null;
+  rewardGrantId: string | null;
+  serverId: string;
+  heroId: string;
 }
 
 export interface ManualTrialOutcome {

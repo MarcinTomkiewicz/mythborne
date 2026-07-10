@@ -217,11 +217,18 @@ export const RPC = {
   add_hero_remaining_actions: 'add_hero_remaining_actions',
   auto_resolve_hero_exploration_challenge_attempt:
     'auto_resolve_hero_exploration_challenge_attempt',
+  auto_resolve_manual_trial: 'auto_resolve_manual_trial',
   complete_hero_exploration_challenge_attempt:
     'complete_hero_exploration_challenge_attempt',
+  create_manual_trial_game_report: 'create_manual_trial_game_report',
   force_complete_hero_exploration_challenge_attempt:
     'force_complete_hero_exploration_challenge_attempt',
+  get_active_trial_offer: 'get_active_trial_offer',
   get_hero_exploration_debug_state: 'get_hero_exploration_debug_state',
+  get_manual_trial_backend_verdict: 'get_manual_trial_backend_verdict',
+  get_manual_trial_backend_verdict_for_attempt:
+    'get_manual_trial_backend_verdict_for_attempt',
+  get_manual_trial_runtime_manifest: 'get_manual_trial_runtime_manifest',
   reset_hero_exploration: 'reset_hero_exploration',
   resolve_hero_exploration_step: 'resolve_hero_exploration_step',
   set_next_hero_exploration_outcome_override:
@@ -266,9 +273,11 @@ export const RPC = {
   preview_trial_opportunity_curve: 'preview_trial_opportunity_curve',
   simulate_trial_opportunity_runs: 'simulate_trial_opportunity_runs',
   start_hero_exploration_step: 'start_hero_exploration_step',
+  start_manual_trial_runtime_session: 'start_manual_trial_runtime_session',
   start_or_get_hero_exploration: 'start_or_get_hero_exploration',
   start_or_get_hero_exploration_and_start_initial_step:
     'start_or_get_hero_exploration_and_start_initial_step',
+  submit_manual_trial_action_log: 'submit_manual_trial_action_log',
   upsert_trial_definition: 'upsert_trial_definition',
   upsert_trial_combat_candidate: 'upsert_trial_combat_candidate',
   deactivate_trial_combat_candidate: 'deactivate_trial_combat_candidate',
