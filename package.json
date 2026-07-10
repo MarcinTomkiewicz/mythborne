@@ -11,7 +11,8 @@
     "build:ssr": "node scripts/build-ssr.mjs",
     "db:types": "node scripts/generate-db-types.mjs",
     "db:types:repair": "node scripts/fix-database-types-encoding.mjs",
-    "review:dirty": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/export-dirty-files.ps1"
+    "review:dirty": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/export-dirty-files.ps1",
+    "codex:guard": "node .codex/hooks/mythsworn-guard.mjs"
   },
   "prettier": {
     "overrides": [
