@@ -12398,9 +12398,9 @@ Perform final frontend integration pass for Council voting.
 
 # Epic AB — Manual Trial Minigame Shell/Core
 
-**Status:** Runtime DB/RPC/generated-type readiness confirmed by AB0; AB1 domain models/mapper envelopes accepted; AB3+ remains blocked until Manual Trial Copy RPC/GameCopy contract exists and generated Supabase types expose it.
+**Status:** Runtime DB/RPC/generated-type readiness confirmed by AB0; AB1 domain models/mapper envelopes and AB2 canonical read/action service accepted; PRE-AB3 canonical Manual Trial GameCopy and confirmed-exit workflow integration accepted. AB3 gate is READY.
 
-**Execution note:** AB0 confirmed the required Manual Trial runtime DB/RPC/generated-type contracts for AB1+. AB0-COPY and/or Migrator copy work still must confirm the required Manual Trial Copy RPC/GameCopy contract before AB3+ starts.
+**Execution note:** AB0 confirmed the Manual Trial runtime DB/RPC/generated-type contracts. PRE-AB3 wired `player.manualTrial.copy` through the canonical `GameCopyService` registry/reader path and exposed `exit_manual_trial_to_auto_resolve(...)` through `ManualTrialFlow.exitToAutoResolve(...)`. AB3 may start through these contracts; runtime/read-model text remains invalid UI copy, and `resolutionModes` / `validationReasons` remain separate future GameCopy dependencies.
 
 ## Epic goal
 
@@ -12590,6 +12590,8 @@ Manual Trial copy DB contract is now available: `player.manualTrial.copy` exists
 
 ## Task AB0-COPY — Manual Trial Copy RPC inventory and contract gap
 
+**Status note 2026-07-10:** Accepted/resolved by the backend contract and PRE-AB3 frontend integration. `player.manualTrial.copy` is available through the canonical GameCopy path with 20 required static string leaves plus dynamic `outcomes` and `failureReasons` dictionaries. `[PH]` remains legal DB copy. `resolutionModes` and `validationReasons` are intentionally absent and must not receive Angular fallbacks.
+
 **Goal:**
 Inventory all player-facing Manual Trial shell/workflow copy required by Epic AB and identify the exact Copy RPC/GameCopy contract gap for backend/Migrator before AB3+ UI work starts.
 
@@ -12691,7 +12693,7 @@ Inventory all player-facing Manual Trial shell/workflow copy required by Epic AB
 
 ## Task AB0 — Manual Trial Core DB/types preflight
 
-**Status note 2026-06-18:** Accepted as a no-code contract preflight. Generated types expose the Manual Trial runtime foundation required for AB1: `get_active_trial_offer`, `start_manual_trial_runtime_session`, `get_manual_trial_runtime_manifest`, `submit_manual_trial_action_log`, `get_manual_trial_backend_verdict`, `get_manual_trial_backend_verdict_for_attempt`, `auto_resolve_manual_trial`, `resolve_trial_offer_inactivity_timeout`, `exit_manual_trial_to_auto_resolve`, `resolve_manual_trial_inactivity_timeout`, `create_manual_trial_game_report`, plus `manual_trial_sessions`, `manual_trial_manifests`, `manual_trial_action_logs`, `manual_trial_verdicts` and the Manual Trial status/outcome/resolution/failure/validation dictionaries. AB1 may start against these generated contracts. AB3+ remains blocked because no `player.manualTrial.copy` GameCopy kind/RPC/typed reader/registry entry exists. Manual Trial RPC return label/helper fields are transitional DB fields and must not be consumed as UI copy.
+**Status note 2026-06-18:** Accepted as a no-code contract preflight. Generated types expose the Manual Trial runtime foundation required for AB1: `get_active_trial_offer`, `start_manual_trial_runtime_session`, `get_manual_trial_runtime_manifest`, `submit_manual_trial_action_log`, `get_manual_trial_backend_verdict`, `get_manual_trial_backend_verdict_for_attempt`, `auto_resolve_manual_trial`, `resolve_trial_offer_inactivity_timeout`, `exit_manual_trial_to_auto_resolve`, `resolve_manual_trial_inactivity_timeout`, `create_manual_trial_game_report`, plus `manual_trial_sessions`, `manual_trial_manifests`, `manual_trial_action_logs`, `manual_trial_verdicts` and the Manual Trial status/outcome/resolution/failure/validation dictionaries. AB1 may start against these generated contracts. The copy-path blocker identified by AB0 was resolved by PRE-AB3 on 2026-07-10. Manual Trial RPC return label/helper fields are transitional DB fields and must not be consumed as UI copy.
 
 **Goal:**
 Confirm which Manual Trial Core DB/RPC/generated-type contracts are available and which are still blockers for Epic AB implementation.
@@ -12853,7 +12855,7 @@ Do not start AB1 unless AB0 verdict is ready and names exact generated RPC/table
 
 ## Task AB2 — Manual Trial Core read/action services
 
-**Status note 2026-07-10:** Accepted. AB2 added the Manual Trial read/action service layer with one public `ManualTrialFlow` service over canonical RPCs, AB1 domain models/mappers and generated RPC alias types. The service loads active offers, starts runtime sessions, loads manifests, submits normalized Action Logs, reads session/attempt verdicts, triggers direct attempt auto-resolve and creates report handoff records without direct Manual Trial table reads/writes. Shared helpers now own request-id normalization/creation, strict required/optional RPC row mapping and active hero/server scoped stale guards. Legacy `firstRpcRow(...)` / `assertSuccessfulRpcRow(...)` behavior was preserved for non-AB2 callers. No UI, renderer, local Manual Trial copy, DB/RPC changes, generated-type edits or specs were added; timeout/exit workflows remain deferred to later AB slices.
+**Status note 2026-07-10:** Accepted. AB2 added the Manual Trial read/action service layer with one public `ManualTrialFlow` service over canonical RPCs, AB1 domain models/mappers and generated RPC alias types. The service loads active offers, starts runtime sessions, loads manifests, submits normalized Action Logs, reads session/attempt verdicts, triggers direct attempt auto-resolve and creates report handoff records without direct Manual Trial table reads/writes. Shared helpers now own request-id normalization/creation, strict required/optional RPC row mapping and active hero/server scoped stale guards. Legacy `firstRpcRow(...)` / `assertSuccessfulRpcRow(...)` behavior was preserved for non-AB2 callers. No UI, renderer, local Manual Trial copy, DB/RPC changes, generated-type edits or specs were added. AB2 deferred exit at acceptance time; PRE-AB3 now provides the canonical confirmed-exit workflow, while timeout/inactivity workflows remain deferred.
 
 **Goal:**
 Add core services for loading Trial Offer, starting manual sessions, submitting Action Logs, triggering auto-resolve and receiving Backend Verdicts.
@@ -12930,12 +12932,20 @@ Add core services for loading Trial Offer, starting manual sessions, submitting 
 
 ---
 
+## Task PRE-AB3 — Manual Trial GameCopy and exit workflow integration
+
+**Status note 2026-07-10:** Accepted. The generated Copy/exit RPC contracts are exposed through typed aliases and canonical constants; `ManualTrialCopy`, its strict mapper, GameCopy registry/args and player reader wire `player.manualTrial.copy` without fallback or runtime/read-model text consumption. `ManualTrialFlow.exitToAutoResolve(...)` uses normalized scoped request ids, required-row mapping, the existing Backend Verdict mapper and hero/server/session stale guards on success and error emissions. No UI, DB/RPC/generated-type edits or specs were added. Verification passed through `npm run codex:guard`, `npx tsc --noEmit`, `npm run build`, `git diff --check` and static greps.
+
+---
+
 ## Task AB3 — Manual Trial Host route/page shell
 
 **Goal:**
 Create the player-facing Manual Trial Host shell for Trial Offer, manual/auto boundary, manual session loading, unsupported minigame state, Backend Verdict and report handoff.
 
 **Gate:**
+**Gate status 2026-07-10:** READY after accepted PRE-AB3 integration. `resolutionModes` and `validationReasons` remain outside the current Copy contract and must not be displayed without a later GameCopy dependency.
+
 Do not start AB3 unless AB0-COPY confirms the Manual Trial Copy RPC/GameCopy contract is available and AB0 confirms the required runtime DB/RPC/generated contracts are available for this scope.
 
 **Scope:**

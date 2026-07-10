@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { map, Observable, switchMap } from 'rxjs';
+import { catchError, map, Observable, switchMap, throwError } from 'rxjs';
 import {
   MANUAL_TRIAL_ERROR_CODES,
   MANUAL_TRIAL_ERROR_CONTEXT,
@@ -34,6 +34,8 @@ import {
   AutoResolveAttemptRpcRow,
   CreateReportHandoffRpcArgs,
   CreateReportHandoffRpcRow,
+  ExitManualTrialRpcArgs,
+  ExitManualTrialRpcRow,
   RuntimeManifestRpcArgs,
   RuntimeManifestRpcRow,
   SessionVerdictRpcArgs,
@@ -317,6 +319,47 @@ export class ManualTrialFlow {
     );
   }
 
+  exitToAutoResolve(
+    rawManualSessionId: string,
+    rawRequestId?: string | null,
+  ): Observable<ManualTrialBackendVerdict> {
+    const manualSessionId = requiredTrimmedText(
+      rawManualSessionId,
+      'manualSessionId',
+      MANUAL_TRIAL_ERROR_CONTEXT,
+    );
+    const requestId = normalizeOrCreateRequestId(
+      rawRequestId,
+      `manual-trial:exit:${manualSessionId}`,
+    );
+    const args: ExitManualTrialRpcArgs = {
+      p_manual_session_id: manualSessionId,
+      p_request_id: requestId,
+    };
+
+    return this.runScopedCall(
+      () =>
+        this.backend
+          .rpc<ExitManualTrialRpcRow[]>(
+            RPC.exit_manual_trial_to_auto_resolve,
+            args,
+          )
+          .pipe(
+            mapRequiredRpcResultRow(
+              RPC.exit_manual_trial_to_auto_resolve,
+              mapManualTrialBackendVerdict,
+            ),
+          ),
+      (verdict) => [
+        {
+          actual: verdict.manualSessionId,
+          expected: manualSessionId,
+          errorCode: MANUAL_TRIAL_ERROR_CODES.staleSession,
+        },
+      ],
+    );
+  }
+
   createReportHandoff(
     rawVerdictId: string,
     rawRequestId?: string | null,
@@ -377,6 +420,17 @@ export class ManualTrialFlow {
                 matchingIds(result),
               ),
             ),
+            catchError((error: unknown) => {
+              ensureCurrentHeroServerScopedResult(
+                this.activeHero.state(),
+                this.activeServer.selectedServer()?.id ?? null,
+                context,
+                null,
+                MANUAL_TRIAL_ERROR_CODES,
+              );
+
+              return throwError(() => error);
+            }),
           ),
         ),
       );

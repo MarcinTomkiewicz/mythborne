@@ -1,3 +1,5 @@
+export const MANUAL_TRIAL_COPY_KIND = 'player.manualTrial.copy';
+
 export const MANUAL_TRIAL_ERROR_CONTEXT = 'manual_trial';
 
 export const MANUAL_TRIAL_ERROR_CODES = {

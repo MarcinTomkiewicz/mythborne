@@ -18,6 +18,8 @@ export type GetPlayerExplorationDifficultyCopyRpcResult =
   Database['public']['Functions']['get_player_exploration_difficulty_copy']['Returns'];
 export type GetPlayerExplorationRuntimeCopyRpcResult =
   Database['public']['Functions']['get_player_exploration_runtime_copy']['Returns'];
+export type GetPlayerManualTrialCopyRpcResult =
+  Database['public']['Functions']['get_player_manual_trial_copy']['Returns'];
 export type GetGameCopyTextEntryLocalesRpcResult =
   Database['public']['Functions']['get_game_copy_text_entry_locales']['Returns'];
 export type GetGameCopySourcePayloadRpcResult =

@@ -37,6 +37,11 @@ export type AutoResolveAttemptRpcArgs =
 export type AutoResolveAttemptRpcRow =
   Rpc<'auto_resolve_manual_trial'>['Returns'][number];
 
+export type ExitManualTrialRpcArgs =
+  Rpc<'exit_manual_trial_to_auto_resolve'>['Args'];
+export type ExitManualTrialRpcRow =
+  Rpc<'exit_manual_trial_to_auto_resolve'>['Returns'][number];
+
 export type CreateReportHandoffRpcArgs =
   Rpc<'create_manual_trial_game_report'>['Args'];
 export type CreateReportHandoffRpcRow =
@@ -46,7 +51,8 @@ export type VerdictRpcRow =
   | SessionVerdictRpcRow
   | AttemptVerdictRpcRow
   | SubmitActionLogRpcRow
-  | AutoResolveAttemptRpcRow;
+  | AutoResolveAttemptRpcRow
+  | ExitManualTrialRpcRow;
 
 export type OutcomeKindRow = Table<'manual_trial_outcome_kinds'>['Row'];
 export type ResolutionModeRow = Table<'manual_trial_resolution_modes'>['Row'];

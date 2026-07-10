@@ -53,6 +53,7 @@ export const RPC = {
   get_player_combat_common_copy: 'get_player_combat_common_copy',
   get_player_exploration_difficulty_copy: 'get_player_exploration_difficulty_copy',
   get_player_exploration_runtime_copy: 'get_player_exploration_runtime_copy',
+  get_player_manual_trial_copy: 'get_player_manual_trial_copy',
   can_manage_game_copy: 'can_manage_game_copy',
   get_game_copy_source_payload: 'get_game_copy_source_payload',
   get_game_copy_text_entry_locales: 'get_game_copy_text_entry_locales',
@@ -221,6 +222,7 @@ export const RPC = {
   complete_hero_exploration_challenge_attempt:
     'complete_hero_exploration_challenge_attempt',
   create_manual_trial_game_report: 'create_manual_trial_game_report',
+  exit_manual_trial_to_auto_resolve: 'exit_manual_trial_to_auto_resolve',
   force_complete_hero_exploration_challenge_attempt:
     'force_complete_hero_exploration_challenge_attempt',
   get_active_trial_offer: 'get_active_trial_offer',

@@ -1,8 +1,10 @@
 import { map } from 'rxjs';
 import { RPC } from '../../constants/rpc.const';
+import { mapManualTrialCopy } from '../../domain/manual-trial/manual-trial-copy.mapper';
 import type { GameCopyReaders } from '../../types/game-copy-reader.types';
 import type {
   GetPlayerCombatCommonCopyRpcResult,
+  GetPlayerManualTrialCopyRpcResult,
   GetPlayerTopbarDisplayContractRpcResult,
   GetPublicPvpReportCopyRpcResult,
   GetPvpActionCopyRpcResult,
@@ -21,6 +23,7 @@ import { mapPlayerTopbarDisplay } from '../../utils/player-topbar-display.mapper
 export const GAME_COPY_PLAYER_READERS: Pick<
   GameCopyReaders,
   'player.combat.common' |
+  'player.manualTrial.copy' |
   'player.pvp.action' |
   'player.pvp.combat' |
   'player.pvp.report.private' |
@@ -33,6 +36,11 @@ export const GAME_COPY_PLAYER_READERS: Pick<
       RPC.get_player_combat_common_copy,
       { p_locale: args.locale },
     ).pipe(map(mapCombatCommonCopy)),
+  'player.manualTrial.copy': (backend, args) =>
+    backend.rpc<GetPlayerManualTrialCopyRpcResult>(
+      RPC.get_player_manual_trial_copy,
+      { p_locale: args.locale },
+    ).pipe(map(mapManualTrialCopy)),
   'player.pvp.action': (backend, args) =>
     backend.rpc<GetPvpActionCopyRpcResult>(
       RPC.get_pvp_action_copy,
