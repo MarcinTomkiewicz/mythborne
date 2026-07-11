@@ -1,6 +1,6 @@
 import { RichTextFragment, RichTextTone } from '../rich-text/rich-text.model';
 
-export const EXPLORATION_DIFFICULTY_COPY_CONTRACT_VERSION =
+export const EXPLORATION_DIFFICULTY_CONTRACT_VERSION =
   'exploration_difficulty_copy_v1';
 
 export const EXPLORATION_DIFFICULTY_COPY_ARTICLE_KEY = 'difficulty_selection';
@@ -24,7 +24,7 @@ export const EXPLORATION_DIFFICULTY_TRIAL_KEYS = [
 ] as const;
 
 export type ExplorationDifficultyCopyContractVersion =
-  typeof EXPLORATION_DIFFICULTY_COPY_CONTRACT_VERSION;
+  typeof EXPLORATION_DIFFICULTY_CONTRACT_VERSION;
 export type ExplorationDifficultyCopyArticleKey =
   typeof EXPLORATION_DIFFICULTY_COPY_ARTICLE_KEY;
 export type ExplorationDifficultyCopyLocale = 'pl';
@@ -52,7 +52,7 @@ export interface ExplorationDifficultyHeaderCopy {
 
 export interface ExplorationDifficultyStatusPanelCopy {
   labels: ExplorationDifficultyStatusLabelsCopy;
-  emptyValues: ExplorationDifficultyStatusEmptyValuesCopy;
+  emptyValues: ExplorationDifficultyEmptyValuesCopy;
 }
 
 export interface ExplorationDifficultyStatusLabelsCopy {
@@ -62,7 +62,7 @@ export interface ExplorationDifficultyStatusLabelsCopy {
   activeEffect: string;
 }
 
-export interface ExplorationDifficultyStatusEmptyValuesCopy {
+export interface ExplorationDifficultyEmptyValuesCopy {
   noDifficulty: string;
   noAutoResult: string;
   noTrials: string;
@@ -102,12 +102,12 @@ export interface ExplorationDifficultyActionCopy {
 }
 
 export interface ExplorationDifficultyTrialDetailsCopy {
-  section: ExplorationDifficultyTrialDetailsSectionCopy;
-  labels: ExplorationDifficultyTrialDetailsLabelsCopy;
+  section: ExplorationTrialDetailsSectionCopy;
+  labels: ExplorationTrialDetailsLabelsCopy;
   trials: Record<ExplorationDifficultyTrialKey, string>;
 }
 
-export interface ExplorationDifficultyTrialDetailsSectionCopy {
+export interface ExplorationTrialDetailsSectionCopy {
   title: string;
   descriptionPlainText: string;
   descriptionRichText: ExplorationDifficultyRichTextFragment[];
@@ -118,7 +118,7 @@ export interface ExplorationDifficultyRichTextFragment extends RichTextFragment 
   tone?: ExplorationDifficultyRichTextTone;
 }
 
-export interface ExplorationDifficultyTrialDetailsLabelsCopy {
+export interface ExplorationTrialDetailsLabelsCopy {
   selectedDifficulty: string;
   manifestation: string;
   autoResult: string;
@@ -128,37 +128,25 @@ export function explorationDifficultyCardCopy(
   copy: ExplorationDifficultyCopy,
   difficultyKey: string,
 ): ExplorationDifficultyCardCopy {
-  return copy.difficulty.cards[explorationDifficultyCopyKey(difficultyKey)];
+  if (!isExplorationDifficultyCopyKey(difficultyKey)) {
+    throw new Error(`Unsupported exploration difficulty copy key: ${difficultyKey}.`);
+  }
+
+  return copy.difficulty.cards[difficultyKey];
 }
 
 export function explorationDifficultyTrialLabel(
   copy: ExplorationDifficultyCopy,
   statKey: string,
 ): string {
-  return copy.trialDetails.trials[explorationDifficultyTrialKey(statKey)];
-}
-
-function explorationDifficultyCopyKey(
-  difficultyKey: string,
-): ExplorationDifficultyCopyKey {
-  if (isExplorationDifficultyCopyKey(difficultyKey)) {
-    return difficultyKey;
+  if (!isExplorationDifficultyTrialKey(statKey)) {
+    throw new Error(`Unsupported exploration difficulty trial key: ${statKey}.`);
   }
 
-  throw new Error(`Unsupported exploration difficulty copy key: ${difficultyKey}.`);
+  return copy.trialDetails.trials[statKey];
 }
 
-function explorationDifficultyTrialKey(
-  statKey: string,
-): ExplorationDifficultyTrialKey {
-  if (isExplorationDifficultyTrialKey(statKey)) {
-    return statKey;
-  }
-
-  throw new Error(`Unsupported exploration difficulty trial key: ${statKey}.`);
-}
-
-function isExplorationDifficultyCopyKey(
+export function isExplorationDifficultyCopyKey(
   difficultyKey: string,
 ): difficultyKey is ExplorationDifficultyCopyKey {
   return EXPLORATION_DIFFICULTY_COPY_KEYS.includes(
@@ -166,7 +154,7 @@ function isExplorationDifficultyCopyKey(
   );
 }
 
-function isExplorationDifficultyTrialKey(
+export function isExplorationDifficultyTrialKey(
   statKey: string,
 ): statKey is ExplorationDifficultyTrialKey {
   return EXPLORATION_DIFFICULTY_TRIAL_KEYS.includes(

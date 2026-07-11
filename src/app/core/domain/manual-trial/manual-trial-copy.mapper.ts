@@ -1,216 +1,115 @@
 import { MANUAL_TRIAL_COPY_KIND } from '../../constants/manual-trial.const';
 import type { GetPlayerManualTrialCopyRpcResult } from '../../types/game-copy-rpc.types';
 import {
-  JsonRecord,
-  read,
+  type JsonRecord,
   requiredRecord,
-  requiredText,
+  requiredRecordField,
+  requiredTextFields,
 } from '../../utils/json-read';
 import type {
   ManualTrialCopy,
   ManualTrialFailureReasonCopy,
-  ManualTrialOutcomeCopy,
+  ManualTrialLabelCopy,
 } from './manual-trial-copy.model';
 
 export function mapManualTrialCopy(
   value: GetPlayerManualTrialCopyRpcResult,
 ): ManualTrialCopy {
   const root = requiredRecord(value, MANUAL_TRIAL_COPY_KIND);
-  const noActive = requiredRecord(
-    read(root, 'noActive'),
-    `${MANUAL_TRIAL_COPY_KIND}.noActive`,
-  );
-  const offer = requiredRecord(
-    read(root, 'offer'),
-    `${MANUAL_TRIAL_COPY_KIND}.offer`,
-  );
-  const offerActions = requiredRecord(
-    read(offer, 'actions'),
-    `${MANUAL_TRIAL_COPY_KIND}.offer.actions`,
-  );
-  const manual = requiredRecord(
-    read(root, 'manual'),
-    `${MANUAL_TRIAL_COPY_KIND}.manual`,
-  );
-  const unsupported = requiredRecord(
-    read(root, 'unsupported'),
-    `${MANUAL_TRIAL_COPY_KIND}.unsupported`,
-  );
-  const unsupportedActions = requiredRecord(
-    read(unsupported, 'actions'),
-    `${MANUAL_TRIAL_COPY_KIND}.unsupported.actions`,
-  );
-  const exit = requiredRecord(
-    read(root, 'exit'),
-    `${MANUAL_TRIAL_COPY_KIND}.exit`,
-  );
-  const exitActions = requiredRecord(
-    read(exit, 'actions'),
-    `${MANUAL_TRIAL_COPY_KIND}.exit.actions`,
-  );
-  const result = requiredRecord(
-    read(root, 'result'),
-    `${MANUAL_TRIAL_COPY_KIND}.result`,
-  );
-  const report = requiredRecord(
-    read(root, 'report'),
-    `${MANUAL_TRIAL_COPY_KIND}.report`,
-  );
-  const reportActions = requiredRecord(
-    read(report, 'actions'),
-    `${MANUAL_TRIAL_COPY_KIND}.report.actions`,
-  );
+  const section = (key: string) =>
+    requiredRecordField(root, key, MANUAL_TRIAL_COPY_KIND);
+  const noActive = section('noActive');
+  const manual = section('manual');
+  const unsupported = section('unsupported');
+  const exit = section('exit');
+  const result = section('result');
 
   return {
-    noActive: {
-      title: requiredText(
-        read(noActive, 'title'),
-        `${MANUAL_TRIAL_COPY_KIND}.noActive.title`,
-      ),
-      body: requiredText(
-        read(noActive, 'body'),
-        `${MANUAL_TRIAL_COPY_KIND}.noActive.body`,
-      ),
-    },
-    offer: {
-      eyebrow: requiredText(
-        read(offer, 'eyebrow'),
-        `${MANUAL_TRIAL_COPY_KIND}.offer.eyebrow`,
-      ),
-      title: requiredText(
-        read(offer, 'title'),
-        `${MANUAL_TRIAL_COPY_KIND}.offer.title`,
-      ),
-      body: requiredText(
-        read(offer, 'body'),
-        `${MANUAL_TRIAL_COPY_KIND}.offer.body`,
-      ),
-      actions: {
-        manualResolve: requiredText(
-          read(offerActions, 'manualResolve'),
-          `${MANUAL_TRIAL_COPY_KIND}.offer.actions.manualResolve`,
-        ),
-        autoResolve: requiredText(
-          read(offerActions, 'autoResolve'),
-          `${MANUAL_TRIAL_COPY_KIND}.offer.actions.autoResolve`,
-        ),
-      },
-    },
-    manual: {
-      loading: requiredText(
-        read(manual, 'loading'),
-        `${MANUAL_TRIAL_COPY_KIND}.manual.loading`,
-      ),
-      submitting: requiredText(
-        read(manual, 'submitting'),
-        `${MANUAL_TRIAL_COPY_KIND}.manual.submitting`,
-      ),
-      resolving: requiredText(
-        read(manual, 'resolving'),
-        `${MANUAL_TRIAL_COPY_KIND}.manual.resolving`,
-      ),
-    },
+    noActive: requiredTextFields(
+      noActive,
+      `${MANUAL_TRIAL_COPY_KIND}.noActive`,
+      ['title', 'body'],
+    ),
+    manual: requiredTextFields(
+      manual,
+      `${MANUAL_TRIAL_COPY_KIND}.manual`,
+      ['loading', 'resolving'],
+    ),
     unsupported: {
-      title: requiredText(
-        read(unsupported, 'title'),
-        `${MANUAL_TRIAL_COPY_KIND}.unsupported.title`,
+      ...requiredTextFields(
+        unsupported,
+        `${MANUAL_TRIAL_COPY_KIND}.unsupported`,
+        ['title', 'body'],
       ),
-      body: requiredText(
-        read(unsupported, 'body'),
-        `${MANUAL_TRIAL_COPY_KIND}.unsupported.body`,
-      ),
-      actions: {
-        autoResolve: requiredText(
-          read(unsupportedActions, 'autoResolve'),
-          `${MANUAL_TRIAL_COPY_KIND}.unsupported.actions.autoResolve`,
+      actions: requiredTextFields(
+        requiredRecordField(
+          unsupported,
+          'actions',
+          `${MANUAL_TRIAL_COPY_KIND}.unsupported`,
         ),
-      },
+        `${MANUAL_TRIAL_COPY_KIND}.unsupported.actions`,
+        ['autoResolve'],
+      ),
     },
     exit: {
-      title: requiredText(
-        read(exit, 'title'),
-        `${MANUAL_TRIAL_COPY_KIND}.exit.title`,
+      ...requiredTextFields(
+        exit,
+        `${MANUAL_TRIAL_COPY_KIND}.exit`,
+        ['title', 'body'],
       ),
-      body: requiredText(
-        read(exit, 'body'),
-        `${MANUAL_TRIAL_COPY_KIND}.exit.body`,
-      ),
-      actions: {
-        confirm: requiredText(
-          read(exitActions, 'confirm'),
-          `${MANUAL_TRIAL_COPY_KIND}.exit.actions.confirm`,
-        ),
-        cancel: requiredText(
-          read(exitActions, 'cancel'),
-          `${MANUAL_TRIAL_COPY_KIND}.exit.actions.cancel`,
-        ),
-      },
-    },
-    result: {
-      title: requiredText(
-        read(result, 'title'),
-        `${MANUAL_TRIAL_COPY_KIND}.result.title`,
+      actions: requiredTextFields(
+        requiredRecordField(exit, 'actions', `${MANUAL_TRIAL_COPY_KIND}.exit`),
+        `${MANUAL_TRIAL_COPY_KIND}.exit.actions`,
+        ['confirm', 'cancel'],
       ),
     },
-    report: {
-      actions: {
-        openReport: requiredText(
-          read(reportActions, 'openReport'),
-          `${MANUAL_TRIAL_COPY_KIND}.report.actions.openReport`,
-        ),
-        backToExploration: requiredText(
-          read(reportActions, 'backToExploration'),
-          `${MANUAL_TRIAL_COPY_KIND}.report.actions.backToExploration`,
-        ),
-      },
-    },
-    outcomes: mapManualTrialOutcomeCopyDictionary(
-      requiredRecord(
-        read(root, 'outcomes'),
-        `${MANUAL_TRIAL_COPY_KIND}.outcomes`,
-      ),
+    result: requiredTextFields(
+      result,
+      `${MANUAL_TRIAL_COPY_KIND}.result`,
+      ['title'],
     ),
-    failureReasons: mapManualTrialFailureReasonCopyDictionary(
-      requiredRecord(
-        read(root, 'failureReasons'),
-        `${MANUAL_TRIAL_COPY_KIND}.failureReasons`,
-      ),
+    trials: mapManualTrialLabelCopyDictionary(
+      section('trials'),
+      `${MANUAL_TRIAL_COPY_KIND}.trials`,
+    ),
+    failureReasons: mapManualTrialFailureReasons(
+      section('failureReasons'),
+      `${MANUAL_TRIAL_COPY_KIND}.failureReasons`,
     ),
   };
 }
 
-export function mapManualTrialOutcomeCopyDictionary(
-  outcomes: JsonRecord,
-): Record<string, ManualTrialOutcomeCopy> {
+export function mapManualTrialLabelCopyDictionary(
+  dictionary: JsonRecord,
+  fieldPath: string,
+): Record<string, ManualTrialLabelCopy> {
   return Object.fromEntries(
-    Object.entries(outcomes).map(([key, value]) => {
-      const field = `${MANUAL_TRIAL_COPY_KIND}.outcomes.${key}`;
-      const outcome = requiredRecord(value, field);
+    Object.entries(dictionary).map(([key, value]) => {
+      const field = `${fieldPath}.${key}`;
 
       return [
         key,
-        {
-          label: requiredText(read(outcome, 'label'), `${field}.label`),
-        },
+        requiredTextFields(requiredRecord(value, field), field, ['label']),
       ];
     }),
   );
 }
 
-export function mapManualTrialFailureReasonCopyDictionary(
+export function mapManualTrialFailureReasons(
   failureReasons: JsonRecord,
+  fieldPath: string,
 ): Record<string, ManualTrialFailureReasonCopy> {
   return Object.fromEntries(
     Object.entries(failureReasons).map(([key, value]) => {
-      const field = `${MANUAL_TRIAL_COPY_KIND}.failureReasons.${key}`;
-      const failureReason = requiredRecord(value, field);
+      const field = `${fieldPath}.${key}`;
 
       return [
         key,
-        {
-          label: requiredText(read(failureReason, 'label'), `${field}.label`),
-          helper: requiredText(read(failureReason, 'helper'), `${field}.helper`),
-        },
+        requiredTextFields(
+          requiredRecord(value, field),
+          field,
+          ['label', 'helper'],
+        ),
       ];
     }),
   );

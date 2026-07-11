@@ -1,5 +1,7 @@
 export const MANUAL_TRIAL_COPY_KIND = 'player.manualTrial.copy';
 
+export const MANUAL_TRIAL_EXIT_DIALOG_KEY = 'manual-trial-exit';
+
 export const MANUAL_TRIAL_ERROR_CONTEXT = 'manual_trial';
 
 export const MANUAL_TRIAL_ERROR_CODES = {

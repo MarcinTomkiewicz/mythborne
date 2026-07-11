@@ -23,7 +23,7 @@ export class PendingTimerOracle {
   readonly pendingLabel = input.required<string>();
   readonly pendingHelperText = input<string | null>(null);
   readonly pendingNeutralHelperText = input<string | null>(null);
-  readonly readyLabel = input.required<string>();
+  readonly readyLabel = input<string | null>(null);
   readonly readyTitle = input.required<string>();
   readonly readyHelperText = input.required<string>();
   readonly primaryActionLabel = input.required<string>();

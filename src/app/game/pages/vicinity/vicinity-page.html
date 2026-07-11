@@ -1,7 +1,7 @@
 <app-structured-confirm-dialog
-  key="vicinity-relocation"
+  [key]="relocationConfirmationKey"
   styleClass="mg-dialog mg-dialog--danger"
-  [messageSegments]="relocationConfirmationSegments()"
+  [content]="relocationConfirmationContent()"
   (hidden)="clearRelocationConfirmationMessage()"
 />
 

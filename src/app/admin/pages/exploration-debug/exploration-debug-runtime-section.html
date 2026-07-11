@@ -1,0 +1,52 @@
+<article class="mg-card p-lg">
+  <h3 class="mg-section__title mg-section__title--xs">Runtime state</h3>
+  @if (page.debugState(); as state) {
+    <div class="flex-col gap-sm">
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        <span class="tag-badge tag-badge--muted">server {{ state.serverId }}</span>
+        <span class="tag-badge tag-badge--muted">hero {{ state.heroId }}</span>
+        <span class="tag-badge tag-badge--info">{{ state.explorationDate }}</span>
+      </div>
+      <div class="grid-2 gap-sm">
+        <div class="flex-col gap-xs">
+          <strong>Counters</strong>
+          @for (counter of state.counters; track counter.id) {
+            <span class="muted-text">
+              {{ counter.actionKind }}: {{ counter.remainingCount }} on {{ counter.actionDate }}
+            </span>
+          } @empty { <span class="muted-text">No daily counters.</span> }
+        </div>
+        <div class="flex-col gap-xs">
+          <strong>Explorations</strong>
+          @for (entry of state.explorations; track entry.exploration.id) {
+            <span class="muted-text">
+              {{ entry.exploration.difficultyKey }} - {{ entry.exploration.status }} -
+              {{ entry.exploration.id }}
+            </span>
+          } @empty { <span class="muted-text">No exploration rows.</span> }
+        </div>
+      </div>
+      @for (entry of state.explorations; track entry.exploration.id) {
+        <div class="mg-card p-md">
+          <div class="flex-row-between-start flex-col-sm gap-sm">
+            <strong>{{ entry.exploration.difficultyKey }}</strong>
+            <span class="tag-badge tag-badge--muted">
+              remaining trials {{ entry.remainingTrials ?? '-' }}
+            </span>
+          </div>
+          <div class="flex-row-start-center flex-wrap gap-xs mt-sm">
+            <span class="tag-badge tag-badge--muted">node {{ entry.currentNode?.id ?? '-' }}</span>
+            <span class="tag-badge tag-badge--muted">step {{ entry.activeStep?.id ?? '-' }}</span>
+            <span class="tag-badge tag-badge--muted">
+              challenge {{ entry.activeChallenge?.id ?? '-' }}
+            </span>
+            <span class="tag-badge tag-badge--muted">overrides {{ entry.testOverrides.length }}</span>
+          </div>
+        </div>
+      }
+      <app-collapsed-json-preview label="Raw debug JSON" [value]="state.rawJson" />
+    </div>
+  } @else {
+    <p class="muted-text mb-0">Load a hero debug state to inspect runtime rows.</p>
+  }
+</article>

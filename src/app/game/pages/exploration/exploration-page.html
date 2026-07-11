@@ -1,5 +1,5 @@
 <div class="flex-col gap-xl min-w-0">
-  @if (page.hasDifficultyCopyError()) {
+  @if (page.difficultyCopyError()) {
     <p-message severity="error">
       <code>player.exploration.difficulty</code>
     </p-message>
@@ -90,7 +90,7 @@
 
   @if (page.shouldShowRuntimeScreen()) {
     <section class="flex-col gap-sm w-100">
-      @if (page.hasRuntimeCopyError()) {
+      @if (page.runtimeCopyError()) {
         <p-message severity="error">
           <code>player.exploration.runtime</code>
         </p-message>
@@ -116,7 +116,7 @@
 
 <app-loading-overlay
   [visible]="page.isLoading()"
-  label=""
+  ariaLabel="Loading exploration"
 />
 
 <app-game-copy-edit-dialog [state]="page.gameCopyEdit" />

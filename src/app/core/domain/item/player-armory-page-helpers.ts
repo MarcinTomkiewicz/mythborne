@@ -6,42 +6,65 @@ import {
   PlayerArmoryPageContextReadModel,
   PlayerArmorySellItemMessageParts,
   PlayerArmorySellSelectedMessageParts,
+  PlayerArmoryVendorScrapItem,
 } from './player-armory-page-context.model';
 import type {
-  StructuredConfirmDialogSegment,
-} from '../../interfaces/structured-confirm-dialog-segment.interface';
+  StructuredDialogParagraph,
+} from '../../interfaces/structured-dialog-content.interface';
 
-export function buildSellItemConfirmationSegments(
+export function buildSellItemConfirmationParagraphs(
   parts: PlayerArmorySellItemMessageParts,
   highlightFields: readonly string[],
   itemName: string,
   drachmaValue: string,
-): StructuredConfirmDialogSegment[] {
-  return [
-    { text: parts.prefix, highlighted: false },
-    { text: itemName, highlighted: highlightFields.includes(parts.itemNameToken) },
-    { text: parts.middle, highlighted: false },
-    {
-      text: drachmaValue,
-      highlighted: highlightFields.includes(parts.drachmaValueToken),
-    },
-    { text: parts.suffix, highlighted: false },
-  ];
+): StructuredDialogParagraph[] {
+  return [{
+    segments: [
+      { text: parts.prefix, tone: 'plain' },
+      {
+        text: itemName,
+        tone: highlightFields.includes(parts.itemNameToken) ? 'heading' : 'plain',
+      },
+      { text: parts.middle, tone: 'plain' },
+      {
+        text: drachmaValue,
+        tone: highlightFields.includes(parts.drachmaValueToken) ? 'heading' : 'plain',
+      },
+      { text: parts.suffix, tone: 'plain' },
+    ],
+  }];
 }
 
-export function buildSellSelectedConfirmationSegments(
+export function buildSellSelectedConfirmationParagraphs(
   parts: PlayerArmorySellSelectedMessageParts,
   highlightFields: readonly string[],
   items: readonly PlayerArmoryItemReadModel[],
-): StructuredConfirmDialogSegment[] {
+): StructuredDialogParagraph[] {
   return [
-    { text: parts.intro, highlighted: false, lineBreakAfter: true },
-    { text: parts.itemsIntro, highlighted: false, lineBreakAfter: true },
-    ...items.flatMap((item) => buildSellSelectedItemLineSegments(
-      parts,
-      highlightFields,
-      item,
-    )),
+    { segments: [{ text: parts.intro, tone: 'plain' }] },
+    { segments: [{ text: parts.itemsIntro, tone: 'plain' }] },
+    ...items.map((item) => {
+      const itemLineParts = parts.itemLineParts;
+
+      return {
+        segments: [
+          {
+            text: item.displayCore.itemName,
+            tone: highlightFields.includes(itemLineParts.itemNameToken)
+              ? 'heading'
+              : 'plain',
+          },
+          { text: itemLineParts.middle, tone: 'plain' },
+          {
+            text: item.displayCore.valueDisplay.displayValue,
+            tone: highlightFields.includes(itemLineParts.drachmaValueToken)
+              ? 'heading'
+              : 'plain',
+          },
+          { text: itemLineParts.suffix, tone: 'plain' },
+        ],
+      } satisfies StructuredDialogParagraph;
+    }),
   ];
 }
 
@@ -65,22 +88,21 @@ export function canEquipInventoryItem(item: PlayerArmoryItemReadModel): boolean 
 
 export function canVendorScrapInventoryItem(
   item: PlayerArmoryItemReadModel,
-): boolean {
+): item is PlayerArmoryVendorScrapItem {
   return item.lifecycleStatusKey === 'active'
-    && isFiniteNumber(item.drachmaValue);
+    && typeof item.drachmaValue === 'number'
+    && Number.isFinite(item.drachmaValue);
 }
 
 export function sumVendorScrapDrachmaValue(
   items: readonly PlayerArmoryItemReadModel[],
 ): number {
   return items.reduce((total, item) => {
-    const drachmaValue = item.drachmaValue;
-
-    if (!canVendorScrapInventoryItem(item) || !isFiniteNumber(drachmaValue)) {
+    if (!canVendorScrapInventoryItem(item)) {
       return total;
     }
 
-    return total + drachmaValue;
+    return total + item.drachmaValue;
   }, 0);
 }
 
@@ -94,50 +116,16 @@ export function mapArmoryPageEquipmentPreviewRows(
     iconClass: equipmentPreviewIconClassForSlot(slot.slotKey),
     emptyDisplayName: slot.hasItem ? null : slot.itemDisplayName,
     emptyDisplayDetail: slot.hasItem ? null : slot.itemDisplayStateLabel,
-    item: equipmentPreviewItem(slot),
+    item: slot.hasItem
+      ? {
+          itemId: slot.itemId,
+          name: slot.itemDisplayName,
+          metadata: slot.itemDisplayStateLabel,
+          statusLabel: slot.itemDisplayStateLabel,
+          qualityLabel: slot.qualityLabel,
+          kindLabel: slot.baseName,
+          slotLabel: slot.slotLabel,
+        }
+      : null,
   }));
-}
-
-function isFiniteNumber(value: number | null): value is number {
-  return typeof value === 'number' && Number.isFinite(value);
-}
-
-function buildSellSelectedItemLineSegments(
-  parts: PlayerArmorySellSelectedMessageParts,
-  highlightFields: readonly string[],
-  item: PlayerArmoryItemReadModel,
-): StructuredConfirmDialogSegment[] {
-  const itemLineParts = parts.itemLineParts;
-  const valueDisplay = item.displayCore.valueDisplay.displayValue;
-
-  return [
-    {
-      text: item.displayCore.itemName,
-      highlighted: highlightFields.includes(itemLineParts.itemNameToken),
-    },
-    { text: itemLineParts.middle, highlighted: false },
-    {
-      text: valueDisplay,
-      highlighted: highlightFields.includes(itemLineParts.drachmaValueToken),
-    },
-    { text: itemLineParts.suffix, highlighted: false, lineBreakAfter: true },
-  ];
-}
-
-function equipmentPreviewItem(
-  slot: PlayerArmoryEquipmentSlotReadModel,
-): EquipmentPreviewSlotRow['item'] {
-  if (!slot.hasItem) {
-    return null;
-  }
-
-  return {
-    itemId: slot.itemId,
-    name: slot.itemDisplayName,
-    metadata: slot.itemDisplayStateLabel,
-    statusLabel: slot.itemDisplayStateLabel,
-    qualityLabel: slot.qualityLabel,
-    kindLabel: slot.baseName,
-    slotLabel: slot.slotLabel,
-  };
 }

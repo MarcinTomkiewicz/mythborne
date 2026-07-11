@@ -88,3 +88,38 @@ If an existing spec fails because production code is broken by the current task,
 If a spec preserves behavior intentionally removed by the task, delete the stale spec. If it still protects current behavior and only needs import/name cleanup after a move, update only that cleanup.
 
 Do not write self-fulfilling specs that assert mocks, constants or implementation details created in the same task. Do not treat focused specs as proof that UI or game flow works.
+
+## Observable-only application flow
+
+Application services, state classes, components and route guards use RxJS/Observable.
+
+Application workflows must not expose or build:
+
+* Promise return types;
+* `new Promise(...)`;
+* `Promise.resolve(...)`;
+* `async` / `await`;
+* application-level `.then(...)` chains;
+* ignored Promises through `void`.
+
+Framework APIs that return Promise must be adapted immediately at the boundary to Observable. Dynamic imports in route configuration are the framework exception.
+
+## Required GameCopyEdit coverage
+
+Every new or modified text rendered from GameCopy must expose an inline admin edit trigger with the exact GameCopy kind, copy path and locale used by the displayed payload.
+
+This also applies to:
+
+* button labels;
+* loading states;
+* empty states;
+* error states;
+* dialog headers;
+* dialog messages;
+* dialog action labels;
+* dynamic dictionary entries;
+* text loaded from a GameCopy kind other than the component's primary kind.
+
+After a save, only the matching Copy payload may be reloaded in the background. Do not reset the page, route, form or domain/gameplay workflow displaying the edited text.
+
+A missing edit trigger or a domain workflow reset used to refresh Copy is a blocking violation.

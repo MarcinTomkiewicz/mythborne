@@ -15,12 +15,13 @@
   @if (editor.target(); as target) {
     @if (editor.copy(); as copy) {
       @let selectedLocale = editor.selectedLocale();
+      @let dirtyGuardMessage = editor.formState.dirtyGuardMessage();
       @let error = editor.error();
       @let errorKind = editor.errorKind();
       @let savedResult = editor.savedResult();
       @let loading = editor.loading();
       @let saving = editor.saving();
-      @let activeEntry = editor.activeEntry();
+      @let activeEntry = editor.formState.activeEntry();
 
       <div class="flex-col gap-md w-100">
         <section class="mg-card p-md grid-3 gap-sm w-100">
@@ -38,11 +39,15 @@
           </div>
         </section>
 
+        @if (dirtyGuardMessage) {
+          <p-message severity="error">
+            <span>{{ dirtyGuardMessage }}</span>
+          </p-message>
+        }
+
         @if (error) {
           <p-message severity="error">
-            @if (errorKind === 'dirty') {
-              <span>{{ copy.messages.dirtyGuard }}</span>
-            } @else if (errorKind === 'save') {
+            @if (errorKind === 'save') {
               <span>{{ copy.messages.saveError }}</span>
               <code>{{ error }}</code>
             } @else {
@@ -74,7 +79,10 @@
 
         @if (loading) {
           <section class="flex-col-center-center gap-sm p-lg w-100" aria-busy="true">
-            <p-progress-spinner strokeWidth="4" />
+            <p-progress-spinner
+              [ariaLabel]="copy.messages.loading"
+              strokeWidth="4"
+            />
             <span>{{ copy.messages.loading }}</span>
           </section>
         } @else if (activeEntry; as entry) {
@@ -92,7 +100,7 @@
             </p-message>
           }
 
-          <form [formGroup]="editor.form" class="flex-col gap-md w-100">
+          <form [formGroup]="editor.formState.formGroup" class="flex-col gap-md w-100">
             <label class="flex-col gap-sm w-100">
               <span class="small-caps color-muted text-xs">{{ copy.fields.value.label }}</span>
               <textarea
@@ -100,7 +108,6 @@
                 rows="8"
                 class="w-100"
                 formControlName="value"
-                [readOnly]="!entry.exists || !entry.isEditable"
                 [attr.aria-label]="copy.fields.value.ariaLabel"
               ></textarea>
             </label>
@@ -124,7 +131,7 @@
       </p-message>
     } @else {
       <section class="flex-col-center-center p-lg w-100" aria-busy="true">
-        <p-progress-spinner strokeWidth="4" />
+        <p-progress-spinner ariaLabel="Loading" strokeWidth="4" />
       </section>
     }
   }

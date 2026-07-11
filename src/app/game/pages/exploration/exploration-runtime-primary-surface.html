@@ -1,41 +1,44 @@
 @let state = overview.state();
 
 @if (state?.hasExploration && state?.exploration) {
-  @if (sandbox.sandboxChallengeResult() || minigameHandoff.currentMinigameReportPointer()) {
+  @if (sandbox.sandboxChallengeResult() || minigameHandoff.currentMinigameCompletion()) {
     <app-exploration-result-report />
   } @else if (challenge.activeChallenge()) {
     <app-exploration-active-challenge-report />
   } @else if (step.currentStepResult()) {
     <app-exploration-step-handoff-card />
   } @else if (step.activeStep()) {
-    <app-pending-timer-oracle
-      [timer]="step.activeStepTimerDisplay()"
-      [isReady]="step.canCheckActiveStepResult()"
-      [isResolving]="step.isResolving()"
-      [isUpdating]="sandbox.isUpdatingActiveStepTimer()"
-      timerAriaLabel="Czas kroku eksploracji"
-      progressAriaLabel="Postęp czasu eksploracji"
-      pendingLabel="Pozostały czas"
-      pendingHelperText="Wynik będzie dostępny po zakończeniu czasu."
-      pendingNeutralHelperText="Aktualizujemy czas kroku."
-      readyLabel="Wynik gotowy"
-      readyTitle="Cel osiągnięty"
-      readyHelperText="Bohater dotarł do celu. Sprawdź, co się wydarzyło."
-      primaryActionLabel="Sprawdź wynik"
-      decorativeLabel="CZAS"
-      (primaryAction)="step.checkResult()"
-    />
+    @if (page.runtimeCopy(); as runtimeCopy) {
+      @let pendingCopy = runtimeCopy.pendingStep;
+      <app-pending-timer-oracle
+        [timer]="step.activeStepTimerDisplay()"
+        [isReady]="step.canCheckActiveStepResult()"
+        [isResolving]="step.isResolving()"
+        [isUpdating]="sandbox.isUpdatingActiveStepTimer()"
+        [timerAriaLabel]="pendingCopy.timeAriaLabel"
+        [progressAriaLabel]="pendingCopy.progressAriaLabel"
+        [pendingLabel]="pendingCopy.inProgress.title"
+        [pendingHelperText]="pendingCopy.inProgress.text"
+        [pendingNeutralHelperText]="pendingCopy.loading.text"
+        [readyTitle]="pendingCopy.ready.title"
+        [readyHelperText]="pendingCopy.ready.text"
+        [primaryActionLabel]="pendingCopy.readyActionLabel"
+        (primaryAction)="step.checkResult()"
+      />
+    }
   } @else if (!page.canShowDirectionBoard()) {
-    <div class="mg-card p-md w-100">
-      <p class="color-text m-0">
-        Eksploracja nie ma teraz dostępnej akcji w tym widoku.
-      </p>
-    </div>
+    @if (page.runtimeCopy(); as runtimeCopy) {
+      <div class="mg-card p-md flex-col gap-xs w-100">
+        <h2 class="color-heading text-lg m-0">{{ runtimeCopy.pendingStep.unavailable.title }}</h2>
+        <p class="color-text m-0">{{ runtimeCopy.pendingStep.unavailable.text }}</p>
+      </div>
+    }
   }
 } @else {
-  <div class="mg-card p-md w-100">
-    <p class="color-text m-0">
-      Brak aktywnej eksploracji dla tej trudności. Wróć do wyboru trudności i rozpocznij wyprawę.
-    </p>
-  </div>
+  @if (page.runtimeCopy(); as runtimeCopy) {
+    <div class="mg-card p-md flex-col gap-xs w-100">
+      <h2 class="color-heading text-lg m-0">{{ runtimeCopy.pendingStep.unavailable.title }}</h2>
+      <p class="color-text m-0">{{ runtimeCopy.pendingStep.unavailable.text }}</p>
+    </div>
+  }
 }

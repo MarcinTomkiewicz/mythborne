@@ -1,8 +1,12 @@
 import { Component, computed, input, output } from '@angular/core';
 import { CombatSurfaceDecisionDeadline } from '../../../core/domain/combat/combat-display.model';
 import { CombatSourcePresentation } from '../../../core/domain/combat/combat-source-presentation.model';
+import {
+  MINIGAME_KEY,
+  type MinigameCompletionEvent,
+  type MinigameSourceRef,
+} from '../../../core/domain/minigame/minigame-completion.model';
 import { CombatHost } from '../combat/combat-host';
-import { MINIGAME_KEY, MinigameCompletionEvent, MinigameSourceRef } from './minigame-host.model';
 
 @Component({
   selector: 'app-minigame-host',

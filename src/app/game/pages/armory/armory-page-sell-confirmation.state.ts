@@ -9,12 +9,13 @@ import {
   PlayerArmoryPageCopyReadModel,
 } from '../../../core/domain/item/player-armory-page-context.model';
 import {
-  buildSellItemConfirmationSegments,
-  buildSellSelectedConfirmationSegments,
+  buildSellItemConfirmationParagraphs,
+  buildSellSelectedConfirmationParagraphs,
 } from '../../../core/domain/item/player-armory-page-helpers';
 import type {
-  StructuredConfirmDialogSegment,
-} from '../../../core/interfaces/structured-confirm-dialog-segment.interface';
+  StructuredConfirmDialogContent,
+  StructuredDialogParagraph,
+} from '../../../core/interfaces/structured-dialog-content.interface';
 import { plainStructuredConfirmMessage } from '../../../core/utils/structured-confirm-dialog/plain-structured-confirm-message';
 
 @Injectable()
@@ -22,21 +23,23 @@ export class ArmoryPageSellConfirmationState {
   private readonly confirmationService = inject(ConfirmationService);
 
   readonly key = ARMORY_SELL_ITEM_CONFIRMATION_KEY;
-  readonly segments = signal<readonly StructuredConfirmDialogSegment[]>([]);
+  readonly content = signal<StructuredConfirmDialogContent>({
+    message: { paragraphs: [] },
+  });
 
   confirmItem(
     copy: PlayerArmoryPageCopyReadModel,
     item: PlayerArmoryItemReadModel,
     accept: () => void,
   ): void {
-    const messageSegments = buildSellItemConfirmationSegments(
+    const messageParagraphs = buildSellItemConfirmationParagraphs(
       copy.confirmations.sellItemMessageParts,
       copy.confirmations.sellItemHighlightFields,
       item.displayCore.itemName,
       item.displayCore.valueDisplay.displayValue,
     );
 
-    this.confirm(copy, messageSegments, accept);
+    this.confirm(copy, messageParagraphs, accept);
   }
 
   confirmSelectedItems(
@@ -44,33 +47,37 @@ export class ArmoryPageSellConfirmationState {
     items: readonly PlayerArmoryItemReadModel[],
     accept: () => void,
   ): void {
-    const messageSegments = buildSellSelectedConfirmationSegments(
+    const messageParagraphs = buildSellSelectedConfirmationParagraphs(
       copy.confirmations.sellSelectedMessageParts,
       copy.confirmations.sellSelectedHighlightFields,
       items,
     );
 
-    if (!messageSegments.length) {
+    if (!messageParagraphs.length) {
       return;
     }
 
-    this.confirm(copy, messageSegments, accept);
+    this.confirm(copy, messageParagraphs, accept);
   }
 
   clear(): void {
-    this.segments.set([]);
+    this.content.set({ message: { paragraphs: [] } });
   }
 
   private confirm(
     copy: PlayerArmoryPageCopyReadModel,
-    messageSegments: readonly StructuredConfirmDialogSegment[],
+    messageParagraphs: readonly StructuredDialogParagraph[],
     accept: () => void,
   ): void {
-    this.segments.set(messageSegments);
+    const content: StructuredConfirmDialogContent = {
+      message: { paragraphs: messageParagraphs },
+    };
+
+    this.content.set(content);
     this.confirmationService.confirm({
       key: this.key,
       header: copy.confirmations.sellItemTitle,
-      message: plainStructuredConfirmMessage(messageSegments),
+      message: plainStructuredConfirmMessage(content),
       acceptLabel: copy.confirmations.confirmLabel,
       rejectLabel: copy.confirmations.cancelLabel,
       acceptIcon: ARMORY_SELL_ITEM_CONFIRMATION_UI.acceptIcon,

@@ -5,8 +5,8 @@ import {
 import { ActivePvpActionOffer } from '../../../../core/domain/pvp/pvp.model';
 import {
   MINIGAME_SOURCE_ENTITY_TYPE,
-  MinigameSourceRef,
-} from '../../../components/minigame-host/minigame-host.model';
+  type MinigameSourceRef,
+} from '../../../../core/domain/minigame/minigame-completion.model';
 
 export function isPvpCombatHostOffer(
   offer: ActivePvpActionOffer | null,

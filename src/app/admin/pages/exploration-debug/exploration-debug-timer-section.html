@@ -1,0 +1,44 @@
+<section class="mg-card p-lg w-100">
+  <div class="flex-col gap-sm">
+    <div class="flex-col gap-xs">
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Step duration configuration</h3>
+      <p class="muted-text mb-0">
+        Effective movement duration is read from DB RPC per selected server and difficulty.
+        Difficulty multiplier comes from the DB difficulty tier row.
+      </p>
+    </div>
+    @if (page.timerConfig.error(); as message) {
+      <p-message severity="error">{{ message }}</p-message>
+    }
+    @if (page.timerConfig.missingConfigContractMessage(); as message) {
+      <p-message severity="warn">{{ message }}</p-message>
+    }
+    <div class="mg-grid grid-cols-3 grid-cols-1-md gap-md w-100">
+      @for (row of page.timerConfig.durations(); track row.difficultyKey) {
+        <div class="flex-col gap-xs">
+          <strong>{{ row.difficultyLabel }} ({{ row.difficultyKey }})</strong>
+          <span>Effective: {{ page.timerConfig.durationLabel(row.effectiveDurationSeconds) }}</span>
+          <span class="muted-text">
+            Difficulty multiplier: {{ page.timerConfig.multiplierLabel(row.stepDurationMultiplier) }}
+          </span>
+          <span class="muted-text">
+            Base inferred from DB values: {{ page.timerConfig.inferredBaseLabel(row) }}
+          </span>
+        </div>
+      } @empty {
+        <p class="muted-text mb-0">No active difficulty tiers are loaded.</p>
+      }
+    </div>
+    @if (page.timerConfig.configExplainability().length) {
+      <div class="flex-col gap-xs">
+        <strong>Config explainability</strong>
+        @for (entry of page.timerConfig.configExplainability(); track entry.configDefinitionId) {
+          <span>
+            {{ entry.label }} ({{ entry.configKey }}):
+            {{ entry.effectiveValueSourceLabel }} / {{ page.timerConfig.effectiveValueLabel(entry) }}
+          </span>
+        }
+      </div>
+    }
+  </div>
+</section>

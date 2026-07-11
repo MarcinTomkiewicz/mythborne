@@ -1,75 +1,86 @@
 @if (challenge.activeChallenge(); as activeChallenge) {
-  @if (challenge.hasMinigameChallenge()) {
-    @if (activeChallenge.minigameKey && sourceRef(); as sourceRef) {
-      <div class="flex-col gap-lg w-100">
-        @if (trialManifestationNarrative(); as narrative) {
-          <section class="mg-card p-lg flex-col gap-md w-100">
-            <div class="flex-col gap-xs">
-              @if (narrative.eyebrow) {
-                <p class="small-caps color-muted text-xs m-0">{{ narrative.eyebrow }}</p>
-              }
-              <h2 class="text-xl font-display color-heading m-0">
-                {{ narrative.title }}
-              </h2>
-            </div>
+  @if (presentation(); as activePresentation) {
+    <div class="flex-col gap-lg w-100">
+      @if (activeChallengeNarrative(); as narrative) {
+        <section class="mg-card p-lg flex-col gap-md w-100">
+          <div class="flex-col gap-xs">
+            @if (narrative.eyebrow) {
+              <p class="small-caps color-muted text-xs m-0">{{ narrative.eyebrow }}</p>
+            }
+            <h2 class="text-xl font-display color-heading m-0">
+              {{ narrative.title }}
+            </h2>
+          </div>
+          <p class="color-text text-md lh-16 m-0">
+            <app-rich-text
+              [fragments]="narrative.narrativeRichText"
+              itemPopoverContext="exploration"
+            />
+          </p>
+        </section>
+      }
 
-            <p class="color-text text-md lh-16 m-0">
-              <app-rich-text [fragments]="narrative.narrativeRichText" itemPopoverContext="exploration" />
-            </p>
-          </section>
-        } @else if (activeChallenge.trialDefinitionId) {
-          <p class="warn-text text-sm m-0">activeChallenge.trialManifestationNarrativeJson</p>
-        }
-
-        @if (encounterCombatHandoffNarrative(); as narrative) {
-          <section class="mg-card p-lg flex-col gap-md w-100">
-            <div class="flex-col gap-xs">
-              @if (narrative.eyebrow) {
-                <p class="small-caps color-muted text-xs m-0">{{ narrative.eyebrow }}</p>
-              }
-              <h2 class="text-xl font-display color-heading m-0">
-                {{ narrative.title }}
-              </h2>
-            </div>
-
-            <p class="color-text text-md lh-16 m-0">
-              <app-rich-text [fragments]="narrative.narrativeRichText" itemPopoverContext="exploration" />
-            </p>
-          </section>
-        } @else if (activeChallenge.encounterDefinitionId) {
-          <p class="warn-text text-sm m-0">activeChallenge.encounterCombatHandoffNarrativeJson</p>
-        }
-
-        @if (combatSourcePresentation(); as sourcePresentation) {
-          <app-minigame-host
-            [minigameKey]="activeChallenge.minigameKey"
-            [sourceRef]="sourceRef"
-            [contextTitle]="challenge.challengeTitle()"
-            [sourcePresentation]="sourcePresentation"
+      @switch (activePresentation.kind) {
+        @case ('manualTrial') {
+          <app-exploration-manual-trial-host
+            [attemptId]="activePresentation.attemptId"
             (completed)="acceptMinigameCompletion($event)"
           />
-        } @else if (requiresCombatSourcePresentation() && isRuntimeCopyLoading()) {
-          <section class="mg-card p-lg flex-col-center-center gap-md w-100" aria-busy="true">
-            <p-progress-spinner strokeWidth="4" />
-          </section>
-        } @else if (requiresCombatSourcePresentation() && hasRuntimeCopyError()) {
-          <p class="warn-text text-sm m-0">exploration.runtimeCopy</p>
-        } @else if (requiresCombatSourcePresentation() && runtimeCopy(); as runtimeCopy) {
-          <section class="mg-card p-lg flex-col gap-sm w-100">
-            <h3 class="color-heading text-lg m-0">
-              {{ runtimeCopy.activeChallenge.unavailableTitle }}
-            </h3>
-            <p class="color-text text-md lh-16 m-0">
-              {{ runtimeCopy.activeChallenge.unavailableText }}
-            </p>
-          </section>
         }
-      </div>
-    }
-  } @else {
-    <div class="flex-col gap-lg w-100">
-      <app-exploration-challenge-details-card />
-      <app-exploration-challenge-pending-reward-card />
+        @case ('renderer') {
+          <app-minigame-host
+            [minigameKey]="activePresentation.minigameKey"
+            [sourceRef]="activePresentation.sourceRef"
+            [contextTitle]="challenge.challengeTitle()"
+            [sourcePresentation]="activePresentation.sourcePresentation"
+            (completed)="acceptMinigameCompletion($event)"
+          />
+        }
+        @case ('unavailable') {
+          @if (isRuntimeCopyLoading()) {
+            <section class="mg-card p-lg flex-col-center-center gap-md w-100" aria-busy="true">
+              <p-progress-spinner ariaLabel="Loading" strokeWidth="4" />
+            </section>
+          } @else if (runtimeCopy(); as runtimeCopy) {
+            <section class="mg-card p-lg flex-col gap-sm w-100">
+              <app-game-copy-editable-text
+                gameCopyKind="player.exploration.runtime"
+                copyPath="activeChallenge.unavailableTitle"
+                [locale]="runtimeCopy.locale"
+              >
+                <h3 class="color-heading text-lg m-0">
+                  {{ runtimeCopy.activeChallenge.unavailableTitle }}
+                </h3>
+              </app-game-copy-editable-text>
+              <app-game-copy-editable-text
+                gameCopyKind="player.exploration.runtime"
+                copyPath="activeChallenge.unavailableText"
+                [locale]="runtimeCopy.locale"
+              >
+                <p class="color-text text-md lh-16 m-0">
+                  {{ runtimeCopy.activeChallenge.unavailableText }}
+                </p>
+              </app-game-copy-editable-text>
+              <p-message severity="error">
+                <code>{{ activePresentation.diagnostic }}</code>
+              </p-message>
+              @if (runtimeCopyError()) {
+                <p-message severity="error">
+                  <code>player.exploration.runtime</code>
+                </p-message>
+              }
+            </section>
+          } @else {
+            <p-message severity="error">
+              <code>{{ activePresentation.diagnostic }}</code>
+            </p-message>
+          }
+        }
+        @case ('details') {
+          <app-exploration-challenge-details-card />
+          <app-exploration-challenge-pending-reward-card />
+        }
+      }
     </div>
   }
 }

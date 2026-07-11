@@ -1,0 +1,50 @@
+<section class="mg-card flex-col gap-lg p-lg w-100">
+  <div class="flex-row-between-center flex-wrap gap-md">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Current staff</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">Selected server assignments</h3>
+    </div>
+    <p-button label="Refresh" [text]="true" (onClick)="page.loadAssignments()" />
+  </div>
+  <div class="mg-grid grid-cols-2 grid-cols-1-md gap-md">
+    @for (assignment of page.assignmentList.assignments(); track assignment.id) {
+      <article class="mg-card flex-col gap-sm p-md">
+        <div class="flex-row-between-center flex-wrap gap-sm">
+          <div class="flex-col gap-xs min-w-0">
+            <strong class="heading-color">Staff user</strong>
+            <span class="muted-text">User id: {{ assignment.userId }}</span>
+            <span class="muted-text">Created {{ assignment.createdAt }}</span>
+          </div>
+          <span class="tag-badge tag-badge--info">{{ assignment.role }}</span>
+        </div>
+        @if (assignment.notes) { <p class="muted-text mb-0">{{ assignment.notes }}</p> }
+        @if (assignment.scopes.length) {
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            @for (scope of assignment.scopes; track scope.id) {
+              <span class="mg-tag">{{ page.assignmentList.scopeLabel(scope.scopeKey) }}</span>
+            }
+          </div>
+        }
+        <div class="flex-row-start-center">
+          @if (page.scopeAssignment.canEditScopes(assignment)) {
+            <p-button
+              label="Manage scopes"
+              [text]="true"
+              (onClick)="page.scopeAssignment.startScopeEdit(
+                assignment,
+                page.selectedServerId(),
+                page.assignmentList.permissionScopes()
+              )"
+            />
+          }
+          <p-button
+            label="Revoke"
+            severity="danger"
+            [text]="true"
+            (onClick)="page.revoke.startRevoke(assignment)"
+          />
+        </div>
+      </article>
+    } @empty { <p class="muted-text mb-0">No staff assignments for this server yet.</p> }
+  </div>
+</section>

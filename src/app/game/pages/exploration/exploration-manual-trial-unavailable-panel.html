@@ -1,0 +1,51 @@
+@if (copyState.copy(); as copy) {
+  <section class="mg-card p-lg flex-col gap-md w-100">
+    <app-game-copy-editable-text
+      [gameCopyKind]="copyKind"
+      copyPath="unsupported.title"
+      [locale]="copyLocale"
+    >
+      <h2 class="mg-section__title mg-section__title--sm mb-0">
+        {{ copy.unsupported.title }}
+      </h2>
+    </app-game-copy-editable-text>
+    <app-game-copy-editable-text
+      [gameCopyKind]="copyKind"
+      copyPath="unsupported.body"
+      [locale]="copyLocale"
+    >
+      <p class="color-text text-md lh-16 m-0">{{ copy.unsupported.body }}</p>
+    </app-game-copy-editable-text>
+
+    @if (display.offerMissingCopyPath(); as missingCopyPath) {
+      <p-message severity="error">
+        <code>{{ missingCopyPath }}</code>
+      </p-message>
+    } @else if (display.rendererDiagnostic(); as rendererDiagnostic) {
+      <p-message severity="error">
+        <code>{{ rendererDiagnostic }}</code>
+      </p-message>
+    } @else if (manualTrial.workflowUnavailable() || manualTrial.manifest()) {
+      <p-message severity="error">
+        <code>{{ errorContext }}</code>
+      </p-message>
+    }
+
+    @if (exit.canExitManualSession()) {
+      <div class="flex-row-start-center flex-wrap gap-sm w-100">
+        <p-button
+          type="button"
+          severity="secondary"
+          [label]="copy.unsupported.actions.autoResolve"
+          [disabled]="exit.isResolving()"
+          (onClick)="exit.resolveUnsupported()"
+        />
+        <app-game-copy-edit-trigger
+          [gameCopyKind]="copyKind"
+          copyPath="unsupported.actions.autoResolve"
+          [locale]="copyLocale"
+        />
+      </div>
+    }
+  </section>
+}

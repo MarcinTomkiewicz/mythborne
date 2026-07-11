@@ -1,0 +1,32 @@
+<section class="flex-col gap-lg w-100">
+  <div class="flex-row-between-center flex-col-sm gap-sm">
+    <div class="flex-col gap-xs">
+      <h2 class="color-heading text-lg m-0">
+        {{ page.buildingSectionHeading(estate(), copy()) }}
+      </h2>
+    </div>
+  </div>
+  <div class="flex-col gap-xl w-100">
+    @for (group of estate().building_groups_json; track group.groupKey) {
+      <section class="flex-col gap-md w-100">
+        @if (estate().building_groups_json.length > 1) {
+          <div
+            class="flex-col gap-xs border-bottom pb-sm"
+            [class.border-secondary]="group.isCurrentEstateDistrict === true"
+          >
+            <h3 class="color-heading text-lg m-0">{{ group.groupTitle }}</h3>
+          </div>
+        }
+        <div class="mg-grid grid-cols-3 grid-cols-2-md grid-cols-1-sm gap-lg w-100">
+          @for (building of group.buildingsJson; track building.buildingId) {
+            <app-mansion-building-card [building]="building" [copy]="copy()" />
+          }
+        </div>
+      </section>
+    } @empty {
+      <section class="mg-card flex-col gap-sm p-lg w-100">
+        <p class="mb-0 muted-text">{{ copy().empty.buildings }}</p>
+      </section>
+    }
+  </div>
+</section>

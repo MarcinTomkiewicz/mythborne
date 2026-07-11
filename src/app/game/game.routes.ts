@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { explorationManualTrialExitGuard } from './pages/exploration/exploration-manual-trial-exit.guard';
 
 export const gameRoutes: Routes = [
   {
@@ -19,6 +20,7 @@ export const gameRoutes: Routes = [
     path: 'exploration',
     loadComponent: () =>
       import('./pages/exploration/exploration-page').then((m) => m.ExplorationPage),
+    canDeactivate: [explorationManualTrialExitGuard],
   },
   {
     path: 'combat',

@@ -1,8 +1,8 @@
 import { DestroyRef, Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { finalize } from 'rxjs';
-import {
+import { GAME_COPY_DEFAULT_LOCALE } from '../../core/constants/game-copy.const';
+import type {
   GameCopyEditUi,
   GameCopyEditTarget,
   GameCopyLocale,
@@ -12,29 +12,27 @@ import {
 import { getErrorMessage } from '../../core/utils/error-message';
 import {
   gameCopyTextEntryFromUpdateResult,
-  missingGameCopyEntryState,
+  mapGameCopyEditEntrySelection,
 } from '../../core/domain/game-copy/game-copy-edit.mapper';
 import { RequestToken } from '../../core/utils/request-token';
 import { GameCopy } from '../../core/services/game-copy/game-copy';
+import { GameCopySignalLoader } from '../../core/services/game-copy/game-copy-signal-loader';
 import { GameCopyEditAdmin } from '../../core/services/game-copy-edit/game-copy-edit-admin';
+import { ToastService } from '../../core/services/ui/toast';
+import type { GameCopyRegistryKind } from '../../core/types/game-copy-registry.types';
+import { GameCopyEditFormState } from './game-copy-edit-form.state';
 
 @Injectable()
 export class GameCopyEditState {
   private readonly admin = inject(GameCopyEditAdmin);
   private readonly destroyRef = inject(DestroyRef);
   private readonly gameCopy = inject(GameCopy);
+  private readonly loader = inject(GameCopySignalLoader);
+  private readonly toast = inject(ToastService);
   private readonly copyToken = new RequestToken();
   private readonly loadToken = new RequestToken();
   private readonly saveToken = new RequestToken();
-  private readonly formRevision = signal(0);
-
-  readonly form = new FormGroup({
-    value: new FormControl('', { nonNullable: true }),
-    reason: new FormControl('', {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
-  });
+  readonly formState = inject(GameCopyEditFormState);
 
   readonly visible = signal(false);
   readonly target = signal<GameCopyEditTarget | null>(null);
@@ -45,68 +43,33 @@ export class GameCopyEditState {
   readonly copyLoading = signal(false);
   readonly saving = signal(false);
   readonly error = signal<string | null>(null);
-  readonly errorKind = signal<'load' | 'save' | 'dirty' | null>(null);
+  readonly errorKind = signal<'load' | 'save' | null>(null);
   readonly copyError = signal<string | null>(null);
   readonly copy = signal<GameCopyEditUi | null>(null);
   readonly savedResult = signal<GameCopyTextUpdateResult | null>(null);
-  readonly dialogTitle = computed(() => this.copy()?.dialog.title ?? '');
+  readonly dialogTitle = computed(() =>
+    this.copy()?.dialog.title ?? 'Game Copy editor',
+  );
   readonly closeAriaLabel = computed(
-    () =>
-      this.copy()?.actions.close.ariaLabel
-      ?? 'admin_game_copy_edit.actions.close.ariaLabel:unavailable',
+    () => this.copy()?.actions.close.ariaLabel ?? 'Close',
   );
 
-  readonly activeEntry = computed(() => {
-    const locale = this.selectedLocale();
-
-    return locale ? this.entriesByLocale()[locale] ?? null : null;
-  });
-  readonly formValue = computed(() => {
-    this.formRevision();
-
-    return this.form.getRawValue();
-  });
-  readonly dirty = computed(() => {
-    const entry = this.activeEntry();
-
-    if (!entry?.exists || !entry.isEditable) {
-      return false;
-    }
-
-    return this.formValue().value !== (entry.value ?? '');
-  });
-  readonly canSave = computed(
-    () =>
-      this.isActiveEntryEditable()
-      && this.dirty()
-      && this.copy() !== null
-      && !this.copyLoading()
-      && !this.copyError()
-      && this.formValue().reason.trim().length > 0
-      && this.form.valid
-      && !this.loading()
-      && !this.saving(),
-  );
+  readonly canSave = computed(() => Boolean(
+    this.copy()
+    && !this.loading()
+    && !this.saving()
+    && this.formState.canSave(),
+  ));
 
   constructor() {
-    this.form.valueChanges
+    this.formState.userChanges
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => {
-        this.error.set(null);
-        this.errorKind.set(null);
-        this.savedResult.set(null);
-        this.bumpFormRevision();
-      });
-
-    this.form.statusChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(() => this.bumpFormRevision());
+      .subscribe(() => this.clearFeedback());
   }
 
   open(target: GameCopyEditTarget): void {
-    if (this.saving() || (this.visible() && this.dirty())) {
-      this.error.set(this.dirtyGuardMessage());
-      this.errorKind.set('dirty');
+    if (this.saving() || (this.visible() && this.formState.dirty())) {
+      this.formState.showDirtyGuard(this.copy()?.messages.dirtyGuard);
       return;
     }
 
@@ -128,39 +91,35 @@ export class GameCopyEditState {
     this.entriesByLocale.set({});
     this.selectedLocale.set(null);
     this.loading.set(false);
-    this.error.set(null);
-    this.errorKind.set(null);
-    this.savedResult.set(null);
-    this.form.reset({ value: '', reason: '' }, { emitEvent: false });
-    this.form.markAsPristine();
-    this.bumpFormRevision();
+    this.clearFeedback();
+    this.formState.clear();
   }
 
   switchLocale(locale: string): void {
-    if (this.dirty()) {
-      this.error.set(this.dirtyGuardMessage());
-      this.errorKind.set('dirty');
+    if (this.loading() || this.saving()) {
+      return;
+    }
+
+    if (this.formState.dirty()) {
+      this.formState.showDirtyGuard(this.copy()?.messages.dirtyGuard);
+      return;
+    }
+
+    const entry = this.entriesByLocale()[locale];
+
+    if (!entry) {
       return;
     }
 
     this.selectedLocale.set(locale);
-    this.error.set(null);
-    this.errorKind.set(null);
-    this.savedResult.set(null);
+    this.clearFeedback();
 
-    const entries = this.entriesByLocale();
-    const entry = entries[locale] ?? missingGameCopyEntryState(locale);
-
-    if (!entries[locale]) {
-      this.entriesByLocale.set({ ...entries, [locale]: entry });
-    }
-
-    this.patchForm(entry, '');
+    this.formState.patchEntry(entry, '');
   }
 
   saveCurrentLocale(): void {
     const target = this.target();
-    const entry = this.activeEntry();
+    const entry = this.formState.activeEntry();
     const locale = this.selectedLocale();
 
     if (
@@ -168,34 +127,23 @@ export class GameCopyEditState {
       || !entry
       || !locale
       || !this.copy()
-      || this.copyLoading()
-      || this.copyError()
       || this.loading()
       || this.saving()
     ) {
       return;
     }
 
-    if (!entry.exists || !entry.isEditable) {
-      return;
-    }
-
-    this.form.controls.reason.updateValueAndValidity();
-
-    if (this.form.invalid || !this.dirty()) {
-      this.form.markAllAsTouched();
-      this.bumpFormRevision();
+    if (!this.formState.validateForSave()) {
       return;
     }
 
     const token = this.saveToken.next();
-    const value = this.form.controls.value.value;
-    const reason = this.form.controls.reason.value.trim();
+    const value = this.formState.formGroup.controls.value.value;
+    const reason = this.formState.formGroup.controls.reason.value.trim();
 
     this.saving.set(true);
-    this.error.set(null);
-    this.errorKind.set(null);
-    this.savedResult.set(null);
+    this.formState.setLocked(true);
+    this.clearFeedback();
 
     this.admin
       .updateEntry(target.gameCopyKind, target.copyPath, locale, value, reason)
@@ -203,6 +151,7 @@ export class GameCopyEditState {
         finalize(() => {
           if (this.saveToken.isCurrent(token)) {
             this.saving.set(false);
+            this.formState.setLocked(false);
           }
         }),
         takeUntilDestroyed(this.destroyRef),
@@ -220,7 +169,7 @@ export class GameCopyEditState {
             [locale]: updatedEntry,
           });
           this.savedResult.set(result);
-          this.patchForm(updatedEntry, '');
+          this.formState.patchEntry(updatedEntry, '');
           this.gameCopy.refreshCopy(target.gameCopyKind, locale);
         },
         error: (error: unknown) => {
@@ -236,6 +185,18 @@ export class GameCopyEditState {
       });
   }
 
+  notifyRefreshFailure(kind: GameCopyRegistryKind, locale: string): void {
+    const copy = this.copy();
+
+    if (copy) {
+      this.toast.show(
+        'error',
+        copy.messages.loadError,
+        `${kind}:${locale}`,
+      );
+    }
+  }
+
   private loadTarget(target: GameCopyEditTarget): void {
     const token = this.loadToken.next();
 
@@ -244,14 +205,8 @@ export class GameCopyEditState {
     this.selectedLocale.set(target.locale);
     this.loading.set(true);
     this.saving.set(false);
-    this.error.set(null);
-    this.errorKind.set(null);
-    this.savedResult.set(null);
-    this.form.reset(
-      { value: '', reason: '' },
-      { emitEvent: false },
-    );
-    this.bumpFormRevision();
+    this.clearFeedback();
+    this.formState.clear();
 
     this.admin
       .getEntryLocales(target.gameCopyKind, target.copyPath)
@@ -269,25 +224,16 @@ export class GameCopyEditState {
             return;
           }
 
-          const activeLocales = entryLocales.availableLocales.filter(
-            (locale) => locale.isActive,
-          );
-          const entries = Object.fromEntries(
-            entryLocales.entries.map((entry) => [entry.locale, entry]),
+          const selection = mapGameCopyEditEntrySelection(
+            entryLocales,
+            target.locale,
           );
 
-          for (const locale of activeLocales) {
-            entries[locale.locale] ??= missingGameCopyEntryState(locale.locale);
-          }
-
-          entries[target.locale] ??= missingGameCopyEntryState(target.locale);
-
-          this.locales.set(activeLocales);
-          this.entriesByLocale.set(entries);
+          this.locales.set(selection.locales);
+          this.entriesByLocale.set(selection.entriesByLocale);
           this.selectedLocale.set(target.locale);
-          this.error.set(null);
-          this.errorKind.set(null);
-          this.patchForm(entries[target.locale], '');
+          this.clearFeedback();
+          this.formState.patchEntry(selection.selectedEntry, '');
         },
         error: (error: unknown) => {
           if (!this.loadToken.isCurrent(token)) {
@@ -307,76 +253,27 @@ export class GameCopyEditState {
       return;
     }
 
-    const token = this.copyToken.next();
-
-    this.copyLoading.set(true);
-    this.copyError.set(null);
-
-    this.gameCopy
-      .getCopy('admin.gameCopy.edit', { locale: 'pl' })
-      .pipe(
-        finalize(() => {
-          if (this.copyToken.isCurrent(token)) {
-            this.copyLoading.set(false);
-          }
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: (copy) => {
-          if (!this.copyToken.isCurrent(token)) {
-            return;
-          }
-
-          this.copy.set(copy);
-          this.copyError.set(null);
-        },
-        error: (error: unknown) => {
-          if (!this.copyToken.isCurrent(token)) {
-            return;
-          }
-
-          this.copy.set(null);
-          this.copyError.set(
-            getErrorMessage(error, 'admin_game_copy_edit:load_error'),
-          );
-        },
-      });
-  }
-
-  private patchForm(entry: GameCopyTextEntry, reason: string): void {
-    const valueControl = this.form.controls.value;
-
-    this.form.setValue(
-      {
-        value: entry.value ?? '',
-        reason,
+    this.loader.load({
+      kind: 'admin.gameCopy.edit',
+      args: { locale: GAME_COPY_DEFAULT_LOCALE },
+      requestToken: this.copyToken,
+      destroyRef: this.destroyRef,
+      loading: this.copyLoading,
+      target: this.copy,
+      preserveCurrent: false,
+      onStart: () => this.copyError.set(null),
+      onSuccess: () => this.copyError.set(null),
+      onError: (error) => {
+        this.copyError.set(
+          getErrorMessage(error, 'admin_game_copy_edit:load_error'),
+        );
       },
-      { emitEvent: false },
-    );
-
-    if (entry.exists && entry.isEditable) {
-      valueControl.enable({ emitEvent: false });
-    } else {
-      valueControl.disable({ emitEvent: false });
-    }
-
-    this.form.markAsPristine();
-    this.bumpFormRevision();
+    });
   }
 
-  private isActiveEntryEditable(): boolean {
-    const entry = this.activeEntry();
-
-    return Boolean(entry?.exists && entry.isEditable);
-  }
-
-  private bumpFormRevision(): void {
-    this.formRevision.update((revision) => revision + 1);
-  }
-
-  private dirtyGuardMessage(): string {
-    return this.copy()?.messages.dirtyGuard
-      ?? 'admin_game_copy_edit.messages.dirtyGuard:unavailable';
+  private clearFeedback(): void {
+    this.error.set(null);
+    this.errorKind.set(null);
+    this.savedResult.set(null);
   }
 }

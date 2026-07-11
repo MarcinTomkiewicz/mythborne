@@ -1,12 +1,10 @@
 export interface ManualTrialCopy {
   noActive: ManualTrialNoActiveCopy;
-  offer: ManualTrialOfferCopy;
   manual: ManualTrialManualStateCopy;
   unsupported: ManualTrialUnsupportedCopy;
   exit: ManualTrialExitCopy;
   result: ManualTrialResultCopy;
-  report: ManualTrialReportCopy;
-  outcomes: Record<string, ManualTrialOutcomeCopy>;
+  trials: Record<string, ManualTrialLabelCopy>;
   failureReasons: Record<string, ManualTrialFailureReasonCopy>;
 }
 
@@ -15,21 +13,8 @@ export interface ManualTrialNoActiveCopy {
   body: string;
 }
 
-export interface ManualTrialOfferCopy {
-  eyebrow: string;
-  title: string;
-  body: string;
-  actions: ManualTrialOfferActionsCopy;
-}
-
-export interface ManualTrialOfferActionsCopy {
-  manualResolve: string;
-  autoResolve: string;
-}
-
 export interface ManualTrialManualStateCopy {
   loading: string;
-  submitting: string;
   resolving: string;
 }
 
@@ -58,16 +43,7 @@ export interface ManualTrialResultCopy {
   title: string;
 }
 
-export interface ManualTrialReportCopy {
-  actions: ManualTrialReportActionsCopy;
-}
-
-export interface ManualTrialReportActionsCopy {
-  openReport: string;
-  backToExploration: string;
-}
-
-export interface ManualTrialOutcomeCopy {
+export interface ManualTrialLabelCopy {
   label: string;
 }
 

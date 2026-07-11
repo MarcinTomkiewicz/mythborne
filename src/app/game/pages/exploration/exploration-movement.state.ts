@@ -3,7 +3,9 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
 import {
   HeroExplorationMovementOptionReadModel,
+  HeroExplorationStateReadModel,
 } from '../../../core/domain/exploration/exploration-runtime.model';
+import { movementOptionValidationError } from '../../../core/domain/exploration/exploration-movement.guard';
 import { EXPLORATION_RUNTIME_COPY } from '../../../core/constants/exploration-runtime-copy.const';
 import { HeroExplorations } from '../../../core/services/exploration/hero-explorations';
 import { ToastService } from '../../../core/services/ui/toast';
@@ -31,7 +33,7 @@ export class ExplorationMovementState {
       !this.isMoving()
       && option.isAvailable
       && this.movementBlockReason() === null
-      && this.movementOptionValidationError(option) === null
+      && movementOptionValidationError(option) === null
     );
   }
 
@@ -50,26 +52,22 @@ export class ExplorationMovementState {
   }
 
   chooseMovementOption(option: HeroExplorationMovementOptionReadModel): void {
-    const context = this.overview.currentContext();
-    const state = this.overview.state();
-    const exploration = state?.exploration;
-
     this.feedback.clear();
+    const validationError = this.movementRequestError(option);
 
-    if (!context || !state?.hasExploration || !exploration) {
-      this.feedback.setError(null, EXPLORATION_RUNTIME_COPY.movementStartRequired);
+    if (validationError) {
+      this.feedback.setError(null, validationError);
       return;
     }
 
-    const blockReason = this.movementBlockReason();
+    this.startMovement(option);
+  }
 
-    const validationError = this.movementOptionValidationError(option);
+  private startMovement(option: HeroExplorationMovementOptionReadModel): void {
+    const context = this.overview.currentContext();
+    const exploration = this.overview.state()?.exploration;
 
-    if (blockReason || !option.isAvailable || validationError) {
-      this.feedback.setError(
-        null,
-        blockReason ?? validationError ?? EXPLORATION_RUNTIME_COPY.movementDirectionUnavailable,
-      );
+    if (!context || !exploration) {
       return;
     }
 
@@ -93,43 +91,73 @@ export class ExplorationMovementState {
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe({
-        next: (nextState) => {
-          if (
-            !this.isCurrentMovement(
-              token,
-              context.serverId,
-              context.heroId,
-              context.difficultyKey,
-              exploration.id,
-            )
-          ) {
-            return;
-          }
-
-          this.minigameHandoff.clearMinigameReportPointer();
-          this.overview.setStateFromWorkflow(nextState);
-          this.toast.show(
-            'success',
-            EXPLORATION_RUNTIME_COPY.explorationToastTitle,
-            EXPLORATION_RUNTIME_COPY.movementStarted,
-          );
-        },
-        error: (error: unknown) => {
-          if (
-            !this.isCurrentMovement(
-              token,
-              context.serverId,
-              context.heroId,
-              context.difficultyKey,
-              exploration.id,
-            )
-          ) {
-            return;
-          }
-
-          this.feedback.setError(error, EXPLORATION_RUNTIME_COPY.movementStartStepFailed);
-        },
+        next: (nextState) => this.acceptMovementSuccess(
+          nextState,
+          token,
+          context.serverId,
+          context.heroId,
+          context.difficultyKey,
+          exploration.id,
+        ),
+        error: (error: unknown) => this.acceptMovementError(
+          error,
+          token,
+          context.serverId,
+          context.heroId,
+          context.difficultyKey,
+          exploration.id,
+        ),
       });
+  }
+
+  private acceptMovementSuccess(
+    nextState: HeroExplorationStateReadModel,
+    token: number,
+    serverId: string,
+    heroId: string,
+    difficultyKey: string,
+    explorationId: string,
+  ): void {
+    if (!this.isCurrentMovement(token, serverId, heroId, difficultyKey, explorationId)) {
+      return;
+    }
+
+    this.minigameHandoff.clearMinigameCompletion();
+    this.overview.setStateFromWorkflow(nextState);
+    this.toast.show(
+      'success',
+      EXPLORATION_RUNTIME_COPY.explorationToastTitle,
+      EXPLORATION_RUNTIME_COPY.movementStarted,
+    );
+  }
+
+  private acceptMovementError(
+    error: unknown,
+    token: number,
+    serverId: string,
+    heroId: string,
+    difficultyKey: string,
+    explorationId: string,
+  ): void {
+    if (!this.isCurrentMovement(token, serverId, heroId, difficultyKey, explorationId)) {
+      return;
+    }
+
+    this.feedback.setError(error, EXPLORATION_RUNTIME_COPY.movementStartStepFailed);
+  }
+
+  private movementRequestError(
+    option: HeroExplorationMovementOptionReadModel,
+  ): string | null {
+    const state = this.overview.state();
+
+    if (!this.overview.currentContext() || !state?.hasExploration || !state.exploration) {
+      return EXPLORATION_RUNTIME_COPY.movementStartRequired;
+    }
+
+    return this.movementBlockReason()
+      ?? (!option.isAvailable ? EXPLORATION_RUNTIME_COPY.movementDirectionUnavailable : null)
+      ?? movementOptionValidationError(option);
   }
 
   private resolveMovementBlockReason(): string | null {
@@ -168,32 +196,4 @@ export class ExplorationMovementState {
     );
   }
 
-  private movementOptionValidationError(
-    option: HeroExplorationMovementOptionReadModel,
-  ): string | null {
-    const stepKind = option.stepKind.trim();
-    const isBacktrack = option.isBacktrack || stepKind === 'backtrack';
-
-    if (!stepKind) {
-      return EXPLORATION_RUNTIME_COPY.movementStepKindMissing;
-    }
-
-    if (isBacktrack) {
-      if (stepKind !== 'backtrack') {
-        return EXPLORATION_RUNTIME_COPY.movementBacktrackKindInvalid;
-      }
-
-      if (option.edgeId !== null) {
-        return EXPLORATION_RUNTIME_COPY.movementBacktrackEdgeInvalid;
-      }
-
-      return null;
-    }
-
-    if (!option.edgeId) {
-      return EXPLORATION_RUNTIME_COPY.movementEdgeMissing;
-    }
-
-    return null;
-  }
 }

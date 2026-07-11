@@ -1,0 +1,42 @@
+@if (page.revoke.selectedRevokeAssignment(); as assignment) {
+  <section class="mg-card flex-col gap-md p-lg w-100">
+    <div class="flex-col gap-xs">
+      <p class="card-legend mb-0">Revoke</p>
+      <h3 class="mg-section__title mg-section__title--xs mb-0">
+        Revoke {{ assignment.role }} assignment
+      </h3>
+      <p class="muted-text mb-0">{{ assignment.userId }}</p>
+    </div>
+    <form
+      [formGroup]="page.revoke.revokeForm"
+      class="flex-col gap-md"
+      (ngSubmit)="page.revokeSelectedAssignment()"
+    >
+      <label class="flex-col gap-sm">
+        <span class="muted-text">Reason</span>
+        <input pInputText class="w-100" formControlName="reason" />
+        @if (page.revoke.revokeForm.controls.reason.touched && page.revoke.revokeForm.controls.reason.invalid) {
+          <span class="form-error">Reason is required.</span>
+        }
+        @if (!page.revoke.revokeForm.controls.reason.value.trim()) {
+          <span class="muted-text">A reason is required before revoking staff access.</span>
+        }
+      </label>
+      <div class="flex-row-start-center flex-wrap gap-sm">
+        <p-button
+          type="submit"
+          label="Revoke staff"
+          severity="danger"
+          [loading]="page.revoke.isRevoking()"
+          [disabled]="page.revoke.isRevoking()"
+        />
+        <p-button
+          label="Cancel"
+          severity="secondary"
+          [text]="true"
+          (onClick)="page.revoke.cancelRevoke()"
+        />
+      </div>
+    </form>
+  </section>
+}

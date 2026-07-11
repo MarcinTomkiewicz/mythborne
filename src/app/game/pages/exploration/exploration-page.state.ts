@@ -1,24 +1,22 @@
 import {
   DestroyRef,
   Injectable,
-  WritableSignal,
   computed,
   effect,
   inject,
-  isDevMode,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { finalize } from 'rxjs';
+import { GAME_COPY_DEFAULT_LOCALE } from '../../../core/constants/game-copy.const';
 import {
-  ExplorationDifficultyCopy,
-  explorationDifficultyCardCopy,
+  type ExplorationDifficultyCopy,
+  isExplorationDifficultyCopyKey,
 } from '../../../core/domain/game-copy/exploration-difficulty-copy.model';
-import { ExplorationRuntimeCopy } from '../../../core/domain/exploration/exploration-runtime-copy.model';
-import { GameCopy } from '../../../core/services/game-copy/game-copy';
 import {
-  GameCopyRegistry,
-} from '../../../core/types/game-copy-registry.types';
+  EXPLORATION_RUNTIME_COPY_LOCALES,
+  type ExplorationRuntimeCopy,
+} from '../../../core/domain/exploration/exploration-runtime-copy.model';
+import { GameCopy } from '../../../core/services/game-copy/game-copy';
+import { GameCopySignalLoader } from '../../../core/services/game-copy/game-copy-signal-loader';
 import { RequestToken } from '../../../core/utils/request-token';
 import { GameCopyEditState } from '../../../shared/game-copy-edit/game-copy-edit.state';
 import { ExplorationChallengeState } from './exploration-challenge.state';
@@ -37,10 +35,22 @@ export class ExplorationPageState {
   private readonly runtimeCopyToken = new RequestToken();
   private readonly destroyRef = inject(DestroyRef);
   private readonly gameCopy = inject(GameCopy);
+  private readonly loader = inject(GameCopySignalLoader);
   private readonly difficultyCopyRevision = this.gameCopy.refreshRevision(
     'player.exploration.difficulty',
-    'pl',
+    GAME_COPY_DEFAULT_LOCALE,
   );
+  private readonly runtimeCopyRevisions = EXPLORATION_RUNTIME_COPY_LOCALES.map(
+    (locale) => ({
+      locale,
+      revision: this.gameCopy.refreshRevision(
+        'player.exploration.runtime',
+        locale,
+      ),
+      handled: 0,
+    }),
+  );
+  private handledDifficultyCopyRevision = 0;
 
   readonly minigameHandoff = inject(ExplorationMinigameHandoffState);
   readonly overview = inject(ExplorationOverviewState);
@@ -62,14 +72,12 @@ export class ExplorationPageState {
   readonly isRuntimeCopyLoading = signal(false);
   readonly difficultyCopyError = signal(false);
   readonly runtimeCopyError = signal(false);
-  readonly hasDifficultyCopyError = computed(() => this.difficultyCopyError());
-  readonly hasRuntimeCopyError = computed(() => this.runtimeCopyError());
   readonly selectedDifficultyCopy = computed(() => {
     const copy = this.difficultyCopy();
     const difficultyKey = this.overview.selectedDifficultyKey();
 
-    return copy && difficultyKey
-      ? explorationDifficultyCardCopy(copy, difficultyKey)
+    return copy && difficultyKey && isExplorationDifficultyCopyKey(difficultyKey)
+      ? copy.difficulty.cards[difficultyKey] ?? null
       : null;
   });
   readonly isLoading = computed(() =>
@@ -117,15 +125,38 @@ export class ExplorationPageState {
       || Boolean(state?.activeChallenge)
       || Boolean(this.step.currentStepResult())
       || Boolean(this.sandbox.sandboxChallengeResult())
-      || Boolean(this.minigameHandoff.currentMinigameReportPointer())
+      || Boolean(this.minigameHandoff.currentMinigameCompletion())
       || Boolean(this.rewardState.reward())
     );
   });
 
   constructor() {
     effect(() => {
-      if (this.difficultyCopyRevision() > 0) {
-        this.loadDifficultyCopy();
+      const revision = this.difficultyCopyRevision();
+
+      if (revision > this.handledDifficultyCopyRevision) {
+        this.handledDifficultyCopyRevision = revision;
+
+        if (this.difficultyCopy()) {
+          this.loadDifficultyCopy(true);
+        }
+      }
+    });
+    effect(() => {
+      const currentLocale = this.runtimeCopy()?.locale;
+
+      for (const tracked of this.runtimeCopyRevisions) {
+        const revision = tracked.revision();
+
+        if (revision <= tracked.handled) {
+          continue;
+        }
+
+        tracked.handled = revision;
+
+        if (currentLocale === tracked.locale) {
+          this.loadRuntimeCopy(true, tracked.locale);
+        }
       }
     });
   }
@@ -158,72 +189,54 @@ export class ExplorationPageState {
     this.runtimeScreenRequested.set(false);
   }
 
-  private loadDifficultyCopy(): void {
-    this.loadPageCopy(
-      'player.exploration.difficulty',
-      this.copyToken,
-      this.isDifficultyCopyLoading,
-      this.difficultyCopyError,
-      this.difficultyCopy,
-    );
+  private loadDifficultyCopy(background = false): void {
+    this.loader.load({
+      kind: 'player.exploration.difficulty',
+      args: { locale: GAME_COPY_DEFAULT_LOCALE },
+      requestToken: this.copyToken,
+      destroyRef: this.destroyRef,
+      loading: this.isDifficultyCopyLoading,
+      target: this.difficultyCopy,
+      preserveCurrent: background,
+      onStart: () => this.difficultyCopyError.set(false),
+      onSuccess: () => this.difficultyCopyError.set(false),
+      onError: (_error, preservedCurrent) => {
+        this.difficultyCopyError.set(true);
+
+        if (preservedCurrent) {
+          this.gameCopyEdit.notifyRefreshFailure(
+            'player.exploration.difficulty',
+            GAME_COPY_DEFAULT_LOCALE,
+          );
+        }
+      },
+    });
   }
 
-  private loadRuntimeCopy(): void {
-    this.loadPageCopy(
-      'player.exploration.runtime',
-      this.runtimeCopyToken,
-      this.isRuntimeCopyLoading,
-      this.runtimeCopyError,
-      this.runtimeCopy,
-    );
-  }
-
-  private loadPageCopy<
-    K extends 'player.exploration.difficulty' | 'player.exploration.runtime',
-  >(
-    kind: K,
-    requestToken: RequestToken,
-    loading: WritableSignal<boolean>,
-    errorState: WritableSignal<boolean>,
-    target: WritableSignal<GameCopyRegistry[K] | null>,
+  private loadRuntimeCopy(
+    background = false,
+    locale = GAME_COPY_DEFAULT_LOCALE,
   ): void {
-    const token = requestToken.next();
+    this.loader.load({
+      kind: 'player.exploration.runtime',
+      args: { locale },
+      requestToken: this.runtimeCopyToken,
+      destroyRef: this.destroyRef,
+      loading: this.isRuntimeCopyLoading,
+      target: this.runtimeCopy,
+      preserveCurrent: background,
+      onStart: () => this.runtimeCopyError.set(false),
+      onSuccess: () => this.runtimeCopyError.set(false),
+      onError: (_error, preservedCurrent) => {
+        this.runtimeCopyError.set(true);
 
-    loading.set(true);
-    errorState.set(false);
-    target.set(null);
-
-    this.gameCopy
-      .getCopy(kind, { locale: 'pl' })
-      .pipe(
-        finalize(() => {
-          if (requestToken.isCurrent(token)) {
-            loading.set(false);
-          }
-        }),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: (copy) => {
-          if (!requestToken.isCurrent(token)) {
-            return;
-          }
-
-          errorState.set(false);
-          target.set(copy);
-        },
-        error: (error: unknown) => {
-          if (!requestToken.isCurrent(token)) {
-            return;
-          }
-
-          if (isDevMode()) {
-            console.error(kind, error);
-          }
-
-          errorState.set(true);
-          target.set(null);
-        },
-      });
+        if (preservedCurrent) {
+          this.gameCopyEdit.notifyRefreshFailure(
+            'player.exploration.runtime',
+            locale,
+          );
+        }
+      },
+    });
   }
 }

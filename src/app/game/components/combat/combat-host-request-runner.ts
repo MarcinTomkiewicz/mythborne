@@ -1,24 +1,14 @@
 import { DestroyRef, Injectable, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Observable, finalize } from 'rxjs';
-import { RequestToken } from '../../../core/utils/request-token';
+import { finalize } from 'rxjs';
+import type { CombatHostRequestRunnerInput } from '../../../core/interfaces/combat-host-runner.interface';
 import { sameSourceRef } from '../../../core/utils/source-ref';
-import { MinigameSourceRef } from '../minigame-host/minigame-host.model';
 
 @Injectable()
 export class CombatHostRequestRunner {
   private readonly destroyRef = inject(DestroyRef);
 
-  run<T>(input: {
-    requestToken: RequestToken;
-    currentSourceRef: () => MinigameSourceRef | null;
-    sourceRef: MinigameSourceRef;
-    request: Observable<T>;
-    onSuccess: (result: T) => void;
-    onError: (error: unknown) => void;
-    onFinalize?: () => void;
-    isCurrent?: () => boolean;
-  }): void {
+  run<T>(input: CombatHostRequestRunnerInput<T>): void {
     const token = input.requestToken.next();
     const isCurrent = () =>
       input.requestToken.isCurrent(token) &&

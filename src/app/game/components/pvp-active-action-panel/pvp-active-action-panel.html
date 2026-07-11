@@ -1,12 +1,33 @@
-@if (offer(); as active) {
+@if (combatCompletion(); as completion) {
+  @if (completion.reportId; as reportId) {
+    <app-report-detail-preview-card
+      [reportId]="reportId"
+      [label]="copy().common.labels.combatReport"
+      [directReportLabel]="copy().common.actionLabels.openReport"
+    />
+  } @else {
+    <section class="mg-card p-lg flex-col gap-sm w-100" role="status" aria-live="polite">
+      <app-game-copy-editable-text
+        gameCopyKind="player.pvp.action"
+        copyPath="common.labels.result"
+        [locale]="copy().locale"
+      >
+        <h2 class="color-heading text-lg m-0">{{ copy().common.labels.result }}</h2>
+      </app-game-copy-editable-text>
+      <app-game-copy-editable-text
+        gameCopyKind="player.pvp.action"
+        copyPath="activeAction.phaseText.attackResolved"
+        [locale]="copy().locale"
+      >
+        <p class="color-text text-md lh-16 m-0">
+          {{ copy().activeAction.phaseText.attackResolved }}
+        </p>
+      </app-game-copy-editable-text>
+    </section>
+  }
+} @else if (offer(); as active) {
   @if (renderCombatHost()) {
-    @if (combatCompletion()?.reportId; as reportId) {
-      <app-report-detail-preview-card
-        [reportId]="reportId"
-        [label]="copy().common.labels.combatReport"
-        [directReportLabel]="copy().common.actionLabels.openReport"
-      />
-    } @else if (combatSourceRef(active); as source) {
+    @if (combatSourceRef(active); as source) {
       @if (sourcePresentation(); as presentation) {
         @if (presentation.header; as header) {
           <section class="mg-card p-lg flex-col gap-sm w-100">

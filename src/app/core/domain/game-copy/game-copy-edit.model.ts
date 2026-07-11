@@ -19,6 +19,12 @@ export interface GameCopyTextEntryLocales {
   entries: GameCopyTextEntry[];
 }
 
+export interface GameCopyEditEntrySelection {
+  locales: GameCopyLocale[];
+  entriesByLocale: Record<string, GameCopyTextEntry>;
+  selectedEntry: GameCopyTextEntry;
+}
+
 export interface GameCopyTextUpdateResult {
   locale: string;
   value: string;

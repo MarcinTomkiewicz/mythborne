@@ -1,0 +1,55 @@
+<section class="mg-card flex-col gap-lg p-lg w-100">
+  <div class="flex-col gap-xs">
+    <p class="card-legend mb-0">Assignment</p>
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Assign staff role</h3>
+  </div>
+  @if (page.candidateSearch.selectedCandidate(); as candidate) {
+    <div class="mg-card flex-col gap-xs p-md">
+      <strong class="heading-color">{{ candidate.displayName }}</strong>
+      <span class="muted-text">{{ candidate.email }}</span>
+      <span class="muted-text">{{ candidate.eligibilityMessage }}</span>
+    </div>
+  } @else {
+    <p-message severity="info">Select an eligible candidate to prepare an assignment.</p-message>
+  }
+  <form
+    [formGroup]="page.assignmentDraft.assignmentForm"
+    class="flex-col gap-md"
+    (ngSubmit)="page.assignSelectedCandidate()"
+  >
+    <label class="flex-col gap-sm">
+      <span class="muted-text">Staff role</span>
+      <p-select
+        class="w-100"
+        formControlName="role"
+        [options]="page.assignmentDraft.roleOptions"
+        optionLabel="label"
+        optionValue="value"
+      />
+    </label>
+    <label class="flex-col gap-sm">
+      <span class="muted-text">Reason</span>
+      <input pInputText class="w-100" formControlName="reason" />
+      @if (
+        page.assignmentDraft.assignmentForm.controls.reason.touched
+        && page.assignmentDraft.assignmentForm.controls.reason.invalid
+      ) { <span class="form-error">Reason is required.</span> }
+      @if (
+        !page.assignmentDraft.assignmentForm.controls.reason.value.trim()
+        && page.candidateSearch.selectedCandidate()
+      ) { <span class="muted-text">A reason is required before assigning staff access.</span> }
+    </label>
+    <label class="flex-col gap-sm">
+      <span class="muted-text">Notes</span>
+      <textarea pInputText rows="3" class="w-100" formControlName="notes"></textarea>
+    </label>
+    <div class="flex-row-start-center">
+      <p-button
+        type="submit"
+        label="Assign staff"
+        [loading]="page.assignmentDraft.isSubmitting()"
+        [disabled]="!page.canSubmitSelectedCandidate()"
+      />
+    </div>
+  </form>
+</section>

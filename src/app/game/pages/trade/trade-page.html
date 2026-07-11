@@ -1,4 +1,7 @@
-<app-loading-overlay [visible]="page.overview.isLoading()" label="" />
+<app-loading-overlay
+  [visible]="page.overview.isLoading()"
+  ariaLabel="Loading trade"
+/>
 
 @if (page.overview.copy(); as copy) {
   @if (page.overview.context()) {

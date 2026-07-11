@@ -1,0 +1,43 @@
+<section class="mg-card p-lg w-100">
+  <div class="grid-form" [formGroup]="page.scopeForm">
+    <label class="form-field">
+      <span>Selected server</span>
+      <input pInputText type="text" [value]="page.serverLabel()" disabled />
+    </label>
+    <label class="form-field">
+      <span>Hero</span>
+      <p-autocomplete
+        styleClass="w-100"
+        [fluid]="true"
+        formControlName="heroTarget"
+        [suggestions]="page.heroTargetSuggestions()"
+        optionLabel="label"
+        [forceSelection]="true"
+        [showClear]="true"
+        [minLength]="page.minHeroQueryLength"
+        [delay]="250"
+        placeholder="Search hero, account, email or technical id"
+        (completeMethod)="page.searchHeroTargets($event)"
+        (onSelect)="page.selectHeroTarget($event.value)"
+        (onClear)="page.clearHeroTarget()"
+      />
+      @if (page.scopeForm.controls.heroTarget.value; as target) {
+        <span class="muted-text">{{ target.description }}</span>
+      }
+    </label>
+    <label class="form-field">
+      <span>Advanced hero id fallback</span>
+      <input pInputText type="text" formControlName="heroId" />
+    </label>
+    <label class="form-field">
+      <span>Exploration date</span>
+      <input pInputText type="date" formControlName="explorationDate" />
+    </label>
+    <p-button
+      type="button"
+      label="Load debug state"
+      [disabled]="page.isLoading()"
+      (onClick)="page.loadDebugState()"
+    />
+  </div>
+</section>

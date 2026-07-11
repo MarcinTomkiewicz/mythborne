@@ -1,9 +1,5 @@
 import { Component, OnInit, inject } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
 import { MessageModule } from 'primeng/message';
-import { SelectModule } from 'primeng/select';
 import { LoadingOverlay } from '../../../shared/loading-overlay/loading-overlay';
 import { STAFF_MANAGEMENT_PAGE_LINKS } from '../../admin-navigation.config';
 import { AdminServerSwitcher } from '../../components/admin-server-switcher/admin-server-switcher';
@@ -15,20 +11,24 @@ import { StaffManagementPageFacade } from '../../../core/services/staff/staff-ma
 import { StaffRevokeActions } from '../../../core/services/staff/staff-revoke.actions';
 import { StaffScopeAssignmentActions } from '../../../core/services/staff/staff-scope-assignment.actions';
 import { StaffScopeAssignmentSection } from './staff-scope-assignment-section';
+import { StaffAssignmentSection } from './staff-assignment-section';
+import { StaffCandidateSection } from './staff-candidate-section';
+import { StaffListSection } from './staff-list-section';
+import { StaffRevokeSection } from './staff-revoke-section';
 
 @Component({
   selector: 'app-staff-management-page',
   standalone: true,
   imports: [
-    ReactiveFormsModule,
-    ButtonModule,
-    InputTextModule,
     MessageModule,
-    SelectModule,
     LoadingOverlay,
     AdminServerSwitcher,
     AdminTagLinks,
     StaffScopeAssignmentSection,
+    StaffAssignmentSection,
+    StaffCandidateSection,
+    StaffListSection,
+    StaffRevokeSection,
   ],
   providers: [
     StaffManagementPageFacade,

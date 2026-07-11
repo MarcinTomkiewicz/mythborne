@@ -1,11 +1,18 @@
-import { CombatSourcePresentation } from '../combat/combat-source-presentation.model';
+import type { CombatSourcePresentation } from '../combat/combat-source-presentation.model';
 
-export type ExplorationRuntimeCopyLocale = 'pl' | 'en';
+export const EXPLORATION_RUNTIME_COPY_LOCALES = [
+  'pl',
+  'en',
+] as const;
 
-export type ExplorationCombatSourcePresentationKey =
-  | 'default'
-  | 'trial'
-  | 'combatEncounter';
+export type ExplorationRuntimeCopyLocale =
+  (typeof EXPLORATION_RUNTIME_COPY_LOCALES)[number];
+
+export function isExplorationRuntimeLocale(
+  value: string,
+): value is ExplorationRuntimeCopyLocale {
+  return EXPLORATION_RUNTIME_COPY_LOCALES.some((locale) => locale === value);
+}
 
 export type ExplorationCombatEffectTone = 'success' | 'danger';
 
@@ -19,7 +26,7 @@ export interface ExplorationRuntimeCopy {
   movement: ExplorationMovementCopy;
   runtimeActions: ExplorationRuntimeActionsCopy;
   activeChallenge: ExplorationActiveChallengeCopy;
-  combatSourcePresentationKeys: ExplorationCombatSourcePresentationKeysCopy;
+  combatSourcePresentationKeys: ExplorationCombatPresentationKeysCopy;
   combatSourcePresentations: ExplorationCombatSourcePresentationsCopy;
   combatEffect: ExplorationCombatEffectCopy;
   feedback: ExplorationRuntimeFeedbackCopy;
@@ -69,7 +76,7 @@ export interface ExplorationActiveChallengeCopy {
   unavailableText: string;
 }
 
-export interface ExplorationCombatSourcePresentationKeysCopy {
+export interface ExplorationCombatPresentationKeysCopy {
   default: 'default';
   trial: 'trial';
   combatEncounter: 'combatEncounter';

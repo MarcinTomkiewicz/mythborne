@@ -1,5 +1,6 @@
 import { Component, DestroyRef, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { ConfirmationService } from 'primeng/api';
+import { VICINITY_RELOCATION_DIALOG_KEY } from '../../../core/configs/vicinity.config';
 import { RouteBackgroundOverride } from '../../../core/services/ui/route-background-override';
 import {
   PVP_SPY_BACKGROUND_IMAGE,
@@ -26,12 +27,10 @@ import { PvpSpyReportState } from '../../features/pvp/state/pvp-spy-report.state
 import { PvpSandboxToolState } from '../../features/pvp/state/pvp-sandbox-tool.state';
 import { VicinityTargetSearchState } from '../../features/vicinity/state/vicinity-target-search.state';
 import { VicinityVisibleTargetOverlayState } from '../../features/vicinity/state/vicinity-visible-target-overlay.state';
+import { mapRelocationParagraphs } from '../../../core/domain/vicinity/vicinity-relocation-message';
 import type {
-  PlayerVicinityCopyReadModel,
-} from '../../../core/domain/vicinity/player-vicinity-page-context.model';
-import type {
-  StructuredConfirmDialogSegment,
-} from '../../../core/interfaces/structured-confirm-dialog-segment.interface';
+  StructuredConfirmDialogContent,
+} from '../../../core/interfaces/structured-dialog-content.interface';
 import { GamePageHeader } from '../../../shared/game-page-header/game-page-header';
 import { EstateRelocationRunner } from '../../workflows/estate-relocation/estate-relocation-runner';
 import {
@@ -40,9 +39,8 @@ import {
   DataRowActionKind,
 } from '../../../core/types/data-row.types';
 import { isAddressDataRow } from '../../../core/utils/data-row';
+import { plainStructuredConfirmMessage } from '../../../core/utils/structured-confirm-dialog/plain-structured-confirm-message';
 import { StructuredConfirmDialog } from '../../../shared/structured-confirm-dialog/structured-confirm-dialog';
-
-const VICINITY_RELOCATION_CONFIRMATION_KEY = 'vicinity-relocation';
 
 @Component({
   selector: 'app-vicinity-page',
@@ -83,7 +81,7 @@ const VICINITY_RELOCATION_CONFIRMATION_KEY = 'vicinity-relocation';
 export class VicinityPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirmationService = inject(ConfirmationService);
-  private readonly pvpActiveActionNavigation = inject(PvpActiveActionNavigationState);
+  private readonly pvpNavigation = inject(PvpActiveActionNavigationState);
   private readonly routeBackgroundOverride = inject(RouteBackgroundOverride);
 
   readonly page = inject(VicinityPageState);
@@ -95,8 +93,10 @@ export class VicinityPage implements OnInit {
   readonly spyReport = inject(PvpSpyReportState);
   readonly targetSearch = inject(VicinityTargetSearchState);
   readonly targetOverlay = inject(VicinityVisibleTargetOverlayState);
-  readonly relocationConfirmationSegments =
-    signal<readonly StructuredConfirmDialogSegment[]>([]);
+  readonly relocationConfirmationKey = VICINITY_RELOCATION_DIALOG_KEY;
+  readonly relocationConfirmationContent = signal<StructuredConfirmDialogContent>({
+    message: { paragraphs: [] },
+  });
   readonly isScreenLoading = computed(() =>
     this.page.error() === null
     && (
@@ -138,10 +138,10 @@ export class VicinityPage implements OnInit {
       this.routeBackgroundOverride.clear(PVP_SPY_BACKGROUND_SOURCE);
     });
 
-    void this.pvpActiveActionNavigation;
   }
 
   ngOnInit(): void {
+    this.pvpNavigation.initialize();
     this.page.loadData();
     this.activePvpAction.load();
     this.page.loadDailyAttackState();
@@ -150,7 +150,7 @@ export class VicinityPage implements OnInit {
   }
 
   clearRelocationConfirmationMessage(): void {
-    this.relocationConfirmationSegments.set([]);
+    this.relocationConfirmationContent.set({ message: { paragraphs: [] } });
   }
 
   selectRow(row: DataRow): void {
@@ -192,11 +192,15 @@ export class VicinityPage implements OnInit {
       return;
     }
 
-    this.relocationConfirmationSegments.set(buildRelocationConfirmationSegments(copy));
+    const content: StructuredConfirmDialogContent = {
+      message: { paragraphs: mapRelocationParagraphs(copy) },
+    };
+
+    this.relocationConfirmationContent.set(content);
     this.confirmationService.confirm({
-      key: VICINITY_RELOCATION_CONFIRMATION_KEY,
+      key: this.relocationConfirmationKey,
       header: copy.confirmTitle,
-      message: copy.confirmMessage,
+      message: plainStructuredConfirmMessage(content),
       acceptLabel: copy.confirmLabel,
       rejectLabel: copy.cancelLabel,
       acceptIcon: 'pi pi-check',
@@ -208,16 +212,4 @@ export class VicinityPage implements OnInit {
       reject: () => this.page.setDestructiveConfirmed(false),
     });
   }
-}
-
-function buildRelocationConfirmationSegments(
-  copy: PlayerVicinityCopyReadModel['relocation'],
-): StructuredConfirmDialogSegment[] {
-  const parts = copy.confirmMessageParts;
-
-  return [
-    { text: parts.intro, highlighted: false, blankLineAfter: true },
-    { text: `${parts.warningLabel} `, highlighted: true, className: 'error-text' },
-    { text: parts.warningText, highlighted: false },
-  ];
 }

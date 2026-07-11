@@ -217,7 +217,11 @@ export interface PlayerArmoryItemReadModel {
   displayCore: PlayerArmoryItemDisplayCore;
 }
 
-interface PlayerArmoryEquipmentSlotBaseReadModel {
+export type PlayerArmoryVendorScrapItem = PlayerArmoryItemReadModel & {
+  drachmaValue: number;
+};
+
+export interface PlayerArmoryEquipmentSlotBaseReadModel {
   slotKey: string;
   slotLabel: string;
   slotSortOrder: number;
@@ -231,11 +235,11 @@ interface PlayerArmoryEquipmentSlotBaseReadModel {
 
 export type PlayerArmoryEquipmentSlotReadModel =
   | PlayerArmoryEmptyEquipmentSlotReadModel
-  | PlayerArmoryEquippedEquipmentSlotReadModel;
+  | PlayerArmoryEquippedSlotReadModel;
 
-export type PlayerArmoryEquippedEquipmentSlotReadModel =
+export type PlayerArmoryEquippedSlotReadModel =
   | PlayerArmoryFullEquipmentSlotReadModel
-  | PlayerArmoryDegradedEquipmentSlotReadModel;
+  | PlayerArmoryDegradedSlotReadModel;
 
 export interface PlayerArmoryEmptyEquipmentSlotReadModel
   extends PlayerArmoryEquipmentSlotBaseReadModel {
@@ -255,7 +259,7 @@ export interface PlayerArmoryFullEquipmentSlotReadModel
   item: PlayerArmoryItemReadModel;
 }
 
-export interface PlayerArmoryDegradedEquipmentSlotReadModel
+export interface PlayerArmoryDegradedSlotReadModel
   extends PlayerArmoryEquipmentSlotBaseReadModel {
   hasItem: true;
   isEmpty: false;

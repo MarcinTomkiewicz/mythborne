@@ -4,8 +4,8 @@ import {
   CombatSurfaceDecisionDeadline,
 } from '../../../core/domain/combat/combat-display.model';
 import { CombatSourcePresentation } from '../../../core/domain/combat/combat-source-presentation.model';
-import { MinigameCompletionEvent, MinigameSourceRef } from '../minigame-host/minigame-host.model';
-import { CombatHostPreviewLoader } from './combat-host-preview-loader';
+import type { MinigameCompletionEvent, MinigameSourceRef } from '../../../core/domain/minigame/minigame-completion.model';
+import { CombatHostPreviewState } from './combat-host-preview.state';
 import { CombatHostRequestRunner } from './combat-host-request-runner';
 import { CombatHostSessionRunner } from './combat-host-session-runner';
 import { CombatHostState } from './combat-host.state';
@@ -19,7 +19,7 @@ import { CombatStage } from './combat-stage';
   providers: [
     CombatHostState,
     CombatHostRequestRunner,
-    CombatHostPreviewLoader,
+    CombatHostPreviewState,
     CombatHostSessionRunner,
     CombatHostTimingState,
   ],
@@ -84,11 +84,6 @@ export class CombatHost {
       const completion = this.flow.completion();
 
       if (!completion) {
-        return;
-      }
-
-      if (!completion.reportId) {
-        this.flow.clearCompletion();
         return;
       }
 

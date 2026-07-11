@@ -1,0 +1,12 @@
+<p-message severity="error">
+  @if (display.runtimeErrorPresentation(); as presentation) {
+    <app-game-copy-editable-text
+      gameCopyKind="player.exploration.runtime"
+      copyPath="feedback.genericError"
+      [locale]="presentation.locale"
+    >
+      <span>{{ presentation.text }}</span>
+    </app-game-copy-editable-text>
+  }
+  <code>{{ technicalContext() }}</code>
+</p-message>

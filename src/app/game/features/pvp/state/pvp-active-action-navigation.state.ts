@@ -1,4 +1,4 @@
-import { effect, inject, Injectable } from '@angular/core';
+import { effect, inject, Injectable, Injector } from '@angular/core';
 import { Router } from '@angular/router';
 import { PvpSpyReportState } from './pvp-spy-report.state';
 
@@ -6,9 +6,16 @@ import { PvpSpyReportState } from './pvp-spy-report.state';
 export class PvpActiveActionNavigationState {
   private readonly router = inject(Router);
   private readonly spyReport = inject(PvpSpyReportState);
+  private readonly injector = inject(Injector);
   private navigatedSpyReportId: string | null = null;
+  private initialized = false;
 
-  constructor() {
+  initialize(): void {
+    if (this.initialized) {
+      return;
+    }
+
+    this.initialized = true;
     effect(() => {
       const reportId = this.spyReport.reportId();
 
@@ -20,6 +27,6 @@ export class PvpActiveActionNavigationState {
       queueMicrotask(() => {
         void this.router.navigate(['/game/reports', reportId]);
       });
-    });
+    }, { injector: this.injector });
   }
 }

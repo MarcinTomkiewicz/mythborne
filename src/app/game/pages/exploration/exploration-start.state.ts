@@ -66,7 +66,7 @@ export class ExplorationStartState {
             return;
           }
 
-          this.minigameHandoff.clearMinigameReportPointer();
+          this.minigameHandoff.clearMinigameCompletion();
           this.overview.setStateFromWorkflow(state);
           onReady?.();
         },

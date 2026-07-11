@@ -1,0 +1,70 @@
+<section class="mg-card flex-col gap-lg p-lg w-100">
+  <div class="flex-col gap-xs">
+    <p class="card-legend mb-0">Candidate</p>
+    <h3 class="mg-section__title mg-section__title--xs mb-0">Search user</h3>
+  </div>
+  <form
+    [formGroup]="page.candidateSearch.searchForm"
+    class="flex-col gap-md"
+    (ngSubmit)="page.searchCandidates()"
+  >
+    <label class="flex-col gap-sm">
+      <span class="muted-text">Email or name</span>
+      <input pInputText class="w-100" formControlName="query" placeholder="At least 2 characters" />
+    </label>
+    <div class="flex-row-start-center">
+      <p-button
+        type="submit"
+        label="Search candidates"
+        [loading]="page.candidateSearch.isSearching()"
+        [disabled]="page.candidateSearch.isSearching()"
+      />
+    </div>
+  </form>
+  @if (page.candidateSearch.searchMessage(); as message) {
+    <p-message severity="info">{{ message }}</p-message>
+  }
+  <div class="flex-col gap-sm">
+    @for (candidate of page.candidateSearch.candidates(); track candidate.userId) {
+      <article class="mg-card flex-col gap-sm p-md">
+        <div class="flex-row-between-center flex-wrap gap-sm">
+          <div class="flex-col gap-xs min-w-0">
+            <strong class="heading-color">{{ candidate.displayName }}</strong>
+            <span class="muted-text">{{ candidate.email }}</span>
+          </div>
+          <div class="flex-row-start-center flex-wrap gap-xs">
+            @if (candidate.globalRoleKey) { <span class="mg-tag">global {{ candidate.globalRoleKey }}</span> }
+            @if (candidate.existingStaffRole) {
+              <span class="tag-badge tag-badge--warn">staff {{ candidate.existingStaffRole }}</span>
+            }
+            <span
+              class="tag-badge"
+              [class.tag-badge--success]="candidate.isEligibleForServerStaff"
+              [class.tag-badge--warn]="!candidate.isEligibleForServerStaff"
+            >{{ candidate.isEligibleForServerStaff ? 'eligible' : 'blocked' }}</span>
+          </div>
+        </div>
+        <p class="muted-text mb-0">{{ candidate.eligibilityMessage }}</p>
+        @if (candidate.hasStaffDisqualifyingHistory) {
+          <p-message severity="warn">
+            Staff-disqualifying moderation history blocks this user from staff assignment.
+          </p-message>
+        }
+        <div class="flex-row-start-center flex-wrap gap-xs">
+          @if (candidate.hasHeroOnServer) { <span class="mg-tag">has hero on server</span> }
+          @if (candidate.hasStaffDisqualifyingHistory) {
+            <span class="mg-tag">staff-disqualifying history</span>
+          }
+        </div>
+        <div class="flex-row-start-center">
+          <p-button
+            label="Select"
+            [text]="true"
+            [disabled]="!candidate.isEligibleForServerStaff"
+            (onClick)="page.candidateSearch.selectCandidate(candidate)"
+          />
+        </div>
+      </article>
+    }
+  </div>
+</section>

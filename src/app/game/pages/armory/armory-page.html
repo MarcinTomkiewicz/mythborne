@@ -1,9 +1,9 @@
-<app-loading-overlay [visible]="isScreenLoading()" />
+<app-loading-overlay [visible]="isScreenLoading()" ariaLabel="Loading armory" />
 
 <app-structured-confirm-dialog
   [key]="sellConfirmation.key"
   styleClass="mg-dialog mg-dialog--danger"
-  [messageSegments]="sellConfirmation.segments()"
+  [content]="sellConfirmation.content()"
   (hidden)="clearSellItemConfirmationMessage()"
 />
 

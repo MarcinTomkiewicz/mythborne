@@ -1,345 +1,102 @@
 import {
   EXPLORATION_DIFFICULTY_COPY_ARTICLE_KEY,
-  EXPLORATION_DIFFICULTY_COPY_CONTRACT_VERSION,
+  EXPLORATION_DIFFICULTY_CONTRACT_VERSION,
   EXPLORATION_DIFFICULTY_COPY_KEYS,
   EXPLORATION_DIFFICULTY_TRIAL_KEYS,
-  ExplorationDifficultyActionCopy,
-  ExplorationDifficultyCardCopy,
-  ExplorationDifficultyCopy,
-  ExplorationDifficultyCopyKey,
-  ExplorationDifficultyHeaderCopy,
-  ExplorationDifficultyMetricLabelsCopy,
-  ExplorationDifficultyRichTextFragment,
-  ExplorationDifficultySectionCopy,
-  ExplorationDifficultySectionIntroCopy,
-  ExplorationDifficultyStatusEmptyValuesCopy,
-  ExplorationDifficultyStatusLabelsCopy,
-  ExplorationDifficultyStatusPanelCopy,
-  ExplorationDifficultyTrialDetailsCopy,
-  ExplorationDifficultyTrialDetailsLabelsCopy,
-  ExplorationDifficultyTrialDetailsSectionCopy,
-  ExplorationDifficultyTrialKey,
+  type ExplorationDifficultyCardCopy,
+  type ExplorationDifficultyCopy,
+  type ExplorationDifficultyCopyKey,
+  type ExplorationDifficultyRichTextFragment,
+  type ExplorationDifficultyTrialKey,
 } from '../domain/game-copy/exploration-difficulty-copy.model';
-import { Json } from '../types/database.types';
+import type { Json } from '../types/database.types';
 import {
-  JsonRecord,
   read,
   requiredRecord,
+  requiredRecordField,
   requiredText,
+  requiredTextFields,
   requireLiteral,
 } from './json-read';
 import { mapRichTextFragments } from './rich-text.mapper';
 
 export function mapExplorationDifficultyCopy(value: Json): ExplorationDifficultyCopy {
+  const path = 'exploration difficulty';
   const root = requiredRecord(value, 'get_player_exploration_difficulty_copy');
-  const contractVersion = requiredText(
-    read(root, 'contractVersion'),
-    'exploration difficulty contractVersion',
-  );
-  const locale = requiredText(read(root, 'locale'), 'exploration difficulty locale');
-  const articleKey = requiredText(
-    read(root, 'articleKey'),
-    'exploration difficulty articleKey',
-  );
+  const header = requiredRecord(read(root, 'header'), `${path} header`);
+  const statusPanel = requiredRecord(read(root, 'statusPanel'), `${path} statusPanel`);
+  const statusLabels = requiredRecordField(statusPanel, 'labels', `${path} statusPanel`);
+  const statusEmpty = requiredRecordField(statusPanel, 'emptyValues', `${path} statusPanel`);
+  const difficulty = requiredRecord(read(root, 'difficulty'), `${path} difficulty`);
+  const difficultySection = requiredRecordField(difficulty, 'section', `${path} difficulty`);
+  const difficultyCards = requiredRecordField(difficulty, 'cards', `${path} difficulty`);
+  const difficultyMetrics = requiredRecordField(difficulty, 'metrics', `${path} difficulty`);
+  const difficultyActions = requiredRecordField(difficulty, 'actions', `${path} difficulty`);
+  const trialDetails = requiredRecord(read(root, 'trialDetails'), `${path} trialDetails`);
+  const trialSection = requiredRecordField(trialDetails, 'section', `${path} trialDetails`);
+  const trialLabels = requiredRecordField(trialDetails, 'labels', `${path} trialDetails`);
+  const trials = requiredRecordField(trialDetails, 'trials', `${path} trialDetails`);
 
   return {
-    contractVersion: requireLiteral(
-      contractVersion,
-      EXPLORATION_DIFFICULTY_COPY_CONTRACT_VERSION,
-      'exploration difficulty contractVersion',
-    ),
-    locale: requireLiteral(locale, 'pl', 'exploration difficulty locale'),
-    articleKey: requireLiteral(
-      articleKey,
-      EXPLORATION_DIFFICULTY_COPY_ARTICLE_KEY,
-      'exploration difficulty articleKey',
-    ),
-    header: mapHeader(
-      requiredRecord(read(root, 'header'), 'exploration difficulty header'),
-    ),
-    statusPanel: mapStatusPanel(
-      requiredRecord(
-        read(root, 'statusPanel'),
-        'exploration difficulty statusPanel',
-      ),
-    ),
-    difficulty: mapDifficulty(
-      requiredRecord(read(root, 'difficulty'), 'exploration difficulty'),
-    ),
-    trialDetails: mapTrialDetails(
-      requiredRecord(read(root, 'trialDetails'), 'exploration difficulty trialDetails'),
-    ),
+    contractVersion: requireLiteral(requiredText(
+      read(root, 'contractVersion'), `${path} contractVersion`,
+    ), EXPLORATION_DIFFICULTY_CONTRACT_VERSION, `${path} contractVersion`),
+    locale: requireLiteral(requiredText(
+      read(root, 'locale'), `${path} locale`,
+    ), 'pl', `${path} locale`),
+    articleKey: requireLiteral(requiredText(
+      read(root, 'articleKey'), `${path} articleKey`,
+    ), EXPLORATION_DIFFICULTY_COPY_ARTICLE_KEY, `${path} articleKey`),
+    header: requiredTextFields(header, `${path} header`, ['eyebrow', 'title', 'intro']),
+    statusPanel: {
+      labels: requiredTextFields(statusLabels, `${path} statusPanel.labels`, [
+        'difficulty', 'estimatedAutoResult', 'trialsToday', 'activeEffect',
+      ]),
+      emptyValues: requiredTextFields(statusEmpty, `${path} statusPanel.emptyValues`, [
+        'noDifficulty', 'noAutoResult', 'noTrials', 'noEffect',
+      ]),
+    },
+    difficulty: {
+      section: requiredTextFields(difficultySection, `${path} difficulty.section`, [
+        'title', 'description',
+      ]),
+      cards: EXPLORATION_DIFFICULTY_COPY_KEYS.reduce((result, key) => {
+        const field = `${path} difficulty.cards.${key}`;
+        result[key] = requiredTextFields(
+          requiredRecordField(difficultyCards, key, `${path} difficulty.cards`),
+          field,
+          ['title', 'subtitle', 'description'],
+        );
+        return result;
+      }, {} as Record<ExplorationDifficultyCopyKey, ExplorationDifficultyCardCopy>),
+      metrics: requiredTextFields(difficultyMetrics, `${path} difficulty.metrics`, [
+        'duration', 'trialChance', 'manifestationChance', 'autoResolveChance', 'rewardItems',
+      ]),
+      actions: requiredTextFields(difficultyActions, `${path} difficulty.actions`, [
+        'startExploration', 'continueExploration', 'changeDifficulty',
+      ]),
+    },
+    trialDetails: {
+      section: {
+        ...requiredTextFields(trialSection, `${path} trialDetails.section`, [
+          'title', 'descriptionPlainText',
+        ]),
+        descriptionRichText: mapRichTextFragments(
+          read(trialSection, 'descriptionRichText'),
+          `${path} trialDetails.section.descriptionRichText`,
+          (kind, field) => requireLiteral(kind, 'text', field),
+        ) as ExplorationDifficultyRichTextFragment[],
+      },
+      labels: requiredTextFields(trialLabels, `${path} trialDetails.labels`, [
+        'selectedDifficulty', 'manifestation', 'autoResult',
+      ]),
+      trials: EXPLORATION_DIFFICULTY_TRIAL_KEYS.reduce((result, key) => {
+        result[key] = requiredText(
+          read(trials, key),
+          `${path} trialDetails.trials.${key}`,
+        );
+        return result;
+      }, {} as Record<ExplorationDifficultyTrialKey, string>),
+    },
   };
-}
-
-function mapHeader(record: JsonRecord): ExplorationDifficultyHeaderCopy {
-  return {
-    eyebrow: requiredText(read(record, 'eyebrow'), 'exploration difficulty header.eyebrow'),
-    title: requiredText(read(record, 'title'), 'exploration difficulty header.title'),
-    intro: requiredText(read(record, 'intro'), 'exploration difficulty header.intro'),
-  };
-}
-
-function mapStatusPanel(
-  record: JsonRecord,
-): ExplorationDifficultyStatusPanelCopy {
-  return {
-    labels: mapStatusLabels(
-      requiredRecord(
-        read(record, 'labels'),
-        'exploration difficulty statusPanel.labels',
-      ),
-    ),
-    emptyValues: mapStatusEmptyValues(
-      requiredRecord(
-        read(record, 'emptyValues'),
-        'exploration difficulty statusPanel.emptyValues',
-      ),
-    ),
-  };
-}
-
-function mapStatusLabels(
-  record: JsonRecord,
-): ExplorationDifficultyStatusLabelsCopy {
-  return {
-    difficulty: requiredText(
-      read(record, 'difficulty'),
-      'exploration difficulty statusPanel.labels.difficulty',
-    ),
-    estimatedAutoResult: requiredText(
-      read(record, 'estimatedAutoResult'),
-      'exploration difficulty statusPanel.labels.estimatedAutoResult',
-    ),
-    trialsToday: requiredText(
-      read(record, 'trialsToday'),
-      'exploration difficulty statusPanel.labels.trialsToday',
-    ),
-    activeEffect: requiredText(
-      read(record, 'activeEffect'),
-      'exploration difficulty statusPanel.labels.activeEffect',
-    ),
-  };
-}
-
-function mapStatusEmptyValues(
-  record: JsonRecord,
-): ExplorationDifficultyStatusEmptyValuesCopy {
-  return {
-    noDifficulty: requiredText(
-      read(record, 'noDifficulty'),
-      'exploration difficulty statusPanel.emptyValues.noDifficulty',
-    ),
-    noAutoResult: requiredText(
-      read(record, 'noAutoResult'),
-      'exploration difficulty statusPanel.emptyValues.noAutoResult',
-    ),
-    noTrials: requiredText(
-      read(record, 'noTrials'),
-      'exploration difficulty statusPanel.emptyValues.noTrials',
-    ),
-    noEffect: requiredText(
-      read(record, 'noEffect'),
-      'exploration difficulty statusPanel.emptyValues.noEffect',
-    ),
-  };
-}
-
-function mapDifficulty(record: JsonRecord): ExplorationDifficultySectionCopy {
-  return {
-    section: mapDifficultySection(
-      requiredRecord(
-        read(record, 'section'),
-        'exploration difficulty difficulty.section',
-      ),
-    ),
-    cards: mapDifficultyCards(
-      requiredRecord(read(record, 'cards'), 'exploration difficulty difficulty.cards'),
-    ),
-    metrics: mapMetrics(
-      requiredRecord(
-        read(record, 'metrics'),
-        'exploration difficulty difficulty.metrics',
-      ),
-    ),
-    actions: mapActions(
-      requiredRecord(
-        read(record, 'actions'),
-        'exploration difficulty difficulty.actions',
-      ),
-    ),
-  };
-}
-
-function mapDifficultySection(
-  record: JsonRecord,
-): ExplorationDifficultySectionIntroCopy {
-  return {
-    title: requiredText(
-      read(record, 'title'),
-      'exploration difficulty difficulty.section.title',
-    ),
-    description: requiredText(
-      read(record, 'description'),
-      'exploration difficulty difficulty.section.description',
-    ),
-  };
-}
-
-function mapDifficultyCards(
-  record: JsonRecord,
-): Record<ExplorationDifficultyCopyKey, ExplorationDifficultyCardCopy> {
-  return EXPLORATION_DIFFICULTY_COPY_KEYS.reduce(
-    (result, difficultyKey) => ({
-      ...result,
-      [difficultyKey]: mapDifficultyCard(
-        requiredRecord(
-          read(record, difficultyKey),
-          `exploration difficulty difficulty.cards.${difficultyKey}`,
-        ),
-        difficultyKey,
-      ),
-    }),
-    {} as Record<ExplorationDifficultyCopyKey, ExplorationDifficultyCardCopy>,
-  );
-}
-
-function mapDifficultyCard(
-  record: JsonRecord,
-  difficultyKey: ExplorationDifficultyCopyKey,
-): ExplorationDifficultyCardCopy {
-  const field = `exploration difficulty difficulty.cards.${difficultyKey}`;
-
-  return {
-    title: requiredText(read(record, 'title'), `${field}.title`),
-    subtitle: requiredText(read(record, 'subtitle'), `${field}.subtitle`),
-    description: requiredText(read(record, 'description'), `${field}.description`),
-  };
-}
-
-function mapMetrics(
-  record: JsonRecord,
-): ExplorationDifficultyMetricLabelsCopy {
-  return {
-    duration: requiredText(
-      read(record, 'duration'),
-      'exploration difficulty difficulty.metrics.duration',
-    ),
-    trialChance: requiredText(
-      read(record, 'trialChance'),
-      'exploration difficulty difficulty.metrics.trialChance',
-    ),
-    manifestationChance: requiredText(
-      read(record, 'manifestationChance'),
-      'exploration difficulty difficulty.metrics.manifestationChance',
-    ),
-    autoResolveChance: requiredText(
-      read(record, 'autoResolveChance'),
-      'exploration difficulty difficulty.metrics.autoResolveChance',
-    ),
-    rewardItems: requiredText(
-      read(record, 'rewardItems'),
-      'exploration difficulty difficulty.metrics.rewardItems',
-    ),
-  };
-}
-
-function mapActions(record: JsonRecord): ExplorationDifficultyActionCopy {
-  return {
-    startExploration: requiredText(
-      read(record, 'startExploration'),
-      'exploration difficulty difficulty.actions.startExploration',
-    ),
-    continueExploration: requiredText(
-      read(record, 'continueExploration'),
-      'exploration difficulty difficulty.actions.continueExploration',
-    ),
-    changeDifficulty: requiredText(
-      read(record, 'changeDifficulty'),
-      'exploration difficulty difficulty.actions.changeDifficulty',
-    ),
-  };
-}
-
-function mapTrialDetails(
-  record: JsonRecord,
-): ExplorationDifficultyTrialDetailsCopy {
-  return {
-    section: mapTrialDetailsSection(
-      requiredRecord(
-        read(record, 'section'),
-        'exploration difficulty trialDetails.section',
-      ),
-    ),
-    labels: mapTrialDetailsLabels(
-      requiredRecord(
-        read(record, 'labels'),
-        'exploration difficulty trialDetails.labels',
-      ),
-    ),
-    trials: mapTrialLabels(
-      requiredRecord(
-        read(record, 'trials'),
-        'exploration difficulty trialDetails.trials',
-      ),
-    ),
-  };
-}
-
-function mapTrialDetailsSection(
-  record: JsonRecord,
-): ExplorationDifficultyTrialDetailsSectionCopy {
-  return {
-    title: requiredText(
-      read(record, 'title'),
-      'exploration difficulty trialDetails.section.title',
-    ),
-    descriptionPlainText: requiredText(
-      read(record, 'descriptionPlainText'),
-      'exploration difficulty trialDetails.section.descriptionPlainText',
-    ),
-    descriptionRichText: mapRichTextFragments(
-      read(record, 'descriptionRichText'),
-      'exploration difficulty trialDetails.section.descriptionRichText',
-      requireTextFragmentKind,
-    ) as ExplorationDifficultyRichTextFragment[],
-  };
-}
-
-function mapTrialDetailsLabels(
-  record: JsonRecord,
-): ExplorationDifficultyTrialDetailsLabelsCopy {
-  return {
-    selectedDifficulty: requiredText(
-      read(record, 'selectedDifficulty'),
-      'exploration difficulty trialDetails.labels.selectedDifficulty',
-    ),
-    manifestation: requiredText(
-      read(record, 'manifestation'),
-      'exploration difficulty trialDetails.labels.manifestation',
-    ),
-    autoResult: requiredText(
-      read(record, 'autoResult'),
-      'exploration difficulty trialDetails.labels.autoResult',
-    ),
-  };
-}
-
-function mapTrialLabels(
-  record: JsonRecord,
-): Record<ExplorationDifficultyTrialKey, string> {
-  return EXPLORATION_DIFFICULTY_TRIAL_KEYS.reduce(
-    (result, trialKey) => ({
-      ...result,
-      [trialKey]: requiredText(
-        read(record, trialKey),
-        `exploration difficulty trialDetails.trials.${trialKey}`,
-      ),
-    }),
-    {} as Record<ExplorationDifficultyTrialKey, string>,
-  );
-}
-
-function requireTextFragmentKind(value: string, field: string): 'text' {
-  return requireLiteral(value, 'text', field);
 }

@@ -12982,6 +12982,12 @@ Do not start AB3 unless AB0-COPY confirms the Manual Trial Copy RPC/GameCopy con
 * Do not introduce a global unsaved-changes/navigation framework unless explicitly approved.
 * Use existing UI/shared patterns where possible.
 * Keep UI player-safe; no raw replay/debug payloads.
+* Resolve Trial identity from `player.manualTrial.copy / trials.<trialKey>.label`; do not substitute the tested-stat label or runtime/read-model text.
+* Provide inline GameCopyEdit coverage for every Manual Trial GameCopy surface, including buttons, loading/error/empty states, dialog fields and dynamic Trial/outcome/failure-reason dictionary entries with exact kind/path/locale metadata.
+* Reload edited Manual Trial, Exploration Difficulty and Exploration Runtime Copy payloads in the background without resetting the page, route, active offer, runtime session, manifest, verdict or report handoff.
+* Keep exit, confirmed auto-resolve and route-guard application flow Observable-only, with framework Promise APIs adapted immediately at their boundary.
+* Treat browser hard reload/reconnect as backend recovery of the active offer, Manual Runtime Session/manifest or Backend Verdict, never as confirmed exit.
+* Render unsupported and missing-copy states from player-safe GameCopy while retaining exact missing paths only as secondary diagnostics.
 
 **Out of scope:**
 
@@ -13004,6 +13010,13 @@ Do not start AB3 unless AB0-COPY confirms the Manual Trial Copy RPC/GameCopy con
 * UI does not show final success/reward before Backend Verdict.
 * UI does not expose raw `trial_power`.
 * Exit warning is present for manual session navigation where feasible.
+* Trial identity uses `player.manualTrial.copy / trials.<trialKey>.label`, while tested stat and difficulty remain independent exact-path lookups.
+* All rendered Manual Trial GameCopy text exposes inline admin editing with exact paths, including dynamic `trials`, `outcomes` and `failureReasons` entries.
+* A successful Copy edit refreshes only the matching Copy payload in the background and does not reset offer/session/manifest/verdict/report state.
+* Exit and route-guard workflows expose Observable rather than Promise application APIs.
+* Confirmed exit returns `true` to the route guard only after successful backend auto-resolve; cancel, busy/unavailable flow and backend failure return `false`.
+* Hard reload/reconnect recovers backend Manual Trial state without invoking confirmed-exit auto-resolve.
+* Missing Trial/tested-stat/difficulty/outcome/failure-reason Copy fails closed with player-safe unsupported copy and an exact secondary diagnostic path.
 * No concrete minigame appears in this task.
 * No Manual Trial player-facing copy is hardcoded in Angular.
 * Runtime/read-model label/description/helper text fields are not used as copy.
@@ -13043,6 +13056,31 @@ Do not start AB3 unless AB0-COPY confirms the Manual Trial Copy RPC/GameCopy con
 * manual smoke status:
 * pending manual smoke:
 * verification results:
+
+---
+
+## Task GAMECOPY-EDIT-COVERAGE — Complete inline editing for existing GameCopy surfaces
+
+**Goal:**
+Complete exact-path inline editing and safe post-save Copy refresh for GameCopy surfaces that existed before AB3.
+
+**Scope:**
+
+* Inventory existing templates and shared components that render GameCopy.
+* Add missing inline edit triggers with exact GameCopy kind, copy path and displayed-payload locale.
+* Cover button labels, loading states, empty states, error states, dialog headers/messages/action labels and dynamic dictionary entries.
+* Reload only the affected Copy payload in the background after a successful save.
+* Preserve active forms, route state and domain/gameplay workflows while visible Copy is refreshed.
+* Record a separate DB/Migrator dependency before changing or extending any Copy contract.
+* Do not use this cross-cutting task to defer GameCopyEdit gaps required by AB3.
+
+**Acceptance criteria:**
+
+* Existing GameCopy consumers have an inventory of rendered paths and missing coverage.
+* Every inventoried rendered leaf has an exact-path inline admin edit trigger.
+* Successful edits update the visible Copy payload without resetting forms, navigation or domain workflows.
+* Refresh failures preserve the previous visible Copy and expose an explicit error.
+* No Copy contract is invented or changed without its own DB/Migrator dependency.
 
 ---
 

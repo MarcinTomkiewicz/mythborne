@@ -30,7 +30,9 @@
 
       <div class="pending-timer-oracle__card mg-card w-60 max-w-full p-lg flex-col-center-center gap-sm text-center position-relative z-1">
         @if (isReady() || isResolving()) {
-          <span class="small-caps color-muted text-xs">{{ readyLabel() }}</span>
+          @if (readyLabel(); as label) {
+            <span class="small-caps color-muted text-xs">{{ label }}</span>
+          }
           <strong class="color-heading text-xxl">
             {{ readyTitle() }}
           </strong>

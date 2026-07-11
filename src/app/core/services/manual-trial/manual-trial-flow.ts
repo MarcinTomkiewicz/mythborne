@@ -21,17 +21,12 @@ import {
   ManualTrialReportHandoff,
   TrialOffer,
 } from '../../domain/manual-trial/manual-trial-core.model';
-import {
-  HeroServerScope,
-  MatchingIdGuard,
-} from '../../interfaces/hero/hero-server-scope.interface';
+import { HeroServerScope, MatchingIdGuard } from '../../interfaces/hero/hero-server-scope.interface';
 import {
   ActiveOfferRpcArgs,
   ActiveOfferRpcRow,
   AttemptVerdictRpcArgs,
   AttemptVerdictRpcRow,
-  AutoResolveAttemptRpcArgs,
-  AutoResolveAttemptRpcRow,
   CreateReportHandoffRpcArgs,
   CreateReportHandoffRpcRow,
   ExitManualTrialRpcArgs,
@@ -278,44 +273,6 @@ export class ManualTrialFlow {
               },
             ]
           : [],
-    );
-  }
-
-  autoResolveAttempt(
-    rawAttemptId: string,
-    rawRequestId?: string | null,
-  ): Observable<ManualTrialBackendVerdict> {
-    const attemptId = requiredTrimmedText(
-      rawAttemptId,
-      'attemptId',
-      MANUAL_TRIAL_ERROR_CONTEXT,
-    );
-    const requestId = normalizeOrCreateRequestId(
-      rawRequestId,
-      `manual-trial:auto:${attemptId}`,
-    );
-    const args: AutoResolveAttemptRpcArgs = {
-      p_attempt_id: attemptId,
-      p_request_id: requestId,
-    };
-
-    return this.runScopedCall(
-      () =>
-        this.backend
-          .rpc<AutoResolveAttemptRpcRow[]>(RPC.auto_resolve_manual_trial, args)
-          .pipe(
-            mapRequiredRpcResultRow(
-              RPC.auto_resolve_manual_trial,
-              mapManualTrialBackendVerdict,
-            ),
-          ),
-      (verdict) => [
-        {
-          actual: verdict.attemptId,
-          expected: attemptId,
-          errorCode: MANUAL_TRIAL_ERROR_CODES.staleAttempt,
-        },
-      ],
     );
   }
 

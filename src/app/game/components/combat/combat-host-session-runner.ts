@@ -1,42 +1,75 @@
-import { Injectable, inject } from '@angular/core';
-import { CombatTimingStrikeSnapshot } from '../../../core/domain/combat/combat-display.model';
-import { CombatLiveStateReadModel } from '../../../core/domain/combat/combat-live.model';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import type { CombatTimingStrikeSnapshot } from '../../../core/domain/combat/combat-display.model';
+import type {
+  CombatLiveStateReadModel,
+  CombatResolutionPreviewReadModel,
+} from '../../../core/domain/combat/combat-live.model';
+import {
+  MINIGAME_KEY,
+  type MinigameCompletionEvent,
+  type MinigameSourceRef,
+} from '../../../core/domain/minigame/minigame-completion.model';
 import { CombatSessions } from '../../../core/services/combat/combat-sessions';
 import { mergeCombatLiveEvents } from '../../../core/utils/combat-live-mappers';
 import { createRequestId } from '../../../core/utils/request-id';
+import { RequestToken } from '../../../core/utils/request-token';
 import { sameSourceRef } from '../../../core/utils/source-ref';
-import { MINIGAME_KEY } from '../minigame-host/minigame-host.model';
 import { CombatHostRequestRunner } from './combat-host-request-runner';
-import {
-  CombatHostLiveStateRecoveryInput,
-  CombatHostSessionRunnerContext,
-} from './combat-host-session-runner-context.model';
 
 @Injectable()
 export class CombatHostSessionRunner {
   private readonly combatSessions = inject(CombatSessions);
   private readonly requestRunner = inject(CombatHostRequestRunner);
+  private readonly manualStartToken = new RequestToken();
+  private readonly autoResolveToken = new RequestToken();
+  private readonly submitActionToken = new RequestToken();
+  private readonly finalizeResultToken = new RequestToken();
+  private readonly recoverStateToken = new RequestToken();
 
-  startManualCombat(context: CombatHostSessionRunnerContext): void {
-    const preview = context.preview();
-    const sourceRef = context.sourceRef();
+  readonly liveState = signal<CombatLiveStateReadModel | null>(null);
+  readonly completion = signal<MinigameCompletionEvent | null>(null);
+  readonly actionError = signal<string | null>(null);
+  readonly finalizeError = signal<string | null>(null);
+  readonly isPreparing = signal(false);
+  readonly isAutoResolving = signal(false);
+  readonly isSubmitting = signal(false);
+  readonly isFinalizing = signal(false);
+  readonly isRecovering = signal(false);
+  readonly canSubmitStrike = computed(() => {
+    const state = this.liveState();
 
+    return Boolean(
+      state?.statusKey !== 'completed'
+      && state?.awaitingPlayerAction
+      && state.currentTimingManifest
+      && !this.isSubmitting()
+      && !this.isPreparing()
+      && !this.isAutoResolving(),
+    );
+  });
+
+  startManualCombat(
+    sourceRef: MinigameSourceRef,
+    currentSourceRef: () => MinigameSourceRef | null,
+    preview: CombatResolutionPreviewReadModel | null,
+    actionUnavailableText: string | null,
+    finalizeUnavailableText: string | null,
+  ): void {
     if (
-      !sourceRef ||
-      !preview?.canStartManual ||
-      context.liveState() ||
-      context.isRecoveringState() ||
-      context.isPreparingSession() ||
-      context.isAutoResolving()
+      !preview?.canStartManual
+      || this.liveState()
+      || this.isRecovering()
+      || this.isPreparing()
+      || this.isAutoResolving()
     ) {
       return;
     }
 
-    context.setActionError(null);
-    context.setIsPreparingSession(true);
+    this.actionError.set(null);
+    this.isPreparing.set(true);
     this.requestRunner.run({
-      requestToken: context.tokens.manualStart,
-      currentSourceRef: context.sourceRef,
+      requestToken: this.manualStartToken,
+      currentSourceRef,
       sourceRef,
       request: this.combatSessions.startManualCombatSession({
         sourceEntityType: sourceRef.sourceEntityType,
@@ -46,36 +79,49 @@ export class CombatHostSessionRunner {
         ),
       }),
       onSuccess: (state) => {
-        context.setLiveState(state);
-        this.completeManualCombatIfNeeded(context, state);
-        this.recoverManualStartStateIfNeeded(context, state);
+        this.liveState.set(state);
+        this.completeIfNeeded(
+          sourceRef,
+          currentSourceRef,
+          state,
+          actionUnavailableText,
+          finalizeUnavailableText,
+        );
+        this.recoverManualStart(
+          sourceRef,
+          currentSourceRef,
+          state,
+          actionUnavailableText,
+          finalizeUnavailableText,
+        );
       },
-      onError: () => context.setActionError(context.actionUnavailableText()),
-      onFinalize: () => context.setIsPreparingSession(false),
+      onError: () => this.actionError.set(actionUnavailableText),
+      onFinalize: () => this.isPreparing.set(false),
     });
   }
 
-  autoResolveCombat(context: CombatHostSessionRunnerContext): void {
-    const preview = context.preview();
-    const sourceRef = context.sourceRef();
-
+  autoResolveCombat(
+    sourceRef: MinigameSourceRef,
+    currentSourceRef: () => MinigameSourceRef | null,
+    preview: CombatResolutionPreviewReadModel | null,
+    actionUnavailableText: string | null,
+  ): void {
     if (
-      !sourceRef ||
-      !preview?.canAutoResolve ||
-      context.liveState() ||
-      context.isRecoveringState() ||
-      context.isPreparingSession() ||
-      context.isAutoResolving()
+      !preview?.canAutoResolve
+      || this.liveState()
+      || this.isRecovering()
+      || this.isPreparing()
+      || this.isAutoResolving()
     ) {
       return;
     }
 
-    context.setActionError(null);
-    context.setFinalizeError(null);
-    context.setIsAutoResolving(true);
+    this.actionError.set(null);
+    this.finalizeError.set(null);
+    this.isAutoResolving.set(true);
     this.requestRunner.run({
-      requestToken: context.tokens.autoResolve,
-      currentSourceRef: context.sourceRef,
+      requestToken: this.autoResolveToken,
+      currentSourceRef,
       sourceRef,
       request: this.combatSessions.autoResolveCombatSession({
         sourceEntityType: sourceRef.sourceEntityType,
@@ -84,114 +130,62 @@ export class CombatHostSessionRunner {
           `combat:${sourceRef.sourceEntityType}:auto-resolve:${sourceRef.sourceEntityId}`,
         ),
       }),
-      onSuccess: (result) => context.setCompletion({
+      onSuccess: (result) => this.completion.set({
         minigameKey: MINIGAME_KEY.combat,
         sourceEntityId: result.sourceEntityId,
         resultId: result.sourceResultId ?? result.combatResultId,
         reportId: result.gameReportId,
         rewardGrantId: result.rewardGrantId,
       }),
-      onError: () => context.setActionError(context.actionUnavailableText()),
-      onFinalize: () => context.setIsAutoResolving(false),
+      onError: () => this.actionError.set(actionUnavailableText),
+      onFinalize: () => this.isAutoResolving.set(false),
     });
   }
 
-  recoverCombatLiveState(
-    context: CombatHostSessionRunnerContext,
-    combatSessionId: string | null,
+  recoverLiveState(
+    sourceRef: MinigameSourceRef,
+    currentSourceRef: () => MinigameSourceRef | null,
+    combatSessionId: string,
+    actionUnavailableText: string | null,
+    finalizeUnavailableText: string | null,
   ): void {
-    const sourceRef = context.sourceRef();
-
-    if (
-      !sourceRef ||
-      !combatSessionId ||
-      context.liveState() ||
-      context.isRecoveringState()
-    ) {
+    if (this.liveState() || this.isRecovering()) {
       return;
     }
 
-    this.recoverCombatLiveStateForSession({
-      context,
+    this.recoverSession(
       sourceRef,
+      currentSourceRef,
       combatSessionId,
-      isCurrent: () => !context.liveState(),
-    });
+      () => !this.liveState(),
+      actionUnavailableText,
+      finalizeUnavailableText,
+    );
   }
 
-  private recoverManualStartStateIfNeeded(
-    context: CombatHostSessionRunnerContext,
-    state: CombatLiveStateReadModel,
-  ): void {
-    const sourceRef = context.sourceRef();
-
-    if (
-      state.statusKey === 'completed' ||
-      !sourceRef ||
-      context.isRecoveringState() ||
-      state.awaitingPlayerAction && state.currentTimingManifest
-    ) {
-      return;
-    }
-
-    this.recoverCombatLiveStateForSession({
-      context,
-      sourceRef,
-      combatSessionId: state.sessionId,
-      isCurrent: () => context.liveState()?.sessionId === state.sessionId,
-    });
-  }
-
-  private recoverCombatLiveStateForSession(
-    input: CombatHostLiveStateRecoveryInput,
-  ): void {
-    const { context, sourceRef, combatSessionId, isCurrent } = input;
-
-    context.setActionError(null);
-    context.setIsRecoveringState(true);
-    this.requestRunner.run({
-      requestToken: context.tokens.recoverState,
-      currentSourceRef: context.sourceRef,
-      sourceRef,
-      request: this.combatSessions.getCombatLiveState({
-        combatSessionId,
-      }),
-      isCurrent,
-      onSuccess: (nextState) => {
-        context.setLiveState(nextState);
-        this.completeManualCombatIfNeeded(context, nextState);
-      },
-      onError: () => context.setActionError(context.actionUnavailableText()),
-      onFinalize: () => context.setIsRecoveringState(false),
-    });
-  }
-
-  submitCombatStrike(
-    context: CombatHostSessionRunnerContext,
+  submitStrike(
+    sourceRef: MinigameSourceRef,
+    currentSourceRef: () => MinigameSourceRef | null,
     snapshot: CombatTimingStrikeSnapshot,
+    actionUnavailableText: string | null,
+    finalizeUnavailableText: string | null,
   ): void {
-    const state = context.liveState();
-    const sourceRef = context.sourceRef();
+    const state = this.liveState();
+    const manifestId = state?.currentTimingManifest?.manifestId ?? null;
 
-    if (!sourceRef || !state || !canSubmitStrike(context)) {
+    if (!state || !this.canSubmitStrike() || !manifestId || snapshot.manifestId !== manifestId) {
       return;
     }
 
     const sessionId = state.sessionId;
     const actionIndex = state.currentActionIndex;
-    const manifestId = state.currentTimingManifest?.manifestId ?? null;
+    let acceptedResponse = false;
 
-    if (!manifestId || snapshot.manifestId !== manifestId) {
-      return;
-    }
-
-    let acceptedSubmitResponse = false;
-
-    context.setActionError(null);
-    context.setIsSubmittingAction(true);
+    this.actionError.set(null);
+    this.isSubmitting.set(true);
     this.requestRunner.run({
-      requestToken: context.tokens.submitAction,
-      currentSourceRef: context.sourceRef,
+      requestToken: this.submitActionToken,
+      currentSourceRef,
       sourceRef,
       request: this.combatSessions.submitCombatPlayerAction({
         combatSessionId: sessionId,
@@ -201,39 +195,122 @@ export class CombatHostSessionRunner {
         ),
       }),
       isCurrent: () => {
-        if (acceptedSubmitResponse) {
+        if (acceptedResponse) {
           return true;
         }
 
-        const current = context.liveState();
+        const current = this.liveState();
 
-        return current?.sessionId === sessionId &&
-          current.currentActionIndex === actionIndex &&
-          current.currentTimingManifest?.manifestId === manifestId;
+        return current?.sessionId === sessionId
+          && current.currentActionIndex === actionIndex
+          && current.currentTimingManifest?.manifestId === manifestId;
       },
       onSuccess: (nextState) => {
-        acceptedSubmitResponse = true;
-        context.setLiveState(mergeCombatLiveEvents(context.liveState(), nextState));
-        this.completeManualCombatIfNeeded(context, nextState);
+        acceptedResponse = true;
+        this.liveState.set(mergeCombatLiveEvents(this.liveState(), nextState));
+        this.completeIfNeeded(
+          sourceRef,
+          currentSourceRef,
+          nextState,
+          actionUnavailableText,
+          finalizeUnavailableText,
+        );
       },
-      onError: () => context.setActionError(context.actionUnavailableText()),
-      onFinalize: () => context.setIsSubmittingAction(false),
+      onError: () => this.actionError.set(actionUnavailableText),
+      onFinalize: () => this.isSubmitting.set(false),
     });
   }
 
-  private completeManualCombatIfNeeded(
-    context: CombatHostSessionRunnerContext,
-    state: CombatLiveStateReadModel,
-  ): void {
-    const sourceRef = context.sourceRef();
+  clearCompletion(): void {
+    this.completion.set(null);
+  }
 
+  reset(): void {
+    this.manualStartToken.next();
+    this.autoResolveToken.next();
+    this.submitActionToken.next();
+    this.finalizeResultToken.next();
+    this.recoverStateToken.next();
+    this.liveState.set(null);
+    this.completion.set(null);
+    this.actionError.set(null);
+    this.finalizeError.set(null);
+    this.isPreparing.set(false);
+    this.isAutoResolving.set(false);
+    this.isSubmitting.set(false);
+    this.isFinalizing.set(false);
+    this.isRecovering.set(false);
+  }
+
+  private recoverManualStart(
+    sourceRef: MinigameSourceRef,
+    currentSourceRef: () => MinigameSourceRef | null,
+    state: CombatLiveStateReadModel,
+    actionUnavailableText: string | null,
+    finalizeUnavailableText: string | null,
+  ): void {
     if (
-      state.statusKey !== 'completed' ||
-      !state.finalCombatResultId ||
-      !sourceRef ||
-      context.isFinalizingResult() ||
-      context.completion() ||
-      !sameSourceRef(sourceRef, {
+      state.statusKey === 'completed'
+      || this.isRecovering()
+      || state.awaitingPlayerAction && state.currentTimingManifest
+    ) {
+      return;
+    }
+
+    this.recoverSession(
+      sourceRef,
+      currentSourceRef,
+      state.sessionId,
+      () => this.liveState()?.sessionId === state.sessionId,
+      actionUnavailableText,
+      finalizeUnavailableText,
+    );
+  }
+
+  private recoverSession(
+    sourceRef: MinigameSourceRef,
+    currentSourceRef: () => MinigameSourceRef | null,
+    combatSessionId: string,
+    isCurrent: () => boolean,
+    actionUnavailableText: string | null,
+    finalizeUnavailableText: string | null,
+  ): void {
+    this.actionError.set(null);
+    this.isRecovering.set(true);
+    this.requestRunner.run({
+      requestToken: this.recoverStateToken,
+      currentSourceRef,
+      sourceRef,
+      request: this.combatSessions.getCombatLiveState({ combatSessionId }),
+      isCurrent,
+      onSuccess: (nextState) => {
+        this.liveState.set(nextState);
+        this.completeIfNeeded(
+          sourceRef,
+          currentSourceRef,
+          nextState,
+          actionUnavailableText,
+          finalizeUnavailableText,
+        );
+      },
+      onError: () => this.actionError.set(actionUnavailableText),
+      onFinalize: () => this.isRecovering.set(false),
+    });
+  }
+
+  private completeIfNeeded(
+    sourceRef: MinigameSourceRef,
+    currentSourceRef: () => MinigameSourceRef | null,
+    state: CombatLiveStateReadModel,
+    actionUnavailableText: string | null,
+    finalizeUnavailableText: string | null,
+  ): void {
+    if (
+      state.statusKey !== 'completed'
+      || !state.finalCombatResultId
+      || this.isFinalizing()
+      || this.completion()
+      || !sameSourceRef(sourceRef, {
         sourceEntityType: state.sourceEntityType,
         sourceEntityId: state.sourceEntityId,
       })
@@ -241,11 +318,11 @@ export class CombatHostSessionRunner {
       return;
     }
 
-    context.setFinalizeError(null);
-    context.setIsFinalizingResult(true);
+    this.finalizeError.set(null);
+    this.isFinalizing.set(true);
     this.requestRunner.run({
-      requestToken: context.tokens.finalizeResult,
-      currentSourceRef: context.sourceRef,
+      requestToken: this.finalizeResultToken,
+      currentSourceRef,
       sourceRef,
       request: this.combatSessions.finalizeCombatSourceResult({
         combatSessionId: state.sessionId,
@@ -254,29 +331,18 @@ export class CombatHostSessionRunner {
         ),
         resolutionMode: 'manual',
       }),
-      isCurrent: () => context.liveState()?.sessionId === state.sessionId,
-      onSuccess: (result) => context.setCompletion({
+      isCurrent: () => this.liveState()?.sessionId === state.sessionId,
+      onSuccess: (result) => this.completion.set({
         minigameKey: MINIGAME_KEY.combat,
         sourceEntityId: result.sourceEntityId,
         resultId: result.sourceResultId ?? result.combatResultId,
         reportId: result.gameReportId,
         rewardGrantId: result.rewardGrantId,
       }),
-      onError: () => context.setFinalizeError(
-        context.finalizeUnavailableText() ?? context.actionUnavailableText(),
+      onError: () => this.finalizeError.set(
+        finalizeUnavailableText ?? actionUnavailableText,
       ),
-      onFinalize: () => context.setIsFinalizingResult(false),
+      onFinalize: () => this.isFinalizing.set(false),
     });
   }
-}
-
-function canSubmitStrike(context: CombatHostSessionRunnerContext): boolean {
-  const state = context.liveState();
-
-  return Boolean(state?.statusKey !== 'completed' &&
-    state?.awaitingPlayerAction &&
-    state.currentTimingManifest &&
-    !context.isSubmittingAction() &&
-    !context.isPreparingSession() &&
-    !context.isAutoResolving());
 }

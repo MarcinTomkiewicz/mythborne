@@ -1,24 +1,98 @@
 <p-confirmdialog
+  #dialog
   [key]="key()"
   [styleClass]="styleClass()"
   (onHide)="hidden.emit()"
 >
-  <ng-template pTemplate="message">
-    <p class="mb-0">
-      @for (segment of messageSegments(); track $index) {
-        @if (segment.highlighted) {
-          <strong [class]="segment.className ?? 'color-heading'">{{ segment.text }}</strong>
-        } @else {
-          <span [class]="segment.className ?? ''">{{ segment.text }}</span>
+  @if (content().header; as header) {
+    <ng-template #header>
+      <span class="flex-row-start-center gap-xs">
+        <span [id]="dialog.dialog?.ariaLabelledBy">
+          {{ header.text }}
+        </span>
+        @if (header.editTarget; as target) {
+          <app-game-copy-edit-trigger
+            [gameCopyKind]="target.gameCopyKind"
+            [copyPath]="target.copyPath"
+            [locale]="target.locale"
+          />
         }
-        @if (segment.blankLineAfter) {
-          <br />
-          <br />
+      </span>
+    </ng-template>
+  }
+
+  <ng-template #message>
+    <div class="flex-row-start-center gap-xs">
+      <div class="flex-col gap-sm">
+        @for (paragraph of content().message.paragraphs; track $index) {
+          <p class="mb-0">
+            @for (segment of paragraph.segments; track $index) {
+              @if (segment.tone === 'heading') {
+                <strong class="color-heading">{{ segment.text }}</strong>
+              } @else if (segment.tone === 'danger') {
+                <strong class="error-text">{{ segment.text }}</strong>
+              } @else {
+                <span>{{ segment.text }}</span>
+              }
+            }
+          </p>
         }
-        @if (segment.lineBreakAfter) {
-          <br />
-        }
+      </div>
+      @if (content().message.editTarget; as target) {
+        <app-game-copy-edit-trigger
+          [gameCopyKind]="target.gameCopyKind"
+          [copyPath]="target.copyPath"
+          [locale]="target.locale"
+        />
       }
-    </p>
+    </div>
   </ng-template>
+
+  @if (content().accept || content().reject) {
+    <ng-template #footer>
+      @if (dialog.option('rejectVisible')) {
+        <span class="flex-row-start-center gap-xs">
+          <p-button
+            [pt]="dialog.ptm('pcRejectButton')"
+            [label]="content().reject?.text ?? dialog.rejectButtonLabel"
+            [icon]="dialog.option('rejectIcon')"
+            [styleClass]="dialog.getButtonStyleClass('pcRejectButton', 'rejectButtonStyleClass')"
+            [ariaLabel]="dialog.option('rejectButtonProps', 'ariaLabel')"
+            [buttonProps]="dialog.getRejectButtonProps()"
+            [unstyled]="dialog.unstyled()"
+            (onClick)="dialog.onReject()"
+          />
+          @if (content().reject?.editTarget; as target) {
+            <app-game-copy-edit-trigger
+              [gameCopyKind]="target.gameCopyKind"
+              [copyPath]="target.copyPath"
+              [locale]="target.locale"
+            />
+          }
+        </span>
+      }
+
+      @if (dialog.option('acceptVisible')) {
+        <span class="flex-row-start-center gap-xs">
+          <p-button
+            [pt]="dialog.ptm('pcAcceptButton')"
+            [label]="content().accept?.text ?? dialog.acceptButtonLabel"
+            [icon]="dialog.option('acceptIcon')"
+            [styleClass]="dialog.getButtonStyleClass('pcAcceptButton', 'acceptButtonStyleClass')"
+            [ariaLabel]="dialog.option('acceptButtonProps', 'ariaLabel')"
+            [buttonProps]="dialog.getAcceptButtonProps()"
+            [unstyled]="dialog.unstyled()"
+            (onClick)="dialog.onAccept()"
+          />
+          @if (content().accept?.editTarget; as target) {
+            <app-game-copy-edit-trigger
+              [gameCopyKind]="target.gameCopyKind"
+              [copyPath]="target.copyPath"
+              [locale]="target.locale"
+            />
+          }
+        </span>
+      }
+    </ng-template>
+  }
 </p-confirmdialog>

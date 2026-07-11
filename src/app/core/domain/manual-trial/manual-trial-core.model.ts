@@ -97,6 +97,12 @@ export interface ManualTrialBackendVerdict {
   reward: ManualTrialRewardSummary;
 }
 
+export interface ManualTrialRecoveryData {
+  offer: TrialOffer | null;
+  manifest: ManualRuntimeManifest | null;
+  verdict: ManualTrialBackendVerdict | null;
+}
+
 export interface ManualTrialReportHandoff {
   reportId: string;
   publicToken: string;

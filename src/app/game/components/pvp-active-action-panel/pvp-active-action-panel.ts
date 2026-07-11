@@ -1,6 +1,12 @@
-import { Component, effect, input, output, signal } from '@angular/core';
+import { Component, effect, inject, input, output, signal } from '@angular/core';
 import { CombatSurfaceDecisionDeadline } from '../../../core/domain/combat/combat-display.model';
 import { CombatSourcePresentation } from '../../../core/domain/combat/combat-source-presentation.model';
+import { activeHeroContextKey } from '../../../core/domain/hero/active-hero-context';
+import {
+  MINIGAME_KEY,
+  type MinigameCompletionEvent,
+  type MinigameSourceRef,
+} from '../../../core/domain/minigame/minigame-completion.model';
 import {
   pvpActiveActionAriaLabel,
   pvpActiveActionKindLabel,
@@ -12,8 +18,10 @@ import {
 import { PvpActiveActionFactRow } from '../../../core/domain/pvp/pvp-active-action-display.model';
 import { PvpActionCopy } from '../../../core/domain/pvp/pvp-action-copy.model';
 import { ActivePvpActionOffer } from '../../../core/domain/pvp/pvp.model';
+import { ActiveHero } from '../../../core/services/hero/active-hero';
 import type { PendingTimerDisplay } from '../../../core/types/pending-timer.types';
 import { formatPendingDurationLabel } from '../../../core/utils/pending-timer';
+import { GameCopyEditableText } from '../../../shared/game-copy-editable-text/game-copy-editable-text';
 import { GameBar } from '../../../shared/game-bar/game-bar';
 import { PendingTimerOracle } from '../../../shared/pending-timer-oracle/pending-timer-oracle';
 import {
@@ -21,21 +29,24 @@ import {
   pvpCombatSourceRef,
 } from '../../features/pvp/utils/pvp-combat-source-ref';
 import { MinigameHost } from '../minigame-host/minigame-host';
-import {
-  MINIGAME_KEY,
-  MinigameCompletionEvent,
-  MinigameSourceRef,
-} from '../minigame-host/minigame-host.model';
 import { ReportDetailPreviewCard } from '../report-detail-preview-card/report-detail-preview-card';
 
 @Component({
   selector: 'app-pvp-active-action-panel',
   standalone: true,
-  imports: [GameBar, MinigameHost, PendingTimerOracle, ReportDetailPreviewCard],
+  imports: [
+    GameBar,
+    GameCopyEditableText,
+    MinigameHost,
+    PendingTimerOracle,
+    ReportDetailPreviewCard,
+  ],
   host: { class: 'd-contents' },
   templateUrl: './pvp-active-action-panel.html',
 })
 export class PvpActiveActionPanel {
+  private readonly activeHero = inject(ActiveHero);
+  private activeContextKey: string | null = null;
   readonly offer = input<ActivePvpActionOffer | null>(null);
   readonly copy = input.required<PvpActionCopy>();
   readonly sourcePresentation = input<CombatSourcePresentation | null>(null);
@@ -47,29 +58,30 @@ export class PvpActiveActionPanel {
   readonly renderCombatHost = input(false);
   readonly refresh = output<void>();
   readonly combatCompletion = signal<MinigameCompletionEvent | null>(null);
-  private readonly completedActionId = signal<string | null>(null);
 
   readonly minigameKey = MINIGAME_KEY.combat;
 
   constructor() {
     effect(() => {
-      const offerId = this.offer()?.pvpActionId ?? null;
-      const completedActionId = this.completedActionId();
+      const contextKey = activeHeroContextKey(this.activeHero.state());
 
-      if (offerId && completedActionId && offerId !== completedActionId) {
+      if (contextKey !== this.activeContextKey) {
+        this.activeContextKey = contextKey;
         this.combatCompletion.set(null);
-        this.completedActionId.set(null);
+        return;
+      }
+
+      const offerId = this.offer()?.pvpActionId;
+      const completion = this.combatCompletion();
+
+      if (offerId && completion && offerId !== completion.sourceEntityId) {
+        this.combatCompletion.set(null);
       }
     });
   }
 
   acceptCombatCompletion(event: MinigameCompletionEvent): void {
-    if (!event.reportId) {
-      return;
-    }
-
     this.combatCompletion.set(event);
-    this.completedActionId.set(this.offer()?.pvpActionId ?? null);
     this.refresh.emit();
   }
 

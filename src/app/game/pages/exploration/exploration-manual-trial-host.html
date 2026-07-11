@@ -1,0 +1,64 @@
+@let copy = copyState.copy();
+
+<app-loading-overlay
+  [visible]="manualTrial.isInitialLoading()"
+  [label]="copy ? copy.manual.loading : ''"
+  [copyEditTargets]="copyState.loadingEditTargets()"
+/>
+
+@if (copyState.unavailable()) {
+  <app-exploration-manual-trial-runtime-error [technicalContext]="copyKind" />
+}
+
+@if (copy) {
+  @if (exit.isResolving()) {
+    <section
+      class="mg-card p-lg flex-col-center-center gap-md w-100"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <app-game-copy-editable-text
+        [gameCopyKind]="copyKind"
+        copyPath="manual.resolving"
+        [locale]="copyLocale"
+      >
+        <p class="color-text text-md m-0">{{ copy.manual.resolving }}</p>
+      </app-game-copy-editable-text>
+    </section>
+  } @else if (display.shouldShowUnavailable()) {
+    <app-exploration-manual-trial-unavailable-panel />
+  } @else if (display.combatPresentation(); as presentation) {
+    <app-minigame-host
+      [minigameKey]="presentation.minigameKey"
+      [sourceRef]="presentation.sourceRef"
+      [contextTitle]="presentation.contextTitle"
+      [sourcePresentation]="presentation.sourcePresentation"
+      (completed)="acceptCompletion($event)"
+    />
+  } @else if (!manualTrial.verdict() && !manualTrial.offer() && !manualTrial.isInitialLoading()) {
+    <section class="mg-card p-lg flex-col gap-sm w-100">
+      <app-game-copy-editable-text
+        [gameCopyKind]="copyKind"
+        copyPath="noActive.title"
+        [locale]="copyLocale"
+      >
+        <h2 class="mg-section__title mg-section__title--sm mb-0">
+          {{ copy.noActive.title }}
+        </h2>
+      </app-game-copy-editable-text>
+      <app-game-copy-editable-text
+        [gameCopyKind]="copyKind"
+        copyPath="noActive.body"
+        [locale]="copyLocale"
+      >
+        <p class="color-text text-md lh-16 m-0">{{ copy.noActive.body }}</p>
+      </app-game-copy-editable-text>
+    </section>
+  }
+}
+
+<app-structured-confirm-dialog
+  [key]="exit.dialogKey"
+  [content]="exit.content()"
+/>

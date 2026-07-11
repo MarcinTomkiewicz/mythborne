@@ -1,5 +1,84 @@
-@if (currentChallengeResult() || minigameReportPointer()) {
-  <app-exploration-report-result-content
-    [reportId]="reportId()"
-  />
+@if (minigameCompletion()) {
+  @let resultProjection = completionResultProjection();
+  <div class="flex-col gap-lg w-100" role="status" aria-live="polite">
+    @if (resultProjection?.presentation; as presentation) {
+      <section class="mg-card p-lg flex-col gap-md w-100">
+        <app-game-copy-editable-text
+          [gameCopyKind]="presentation.title.copyEditTarget.gameCopyKind"
+          [copyPath]="presentation.title.copyEditTarget.copyPath"
+          [locale]="presentation.title.copyEditTarget.locale"
+        >
+          <h2 class="mg-section__title mg-section__title--sm mb-0">
+            {{ presentation.title.text }}
+          </h2>
+        </app-game-copy-editable-text>
+
+        @for (detail of presentation.details; track detail.copyEditTarget.copyPath) {
+          <app-game-copy-editable-text
+            [gameCopyKind]="detail.copyEditTarget.gameCopyKind"
+            [copyPath]="detail.copyEditTarget.copyPath"
+            [locale]="detail.copyEditTarget.locale"
+          >
+            <p class="color-text text-md lh-16 m-0">{{ detail.text }}</p>
+          </app-game-copy-editable-text>
+        }
+      </section>
+    } @else if (resultProjection?.missingCopyPath; as missingCopyPath) {
+      <app-exploration-manual-trial-runtime-error
+        [technicalContext]="missingCopyPath"
+      />
+    }
+
+    @if (reward.reward(); as rewardReadModel) {
+      @if (reward.rewardDisplay(); as display) {
+        <section class="mg-card p-lg flex-col gap-md w-100">
+          @if (rewardReadModel.rewardStatusLabel; as rewardStatusLabel) {
+            <h3 class="color-heading text-lg m-0">{{ rewardStatusLabel }}</h3>
+          }
+          @if (rewardReadModel.explanation; as explanation) {
+            <p class="color-text text-md lh-16 m-0">{{ explanation }}</p>
+          }
+
+          @for (entry of display.entries; track entry.id) {
+            <div class="flex-col gap-2xs">
+              <strong class="color-heading text-md">{{ reward.entryLabel(entry) }}</strong>
+              @if (reward.entryDetails(entry); as details) {
+                <span class="color-muted text-sm">{{ details }}</span>
+              }
+            </div>
+          }
+
+          @for (item of display.items; track item.id) {
+            <div class="flex-row-start-start gap-sm">
+              <i [class]="reward.itemIconClass(item)" aria-hidden="true"></i>
+              <div class="flex-col gap-2xs">
+                <strong class="color-heading text-md">{{ reward.itemLabel(item) }}</strong>
+                @for (detail of reward.itemDetails(item); track detail) {
+                  <span class="color-muted text-sm">{{ detail }}</span>
+                }
+              </div>
+            </div>
+          }
+
+          @if (display.items.length === 0 && display.entries.length === 0) {
+            <p class="color-text text-md lh-16 m-0">{{ display.emptyMessage }}</p>
+          }
+        </section>
+      }
+    } @else if (reward.rewardUnavailableMessage(); as unavailableMessage) {
+      <p class="color-text text-md lh-16 m-0">{{ unavailableMessage }}</p>
+    }
+
+    @if (manualTrialReport.currentUnavailable() && !reportId()) {
+      <app-exploration-manual-trial-runtime-error
+        [technicalContext]="manualTrialReport.errorContext"
+      />
+    }
+
+    @if (reportId(); as reportId) {
+      <app-exploration-report-result-content [reportId]="reportId" />
+    }
+  </div>
+} @else if (reportId(); as reportId) {
+  <app-exploration-report-result-content [reportId]="reportId" />
 }

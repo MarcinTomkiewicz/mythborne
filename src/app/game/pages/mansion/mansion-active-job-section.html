@@ -1,0 +1,48 @@
+@if (page.activeJob(); as job) {
+  @if (page.copyJson(); as copy) {
+    <section class="mg-card p-lg w-100">
+      <div class="grid-2 gap-lg grid-items-center">
+        <div class="flex-row-start-center flex-col-sm gap-md min-w-0">
+          <span class="image__preview image__preview--square w-px-150 min-w-auto flex-none">
+            @if (page.activeJobBuildingImageUrl(job); as imageUrl) {
+              <img
+                [ngSrc]="imageUrl"
+                [alt]="job.buildingName ?? copy.summary.activeJob"
+                class="image__preview-image object-fit-contain"
+                [width]="imageDimensions.width"
+                [height]="imageDimensions.height"
+              />
+            } @else {
+              <span class="flex-col-center-center h-100 w-100">
+                <i class="pi pi-capitol color-heading" aria-hidden="true"></i>
+              </span>
+            }
+          </span>
+          <div class="flex-col gap-sm min-w-0">
+            <h2 class="mg-section__title mg-section__title--sm mb-0">
+              {{ job.buildingName ?? copy.summary.activeJob }} |
+              {{ copy.labels.nextLevel }} {{ job.targetLevel }}
+            </h2>
+            @if (job.completesAt) {
+              <p class="mb-0 muted-text">{{ toDateTimeLabel(job.completesAt) }}</p>
+            }
+          </div>
+        </div>
+        <div class="flex-col gap-md w-100">
+          @if (page.activeJobCountdownLabel(job); as countdownLabel) {
+            <strong class="color-heading font-display text-xl text-right">{{ countdownLabel }}</strong>
+          }
+          <app-game-bar
+            [label]="copy.summary.activeJob"
+            [value]="page.activeJobProgress(job)"
+            [max]="100"
+            type="xp"
+            [compact]="true"
+            [showLabel]="false"
+            [showValue]="false"
+          />
+        </div>
+      </div>
+    </section>
+  }
+}

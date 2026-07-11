@@ -1,5 +1,6 @@
 export const VICINITY_ADDRESS_PAGE_SIZE = 20;
 export const VICINITY_TARGET_LIMIT = VICINITY_ADDRESS_PAGE_SIZE;
+export const VICINITY_RELOCATION_DIALOG_KEY = 'vicinity-relocation';
 
 export const VICINITY_HEADER_SUMMARY_ROW_KEYS = [
   'dailyAttacks',

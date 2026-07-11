@@ -1,8 +1,10 @@
 import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { finalize } from 'rxjs';
+import { GAME_COPY_DEFAULT_LOCALE } from '../../../core/constants/game-copy.const';
 import { CombatSurfaceDecisionDeadline } from '../../../core/domain/combat/combat-display.model';
 import { activeHeroContextKey } from '../../../core/domain/hero/active-hero-context';
+import type { MinigameSourceRef } from '../../../core/domain/minigame/minigame-completion.model';
 import {
   isPvpAttackArrivalReady,
   isPvpManualCombatDecisionOffer,
@@ -15,7 +17,7 @@ import {
 } from '../../../core/domain/pvp/pvp-active-action-display.mapper';
 import { PvpActionCopy } from '../../../core/domain/pvp/pvp-action-copy.model';
 import { ActivePvpActionOffer } from '../../../core/domain/pvp/pvp.model';
-import { GameCopy } from '../../../core/services/game-copy/game-copy';
+import { GameCopySignalLoader } from '../../../core/services/game-copy/game-copy-signal-loader';
 import { ActiveHero } from '../../../core/services/hero/active-hero';
 import { PlayerPvp } from '../../../core/services/pvp/player-pvp';
 import {
@@ -25,7 +27,6 @@ import {
 import { getErrorMessage } from '../../../core/utils/error-message';
 import { pvpActionCopyKeyFallback } from '../../../core/utils/pvp-action-copy-key-fallback';
 import { RequestToken } from '../../../core/utils/request-token';
-import { MinigameSourceRef } from '../../components/minigame-host/minigame-host.model';
 import {
   isPvpCombatHostOffer,
   pvpCombatSourceRef,
@@ -37,8 +38,9 @@ export class PvpCombatActionState {
   private readonly activeHero = inject(ActiveHero);
   private readonly destroyRef = inject(DestroyRef);
   private readonly combatCopy = inject(PvpCombatCopyState);
-  private readonly gameCopy = inject(GameCopy);
+  private readonly copyLoader = inject(GameCopySignalLoader);
   private readonly playerPvp = inject(PlayerPvp);
+  private readonly copyRequest = new RequestToken();
   private readonly requests = new RequestToken();
   private readonly nowMs = signal(Date.now());
   private activeContextKey: string | null = null;
@@ -154,7 +156,7 @@ export class PvpCombatActionState {
       this.error.set(null);
 
       if (contextKey) {
-        queueMicrotask(() => this.load());
+        this.load();
       } else {
         this.isOfferLoading.set(false);
       }
@@ -183,7 +185,7 @@ export class PvpCombatActionState {
       }
 
       this.lastReturnRefreshKey = refreshKey;
-      queueMicrotask(() => this.load());
+      this.load();
     });
     this.loadCopy();
   }
@@ -261,18 +263,21 @@ export class PvpCombatActionState {
   }
 
   private loadCopy(): void {
-    this.isCopyLoading.set(true);
-    this.gameCopy.getCopy('player.pvp.action', { locale: 'pl' })
-      .pipe(
-        finalize(() => this.isCopyLoading.set(false)),
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe({
-        next: (copy) => {
-          this.copy.set(copy);
-        },
-        error: () => this.copy.set(pvpActionCopyKeyFallback()),
-      });
+    this.copyLoader.load({
+      kind: 'player.pvp.action',
+      args: { locale: GAME_COPY_DEFAULT_LOCALE },
+      requestToken: this.copyRequest,
+      destroyRef: this.destroyRef,
+      loading: this.isCopyLoading,
+      target: this.copy,
+      preserveCurrent: true,
+      onStart: () => this.isCopyLoading.set(true),
+      onSuccess: () => this.isCopyLoading.set(false),
+      onError: () => {
+        this.copy.set(pvpActionCopyKeyFallback());
+        this.isCopyLoading.set(false);
+      },
+    });
   }
 
   private isCurrentRequest(

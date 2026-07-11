@@ -1,5 +1,5 @@
 <main class="py-lg w-100">
-  <app-loading-overlay [visible]="page.isLoading()" />
+  <app-loading-overlay [visible]="page.isLoading()" ariaLabel="Loading report" />
 
   @if (page.detail(); as detail) {
     @if (detail.report && isPublicPvpDetail(detail)) {

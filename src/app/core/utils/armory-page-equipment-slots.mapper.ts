@@ -1,18 +1,18 @@
-import { EquippedItemSummary } from '../domain/item/item-equipment.model';
-import {
+import type { EquippedItemSummary } from '../domain/item/item-equipment.model';
+import type {
   PlayerArmoryEquipmentSlotReadModel,
-  PlayerArmoryEquippedEquipmentSlotReadModel,
+  PlayerArmoryEquippedSlotReadModel,
   PlayerArmoryItemReadModel,
 } from '../domain/item/player-armory-page-context.model';
 
 export function equippedArmorySlotsByItemIds(
   slots: readonly PlayerArmoryEquipmentSlotReadModel[],
   itemIds: readonly string[],
-): PlayerArmoryEquippedEquipmentSlotReadModel[] {
+): PlayerArmoryEquippedSlotReadModel[] {
   const requestedItemIds = new Set(itemIds);
 
   return slots.filter(
-    (slot): slot is PlayerArmoryEquippedEquipmentSlotReadModel =>
+    (slot): slot is PlayerArmoryEquippedSlotReadModel =>
       slot.hasItem && requestedItemIds.has(slot.itemId),
   );
 }
@@ -32,51 +32,40 @@ export function mapArmoryEquipmentSlotsFromLoadout(
     ),
   ]);
 
-  return slots.map((slot) =>
-    mapEquipmentSlotFromLoadoutItem(
-      slot,
-      equippedBySlot.get(slot.slotKey),
-      itemsById,
-    ),
-  );
-}
+  return slots.map((slot) => {
+    const item = equippedBySlot.get(slot.slotKey);
 
-function mapEquipmentSlotFromLoadoutItem(
-  slot: PlayerArmoryEquipmentSlotReadModel,
-  item: EquippedItemSummary | undefined,
-  itemsById: ReadonlyMap<string, PlayerArmoryItemReadModel>,
-): PlayerArmoryEquipmentSlotReadModel {
-  if (!item) {
+    if (!item) {
+      return {
+        ...slot,
+        hasItem: false,
+        isEmpty: true,
+        itemDisplayName: '',
+        itemDisplayStateLabel: null,
+        itemStatusKey: null,
+        itemId: null,
+        itemName: null,
+        item: null,
+        qualityLabel: null,
+        baseName: null,
+      };
+    }
+
     return {
       ...slot,
-      hasItem: false,
-      isEmpty: true,
-      itemDisplayName: '',
+      slotLabel: item.slotLabel,
+      slotSortOrder: item.slotSortOrder,
+      hasItem: true,
+      isEmpty: false,
+      itemDisplayName: item.itemName,
       itemDisplayStateLabel: null,
-      itemStatusKey: null,
-      itemId: null,
-      itemName: null,
-      item: null,
-      qualityLabel: null,
-      baseName: null,
+      itemStatusKey: item.lifecycleStatus,
+      equipmentArea: item.equipmentArea,
+      itemId: item.itemId,
+      itemName: item.itemName,
+      item: itemsById.get(item.itemId) ?? null,
+      qualityLabel: item.qualityLabel,
+      baseName: item.baseName,
     };
-  }
-  const itemReadModel = itemsById.get(item.itemId) ?? null;
-
-  return {
-    ...slot,
-    slotLabel: item.slotLabel,
-    slotSortOrder: item.slotSortOrder,
-    hasItem: true,
-    isEmpty: false,
-    itemDisplayName: item.itemName,
-    itemDisplayStateLabel: null,
-    itemStatusKey: item.lifecycleStatus,
-    equipmentArea: item.equipmentArea,
-    itemId: item.itemId,
-    itemName: item.itemName,
-    item: itemReadModel,
-    qualityLabel: item.qualityLabel,
-    baseName: item.baseName,
-  };
+  });
 }

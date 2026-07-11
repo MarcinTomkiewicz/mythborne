@@ -1,11 +1,11 @@
 import type {
-  StructuredConfirmDialogSegment,
-} from '../../interfaces/structured-confirm-dialog-segment.interface';
+  StructuredConfirmDialogContent,
+} from '../../interfaces/structured-dialog-content.interface';
 
 export function plainStructuredConfirmMessage(
-  segments: readonly StructuredConfirmDialogSegment[],
+  content: StructuredConfirmDialogContent,
 ): string {
-  return segments
-    .map((segment) => `${segment.text}${segment.lineBreakAfter ? '\n' : ''}`)
-    .join('');
+  return content.message.paragraphs
+    .map((paragraph) => paragraph.segments.map((segment) => segment.text).join(''))
+    .join('\n\n');
 }

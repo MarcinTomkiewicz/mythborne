@@ -1,59 +1,28 @@
 <div class="flex-col gap-lg min-w-0">
-  <app-loading-overlay [visible]="pvpAction.isLoading()" label="" />
+  <app-loading-overlay
+    [visible]="pvpAction.isLoading()"
+    ariaLabel="Loading combat"
+  />
 
   @if (pvpAction.copy(); as actionCopy) {
-    @if (currentCompletion()?.reportId; as reportId) {
-      <app-report-detail-preview-card
-        [reportId]="reportId"
-        [label]="actionCopy.common.labels.combatReport"
-        [directReportLabel]="actionCopy.common.actionLabels.openReport"
-      />
-    } @else if (pvpAction.combatSourceRef(); as source) {
-      @if (pvpAction.combatSourcePresentation(); as presentation) {
-        @if (presentation.header; as header) {
-          <section class="mg-card p-lg flex-col gap-sm w-100">
-            <p class="small-caps color-muted text-xs mb-0">{{ header.eyebrow }}</p>
-            <h1 class="color-heading text-xl mb-0">{{ header.title }}</h1>
-            <p class="color-text text-md lh-16 mb-0">{{ header.text }}</p>
-          </section>
-        }
+    <app-pvp-sandbox-tools
+      [offer]="pvpAction.visibleOffer()"
+      (refreshActiveOffer)="refreshActivePvpOffer()"
+      (refreshAttackCounters)="refreshActivePvpOffer()"
+    />
 
-        <app-pvp-sandbox-tools
-          [offer]="pvpAction.visibleOffer()"
-          (refreshActiveOffer)="refreshActivePvpOffer()"
-          (refreshAttackCounters)="refreshActivePvpOffer()"
-        />
-
-        <app-minigame-host
-          [minigameKey]="minigameKey"
-          [sourceRef]="source"
-          [contextTitle]="presentation.header?.title ?? actionCopy.common.labels.heroCombat"
-          [sourcePresentation]="presentation"
-          [combatDecisionDeadline]="pvpAction.decisionDeadline()"
-          [combatLiveSessionId]="pvpAction.combatLiveSessionId()"
-          (completed)="acceptCompletion($event)"
-        />
-      }
-    } @else if (!pvpAction.isLoading() && !pvpAction.visibleOffer()) {
-      <section class="mg-card p-lg flex-col gap-sm w-100">
-        <p class="small-caps color-muted text-xs mb-0">{{ actionCopy.common.labels.combat }}</p>
-        <p class="warn-text mb-0">{{ actionCopy.common.emptyValues.noData }}</p>
-      </section>
-    }
-
-    @if (pvpAction.visibleOffer(); as offer) {
-      <app-pvp-active-action-panel
-        [offer]="offer"
-        [copy]="actionCopy"
-        [sourcePresentation]="pvpAction.combatSourcePresentation()"
-        [timer]="pvpAction.timer()"
-        [factRows]="pvpAction.factRows()"
-        [isLoading]="pvpAction.isLoading()"
-        [isTimerReady]="pvpAction.isTimerReady()"
-        [isArrivalReady]="pvpAction.isAttackArrivalReady()"
-        (refresh)="refreshActivePvpOffer()"
-      />
-    }
+    <app-pvp-active-action-panel
+      [offer]="pvpAction.visibleOffer()"
+      [copy]="actionCopy"
+      [sourcePresentation]="pvpAction.combatSourcePresentation()"
+      [timer]="pvpAction.timer()"
+      [factRows]="pvpAction.factRows()"
+      [isLoading]="pvpAction.isLoading()"
+      [isTimerReady]="pvpAction.isTimerReady()"
+      [isArrivalReady]="pvpAction.isAttackArrivalReady()"
+      [renderCombatHost]="true"
+      (refresh)="refreshActivePvpOffer()"
+    />
 
     @if (pvpAction.error()) {
       <p class="warn-text mb-0">{{ pvpAction.error() }}</p>
