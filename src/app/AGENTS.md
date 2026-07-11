@@ -12,6 +12,7 @@ Blocked unless the current task explicitly allows:
 * deprecated PrimeNG APIs;
 * native form controls where PrimeNG/project wrappers are expected;
 * `p-select` nested inside native `<label>`;
+* feature/page/component-local `ng-template`, `ng-container`, `ngTemplateOutlet`, `pTemplate` or equivalent template indirection;
 * copied prototype CSS;
 * prototype `mb-*` classes;
 * raw gradients/palette values copied from prototypes;
@@ -31,6 +32,24 @@ For UI tasks:
 * make manual/route smoke explain domain meaning, not only click paths.
 
 If production pattern or data needed for UI is missing, report the missing pattern or DB/RPC/read-model gap. Do not invent a frontend fallback.
+
+## Template composition
+
+Do not use `ng-template`, `ng-container`, `ngTemplateOutlet`, `pTemplate`, template context objects or equivalent projection/composition in page, feature or ordinary component templates.
+
+Replace every such pattern in touched code with a dedicated shared component exposing explicit, typed inputs and outputs. One use, small markup, local privacy, readability or PrimeNG documentation are not exceptions.
+
+If a third-party API requires a template, isolate the smallest possible integration inside a dedicated shared wrapper. Feature/page callers must use a normal component element and must not own template references, outlets or context composition.
+
+## Touched-file quality gate
+
+Before reporting completion, read every touched production `.ts` and `.html` in full, not only its diff.
+
+For each `.ts`, inspect every function, method, constructor, class member, interface/type/enum and its fields, input/output/signal/computed/effect, constant, parameter, local variable and helper. Walk each function/method body statement by statement. Fix responsibility, duplication, lifecycle, stale behavior, error handling, mutability, dead code and ownership violations in the touched file now.
+
+Audit every filename and symbol name. Rename names that are strange, sentence-like, vague, implementation-history-driven, repeat surrounding class/feature/domain context or are long because they hide several responsibilities. A project-owned identifier longer than about 40 characters or five lexical parts, or a file basename longer than about 50 characters, requires a shorter name or responsibility split; generated/external contract names are the only narrow exception.
+
+Do not use aggregate conclusions such as `other methods OK`. Every declared symbol must be consciously checked even though the final completion receipt stays short.
 
 ## UI utilities and SCSS
 
